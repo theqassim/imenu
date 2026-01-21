@@ -1,0 +1,3921 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة التحكم | Smart Menu</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <style>
+      :root {
+        --primary: #4338ca;
+        --primary-light: #e0e7ff;
+        --secondary: #64748b;
+        --bg: #f3f4f6;
+        --surface: #ffffff;
+        --border-color: #e2e8f0;
+        --text-main: #1e293b;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+      }
+
+      body.dark-mode {
+        --primary: #6366f1;
+        --primary-light: #312e81;
+        --secondary: #94a3b8;
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --border-color: #334155;
+        --text-main: #f1f5f9;
+      }
+
+      body {
+        font-family: "Tajawal", sans-serif;
+        background: var(--bg);
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        color: var(--text-main);
+        transition:
+          background 0.3s,
+          color 0.3s;
+      }
+
+      .mobile-header {
+        display: none;
+        background: var(--surface);
+        padding: 15px;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 1000;
+        box-sizing: border-box;
+      }
+      .mobile-menu-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-main);
+        cursor: pointer;
+      }
+
+      .sidebar {
+        width: 260px;
+        background: var(--surface);
+        height: 100%;
+        border-left: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+        z-index: 1001;
+        transition: 0.3s;
+      }
+      .logo {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--primary);
+        margin-bottom: 40px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .nav-item {
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        border-radius: 10px;
+        color: var(--secondary);
+        font-weight: 500;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .nav-item:hover {
+        background: var(--bg);
+        color: var(--primary);
+      }
+      .nav-item.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(67, 56, 202, 0.3);
+      }
+      .nav-item i {
+        width: 20px;
+        text-align: center;
+        font-size: 18px;
+      }
+
+      .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: none;
+      }
+
+      .main-content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+        width: 100%;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+      .page-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+      .btn-preview {
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        padding: 10px 20px;
+        border-radius: 30px;
+        color: var(--primary);
+        font-weight: bold;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: 0.3s;
+      }
+      .btn-preview:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+      }
+
+      .login-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--bg);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+      }
+      .login-box {
+        background: var(--surface);
+        padding: 40px;
+        border-radius: 20px;
+        width: 400px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .card {
+        background: var(--surface);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
+        margin-bottom: 25px;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--secondary);
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-family: inherit;
+        font-size: 14px;
+        transition: 0.3s;
+        outline: none;
+        box-sizing: border-box;
+        background: var(--bg);
+        color: var(--text-main);
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-light);
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .custom-file-upload {
+        border: 1px solid #cbd5e1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 15px;
+        cursor: pointer;
+        border-radius: 10px;
+        background: var(--bg);
+        color: var(--secondary);
+        font-size: 14px;
+        font-weight: 500;
+        transition: 0.2s;
+        height: 45px;
+        box-sizing: border-box;
+        width: 100%;
+        white-space: nowrap;
+      }
+      .custom-file-upload:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+      }
+
+      .img-preview {
+        width: 45px;
+        height: 45px;
+        border-radius: 8px;
+        object-fit: cover;
+        display: none;
+        border: 1px solid var(--border-color);
+        margin-right: 10px;
+      }
+
+      .btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+        width: 100%;
+      }
+      .btn-primary:hover {
+        background: #3730a3;
+      }
+      .btn-success {
+        background: var(--success);
+        color: white;
+      }
+      .btn-outline {
+        background: transparent;
+        border: 1px solid #cbd5e1;
+        color: var(--secondary);
+      }
+
+      .search-container {
+        position: relative;
+        max-width: 400px;
+        margin-bottom: 20px;
+      }
+      .search-input {
+        padding-right: 40px;
+        border-radius: 50px;
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+      }
+      .search-icon {
+        position: absolute;
+        right: 15px;
+        top: 13px;
+        color: var(--secondary);
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        background: var(--surface);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 600px;
+      }
+      th {
+        background: var(--bg);
+        text-align: right;
+        padding: 18px;
+        font-size: 13px;
+        color: var(--secondary);
+        font-weight: 700;
+        border-bottom: 1px solid var(--border-color);
+      }
+      td {
+        padding: 15px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 14px;
+        vertical-align: middle;
+        color: var(--text-main);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover {
+        background: var(--bg);
+      }
+
+      .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .badge-cat {
+        background: var(--primary-light);
+        color: var(--primary);
+      }
+
+      .bulk-card {
+        background: var(--surface);
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        position: relative;
+        transition: 0.3s;
+      }
+      .bulk-card:hover {
+        border-color: var(--primary);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      }
+      .btn-remove-row {
+        position: absolute;
+        left: 15px;
+        top: 15px;
+        color: var(--danger);
+        background: var(--bg);
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+      }
+      .btn-remove-row:hover {
+        background: var(--danger);
+        color: white;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          flex-direction: column;
+        }
+        .mobile-header {
+          display: flex;
+        }
+        .sidebar {
+          position: fixed;
+          right: -270px;
+          height: 100%;
+          top: 0;
+          transition: 0.3s;
+          box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .sidebar.active {
+          right: 0;
+        }
+        .main-content {
+          padding-top: 80px;
+          padding-left: 15px;
+          padding-right: 15px;
+        }
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+        .btn-preview {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .bulk-card .form-grid {
+          display: flex;
+          flex-direction: column;
+        }
+        .bulk-card div[style*="display:flex"] {
+          flex-wrap: wrap;
+        }
+      }
+      .phone-frame {
+        width: 320px;
+        height: 650px;
+        background: #fff;
+        border-radius: 40px;
+        border: 12px solid #1a1a1a;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+      }
+      .notch {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150px;
+        height: 25px;
+        background: #1a1a1a;
+        border-bottom-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+        z-index: 10;
+      }
+      .btn-layout {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg);
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+      }
+      .btn-layout.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
+      .btn-layout i {
+        font-size: 20px;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="login-section" class="login-wrapper">
+      <div class="login-box">
+        <div class="logo" style="justify-content: center; font-size: 28px">
+          🍕 Smart Menu
+        </div>
+        <p style="color: var(--secondary); margin-bottom: 30px">سجل دخول</p>
+        <div class="form-group">
+          <input type="email" id="email" placeholder="البريد الإلكتروني" />
+        </div>
+        <div class="form-group">
+          <input type="password" id="password" placeholder="كلمة المرور" />
+        </div>
+        <button class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
+      </div>
+    </div>
+
+    <div class="mobile-header">
+      <div class="logo" style="margin: 0; font-size: 20px">🍕 Smart Menu</div>
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <div class="overlay" onclick="toggleSidebar()"></div>
+
+    <div
+      id="dashboard-section"
+      class="hidden"
+      style="display: flex; width: 100%"
+    >
+      <div class="sidebar" id="sidebar">
+        <div class="logo"><i class="fas fa-pizza-slice"></i> Smart Menu</div>
+
+        <div
+          class="nav-item active"
+          onclick="switchView('categories')"
+          id="nav-categories"
+        >
+          <i class="fas fa-layer-group"></i> الأقسام
+        </div>
+        <div
+          class="nav-item"
+          onclick="switchView('products')"
+          id="nav-products"
+        >
+          <i class="fas fa-hamburger"></i> المنتجات
+        </div>
+        <div class="nav-item" onclick="switchView('bulk')" id="nav-bulk">
+          <i class="fas fa-rocket"></i> إضافة جملة
+        </div>
+        <div class="nav-item" onclick="switchView('orders')" id="nav-orders">
+          <i class="fas fa-bell"></i> الطلبات الحية
+          <span
+            id="live-badge"
+            class="badge badge-cat hidden"
+            style="background: var(--danger); color: white"
+            >0</span
+          >
+        </div>
+        <div class="nav-item" onclick="switchView('history')" id="nav-history">
+          <i class="fas fa-history"></i> سجل الجرد
+        </div>
+        <div class="nav-item" onclick="switchView('design')" id="nav-design">
+          <i class="fas fa-paint-brush"></i> التصميم
+        </div>
+        <div
+          class="nav-item"
+          onclick="switchView('settings')"
+          id="nav-settings"
+        >
+          <i class="fas fa-cog"></i> إعدادات المتجر
+        </div>
+        <div
+          class="nav-item hidden"
+          onclick="switchView('staff')"
+          id="nav-staff"
+        >
+          <i class="fas fa-users-cog"></i> إدارة الموظفين
+        </div>
+
+        <div
+          class="nav-item hidden"
+          onclick="switchView('coupons')"
+          id="nav-coupons"
+        >
+          <i class="fas fa-ticket-alt"></i> الكوبونات
+        </div>
+        <div class="nav-item" onclick="toggleDarkMode()">
+          <i class="fas fa-moon"></i> وضع ليلي/نهاري
+        </div>
+
+        <div style="margin-top: auto">
+          <div class="nav-item" onclick="logout()" style="color: var(--danger)">
+            <i class="fas fa-sign-out-alt"></i> خروج
+          </div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="header">
+          <div class="page-title" id="page-title">جارِ التحميل...</div>
+          <a href="#" id="preview-link" target="_blank" class="btn-preview">
+            <i class="fas fa-external-link-alt"></i> معاينة المنيو
+          </a>
+        </div>
+
+        <div id="view-orders" class="hidden">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+            "
+          >
+            <h3 style="margin: 0; color: var(--primary)">الطلبات الواردة</h3>
+            <button
+              id="btn-recent-orders"
+              class="btn btn-primary"
+              onclick="showRecentOrders()"
+              style="margin-left: 10px"
+            >
+              <i class="fas fa-history"></i> فواتير سابقة
+            </button>
+            <button class="btn btn-outline" onclick="loadOrders()">
+              <i class="fas fa-sync"></i> تحديث
+            </button>
+          </div>
+          <div style="margin-bottom: 20px; display: flex; gap: 10px">
+            <input
+              type="number"
+              id="live-order-search"
+              placeholder="ابحث برقم الطلب اليومي..."
+              style="
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid var(--border-color);
+                flex: 1;
+              "
+              onkeydown="if (event.key === 'Enter') searchOrderHistory();"
+            />
+            <button
+              class="btn btn-primary"
+              onclick="searchOrderHistory()"
+              style="width: auto"
+            >
+              <i class="fas fa-search"></i> بحث
+            </button>
+          </div>
+          <div
+            id="orders-grid"
+            style="
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+              gap: 20px;
+            "
+          ></div>
+          <audio
+            id="order-sound"
+            src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
+          ></audio>
+        </div>
+
+        <div id="view-history" class="hidden">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+              flex-wrap: wrap;
+              gap: 10px;
+            "
+          >
+            <h3 style="margin: 0; color: var(--primary)">
+              <span id="history-title">سجل الجرد</span>
+            </h3>
+
+            <div
+              id="owner-filters"
+              class="hidden"
+              style="display: flex; gap: 10px; align-items: center"
+            >
+              <input
+                type="date"
+                id="filter-start"
+                style="padding: 5px; height: 35px"
+              />
+              <span style="font-weight: bold">:</span>
+              <input
+                type="date"
+                id="filter-end"
+                style="padding: 5px; height: 35px"
+              />
+              <button
+                class="btn btn-primary"
+                style="height: 35px; padding: 0 15px"
+                onclick="window.loadHistory()"
+              >
+                <i class="fas fa-filter"></i> عرض
+              </button>
+              <input
+                type="text"
+                id="history-search"
+                placeholder="رقم الطلب / الطاولة"
+                style="padding: 5px; height: 35px; width: 120px"
+              />
+            </div>
+
+            <button class="btn btn-outline" onclick="window.loadHistory()">
+              <i class="fas fa-sync"></i> تحديث
+            </button>
+          </div>
+
+          <div
+            style="
+              background: linear-gradient(45deg, var(--primary), #6366f1);
+              color: white;
+              padding: 20px;
+              border-radius: 16px;
+              margin-bottom: 25px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+            "
+          >
+            <div>
+              <div style="font-size: 14px; opacity: 0.9">
+                إجمالي المبيعات (كل الأوقات)
+              </div>
+              <div
+                style="font-size: 32px; font-weight: 800"
+                id="total-sales-display"
+              >
+                0 ج.م
+              </div>
+            </div>
+            <i class="fas fa-wallet fa-3x" style="opacity: 0.2"></i>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>رقم الطلب</th>
+                  <th>التاريخ</th>
+                  <th>الطاولة</th>
+                  <th>الأصناف</th>
+                  <th>الإجمالي</th>
+                  <th>الحالة</th>
+                </tr>
+              </thead>
+              <tbody id="history-list"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="view-categories">
+          <div class="card">
+            <h3
+              style="
+                margin-top: 0;
+                margin-bottom: 15px;
+                color: var(--primary);
+                font-size: 18px;
+              "
+            >
+              إضافة قسم جديد
+            </h3>
+
+            <div
+              style="
+                display: flex;
+                gap: 15px;
+                align-items: flex-end;
+                flex-wrap: wrap;
+              "
+            >
+              <div style="flex-grow: 1; min-width: 200px">
+                <label class="form-label">اسم القسم</label>
+                <input type="text" id="c-name" placeholder="" />
+              </div>
+              <div style="width: auto; min-width: 180px; flex-grow: 1">
+                <label class="form-label">الغلاف (اختياري)</label>
+                <div style="display: flex; align-items: center">
+                  <img id="c-preview" class="img-preview" />
+                  <label for="c-image" class="custom-file-upload">
+                    <i class="fas fa-image"></i> اختر صورة
+                  </label>
+                  <input
+                    type="file"
+                    id="c-image"
+                    accept="image/*"
+                    onchange="previewImage(this, 'c-preview')"
+                  />
+                </div>
+              </div>
+              <div style="width: auto">
+                <button
+                  class="btn btn-primary"
+                  style="height: 45px; padding: 0 25px"
+                  onclick="addCategory()"
+                >
+                  <i class="fas fa-plus"></i> حفظ
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>الغلاف</th>
+                  <th>اسم القسم</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="categories-list"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="view-products" class="hidden">
+          <div class="search-container">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              onkeyup="searchTable()"
+              placeholder="ابحث عن منتج أو قسم..."
+            />
+          </div>
+
+          <div class="card">
+            <h3
+              style="
+                margin-top: 0;
+                font-size: 18px;
+                margin-bottom: 20px;
+                color: var(--primary);
+              "
+            >
+              <span id="form-mode-title">إضافة منتج جديد</span>
+              <button
+                id="btn-cancel"
+                class="btn btn-outline hidden"
+                onclick="resetProductForm()"
+                style="float: left; padding: 5px 10px; font-size: 12px"
+              >
+                إلغاء التعديل
+              </button>
+            </h3>
+
+            <div class="form-grid">
+              <div>
+                <label class="form-label">اسم المنتج</label>
+                <input type="text" id="p-name" placeholder="اسم المنتج" />
+              </div>
+              <div
+                style="
+                  background: var(--bg);
+                  padding: 15px;
+                  border-radius: 10px;
+                  border: 1px solid var(--border-color);
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                  "
+                >
+                  <label class="form-label" style="margin: 0"
+                    >نظام التسعير</label
+                  >
+                  <div style="display: flex; gap: 10px; font-size: 14px">
+                    <label
+                      style="
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                      "
+                    >
+                      <input
+                        type="radio"
+                        name="pricingMode"
+                        value="single"
+                        checked
+                        onchange="togglePricingMode()"
+                      />
+                      سعر موحد
+                    </label>
+                    <label
+                      style="
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        gap: 5px;
+                      "
+                    >
+                      <input
+                        type="radio"
+                        name="pricingMode"
+                        value="multi"
+                        onchange="togglePricingMode()"
+                      />
+                      أحجام متعددة
+                    </label>
+                  </div>
+                </div>
+
+                <div id="mode-single" class="pricing-group">
+                  <div
+                    style="
+                      display: grid;
+                      grid-template-columns: 1fr 1fr;
+                      gap: 10px;
+                    "
+                  >
+                    <div>
+                      <label class="form-label">السعر (ج.م)</label>
+                      <input
+                        type="number"
+                        id="p-price"
+                        placeholder="مثال: 150"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="form-label"
+                        style="color: var(--danger); font-weight: bold"
+                        >السعر الأصلي (قبل الخصم)</label
+                      >
+                      <input
+                        type="number"
+                        id="p-old-price"
+                        placeholder="اكتب السعر القديم (الأغلى)"
+                        style="
+                          border: 1px dashed var(--danger);
+                          background: #fef2f2;
+                          color: var(--danger);
+                        "
+                      />
+                      <small style="font-size: 11px; color: var(--secondary)"
+                        >سيبه فاضي لو مفيش خصم</small
+                      >
+                    </div>
+                  </div>
+                </div>
+
+                <div id="mode-multi" class="pricing-group hidden">
+                  <div id="sizes-list"></div>
+                  <button
+                    class="btn btn-outline"
+                    style="width: 100%; margin-top: 10px; border-style: dashed"
+                    onclick="addSizeRow()"
+                  >
+                    <i class="fas fa-plus"></i> إضافة حجم جديد
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 15px">
+              <div>
+                <label class="form-label">القسم</label>
+                <select id="p-cat">
+                  <option value="">-- اختر القسم --</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">الصورة</label>
+                <div style="display: flex; align-items: center">
+                  <img id="p-preview" class="img-preview" />
+                  <label for="p-image" class="custom-file-upload">
+                    <i class="fas fa-cloud-upload-alt"></i> رفع صورة
+                  </label>
+                  <input
+                    type="file"
+                    id="p-image"
+                    accept="image/*"
+                    onchange="previewImage(this, 'p-preview')"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 15px">
+              <label class="form-label">الوصف</label>
+              <textarea id="p-desc" rows="2" placeholder="الوصف"></textarea>
+            </div>
+
+            <div style="margin-top: 20px">
+              <button
+                id="btn-add-prod"
+                class="btn btn-primary"
+                onclick="saveProduct('POST')"
+              >
+                <i class="fas fa-plus-circle"></i> إضافة للمنيو
+              </button>
+              <button
+                id="btn-update-prod"
+                class="btn hidden"
+                style="background: var(--warning); color: white; width: 100%"
+                onclick="saveProduct('PATCH')"
+              >
+                <i class="fas fa-save"></i> حفظ التعديلات
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th width="60">صورة</th>
+                  <th>الاسم</th>
+                  <th>القسم</th>
+                  <th>السعر</th>
+                  <th>الحالة</th>
+                  <th>تحكم</th>
+                </tr>
+              </thead>
+              <tbody id="products-list"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="view-bulk" class="hidden">
+          <div
+            style="
+              background: rgba(16, 185, 129, 0.1);
+              border: 1px solid var(--success);
+              padding: 15px;
+              border-radius: 10px;
+              color: var(--success);
+              margin-bottom: 20px;
+            "
+          >
+            <i class="fas fa-info-circle"></i> <strong>نصيحة:</strong> يمكنك
+            إضافة عدد غير محدود من المنتجات هنا، ثم رفعها مرة واحدة.
+          </div>
+
+          <div id="bulk-container"></div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px">
+            <button
+              class="btn btn-outline"
+              style="flex: 1; border-style: dashed"
+              onclick="addBulkRow()"
+            >
+              <i class="fas fa-plus"></i> صف جديد
+            </button>
+            <button
+              class="btn btn-success"
+              style="flex: 1"
+              onclick="submitBulkAll()"
+            >
+              <i class="fas fa-cloud-upload-alt"></i> رفع وحفظ الكل
+            </button>
+          </div>
+        </div>
+        <div id="view-staff" class="hidden">
+          <div class="card">
+            <h3 style="color: var(--primary); margin-top: 0">
+              <i class="fas fa-user-plus"></i> إضافة موظف جديد
+            </h3>
+            <div class="form-grid">
+              <input type="text" id="staff-name" placeholder="اسم الموظف" />
+              <input
+                type="email"
+                id="staff-email"
+                placeholder="البريد الإلكتروني للدخول"
+              />
+            </div>
+            <div class="form-grid" style="margin-top: 15px">
+              <input
+                type="text"
+                id="staff-password"
+                placeholder="كلمة المرور"
+              />
+              <select id="staff-role">
+                <option value="cashier">كاشير</option>
+                <option value="kitchen">شيف</option>
+              </select>
+            </div>
+
+            <div
+              style="
+                background: var(--bg);
+                padding: 15px;
+                border-radius: 10px;
+                margin-top: 15px;
+                border: 1px solid var(--border-color);
+              "
+            >
+              <h4 style="margin-top: 0; color: var(--secondary)">
+                ⏰ مواعيد العمل والإجازات
+              </h4>
+              <div class="form-grid">
+                <div>
+                  <label class="form-label">بداية الشيفت</label>
+                  <input type="time" id="staff-start" value="09:00" />
+                </div>
+                <div>
+                  <label class="form-label">نهاية الشيفت</label>
+                  <input type="time" id="staff-end" value="17:00" />
+                </div>
+              </div>
+              <label class="form-label" style="margin-top: 10px"
+                >أيام الإجازة الأسبوعية</label
+              >
+              <div
+                style="display: flex; gap: 10px; flex-wrap: wrap"
+                id="rest-days-container"
+              >
+                <label><input type="checkbox" value="6" /> السبت</label>
+                <label><input type="checkbox" value="0" /> الأحد</label>
+                <label><input type="checkbox" value="1" /> الإثنين</label>
+                <label><input type="checkbox" value="2" /> الثلاثاء</label>
+                <label><input type="checkbox" value="3" /> الأربعاء</label>
+                <label><input type="checkbox" value="4" /> الخميس</label>
+                <label><input type="checkbox" value="5" /> الجمعة</label>
+              </div>
+            </div>
+            <button
+              class="btn btn-primary"
+              onclick="addStaff()"
+              style="margin-top: 15px"
+            >
+              حفظ البيانات
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>الاسم</th>
+                  <th>البريد</th>
+                  <th>الدور</th>
+                  <th>حذف</th>
+                </tr>
+              </thead>
+              <tbody id="staff-list"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="view-coupons" class="hidden">
+          <div class="card">
+            <h3 style="color: var(--primary); margin-top: 0">
+              إضافة كوبون جديد
+            </h3>
+            <div class="form-grid">
+              <input
+                type="text"
+                id="coup-code"
+                placeholder="كود الكوبون (مثال: SAVE20)"
+              />
+              <select id="coup-type">
+                <option value="percent">نسبة مئوية (%)</option>
+                <option value="fixed">مبلغ ثابت (ج.م)</option>
+              </select>
+            </div>
+            <div class="form-grid" style="margin-top: 10px">
+              <input type="number" id="coup-value" placeholder="قيمة الخصم" />
+              <input
+                type="number"
+                id="coup-min"
+                placeholder="الحد الأدنى للطلب (اختياري)"
+              />
+            </div>
+            <div class="form-grid" style="margin-top: 10px">
+              <input
+                type="number"
+                id="coup-max-disc"
+                placeholder="أقصى خصم (للنسبة المئوية فقط)"
+              />
+              <input
+                type="number"
+                id="coup-limit"
+                placeholder="عدد مرات الاستخدام (الافتراضي 1000)"
+              />
+            </div>
+            <button
+              class="btn btn-primary"
+              style="margin-top: 15px"
+              onclick="createCoupon()"
+            >
+              إنشاء الكوبون
+            </button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>الكود</th>
+                  <th>الخصم</th>
+                  <th>الاستخدام</th>
+                  <th>حذف</th>
+                </tr>
+              </thead>
+              <tbody id="coupons-list"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="view-settings" class="hidden">
+          <div class="card" style="max-width: 800px; margin: 0 auto">
+            <h3
+              style="
+                color: var(--primary);
+                margin-top: 0;
+                border-bottom: 1px solid var(--border-color);
+                padding-bottom: 15px;
+                margin-bottom: 20px;
+              "
+            >
+              <i class="fas fa-cogs"></i> إعدادات استلام الطلبات
+            </h3>
+
+            <div class="form-group">
+              <label class="form-label">نظام التشغيل (Order Mode)</label>
+              <select
+                id="set-orderMode"
+                style="height: 50px; font-size: 15px; font-weight: bold"
+              >
+                <option value="whatsapp">📱 واتساب (إرسال الطلب لرقمك)</option>
+                <option value="system">
+                  🚀 النظام الذكي (Live Orders System)
+                </option>
+                <option value="view_only">👀 للعرض فقط (بدون طلب)</option>
+              </select>
+              <small
+                style="color: var(--secondary); display: block; margin-top: 5px"
+              >
+                <i class="fas fa-info-circle"></i>
+                <b>واتساب:</b> الزبون يختار الطلب ويتحول للشات معاك. <br />
+                <b>النظام الذكي:</b> الطلبات تنزل في صفحة "الطلبات الحية" وتسمع
+                صوت تنبيه. <br />
+                <b>للعرض فقط:</b> إخفاء أزرار الإضافة والسلة (كتالوج).
+              </small>
+            </div>
+
+            <div class="form-grid" style="margin-top: 20px">
+              <div>
+                <label class="form-label">نسبة الضريبة (%)</label>
+                <input
+                  type="number"
+                  id="set-taxRate"
+                  placeholder="0"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+              <div>
+                <label class="form-label">نسبة الخدمة (%)</label>
+                <input
+                  type="number"
+                  id="set-serviceRate"
+                  placeholder="0"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 20px">
+              <label class="form-label">خيارات إضافية</label>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                  background: var(--bg);
+                  padding: 15px;
+                  border-radius: 10px;
+                  border: 1px solid var(--border-color);
+                "
+              >
+                <input
+                  type="checkbox"
+                  id="set-useTableNumbers"
+                  style="width: 20px; height: 20px"
+                />
+                <label
+                  for="set-useTableNumbers"
+                  style="cursor: pointer; font-weight: bold"
+                  >تفعيل نظام الطاولات (Table Numbers)</label
+                >
+              </div>
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  align-items: center;
+                  background: var(--bg);
+                  padding: 15px;
+                  border-radius: 10px;
+                  border: 1px solid var(--border-color);
+                  margin-top: 10px;
+                "
+              >
+                <input
+                  type="checkbox"
+                  id="set-enableCoupons"
+                  style="width: 20px; height: 20px"
+                />
+                <label
+                  for="set-enableCoupons"
+                  style="cursor: pointer; font-weight: bold"
+                  >تفعيل الكوبونات (Coupons)</label
+                >
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px">
+              <label class="form-label">رقم الواتساب لاستقبال الطلبات</label>
+              <input
+                type="text"
+                id="set-whatsapp"
+                placeholder="مثال: 01000000000"
+                style="font-size: 16px; font-weight: bold; letter-spacing: 1px"
+              />
+            </div>
+
+            <button
+              class="btn btn-success"
+              onclick="saveSettings()"
+              style="margin-top: 20px; font-size: 16px"
+            >
+              <i class="fas fa-save"></i> حفظ الإعدادات
+            </button>
+          </div>
+        </div>
+
+        <div id="view-design" class="hidden">
+          <div
+            style="
+              display: flex;
+              gap: 20px;
+              flex-wrap: wrap;
+              height: calc(100vh - 100px);
+            "
+          >
+            <div
+              class="card"
+              style="flex: 1; min-width: 300px; overflow-y: auto; height: 100%"
+            >
+              <h3 style="color: var(--primary); margin-top: 0">
+                <i class="fas fa-paint-brush"></i> ستوديو التصميم
+              </h3>
+
+              <div
+                class="form-group"
+                style="
+                  background: var(--bg);
+                  padding: 15px;
+                  border-radius: 12px;
+                  border: 1px solid var(--border-color);
+                  margin-bottom: 25px;
+                "
+              >
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                  "
+                >
+                  <label
+                    class="form-label"
+                    style="color: var(--primary); margin: 0"
+                    ><i class="fas fa-magic"></i> اختر قالب جاهز</label
+                  >
+                  <small style="color: var(--secondary)"
+                    >أو صمم بنفسك من الأسفل 👇</small
+                  >
+                </div>
+                <div
+                  class="theme-grid"
+                  id="theme-library"
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                    gap: 10px;
+                  "
+                ></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">طريقة عرض المنتجات (Layout)</label>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 8px;
+                  "
+                >
+                  <button
+                    class="btn-layout active"
+                    onclick="setUiParam('layoutType', 'modern')"
+                    id="btn-layout-modern"
+                  >
+                    <i class="fas fa-bolt"></i> مودرن
+                  </button>
+                  <button
+                    class="btn-layout"
+                    onclick="setUiParam('layoutType', 'grid')"
+                    id="btn-layout-grid"
+                  >
+                    <i class="fas fa-th-large"></i> شبكة
+                  </button>
+                  <button
+                    class="btn-layout"
+                    onclick="setUiParam('layoutType', 'list')"
+                    id="btn-layout-list"
+                  >
+                    <i class="fas fa-list-ul"></i> قائمة
+                  </button>
+                  <button
+                    class="btn-layout"
+                    onclick="setUiParam('layoutType', 'focus')"
+                    id="btn-layout-focus"
+                  >
+                    <i class="fas fa-camera-retro"></i> فوكس (صور)
+                  </button>
+                  <button
+                    class="btn-layout"
+                    onclick="setUiParam('layoutType', 'minimal')"
+                    id="btn-layout-minimal"
+                  >
+                    <i class="fas fa-align-right"></i> تكست (سريع)
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">اللون الأساسي</label>
+                <input
+                  type="color"
+                  id="ui-primaryColor"
+                  oninput="setUiParam('primaryColor', this.value)"
+                  style="height: 50px; cursor: pointer"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">إعدادات الهيدر والغلاف</label>
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 15px;
+                  "
+                >
+                  <img
+                    id="hero-preview"
+                    class="img-preview"
+                    style="width: 50px; height: 50px"
+                  />
+                  <label
+                    for="ui-heroFile"
+                    class="custom-file-upload"
+                    style="margin: 0"
+                  >
+                    <i class="fas fa-cloud-upload-alt"></i> رفع صورة الغلاف
+                  </label>
+                  <input
+                    type="file"
+                    id="ui-heroFile"
+                    accept="image/*"
+                    onchange="handleHeroUpload(this)"
+                  />
+                </div>
+
+                <div
+                  style="
+                    background: var(--bg);
+                    padding: 10px;
+                    border-radius: 10px;
+                    border: 1px solid var(--border-color);
+                  "
+                >
+                  <div
+                    style="
+                      display: flex;
+                      align-items: center;
+                      gap: 10px;
+                      margin-bottom: 10px;
+                    "
+                  >
+                    <i
+                      class="fas fa-adjust"
+                      style="color: var(--secondary)"
+                    ></i>
+                    <input
+                      type="range"
+                      min="0"
+                      max="90"
+                      value="30"
+                      id="ui-heroOverlay"
+                      oninput="setUiParam('heroOverlay', this.value)"
+                      style="flex: 1"
+                    />
+                    <span style="font-size: 12px; width: 50px">تعتيم</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <i
+                      class="fas fa-arrows-alt-v"
+                      style="color: var(--secondary)"
+                    ></i>
+                    <input
+                      type="range"
+                      min="150"
+                      max="500"
+                      value="200"
+                      id="ui-heroHeight"
+                      oninput="setUiParam('heroHeight', this.value)"
+                      style="flex: 1"
+                    />
+                    <span style="font-size: 12px; width: 50px">ارتفاع</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">خلفية الصفحة</label>
+                <select
+                  id="ui-bgType"
+                  onchange="toggleBgInput()"
+                  style="margin-bottom: 10px"
+                >
+                  <option value="color">لون ثابت</option>
+                  <option value="pattern">نمط (Pattern)</option>
+                  <option value="image">صورة رابط</option>
+                </select>
+                <input
+                  type="color"
+                  id="ui-bgColor"
+                  oninput="setUiParam('bgValue', this.value)"
+                  style="height: 50px"
+                />
+                <div
+                  id="ui-bgImage-container"
+                  class="hidden"
+                  style="margin-top: 10px"
+                >
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <img
+                      id="bg-preview"
+                      class="img-preview"
+                      style="width: 50px; height: 50px"
+                    />
+                    <label
+                      for="ui-bgFile"
+                      class="custom-file-upload"
+                      style="margin: 0"
+                    >
+                      <i class="fas fa-cloud-upload-alt"></i> اختر صورة
+                    </label>
+                    <input
+                      type="file"
+                      id="ui-bgFile"
+                      accept="image/*"
+                      onchange="handleBgUpload(this)"
+                    />
+                  </div>
+                  <small
+                    style="
+                      color: var(--secondary);
+                      display: block;
+                      margin-top: 5px;
+                    "
+                    >يفضل صورة طولية عالية الجودة</small
+                  >
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">ستايل الكارت</label>
+                <select
+                  id="ui-cardStyle"
+                  onchange="setUiParam('cardStyle', this.value)"
+                >
+                  <option value="solid">مصمت (Solid)</option>
+                  <option value="glass">زجاجي (Glassmorphism)</option>
+                  <option value="outlined">إطار فقط</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label"
+                  >انحناء الحواف (Radius):
+                  <span id="radius-val">16</span>px</label
+                >
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  id="ui-cardRadius"
+                  oninput="setUiParam('cardRadius', this.value)"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">نوع الخط</label>
+                <select
+                  id="ui-fontFamily"
+                  onchange="setUiParam('fontFamily', this.value)"
+                >
+                  <option value="Tajawal">Tajawal (افتراضي)</option>
+                  <option value="Cairo">Cairo (رسمي)</option>
+                  <option value="Almarai">Almarai (عصري)</option>
+                  <option value="Amiri">Amiri (كلاسيك)</option>
+                  <option value="Zain">Zain (شبابي)</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 10px; margin-top: 20px">
+                <button
+                  class="btn btn-outline"
+                  onclick="resetDesign()"
+                  style="
+                    flex: 1;
+                    border-color: var(--danger);
+                    color: var(--danger);
+                  "
+                >
+                  <i class="fas fa-undo"></i> افتراضي
+                </button>
+                <button
+                  class="btn btn-success"
+                  onclick="saveDesignSettings()"
+                  style="flex: 2; font-size: 16px"
+                >
+                  <i class="fas fa-save"></i> حفظ
+                </button>
+              </div>
+            </div>
+
+            <div
+              style="
+                flex: 1;
+                min-width: 320px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: #333;
+                border-radius: 20px;
+                padding: 20px;
+              "
+            >
+              <div class="phone-frame">
+                <div class="notch"></div>
+                <iframe
+                  id="live-preview"
+                  src=""
+                  style="
+                    width: 100%;
+                    height: 100%;
+                    border: none;
+                    background: white;
+                  "
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" id="restaurant-id" />
+
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlToken = urlParams.get("t");
+
+      if (urlToken) {
+        sessionStorage.setItem("ownerToken", urlToken);
+
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
+      }
+
+      let token = sessionStorage.getItem("ownerToken");
+
+      let categoriesData = [];
+      let editingProductId = null;
+      let currentUserRole = null;
+
+      if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark-mode");
+      }
+
+      async function initDashboard() {
+        try {
+          const res = await fetch("/api/v1/restaurants/my-restaurant", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const result = await res.json();
+
+          if (result.status === "success") {
+            document.getElementById("restaurant-id").value =
+              result.data.restaurant._id;
+            document.getElementById("preview-link").href =
+              `/menu/${result.data.restaurant.slug}`;
+
+            document.getElementById("set-orderMode").value =
+              result.data.restaurant.orderMode || "whatsapp";
+            document.getElementById("set-taxRate").value =
+              result.data.restaurant.taxRate || 0;
+            document.getElementById("set-serviceRate").value =
+              result.data.restaurant.serviceRate || 0;
+            document.getElementById("set-useTableNumbers").checked =
+              result.data.restaurant.useTableNumbers === true;
+            document.getElementById("set-enableCoupons").checked =
+              result.data.restaurant.enableCoupons === true;
+            if (result.data.restaurant.contactInfo) {
+              document.getElementById("set-whatsapp").value =
+                result.data.restaurant.contactInfo.whatsapp || "";
+            }
+
+            applyPermissions(result.data.userRole);
+            currentUserRole = result.data.userRole;
+
+            const roleNames = {
+              owner: "المالك",
+              cashier: "الكاشير",
+              kitchen: "المطبخ",
+            };
+            const roleAr = roleNames[currentUserRole] || currentUserRole;
+            const userName =
+              sessionStorage.getItem("currentUserName") || "مستخدم";
+
+            document.getElementById("page-title").innerHTML = `
+                        <div>${result.data.restaurant.restaurantName}</div>
+                        <div style="font-size:14px; color:var(--secondary); font-weight:normal; margin-top:5px;">
+                            <i class="fas fa-user-circle"></i> ${userName} <span class="badge" style="background:var(--primary); color:white; font-size:12px;">${roleAr}</span>
+                        </div>
+                    `;
+
+            document.getElementById("login-section").style.display = "none";
+            document
+              .getElementById("dashboard-section")
+              .classList.remove("hidden");
+            if (
+              result.data.userRole === "cashier" ||
+              result.data.userRole === "kitchen"
+            ) {
+              checkShiftStatus(result.data.userRole);
+            }
+            if (result.data.userRole === "owner") {
+              loadCategories();
+              loadProducts();
+              initDesignStudio(result.data.restaurant);
+            }
+
+            const lastView = localStorage.getItem("lastActiveView");
+            if (result.data.userRole === "kitchen") switchView("orders");
+            else if (result.data.userRole === "cashier") {
+              if (lastView === "history") switchView("history");
+              else switchView("orders");
+            } else {
+              if (lastView && lastView !== "orders") switchView(lastView);
+              else switchView("categories");
+            }
+          } else {
+            if (res.status === 401) {
+              sessionStorage.removeItem("ownerToken");
+              document.getElementById("login-section").style.display = "flex";
+              document
+                .getElementById("dashboard-section")
+                .classList.add("hidden");
+            } else {
+              Swal.fire({
+                icon: "warning",
+                title: "تنبيه",
+                text: result.message || "خطأ في البيانات",
+              });
+              document.getElementById("login-section").style.display = "flex";
+            }
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "فشل الاتصال بالسيرفر", "error");
+        }
+      }
+      function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+        localStorage.setItem(
+          "theme",
+          document.body.classList.contains("dark-mode") ? "dark" : "light",
+        );
+      }
+
+      function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.querySelector(".overlay");
+        sidebar.classList.toggle("active");
+        overlay.style.display = sidebar.classList.contains("active")
+          ? "block"
+          : "none";
+      }
+
+      function previewImage(input, previewId) {
+        const preview = document.getElementById(previewId);
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+          };
+          reader.readAsDataURL(input.files[0]);
+        } else {
+          preview.src = "";
+          preview.style.display = "none";
+        }
+      }
+
+      async function login() {
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("password");
+        const btn = document.querySelector("#login-section .btn-primary");
+
+        const email = emailInput.value;
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+          return Swal.fire(
+            "تنبيه",
+            "من فضلك اكتب الإيميل والباسورد",
+            "warning",
+          );
+        }
+
+        const originalText = btn.innerText;
+        btn.innerText = "جاري التحقق...";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch("/api/v1/users/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const contentType = res.headers.get("content-type");
+          let data;
+
+          if (contentType && contentType.indexOf("application/json") !== -1) {
+            data = await res.json();
+          } else {
+            const text = await res.text();
+            console.error("Server Error (HTML):", text);
+            throw new Error(
+              "حدث خطأ في السيرفر (500). راجع الكونسول للتفاصيل.",
+            );
+          }
+
+          if (res.ok && data.status === "success") {
+            sessionStorage.setItem("ownerToken", data.token);
+
+            if (data.data && data.data.user) {
+              sessionStorage.setItem("currentUserName", data.data.user.name);
+              if (data.data.user.shiftEnd) {
+                sessionStorage.setItem("shiftEnd", data.data.user.shiftEnd);
+              } else {
+                sessionStorage.removeItem("shiftEnd");
+              }
+            }
+
+            token = data.token;
+            initDashboard();
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "تنبيه",
+              text: data.message || "بيانات الدخول غير صحيحة",
+            });
+          }
+        } catch (e) {
+          console.error("Login Error:", e);
+          Swal.fire({
+            icon: "error",
+            title: "خطأ",
+            text: e.message || "فشل الاتصال بالسيرفر",
+          });
+        } finally {
+          btn.innerText = originalText;
+          btn.disabled = false;
+        }
+      }
+      function switchView(viewName) {
+        localStorage.setItem("lastActiveView", viewName);
+
+        [
+          "categories",
+          "products",
+          "bulk",
+          "design",
+          "orders",
+          "history",
+          "settings",
+          "staff",
+          "coupons",
+        ].forEach((v) => {
+          const el = document.getElementById(`view-${v}`);
+          if (el) el.classList.add("hidden");
+
+          const nav = document.getElementById(`nav-${v}`);
+          if (nav) nav.classList.remove("active");
+        });
+
+        const targetEl = document.getElementById(`view-${viewName}`);
+        if (targetEl) targetEl.classList.remove("hidden");
+
+        const targetNav = document.getElementById(`nav-${viewName}`);
+        if (targetNav) targetNav.classList.add("active");
+
+        const currentRestName =
+          document.getElementById("page-title").innerText.split(":")[1] || "";
+        let cleanName = currentRestName;
+        if (
+          currentRestName.includes("المالك") ||
+          currentRestName.includes("الكاشير")
+        ) {
+          cleanName = currentRestName.split(" <span")[0];
+        }
+
+        const roleBadge = document.querySelector("#page-title .badge");
+        const roleHtml = roleBadge ? ` ${roleBadge.outerHTML}` : "";
+
+        if (
+          !document.getElementById("page-title").innerHTML.includes(viewName)
+        ) {
+        }
+
+        if (window.innerWidth <= 768) toggleSidebar();
+
+        if (viewName === "orders") {
+          const badge = document.getElementById("live-badge");
+          if (badge) {
+            badge.innerText = "0";
+            badge.classList.add("hidden");
+          }
+          window.loadOrders();
+        }
+
+        if (
+          viewName === "bulk" &&
+          document.getElementById("bulk-container").innerHTML === ""
+        )
+          addBulkRow();
+        if (viewName === "history") window.loadHistory();
+        if (viewName === "coupons") loadCoupons();
+      }
+
+      function isNumberKey(evt) {
+        var charCode = evt.which ? evt.which : evt.keyCode;
+        if (charCode != 46 && charCode > 31 && (charCode < 48 || charCode > 57))
+          return false;
+        return true;
+      }
+
+      function logout() {
+        sessionStorage.removeItem("ownerToken");
+        localStorage.removeItem("ownerToken");
+        location.reload();
+      }
+
+      async function saveSettings() {
+        const rId = document.getElementById("restaurant-id").value;
+        const orderMode = document.getElementById("set-orderMode").value;
+        const useTables = document.getElementById(
+          "set-useTableNumbers",
+        ).checked;
+        const enableCoupons =
+          document.getElementById("set-enableCoupons").checked;
+        const whatsapp = document.getElementById("set-whatsapp").value;
+        const taxRate = document.getElementById("set-taxRate").value;
+        const serviceRate = document.getElementById("set-serviceRate").value;
+
+        const bodyData = {
+          orderMode: orderMode,
+          taxRate: taxRate,
+          serviceRate: serviceRate,
+          useTableNumbers: useTables,
+          enableCoupons: enableCoupons,
+          contactInfo: {
+            whatsapp: whatsapp,
+          },
+        };
+
+        Swal.showLoading();
+        try {
+          const res = await fetch(`/api/v1/restaurants/${rId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(bodyData),
+          });
+
+          if (res.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "تم حفظ الإعدادات",
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          } else {
+            throw new Error("فشل الحفظ");
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "حدث خطأ أثناء الحفظ", "error");
+        }
+      }
+
+      async function loadCategories() {
+        const rId = document.getElementById("restaurant-id").value;
+        const res = await fetch(`/api/v1/categories/${rId}`);
+        const result = await res.json();
+        categoriesData = result.data.categories;
+        updateCategoryDropdowns();
+        const list = document.getElementById("categories-list");
+        list.innerHTML = "";
+        categoriesData.forEach((cat) => {
+          const img = cat.image
+            ? `<img src="${cat.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover">`
+            : '<i class="fas fa-folder" style="font-size:24px; color:#cbd5e1"></i>';
+          list.innerHTML += `
+                    <tr>
+                        <td>${img}</td>
+                        <td style="font-weight:bold">${cat.name}</td>
+                        <td>
+                            <button class="btn btn-outline" style="padding:5px 10px; color:var(--danger); border-color:var(--danger)" onclick="deleteCategory('${cat._id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+        });
+      }
+
+      function updateCategoryDropdowns() {
+        const select = document.getElementById("p-cat");
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">-- اختر القسم --</option>';
+        categoriesData.forEach((cat) => {
+          const option = document.createElement("option");
+          option.value = cat.name;
+          option.innerText = cat.name;
+          select.appendChild(option);
+        });
+        if (currentVal) select.value = currentVal;
+      }
+
+      async function addCategory() {
+        const name = document.getElementById("c-name").value;
+        const imageFile = document.getElementById("c-image").files[0];
+        const rId = document.getElementById("restaurant-id").value;
+        if (!name) return Swal.fire("تنبيه", "اكتب اسم القسم", "warning");
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("restaurantId", rId);
+        if (imageFile) formData.append("image", imageFile);
+        Swal.showLoading();
+        await fetch("/api/v1/categories", { method: "POST", body: formData });
+        Swal.close();
+        document.getElementById("c-name").value = "";
+        document.getElementById("c-image").value = "";
+        document.getElementById("c-preview").style.display = "none";
+        loadCategories();
+        Swal.fire({ toast: true, icon: "success", title: "تمت الإضافة" });
+      }
+
+      async function deleteCategory(id) {
+        if (
+          (
+            await Swal.fire({
+              title: "حذف القسم؟",
+              icon: "warning",
+              showCancelButton: true,
+            })
+          ).isConfirmed
+        ) {
+          await fetch(`/api/v1/categories/${id}`, { method: "DELETE" });
+          loadCategories();
+        }
+      }
+
+      function searchTable() {
+        let input = document.getElementById("searchInput").value.toLowerCase();
+        let rows = document.querySelectorAll("#products-list tr");
+        rows.forEach((row) => {
+          let text = row.innerText.toLowerCase();
+          row.style.display = text.includes(input) ? "" : "none";
+        });
+      }
+
+      async function loadProducts() {
+        const rId = document.getElementById("restaurant-id").value;
+        const res = await fetch(`/api/v1/products/restaurant/${rId}`);
+        const result = await res.json();
+        const tbody = document.getElementById("products-list");
+        tbody.innerHTML = "";
+        if (result.data.products.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="6" style="text-align:center; padding:20px; color:#94a3b8">لا توجد منتجات حتى الآن</td></tr>';
+          return;
+        }
+        result.data.products.forEach((p) => {
+          const img = p.image
+            ? `<img src="${p.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover">`
+            : '<span style="color:#ccc">—</span>';
+          const pData = encodeURIComponent(JSON.stringify(p));
+          const toggleIcon = p.isAvailable
+            ? '<i class="fas fa-eye"></i>'
+            : '<i class="fas fa-eye-slash"></i>';
+          const toggleClass = p.isAvailable ? "btn-outline" : "btn-outline";
+          const toggleStyle = p.isAvailable
+            ? "color:var(--success); border-color:var(--success)"
+            : "color:#94a3b8";
+          tbody.innerHTML += `
+                    <tr>
+                        <td>${img}</td>
+                        <td style="font-weight:bold; color:var(--text-main)">${p.name.ar}</td>
+                        <td><span class="badge badge-cat">${p.category}</span></td>
+                        <td style="color:var(--primary); font-weight:bold">${p.price}</td>
+                        <td>
+                            <button onclick="toggleProd('${p._id}')" class="btn ${toggleClass}" style="padding:5px 10px; ${toggleStyle}" title="تغيير الحالة">${toggleIcon}</button>
+                        </td>
+                        <td>
+                            <button onclick="editProd('${pData}')" class="btn btn-outline" style="padding:5px 10px; color:var(--primary); border-color:var(--primary)"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteProd('${p._id}')" class="btn btn-outline" style="padding:5px 10px; color:var(--danger); border-color:var(--danger)"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+        });
+      }
+
+      async function saveProduct(method) {
+        const url =
+          method === "POST"
+            ? "/api/v1/products"
+            : `/api/v1/products/${editingProductId}`;
+        const name = document.getElementById("p-name").value;
+        const cat = document.getElementById("p-cat").value;
+        const desc = document.getElementById("p-desc").value;
+        const imageFile = document.getElementById("p-image").files[0];
+        const pricingMode = document.querySelector(
+          'input[name="pricingMode"]:checked',
+        ).value;
+
+        if (!name || !cat)
+          return Swal.fire("ناقص بيانات", "الاسم والقسم مطلوبين", "warning");
+
+        const formData = new FormData();
+        formData.append(
+          "restaurantId",
+          document.getElementById("restaurant-id").value,
+        );
+        formData.append("category", cat);
+        formData.append("name", JSON.stringify({ ar: name, en: name }));
+        formData.append("description", JSON.stringify({ ar: desc, en: "" }));
+        if (imageFile) formData.append("image", imageFile);
+
+        if (pricingMode === "single") {
+          const price = parseFloat(document.getElementById("p-price").value);
+          if (!price) return Swal.fire("تنبيه", "يجب تحديد السعر", "warning");
+
+          let oldPriceInput =
+            parseFloat(document.getElementById("p-old-price").value) || 0;
+
+          if (oldPriceInput <= price) {
+            oldPriceInput = 0;
+          }
+
+          formData.append("price", price);
+          formData.append("oldPrice", oldPriceInput);
+          formData.append("sizes", JSON.stringify([]));
+        } else {
+          const rows = document.querySelectorAll(".size-row");
+          let sizesArr = [];
+          rows.forEach((row) => {
+            const sName = row.querySelector(".s-name").value;
+            const sPrice = Number(row.querySelector(".s-price").value);
+            let sOld = Number(row.querySelector(".s-old").value) || 0;
+
+            if (sOld <= sPrice) sOld = 0;
+
+            if (sName && sPrice) {
+              sizesArr.push({ name: sName, price: sPrice, oldPrice: sOld });
+            }
+          });
+
+          if (sizesArr.length === 0)
+            return Swal.fire(
+              "تنبيه",
+              "يجب إضافة حجم واحد على الأقل",
+              "warning",
+            );
+
+          formData.append("price", sizesArr[0].price);
+          formData.append("sizes", JSON.stringify(sizesArr));
+        }
+
+        const headers = { Authorization: `Bearer ${token}` };
+
+        Swal.showLoading();
+        try {
+          const res = await fetch(url, {
+            method: method,
+            headers: headers,
+            body: formData,
+          });
+          const data = await res.json();
+
+          if (data.status === "success") {
+            Swal.close();
+            loadProducts();
+            resetProductForm();
+            Swal.fire({
+              toast: true,
+              icon: "success",
+              title: "تم الحفظ بنجاح",
+            });
+          } else {
+            throw new Error(data.message);
+          }
+        } catch (e) {
+          Swal.fire("خطأ", e.message || "فشل الحفظ", "error");
+        }
+      }
+
+      function editProd(dataEncoded) {
+        const p = JSON.parse(decodeURIComponent(dataEncoded));
+        editingProductId = p._id;
+
+        document.getElementById("p-name").value = p.name.ar;
+        document.getElementById("p-cat").value = p.category;
+        document.getElementById("p-desc").value = p.description
+          ? p.description.ar
+          : "";
+
+        if (p.image) {
+          document.getElementById("p-preview").src = p.image;
+          document.getElementById("p-preview").style.display = "block";
+        } else {
+          document.getElementById("p-preview").style.display = "none";
+        }
+
+        const sizesList = document.getElementById("sizes-list");
+        sizesList.innerHTML = "";
+
+        if (p.sizes && p.sizes.length > 0) {
+          document.querySelector(
+            'input[name="pricingMode"][value="multi"]',
+          ).checked = true;
+          p.sizes.forEach((s) => addSizeRow(s.name, s.price, s.oldPrice));
+        } else {
+          document.querySelector(
+            'input[name="pricingMode"][value="single"]',
+          ).checked = true;
+          document.getElementById("p-price").value = p.price;
+          document.getElementById("p-old-price").value =
+            p.oldPrice && p.oldPrice > 0 ? p.oldPrice : "";
+        }
+
+        togglePricingMode();
+
+        document.getElementById("form-mode-title").innerText =
+          `تعديل: ${p.name.ar}`;
+        document.getElementById("btn-add-prod").classList.add("hidden");
+        document.getElementById("btn-update-prod").classList.remove("hidden");
+        document.getElementById("btn-cancel").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function resetProductForm() {
+        editingProductId = null;
+        document.getElementById("p-name").value = "";
+        document.getElementById("p-price").value = "";
+        document.getElementById("p-cat").value = "";
+        document.getElementById("p-desc").value = "";
+        document.getElementById("p-image").value = "";
+        document.getElementById("p-preview").style.display = "none";
+        document.getElementById("form-mode-title").innerText =
+          "إضافة منتج جديد";
+        document.getElementById("btn-add-prod").classList.remove("hidden");
+        document.getElementById("btn-update-prod").classList.add("hidden");
+        document.getElementById("btn-cancel").classList.add("hidden");
+      }
+
+      async function toggleProd(id) {
+        await fetch(`/api/v1/products/${id}/toggle`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        loadProducts();
+      }
+
+      async function deleteProd(id) {
+        if (
+          (
+            await Swal.fire({
+              title: "حذف المنتج؟",
+              icon: "warning",
+              showCancelButton: true,
+            })
+          ).isConfirmed
+        ) {
+          await fetch(`/api/v1/products/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          loadProducts();
+        }
+      }
+
+      function addBulkRow() {
+        const container = document.getElementById("bulk-container");
+        const rowId = Date.now();
+        let catOptions = '<option value="">-- القسم --</option>';
+        categoriesData.forEach((cat) => {
+          catOptions += `<option value="${cat.name}">${cat.name}</option>`;
+        });
+        const html = `
+                <div class="bulk-card" id="row-${rowId}">
+                    <button class="btn-remove-row" onclick="removeBulkRow('${rowId}')"><i class="fas fa-times"></i></button>
+                   <div class="form-grid">
+                        <input type="text" class="b-name" placeholder="اسم المنتج">
+                        <div style="display: flex; gap: 5px;">
+                            <input type="number" class="b-price" placeholder="السعر الحالي (بعد الخصم)" style="flex: 1; font-weight:bold;">
+                            <input type="number" class="b-old-price" placeholder="السعر الأصلي (كان كام؟)" style="flex: 1; border:1px dashed var(--danger); background:#fff1f2; color: var(--danger);">
+                        </div>
+                    </div>
+                    <div class="form-grid" style="margin-top:10px">
+                        <select class="b-cat">${catOptions}</select>
+                        <div style="display:flex; align-items:center;">
+                            <img id="preview-${rowId}" class="img-preview">
+                            <label for="img-${rowId}" class="custom-file-upload">
+                                <i class="fas fa-cloud-upload-alt"></i> صورة
+                            </label>
+                            <input type="file" id="img-${rowId}" class="b-image" accept="image/*" onchange="previewImage(this, 'preview-${rowId}')">
+                        </div>
+                    </div>
+                    <textarea class="b-desc" rows="1" placeholder="الوصف (اختياري)" style="margin-top:10px"></textarea>
+                </div>
+            `;
+        container.insertAdjacentHTML("beforeend", html);
+      }
+
+      function removeBulkRow(id) {
+        document.getElementById(`row-${id}`).remove();
+      }
+
+      async function submitBulkAll() {
+        const rows = document.querySelectorAll(".bulk-card");
+        const rId = document.getElementById("restaurant-id").value;
+        let promises = [];
+        let validCount = 0;
+        for (const row of rows) {
+          const name = row.querySelector(".b-name").value;
+          const price = row.querySelector(".b-price").value;
+          const oldPrice = row.querySelector(".b-old-price")?.value || 0;
+          const cat = row.querySelector(".b-cat").value;
+          const imageFile = row.querySelector(".b-image").files[0];
+          if (name && price && cat) {
+            validCount++;
+            const currentPrice = parseFloat(price);
+            let oldPriceVal =
+              parseFloat(row.querySelector(".b-old-price")?.value) || 0;
+
+            if (oldPriceVal <= currentPrice) oldPriceVal = 0;
+
+            const formData = new FormData();
+            formData.append("restaurantId", rId);
+            formData.append("price", currentPrice);
+            formData.append("oldPrice", oldPriceVal);
+            formData.append("category", cat);
+            formData.append("name", JSON.stringify({ ar: name, en: name }));
+            formData.append(
+              "description",
+              JSON.stringify({
+                ar: row.querySelector(".b-desc").value,
+                en: "",
+              }),
+            );
+            if (imageFile) formData.append("image", imageFile);
+            promises.push(
+              fetch("/api/v1/products", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+              }),
+            );
+          }
+        }
+        if (validCount === 0)
+          return Swal.fire(
+            "تنبيه",
+            "املأ بيانات منتج واحد على الأقل",
+            "warning",
+          );
+        Swal.showLoading();
+        await Promise.all(promises);
+        Swal.close();
+        Swal.fire({
+          toast: true,
+          icon: "success",
+          title: `تم رفع ${validCount} منتجات`,
+        });
+        document.getElementById("bulk-container").innerHTML = "";
+        addBulkRow();
+        loadProducts();
+      }
+
+      const themesLibrary = [
+        {
+          id: "default",
+          name: "الافتراضي",
+          primary: "#4338ca",
+          bg: "#F3F4F6",
+          type: "color",
+          font: "Tajawal",
+          radius: 16,
+          style: "solid",
+          layout: "modern",
+        },
+        {
+          id: "dark_lux",
+          name: "فخامة",
+          primary: "#D4AF37",
+          bg: "#121212",
+          type: "color",
+          font: "Amiri",
+          radius: 8,
+          style: "glass",
+          layout: "focus",
+        },
+        {
+          id: "fresh",
+          name: "فريش",
+          primary: "#10b981",
+          bg: "#ecfdf5",
+          type: "color",
+          font: "Almarai",
+          radius: 24,
+          style: "solid",
+          layout: "grid",
+        },
+        {
+          id: "burger",
+          name: "برجر",
+          primary: "#f59e0b",
+          bg: "#1f2937",
+          type: "color",
+          font: "Cairo",
+          radius: 30,
+          style: "outlined",
+          layout: "modern",
+        },
+        {
+          id: "sky",
+          name: "سماوي",
+          primary: "#0ea5e9",
+          bg: "#f0f9ff",
+          type: "color",
+          font: "Tajawal",
+          radius: 12,
+          style: "glass",
+          layout: "list",
+        },
+        {
+          id: "paper",
+          name: "ورقي",
+          primary: "#4b5563",
+          bg: "#fffbeb",
+          type: "color",
+          font: "Cairo",
+          radius: 4,
+          style: "outlined",
+          layout: "minimal",
+        },
+        {
+          id: "neon",
+          name: "نيون (Cyberpunk)",
+          primary: "#0ff",
+          bg: "#050505",
+          type: "color",
+          font: "Cairo",
+          radius: 0,
+          style: "neon",
+          layout: "focus",
+        },
+        {
+          id: "soft",
+          name: "سوفت (3D)",
+          primary: "#8899a6",
+          bg: "#e0e5ec",
+          type: "color",
+          font: "Tajawal",
+          radius: 20,
+          style: "neumorphism",
+          layout: "modern",
+        },
+        {
+          id: "luxury",
+          name: "فخامة (Royal)",
+          primary: "#D4AF37",
+          bg: "#1a1a1a",
+          type: "pattern",
+          font: "Amiri",
+          radius: 8,
+          style: "glass",
+          layout: "magazine",
+        },
+        {
+          id: "brutal",
+          name: "بروتال (Trend)",
+          primary: "#000000",
+          bg: "#fffd00",
+          type: "color",
+          font: "Cairo",
+          radius: 0,
+          style: "brutalism",
+          layout: "zigzag",
+        },
+        {
+          id: "oriental",
+          name: "شرقي (أصيل)",
+          primary: "#c2410c",
+          bg: "#fff7ed",
+          type: "pattern",
+          font: "Amiri",
+          radius: 12,
+          style: "solid",
+          layout: "list",
+        },
+      ];
+
+      let currentDesign = {
+        layoutType: "modern",
+        primaryColor: "#B78728",
+        bgType: "color",
+        bgValue: "#F9F9F9",
+        cardStyle: "solid",
+        cardRadius: 16,
+        fontFamily: "Tajawal",
+        heroOverlay: 30,
+        heroHeight: 200,
+      };
+
+      function initDesignStudio(restaurantData) {
+        if (restaurantData.customUI) {
+          currentDesign = { ...currentDesign, ...restaurantData.customUI };
+        }
+
+        const themeContainer = document.getElementById("theme-library");
+        if (themeContainer) {
+          themeContainer.innerHTML = "";
+          themesLibrary.forEach((t) => {
+            const btn = document.createElement("div");
+            btn.style.cssText = "cursor:pointer; text-align:center;";
+            btn.onclick = () => applyTheme(t.id);
+            btn.innerHTML = `
+                <div style="height:45px; border-radius:10px; background:${t.bg}; border:2px solid ${t.primary}; position:relative; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1); margin-bottom:5px;">
+                    <div style="position:absolute; bottom:0; width:100%; height:15px; background:${t.primary}"></div>
+                </div>
+                <div style="font-size:11px; font-weight:bold; color:var(--secondary)">${t.name}</div>
+            `;
+            themeContainer.appendChild(btn);
+          });
+        }
+
+        if (document.getElementById("ui-heroOverlay"))
+          document.getElementById("ui-heroOverlay").value =
+            currentDesign.heroOverlay || 30;
+        if (document.getElementById("ui-heroHeight"))
+          document.getElementById("ui-heroHeight").value =
+            currentDesign.heroHeight || 200;
+
+        document.getElementById("ui-primaryColor").value =
+          currentDesign.primaryColor;
+        document.getElementById("ui-bgType").value = currentDesign.bgType;
+        document.getElementById("ui-cardStyle").value = currentDesign.cardStyle;
+        document.getElementById("ui-cardRadius").value =
+          currentDesign.cardRadius;
+        document.getElementById("ui-fontFamily").value =
+          currentDesign.fontFamily;
+
+        toggleBgInput();
+        if (currentDesign.bgType === "color")
+          document.getElementById("ui-bgColor").value = currentDesign.bgValue;
+        else
+          document.getElementById("ui-bgImage").value = currentDesign.bgValue;
+
+        if (currentDesign.heroImage) {
+          const heroPreview = document.getElementById("hero-preview");
+          heroPreview.src = currentDesign.heroImage.replace(/\\/g, "/");
+          heroPreview.style.display = "block";
+        }
+
+        document
+          .querySelectorAll(".btn-layout")
+          .forEach((b) => b.classList.remove("active"));
+        document
+          .getElementById(`btn-layout-${currentDesign.layoutType}`)
+          .classList.add("active");
+
+        const previewFrame = document.getElementById("live-preview");
+        previewFrame.src = `/menu/${restaurantData.slug}`;
+
+        previewFrame.onload = () => {
+          updatePreview();
+        };
+      }
+
+      function setUiParam(key, value) {
+        currentDesign[key] = value;
+        if (key === "cardRadius")
+          document.getElementById("radius-val").innerText = value;
+        if (key === "layoutType") {
+          document
+            .querySelectorAll(".btn-layout")
+            .forEach((b) => b.classList.remove("active"));
+          document
+            .getElementById(`btn-layout-${value}`)
+            .classList.add("active");
+        }
+        updatePreview();
+      }
+
+      function toggleBgInput() {
+        const type = document.getElementById("ui-bgType").value;
+        currentDesign.bgType = type;
+
+        const colorInput = document.getElementById("ui-bgColor");
+        const imgContainer = document.getElementById("ui-bgImage-container");
+
+        if (type === "color") {
+          colorInput.classList.remove("hidden");
+          imgContainer.classList.add("hidden");
+        } else if (type === "image") {
+          colorInput.classList.add("hidden");
+          imgContainer.classList.remove("hidden");
+        } else {
+          colorInput.classList.remove("hidden");
+          imgContainer.classList.add("hidden");
+        }
+        updatePreview();
+      }
+      function updatePreview() {
+        const iframe = document.getElementById("live-preview");
+        if (iframe.contentWindow) {
+          iframe.contentWindow.postMessage(
+            { type: "UPDATE_THEME", config: currentDesign },
+            "*",
+          );
+        }
+      }
+
+      async function saveDesignSettings() {
+        const rId = document.getElementById("restaurant-id").value;
+        const bgFile = document.getElementById("ui-bgFile").files[0];
+
+        const formData = new FormData();
+
+        formData.append("customUI", JSON.stringify(currentDesign));
+
+        if (bgFile && currentDesign.bgType === "image") {
+          formData.append("bgImage", bgFile);
+        }
+
+        const heroFile = document.getElementById("ui-heroFile").files[0];
+        if (heroFile) {
+          formData.append("heroImage", heroFile);
+        }
+
+        Swal.showLoading();
+        try {
+          const res = await fetch(`/api/v1/restaurants/${rId}`, {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+
+          if (res.ok) {
+            Swal.fire({
+              icon: "success",
+              title: "تم حفظ التصميم والصورة",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          } else {
+            throw new Error("فشل الحفظ");
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "حدث خطأ أثناء الحفظ", "error");
+        }
+      }
+
+      const defaultDesign = {
+        layoutType: "modern",
+        primaryColor: "#B78728",
+        bgType: "color",
+        bgValue: "#F9F9F9",
+        cardStyle: "solid",
+        cardRadius: 16,
+        fontFamily: "Tajawal",
+      };
+
+      function resetDesign() {
+        Swal.fire({
+          title: "هل أنت متأكد؟",
+          text: "سيعود التصميم للشكل الافتراضي (لن يتم الحفظ في قاعدة البيانات إلا بالضغط على حفظ).",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#3085d6",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "نعم، استعد الافتراضي",
+          cancelButtonText: "إلغاء",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            currentDesign = { ...defaultDesign };
+
+            document.getElementById("ui-primaryColor").value =
+              currentDesign.primaryColor;
+            document.getElementById("ui-bgType").value = currentDesign.bgType;
+            document.getElementById("ui-cardStyle").value =
+              currentDesign.cardStyle;
+            document.getElementById("ui-cardRadius").value =
+              currentDesign.cardRadius;
+            document.getElementById("ui-fontFamily").value =
+              currentDesign.fontFamily;
+            document.getElementById("radius-val").innerText =
+              currentDesign.cardRadius;
+
+            toggleBgInput();
+            if (currentDesign.bgType === "color") {
+              document.getElementById("ui-bgColor").value =
+                currentDesign.bgValue;
+            } else {
+              document.getElementById("ui-bgImage").value = "";
+            }
+
+            document
+              .querySelectorAll(".btn-layout")
+              .forEach((b) => b.classList.remove("active"));
+            document
+              .getElementById(`btn-layout-${currentDesign.layoutType}`)
+              .classList.add("active");
+
+            updatePreview();
+
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "info",
+              title: "تم استعادة الشكل الافتراضي",
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          }
+        });
+      }
+
+      function handleBgUpload(input) {
+        previewImage(input, "bg-preview");
+
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            setUiParam("bgValue", e.target.result);
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+      function handleHeroUpload(input) {
+        previewImage(input, "hero-preview");
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            setUiParam("heroImage", e.target.result);
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+
+      let socket;
+
+      window.loadOrders = async function () {
+        const rId = document.getElementById("restaurant-id").value;
+
+        const badge = document.getElementById("live-badge");
+        if (badge) {
+          badge.classList.add("hidden");
+          badge.innerText = "0";
+        }
+
+        const container = document.getElementById("orders-grid");
+        if (!container) return;
+
+        container.innerHTML =
+          '<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>';
+
+        try {
+          const res = await fetch(`/api/v1/orders/${rId}/active`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          container.innerHTML = "";
+
+          if (!data.data || data.data.orders.length === 0) {
+            container.innerHTML =
+              '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--secondary)"><i class="fas fa-clipboard-list fa-3x" style="margin-bottom:15px; opacity:0.5"></i><p>لا توجد طلبات نشطة حالياً.</p></div>';
+            return;
+          }
+
+          data.data.orders.forEach((order) => {
+            container.innerHTML += window.createOrderCardHTML(order);
+          });
+        } catch (e) {
+          console.error(e);
+          container.innerHTML =
+            '<p style="color:red; text-align:center">حدث خطأ في تحميل الطلبات</p>';
+        }
+      };
+
+      window.createOrderCardHTML = function (order) {
+        const role =
+          currentUserRole && currentUserRole !== ""
+            ? currentUserRole
+            : "cashier";
+
+        if (
+          role === "kitchen" &&
+          (order.status === "completed" || order.status === "canceled")
+        ) {
+          return "";
+        }
+
+        const time = new Date(order.createdAt).toLocaleTimeString("ar-EG", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        let statusColor = "#f59e0b";
+        let statusText = "جديد (انتظار)";
+        let cardBg = "var(--surface)";
+
+        if (order.status === "preparing") {
+          statusColor = "#3b82f6";
+          statusText = "جاري التجهيز";
+        }
+
+        let textColor = "var(--text-main)";
+
+        if (order.status === "completed") {
+          statusColor = "#10b981";
+          statusText = "مكتمل";
+          cardBg = "#ecfdf5";
+          textColor = "#1f2937";
+        }
+        if (order.status === "canceled") {
+          statusColor = "#ef4444";
+          statusText = "ملغي";
+          cardBg = "#fee2e2";
+          textColor = "#1f2937";
+        }
+
+        let itemsHtml = "";
+        order.items.forEach((item) => {
+          itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px; border-bottom:1px solid #eee; padding-bottom:5px;">
+            <span>- ${item.name} <span style="font-weight:bold">x${item.qty}</span></span>
+            ${role !== "kitchen" ? `<span>${item.price * item.qty}</span>` : ""} </div>`;
+        });
+
+        if (order.discountAmount > 0 && role !== "kitchen") {
+          itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px; color:var(--danger); font-weight:bold;">
+            <span>خصم كوبون (${order.couponCode || ""}):</span>
+            <span>-${order.discountAmount}</span>
+        </div>`;
+        }
+
+        const orderDataEncoded = encodeURIComponent(JSON.stringify(order));
+        let actions = "";
+
+        const printBtn =
+          role !== "kitchen"
+            ? `<button class="btn btn-outline" onclick="window.printOrder('${orderDataEncoded}')" style="margin-left:5px; color:var(--text-main);" title="طباعة الفاتورة"><i class="fas fa-print"></i></button>`
+            : "";
+
+        if (order.status === "pending") {
+          actions = `${printBtn} <button class="btn btn-primary" onclick="window.updateOrderStatus('${order._id}', 'preparing')" style="width:100%; margin-left:5px;">بدء التحضير <i class="fas fa-fire"></i></button>`;
+        } else if (order.status === "preparing") {
+          actions = `${printBtn} <button class="btn btn-success" onclick="window.updateOrderStatus('${order._id}', 'completed')" style="width:100%; margin-left:5px;">تم الانتهاء <i class="fas fa-check"></i></button>`;
+        } else {
+          actions = `${printBtn}`;
+        }
+
+        const cancelBtn =
+          role !== "kitchen" &&
+          order.status !== "completed" &&
+          order.status !== "canceled"
+            ? `<button class="btn btn-outline" onclick="window.updateOrderStatus('${order._id}', 'canceled')" style="color:var(--danger); border-color:var(--danger); padding:0 15px;"><i class="fas fa-times"></i></button>`
+            : "";
+
+        const tableDisplay =
+          order.tableNumber === 0
+            ? "تيك أواي 🏃"
+            : `طاولة: ${order.tableNumber}`;
+
+        const displayNum = order.orderNum
+          ? `#${order.orderNum}`
+          : `#${String(order._id).slice(-4)}`;
+
+        return `
+        <div class="card" id="order-${order._id}" style="border-top: 4px solid ${statusColor}; padding:15px; position:relative; background: ${cardBg}; color: ${textColor}">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-weight:bold; font-size:18px; background:var(--primary); color:white; padding:2px 12px; border-radius:8px">${displayNum}</span>
+                <span id="status-text-${order._id}" style="background:${statusColor}20; color:${statusColor}; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold;">${statusText}</span>
+            </div>
+            <div style="font-weight:bold; font-size:18px; margin-bottom:5px;">${tableDisplay}</div>
+            <div style="color:var(--secondary); font-size:12px; margin-bottom:15px;"><i class="far fa-clock"></i> ${time}</div>
+            
+            <div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:15px; max-height:150px; overflow-y:auto;">
+                ${itemsHtml}
+            </div>
+            
+            ${
+              role !== "kitchen"
+                ? `
+            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:15px; border-top:1px dashed var(--border-color); padding-top:10px;">
+                <span>الإجمالي:</span>
+                <span style="color:var(--primary); font-size:18px">${order.totalPrice} ج.م</span>
+            </div>`
+                : ""
+            } 
+            
+            <div id="actions-${order._id}" style="display:flex; justify-content:space-between;">
+                <div style="flex:1; display:flex;">${actions}</div>
+                ${cancelBtn}
+            </div>
+        </div>
+    `;
+      };
+      window.updateOrderStatus = async function (orderId, status) {
+        try {
+          const btn = document.querySelector(`#order-${orderId} button`);
+          if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+          }
+
+          await fetch(`/api/v1/orders/${orderId}/status`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status }),
+          });
+
+          const card = document.getElementById(`order-${orderId}`);
+          if (card) {
+            if (status === "completed") {
+              card.style.background = "#ecfdf5";
+              card.style.borderTopColor = "#10b981";
+              const statusText = document.getElementById(
+                `status-text-${orderId}`,
+              );
+              if (statusText) {
+                statusText.innerText = "مكتمل";
+                statusText.style.color = "#10b981";
+              }
+              window.loadOrders();
+            } else if (status === "preparing") {
+              card.style.borderTopColor = "#3b82f6";
+              window.loadOrders();
+            } else {
+              window.loadOrders();
+            }
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "فشل تحديث الحالة", "error");
+        }
+      };
+
+      window.prependOrderCard = function (order) {
+        const container = document.getElementById("orders-grid");
+        if (container) {
+          const html = window.createOrderCardHTML(order);
+          container.insertAdjacentHTML("afterbegin", html);
+        }
+      };
+
+      window.initSocket = function (rId) {
+        if (socket) return;
+
+        socket = io({
+          transports: ["websocket"],
+          upgrade: false,
+        });
+
+        socket.on("connect", () => {
+          console.log("✅ Connected to Live Orders System");
+          socket.emit("join-restaurant", rId);
+        });
+
+        socket.on("order-updated", (updatedOrder) => {
+          console.log("🔄 Order Updated:", updatedOrder);
+
+          const isOrdersPageOpen = !document
+            .getElementById("view-orders")
+            .classList.contains("hidden");
+          if (isOrdersPageOpen) {
+            window.loadOrders();
+          }
+        });
+
+        socket.on("new-order", (order) => {
+          console.log("🔔 New Order Received:", order);
+
+          const audio = document.getElementById("order-sound");
+          if (audio) {
+            if (currentUserRole === "kitchen") {
+              audio.src =
+                "https://assets.mixkit.co/active_storage/sfx/alarm-tone-996.wav";
+            } else {
+              audio.src =
+                "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3";
+            }
+            audio.currentTime = 0;
+            audio
+              .play()
+              .catch((err) =>
+                console.log("🔊 اضغط على أي مكان في الصفحة لتفعيل الصوت"),
+              );
+          }
+
+          Swal.fire({
+            position: "top-end",
+            icon: "success",
+            title: `طلب جديد! طاولة: ${order.tableNumber}`,
+            showConfirmButton: false,
+            timer: 3000,
+            toast: true,
+          });
+
+          const isOrdersPageOpen = !document
+            .getElementById("view-orders")
+            .classList.contains("hidden");
+
+          if (isOrdersPageOpen) {
+            window.prependOrderCard(order);
+          } else {
+            const badge = document.getElementById("live-badge");
+            if (badge) {
+              let currentCount = parseInt(badge.innerText || "0");
+              if (isNaN(currentCount)) currentCount = 0;
+              badge.innerText = currentCount + 1;
+              badge.classList.remove("hidden");
+              badge.style.display = "inline-block";
+            }
+          }
+        });
+      };
+
+      function startShiftMonitor() {
+        const shiftEndStr = sessionStorage.getItem("shiftEnd");
+        if (!shiftEndStr) return;
+
+        checkTime(shiftEndStr);
+
+        setInterval(() => {
+          checkTime(shiftEndStr);
+        }, 30000);
+      }
+
+      function checkTime(shiftEndStr) {
+        const now = new Date();
+        const [endH, endM] = shiftEndStr.split(":").map(Number);
+
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const endMinutes = endH * 60 + endM;
+
+        const gracePeriod = 10;
+
+        if (currentMinutes > endMinutes) {
+          const diff = currentMinutes - endMinutes;
+
+          if (diff < gracePeriod) {
+            const remaining = gracePeriod - diff;
+            if (remaining === 5 || remaining === 1) {
+              Swal.fire({
+                icon: "warning",
+                title: "انتهى وقت الشيفت!",
+                text: `سيتم تسجيل الخروج تلقائياً خلال ${remaining} دقائق.`,
+                timer: 3000,
+                showConfirmButton: false,
+                toast: true,
+                position: "top",
+              });
+            }
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "انتهت فترة السماح",
+              text: "انتهى الشيفت وتم إغلاق النظام.",
+              allowOutsideClick: false,
+              confirmButtonText: "حسناً",
+            }).then(() => {
+              logout();
+            });
+          }
+        }
+      }
+
+      const startApp = async function () {
+        if (!token) {
+          document.getElementById("login-section").style.display = "flex";
+          return;
+        }
+
+        await initDashboard();
+
+        const rId = document.getElementById("restaurant-id").value;
+        if (rId) {
+          window.initSocket(rId);
+        }
+
+        if (
+          !document.getElementById("view-orders").classList.contains("hidden")
+        ) {
+          window.loadOrders();
+        }
+
+        startShiftMonitor();
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", startApp);
+      } else {
+        startApp();
+      }
+      window.loadHistory = async function () {
+        const rId = document.getElementById("restaurant-id").value;
+        const tbody = document.getElementById("history-list");
+        const salesDisplay = document.getElementById("total-sales-display");
+        const title = document.getElementById("history-title");
+
+        let queryParams = "";
+
+        const role =
+          typeof currentUserRole !== "undefined" ? currentUserRole : "cashier";
+
+        if (role === "owner") {
+          const filterDiv = document.getElementById("owner-filters");
+          if (filterDiv) filterDiv.style.display = "flex";
+          if (title) title.innerText = "سجل المبيعات (شامل)";
+
+          const start = document.getElementById("filter-start").value;
+          const end = document.getElementById("filter-end").value;
+
+          if (start && end) {
+            queryParams = `?startDate=${start}&endDate=${end}`;
+          }
+          const searchVal = document.getElementById("history-search").value;
+          if (searchVal) {
+            queryParams += queryParams
+              ? `&search=${searchVal}`
+              : `?search=${searchVal}`;
+          }
+        } else {
+          const filterDiv = document.getElementById("owner-filters");
+          if (filterDiv) filterDiv.style.display = "none";
+          if (title) title.innerText = "جرد الشيفت الحالي (اليوم)";
+        }
+
+        tbody.innerHTML =
+          '<tr><td colspan="6" style="text-align:center">جارِ جلب البيانات...</td></tr>';
+
+        try {
+          const res = await fetch(
+            `/api/v1/orders/${rId}/history${queryParams}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+
+          const data = await res.json();
+
+          tbody.innerHTML = "";
+
+          if (data.status !== "success") {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red">${data.message || "حدث خطأ"}</td></tr>`;
+            return;
+          }
+
+          if (salesDisplay)
+            salesDisplay.innerText =
+              (data.data.totalSales || 0).toLocaleString() + " ج.م";
+
+          if (!data.data.orders || data.data.orders.length === 0) {
+            tbody.innerHTML =
+              '<tr><td colspan="6" style="text-align:center; padding:20px;">لا يوجد سجل مبيعات لهذه الفترة</td></tr>';
+            return;
+          }
+
+          const groups = {};
+          data.data.orders.forEach((order) => {
+            const dateObj = new Date(order.createdAt);
+            const monthKey = dateObj.toLocaleDateString("ar-EG", {
+              month: "long",
+              year: "numeric",
+            });
+
+            if (!groups[monthKey]) {
+              groups[monthKey] = { orders: [], total: 0, count: 0 };
+            }
+
+            groups[monthKey].orders.push(order);
+            if (order.status === "completed") {
+              groups[monthKey].total += order.totalPrice;
+              groups[monthKey].count += 1;
+            }
+          });
+
+          for (const [month, info] of Object.entries(groups)) {
+            tbody.innerHTML += `
+                    <tr style="background-color: var(--primary-light); border-top: 2px solid var(--primary);">
+                        <td colspan="6" style="padding: 10px 15px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-weight:bold; color:var(--primary)">
+                                <span><i class="fas fa-calendar-alt"></i> ${month}</span>
+                                <span>مبيعات الشهر: ${info.total.toLocaleString()} ج.م (${info.count} طلب)</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+            info.orders.forEach((order) => {
+              const time = new Date(order.createdAt).toLocaleTimeString(
+                "ar-EG",
+                { hour: "2-digit", minute: "2-digit" },
+              );
+              const dateDay = new Date(order.createdAt).toLocaleDateString(
+                "ar-EG",
+                { day: "numeric", month: "numeric" },
+              );
+              const itemsSummary = order.items
+                .map((i) => `${i.name} (${i.qty})`)
+                .join(", ");
+
+              let statusBadge = "";
+              if (order.status === "completed")
+                statusBadge =
+                  '<span class="badge" style="background:#dcfce7; color:#166534">مكتمل</span>';
+              else if (order.status === "canceled")
+                statusBadge =
+                  '<span class="badge" style="background:#fee2e2; color:#991b1b">ملغي</span>';
+
+              const tableNum =
+                order.tableNumber === 0 ? "تيك أواي" : order.tableNumber;
+
+              tbody.innerHTML += `
+                        <tr style="background:var(--surface)">
+                            <td style="font-weight:bold">#${order.orderNum || String(order._id).slice(-4)}</td>
+                            <td style="font-size:12px">${dateDay} - ${time}</td>
+                            <td>${tableNum}</td>
+                            <td style="font-size:13px; color:var(--secondary); max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap" title="${itemsSummary}">${itemsSummary}</td>
+                            <td style="font-weight:bold">${order.totalPrice}</td>
+                            <td>${statusBadge}</td>
+                        </tr>
+                    `;
+            });
+          }
+        } catch (e) {
+          console.error(e);
+          tbody.innerHTML =
+            '<tr><td colspan="6" style="text-align:center; color:red">حدث خطأ في الاتصال</td></tr>';
+        }
+      };
+
+      function applyPermissions(role) {
+        const allNavs = [
+          "nav-categories",
+          "nav-products",
+          "nav-bulk",
+          "nav-history",
+          "nav-design",
+          "nav-settings",
+          "nav-staff",
+        ];
+
+        const permissions = {
+          owner: [
+            "nav-categories",
+            "nav-products",
+            "nav-bulk",
+            "nav-history",
+            "nav-design",
+            "nav-settings",
+            "nav-orders",
+            "nav-staff",
+            "nav-coupons",
+          ],
+          cashier: ["nav-orders", "nav-history"],
+          kitchen: ["nav-orders"],
+        };
+
+        const allowed = permissions[role] || [];
+
+        allNavs.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add("hidden");
+        });
+
+        allowed.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove("hidden");
+        });
+
+        if (role === "owner") loadStaff();
+
+        const recentBtn = document.getElementById("btn-recent-orders");
+        if (recentBtn) {
+          if (role === "kitchen") {
+            recentBtn.classList.add("hidden");
+          } else {
+            recentBtn.classList.remove("hidden");
+          }
+        }
+      }
+
+      async function loadStaff() {
+        try {
+          const res = await fetch("/api/v1/users/my-staff", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          const list = document.getElementById("staff-list");
+          list.innerHTML = "";
+          data.data.staff.forEach((u) => {
+            let roleBadge =
+              u.role === "cashier"
+                ? '<span class="badge" style="background:#dbeafe; color:#1e40af">كاشير</span>'
+                : '<span class="badge" style="background:#ffedd5; color:#9a3412">مطبخ</span>';
+
+            const shiftInfo =
+              u.shiftStart && u.shiftEnd
+                ? `<div style="font-size:11px; color:var(--secondary); margin-top:5px;"><i class="far fa-clock"></i> ${u.shiftStart} - ${u.shiftEnd}</div>`
+                : "";
+
+            list.innerHTML += `
+                    <tr>
+                        <td>
+                            ${u.name}
+                            ${shiftInfo}
+                        </td>
+                        <td>${u.email}</td>
+                        <td>${roleBadge}</td>
+                        <td><button class="btn btn-outline" style="color:red" onclick="deleteStaff('${u._id}')"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `;
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function addStaff() {
+        const name = document.getElementById("staff-name").value;
+        const email = document.getElementById("staff-email").value;
+        const password = document.getElementById("staff-password").value;
+        const role = document.getElementById("staff-role").value;
+        const rId = document.getElementById("restaurant-id").value;
+
+        const shiftStart = document.getElementById("staff-start").value;
+        const shiftEnd = document.getElementById("staff-end").value;
+
+        const restDays = [];
+        document
+          .querySelectorAll("#rest-days-container input:checked")
+          .forEach((cb) => {
+            restDays.push(parseInt(cb.value));
+          });
+
+        if (!name || !email || !password)
+          return Swal.fire("تنبيه", "أكمل البيانات الأساسية", "warning");
+
+        try {
+          const res = await fetch("/api/v1/users/create-staff", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              name,
+              email,
+              password,
+              role,
+              restaurantId: rId,
+              shiftStart,
+              shiftEnd,
+              restDays,
+            }),
+          });
+          const data = await res.json();
+          if (data.status === "success") {
+            Swal.fire("تم", "تم إضافة الموظف وتحديد الشيفت", "success");
+            document.getElementById("staff-name").value = "";
+            document.getElementById("staff-email").value = "";
+            document.getElementById("staff-password").value = "";
+            document
+              .querySelectorAll("#rest-days-container input")
+              .forEach((cb) => (cb.checked = false));
+            loadStaff();
+          } else {
+            Swal.fire("خطأ", data.message, "error");
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function deleteStaff(id) {
+        if (
+          (
+            await Swal.fire({
+              title: "حذف الموظف؟",
+              icon: "warning",
+              showCancelButton: true,
+            })
+          ).isConfirmed
+        ) {
+          await fetch(`/api/v1/users/staff/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          loadStaff();
+        }
+      }
+
+      window.printOrder = function (orderEncoded) {
+        const order = JSON.parse(decodeURIComponent(orderEncoded));
+
+        let fullTitle = document.getElementById("page-title").innerText;
+        const restName = fullTitle.split("\n")[0] || "Smart Menu";
+
+        const cashierName =
+          sessionStorage.getItem("currentUserName") || "Cashier";
+
+        const date = new Date(order.createdAt).toLocaleString("ar-EG");
+        const orderNumDisplay = order.orderNum
+          ? order.orderNum
+          : String(order._id).slice(-4);
+
+        let itemsHtml = "";
+        order.items.forEach((item) => {
+          itemsHtml += `
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;">
+                    <span style="font-weight:bold;">${item.name}</span>
+                    <span>${item.qty} x ${item.price}</span>
+                </div>
+                <div style="text-align:left; border-bottom:1px dashed #000; margin-bottom:5px; padding-bottom:2px;">
+                    ${item.qty * item.price} ج.م
+                </div>
+            `;
+        });
+
+        const subTotal = order.subTotal || order.totalPrice;
+        const taxVal = order.taxAmount || 0;
+        const serviceVal = order.serviceAmount || 0;
+
+        const receiptHTML = `
+            <html>
+            <head>
+                <style>
+                    body { font-family: 'Courier New', monospace; width: 300px; margin: 0; padding: 10px; direction: rtl; }
+                    .header { text-align: center; margin-bottom: 10px; }
+                    .title { font-size: 20px; font-weight: bold; }
+                    .meta { font-size: 12px; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px; }
+                    .totals { margin-top: 10px; border-top: 1px dashed #000; padding-top: 5px; font-size: 14px; }
+                    .row { display: flex; justify-content: space-between; }
+                    .grand-total { font-size: 18px; font-weight: bold; margin-top: 5px; }
+                    @media print { .no-print { display: none; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <div class="title">${restName}</div>
+                    <div style="font-size:12px">أوردر #${orderNumDisplay}</div>
+                </div>
+                
+                <div class="meta">
+                    <div>التاريخ: ${date}</div>
+                    <div>بواسطة: ${cashierName}</div>
+                    <div>الطاولة: <strong>${order.tableNumber}</strong></div>
+                    <div>نوع الطلب: ${order.tableNumber === 0 ? "تيك أواي" : "صالة"}</div>
+                </div>
+
+                <div class="items">${itemsHtml}</div>
+
+                <div class="totals">
+                    <div class="row"><span>المجموع:</span> <span>${subTotal}</span></div>
+                    ${taxVal > 0 ? `<div class="row"><span>ضريبة:</span> <span>${taxVal}</span></div>` : ""}
+                    ${serviceVal > 0 ? `<div class="row"><span>خدمة:</span> <span>${serviceVal}</span></div>` : ""}
+                    ${order.discountAmount > 0 ? `<div class="row" style="color:black"><span>خصم:</span> <span>-${order.discountAmount}</span></div>` : ""}
+                    <div class="row grand-total">
+                        <span>الإجمالي:</span> <span>${order.totalPrice} ج.م</span>
+                    </div>
+                </div>
+
+                <div style="text-align:center; margin-top:20px; font-size:12px;">
+                    *** شكراً لزيارتكم ***
+                </div>
+
+                <script>
+                    window.onload = function() { window.print(); setTimeout(() => window.close(), 1000); }
+                <\/script>
+            </body>
+            </html>
+        `;
+
+        const popup = window.open("", "_blank", "width=350,height=600");
+        popup.document.open();
+        popup.document.write(receiptHTML);
+        popup.document.close();
+      };
+    </script>
+
+    <div
+      id="recent-orders-modal"
+      class="overlay"
+      style="z-index: 2000; display: none"
+    >
+      <div
+        class="card"
+        style="
+          width: 90%;
+          max-width: 600px;
+          max-height: 80vh;
+          margin: 5vh auto;
+          display: flex;
+          flex-direction: column;
+          padding: 0;
+        "
+      >
+        <div
+          style="
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h3 style="margin: 0; color: var(--primary)">🧾 فواتير آخر ساعتين</h3>
+          <button
+            onclick="
+              document.getElementById('recent-orders-modal').style.display =
+                'none'
+            "
+            style="
+              background: none;
+              border: none;
+              font-size: 20px;
+              cursor: pointer;
+              color: var(--text-main);
+            "
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div
+          id="recent-orders-list"
+          style="padding: 20px; overflow-y: auto; flex: 1"
+        ></div>
+      </div>
+    </div>
+
+    <script>
+      window.showRecentOrders = async function () {
+        const rId = document.getElementById("restaurant-id").value;
+        const modal = document.getElementById("recent-orders-modal");
+        const container = document.getElementById("recent-orders-list");
+
+        modal.style.display = "block";
+        container.innerHTML =
+          '<div style="text-align:center"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+
+        try {
+          const res = await fetch(`/api/v1/orders/${rId}/recent-completed`, {
+            headers: {
+              Authorization: `Bearer ${sessionStorage.getItem("ownerToken")}`,
+            },
+          });
+          const data = await res.json();
+
+          container.innerHTML = "";
+          if (data.data.orders.length === 0) {
+            container.innerHTML =
+              '<p style="text-align:center; color:var(--secondary)">لا توجد طلبات مكتملة في آخر ساعتين</p>';
+            return;
+          }
+
+          data.data.orders.forEach((order) => {
+            const time = new Date(order.updatedAt).toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            const orderDataEncoded = encodeURIComponent(JSON.stringify(order));
+
+            container.innerHTML += `
+                <div style="background:var(--bg); border:1px solid var(--border-color); padding:10px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:bold; color:var(--text-main)">أوردر #${String(order._id).slice(-4)} <span style="font-size:12px; color:var(--success)">(${time})</span></div>
+                        <div style="font-size:12px; color:var(--secondary)">${order.tableNumber === 0 ? "تيك أواي" : "طاولة " + order.tableNumber} - ${order.totalPrice} ج.م</div>
+                    </div>
+                    <button class="btn btn-outline" onclick="window.printOrder('${orderDataEncoded}')" style="padding:5px 15px;">
+                        <i class="fas fa-print"></i> طباعة
+                    </button>
+                </div>
+            `;
+          });
+        } catch (e) {
+          container.innerHTML =
+            '<p style="color:red; text-align:center">حدث خطأ</p>';
+        }
+      };
+
+      let currentSizes = [];
+
+      function togglePricingMode() {
+        const mode = document.querySelector(
+          'input[name="pricingMode"]:checked',
+        ).value;
+        if (mode === "single") {
+          document.getElementById("mode-single").classList.remove("hidden");
+          document.getElementById("mode-multi").classList.add("hidden");
+        } else {
+          document.getElementById("mode-single").classList.add("hidden");
+          document.getElementById("mode-multi").classList.remove("hidden");
+          if (document.getElementById("sizes-list").innerHTML === "")
+            addSizeRow();
+        }
+      }
+
+      function addSizeRow(name = "", price = "", oldPrice = "") {
+        const id = Date.now();
+        const oldValDisplay = oldPrice && oldPrice > 0 ? oldPrice : "";
+
+        const html = `
+                <div class="size-row" id="size-${id}" style="display:flex; gap:10px; margin-bottom:10px; align-items:flex-end;">
+                    <div style="flex:2">
+                        <input type="text" class="s-name" placeholder="اسم الحجم (صغير، وسط)" value="${name}">
+                    </div>
+                    <div style="flex:1">
+                        <input type="number" class="s-price" placeholder="السعر" value="${price}">
+                    </div>
+                    <div style="flex:1">
+                        <input type="number" class="s-old" placeholder="السعر الأصلي" value="${oldValDisplay}" 
+                               style="border: 1px dashed var(--danger); background: #fff1f2; color: var(--danger);">
+                    </div>
+                    <button class="btn btn-outline" style="color:red; height:42px" onclick="document.getElementById('size-${id}').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+        document
+          .getElementById("sizes-list")
+          .insertAdjacentHTML("beforeend", html);
+      }
+      async function loadCoupons() {
+        const rId = document.getElementById("restaurant-id").value;
+        const res = await fetch(`/api/v1/coupons/${rId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        const list = document.getElementById("coupons-list");
+        list.innerHTML = "";
+        data.data.coupons.forEach((c) => {
+          const val =
+            c.discountType === "percent" ? `${c.value}%` : `${c.value} ج.م`;
+          list.innerHTML += `
+            <tr>
+                <td style="font-weight:bold; color:var(--primary)">${c.code}</td>
+                <td>${val}</td>
+                <td>${c.usedCount} / ${c.usageLimit}</td>
+                <td><button class="btn btn-outline" style="color:red" onclick="deleteCoupon('${c._id}')"><i class="fas fa-trash"></i></button></td>
+            </tr>
+        `;
+        });
+      }
+
+      async function createCoupon() {
+        const rId = document.getElementById("restaurant-id").value;
+        const body = {
+          code: document.getElementById("coup-code").value,
+          discountType: document.getElementById("coup-type").value,
+          value: document.getElementById("coup-value").value,
+          minOrderVal: document.getElementById("coup-min").value || 0,
+          maxDiscount: document.getElementById("coup-max-disc").value || 0,
+          usageLimit: document.getElementById("coup-limit").value || 1000,
+        };
+        if (!body.code || !body.value)
+          return Swal.fire("تنبيه", "أدخل الكود والقيمة", "warning");
+
+        const res = await fetch(`/api/v1/coupons/${rId}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          Swal.fire({
+            toast: true,
+            icon: "success",
+            title: "تم إنشاء الكوبون",
+          });
+          document.getElementById("coup-code").value = "";
+          loadCoupons();
+        } else {
+          Swal.fire("خطأ", data.message, "error");
+        }
+      }
+
+      async function deleteCoupon(id) {
+        if (
+          (
+            await Swal.fire({
+              title: "حذف الكوبون؟",
+              icon: "warning",
+              showCancelButton: true,
+            })
+          ).isConfirmed
+        ) {
+          await fetch(`/api/v1/coupons/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          loadCoupons();
+        }
+      }
+      function createRecentOrderHTML(order) {
+        const time = new Date(order.updatedAt).toLocaleTimeString("ar-EG", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const orderDataEncoded = encodeURIComponent(JSON.stringify(order));
+
+        let itemsTxt = order.items
+          .map((i) => `${i.name} (x${i.qty})`)
+          .join("، ");
+
+        return `
+        <div style="background:var(--bg); border:1px solid var(--border-color); padding:15px; border-radius:10px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div>
+                    <span style="font-weight:bold; color:var(--text-main); font-size:16px;">أوردر #${order.orderNum}</span>
+                    <span style="font-size:12px; color:var(--success); margin-right:5px;">(${time})</span>
+                </div>
+                <button class="btn btn-outline" onclick="window.printOrder('${orderDataEncoded}')" style="padding:5px 15px;">
+                    <i class="fas fa-print"></i>
+                </button>
+            </div>
+            
+            <div style="font-size:13px; color:var(--text-main); margin-bottom:8px; line-height:1.6;">
+                <strong>الأصناف:</strong> ${itemsTxt}
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--secondary); border-top:1px dashed #ddd; padding-top:5px;">
+                <span>${order.tableNumber === 0 ? "تيك أواي" : "طاولة " + order.tableNumber}</span>
+                <span style="font-weight:bold; color:var(--primary); font-size:14px;">${order.totalPrice} ج.م</span>
+            </div>
+        </div>
+    `;
+      }
+
+      window.searchOrderHistory = async function () {
+        const orderNum = document.getElementById("live-order-search").value;
+        if (!orderNum) return;
+
+        const rId = document.getElementById("restaurant-id").value;
+        Swal.showLoading();
+
+        try {
+          const res = await fetch(
+            `/api/v1/orders/${rId}/history?search=${orderNum}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          const data = await res.json();
+          Swal.close();
+
+          if (data.status === "success" && data.data.orders.length > 0) {
+            const modal = document.getElementById("recent-orders-modal");
+            const container = document.getElementById("recent-orders-list");
+            modal.style.display = "block";
+
+            container.innerHTML = `<h4 style="text-align:center; margin-top:0">نتائج البحث عن أوردر #${orderNum}</h4>`;
+
+            data.data.orders.forEach((order) => {
+              container.innerHTML += createRecentOrderHTML(order);
+            });
+          } else {
+            Swal.fire("غير موجود", "لم يتم العثور على طلب بهذا الرقم", "info");
+          }
+        } catch (e) {
+          Swal.fire("خطأ", "حدث خطأ في البحث", "error");
+        }
+      };
+
+      window.showRecentOrders = async function () {
+        const rId = document.getElementById("restaurant-id").value;
+        const modal = document.getElementById("recent-orders-modal");
+        const container = document.getElementById("recent-orders-list");
+
+        modal.style.display = "block";
+        container.innerHTML =
+          '<div style="text-align:center"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
+
+        try {
+          const res = await fetch(`/api/v1/orders/${rId}/recent-completed`, {
+            headers: {
+              Authorization: `Bearer ${sessionStorage.getItem("ownerToken")}`,
+            },
+          });
+          const data = await res.json();
+
+          container.innerHTML = "";
+          if (data.data.orders.length === 0) {
+            container.innerHTML =
+              '<p style="text-align:center; color:var(--secondary)">لا توجد طلبات مكتملة حديثاً</p>';
+            return;
+          }
+
+          data.data.orders.forEach((order) => {
+            container.innerHTML += createRecentOrderHTML(order);
+          });
+        } catch (e) {
+          container.innerHTML =
+            '<p style="color:red; text-align:center">حدث خطأ</p>';
+        }
+      };
+      function applyTheme(themeId) {
+        const theme = themesLibrary.find((t) => t.id === themeId);
+        if (!theme) return;
+
+        currentDesign.primaryColor = theme.primary;
+        currentDesign.bgType = theme.type;
+        currentDesign.bgValue = theme.bg;
+        currentDesign.fontFamily = theme.font;
+        currentDesign.cardRadius = theme.radius;
+        currentDesign.cardStyle = theme.style;
+        currentDesign.layoutType = theme.layout;
+
+        document.getElementById("ui-primaryColor").value = theme.primary;
+        document.getElementById("ui-fontFamily").value = theme.font;
+        document.getElementById("ui-cardRadius").value = theme.radius;
+        document.getElementById("ui-cardStyle").value = theme.style;
+        document.getElementById("radius-val").innerText = theme.radius;
+
+        document.getElementById("ui-bgType").value = theme.type;
+        toggleBgInput();
+        if (theme.type === "color")
+          document.getElementById("ui-bgColor").value = theme.bg;
+
+        document
+          .querySelectorAll(".btn-layout")
+          .forEach((b) => b.classList.remove("active"));
+        const activeBtn = document.getElementById(`btn-layout-${theme.layout}`);
+        if (activeBtn) activeBtn.classList.add("active");
+
+        updatePreview();
+
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: `تم تطبيق قالب: ${theme.name}`,
+          showConfirmButton: false,
+          timer: 1000,
+        });
+      }
+      async function checkShiftStatus(role) {
+        setInterval(async () => {
+          const now = new Date();
+          try {
+            const res = await fetch("/api/v1/users/my-staff", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (res.status === 403) {
+              const data = await res.json();
+              if (data.message.includes("خارج وقت الشيفت")) {
+                logout();
+              }
+            }
+          } catch (e) {}
+        }, 60000);
+      }
+    </script>
+  </body>
+</html>
