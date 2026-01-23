@@ -414,433 +414,21 @@
         display: none !important;
       }
 
-      /* تحسينات الموبايل - Mobile App Mode */
-      @media (max-width: 768px) {
-        body {
-          flex-direction: column;
-          padding-bottom: 80px; /* مسافة للبار السفلي */
-          background: #f8fafc; /* لون خلفية أفتح للموبايل */
-        }
-        
-        /* الهيدر العلوي */
-        .mobile-header {
-          display: flex;
-          background: var(--surface);
-          box-shadow: 0 1px 5px rgba(0,0,0,0.05);
-          height: 60px;
-          padding: 0 20px;
-        }
-        .mobile-header .logo {
-          font-size: 18px;
-        }
-        .mobile-menu-btn {
-          display: none; /* إخفاء زر القائمة لأننا سنستخدم بار سفلي */
-        }
-
-        /* القائمة الجانبية تتحول لبار سفلي */
-        .sidebar {
-          position: fixed;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          top: auto;
-          width: 100%;
-          height: 70px;
-          flex-direction: row;
-          padding: 0;
-          border-left: none;
-          border-top: 1px solid var(--border-color);
-          box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
-          z-index: 9999;
-          overflow-x: auto; /* سكرول أفقي لو العناصر كتير */
-          white-space: nowrap;
-          justify-content: flex-start; /* بداية العناصر */
-          align-items: center;
-        }
-        
-        /* إخفاء عناصر غير ضرورية في البار السفلي */
-        .sidebar .logo, .sidebar div[style*="margin-top: auto"] {
-          display: none !important;
-        }
-
-        .nav-item {
-          flex-direction: column;
-          justify-content: center;
-          gap: 5px;
-          padding: 5px 10px;
-          font-size: 10px;
-          min-width: 65px;
-          margin: 0;
-          border-radius: 0;
-          height: 100%;
-          border-top: 3px solid transparent;
-        }
-
-        .nav-item i {
-          font-size: 20px;
-          margin-bottom: 2px;
-        }
-        
-        .nav-item.active {
-          background: transparent;
-          color: var(--primary);
-          box-shadow: none;
-          border-top-color: var(--primary);
-        }
-
-        /* المحتوى الرئيسي */
-        .main-content {
-          padding: 20px 15px;
-          padding-top: 80px; /* عشان الهيدر */
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        .header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
-        }
-
-        /* تحويل الجداول إلى كروت (Cards) */
-        table, thead, tbody, th, td, tr { 
-          display: block; 
-        }
-        
-        thead tr { 
-          position: absolute;
-          top: -9999px;
-          left: -9999px;
-        }
-        
-        tr { 
-          background: var(--surface);
-          border-radius: 12px;
-          margin-bottom: 15px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-          border: 1px solid var(--border-color);
-          overflow: hidden;
-        }
-        
-        td { 
-          border: none;
-          border-bottom: 1px solid #f1f5f9; 
-          position: relative;
-          padding: 12px 15px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          text-align: right;
-        }
-        
-        td:last-child {
-            border-bottom: none;
-            background: #f8fafc;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        td img {
-            width: 50px;
-            height: 50px;
-        }
-
-        /* تحسينات الفورم */
-        .form-grid {
-          grid-template-columns: 1fr;
-          gap: 15px;
-        }
-        
-        input, select, textarea {
-            height: 50px; /* تكبير حقول الإدخال للمس */
-            font-size: 16px; /* منع الزووم التلقائي في الآيفون */
-        }
-        
-        .btn {
-            height: 50px;
-            font-size: 16px;
-        }
-
-        /* تحسينات صفحة الطلبات */
-        #orders-grid {
-            grid-template-columns: 1fr !important;
-        }
-        
-        /* إخفاء الـ Overlay القديم */
-        .overlay {
-            display: none !important;
-        }
-        
-        /* زر المعاينة */
-        .btn-preview {
-            width: 100%;
-            justify-content: center;
-            background: var(--primary-light);
-        }
-        
-        /* تحسينات عرض المنتجات */
-        .bulk-card .form-grid {
-          display: flex;
-          flex-direction: column;
-        }
-      }
-      .phone-frame {
-        width: 320px;
-        height: 650px;
-        background: #fff;
-        border-radius: 40px;
-        border: 12px solid #1a1a1a;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-      }
-      .notch {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 150px;
-        height: 25px;
-        background: #1a1a1a;
-        border-bottom-left-radius: 15px;
-        border-bottom-right-radius: 15px;
-        z-index: 10;
-      }
-      .btn-layout {
-        flex: 1;
-        padding: 10px;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        background: var(--bg);
-        cursor: pointer;
-        transition: 0.2s;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
-        font-size: 12px;
-      }
-      .btn-layout.active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-      }
-      .btn-layout i {
-        font-size: 20px;
-        margin-bottom: 5px;
-      }
-      /* === وضع الموبايل - Mobile App Transformation === */
-      @media (max-width: 768px) {
-        /* 1. إصلاح السكرول وهيكل الصفحة */
-        body {
-          display: block !important; /* إلغاء نظام الـ Flex الخاص بالكمبيوتر */
-          height: auto !important;   /* السماح للصفحة بالطول الطبيعي */
-          overflow-y: auto !important; /* تفعيل السكرول */
-          overflow-x: hidden !important; /* منع الحركة الجانبية */
-          padding-bottom: 85px !important; /* مساحة للبار السفلي */
-          background: #f4f6f8;
-        }
-
-        .main-content {
-          padding: 75px 15px 20px 15px !important; /* مساحة للهيدر العلوي */
-          height: auto !important;
-          overflow: visible !important;
-          width: 100% !important;
-          box-sizing: border-box;
-        }
-
-        /* 2. الهيدر العلوي (الثابت) */
-        .mobile-header {
-            display: flex;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px); /* تأثير زجاجي */
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            z-index: 9999;
-            align-items: center;
-            padding: 0 15px;
-            box-sizing: border-box;
-            justify-content: space-between;
-        }
-        
-        /* 3. شريط التنقل السفلي (Bottom Navigation) */
-        .sidebar {
-          position: fixed !important;
-          bottom: 0 !important;
-          top: auto !important;
-          left: 0 !important;
-          right: 0 !important;
-          width: 100% !important;
-          height: 70px !important;
-          background: #ffffff !important;
-          border-top: 1px solid #eee;
-          box-shadow: 0 -5px 20px rgba(0,0,0,0.03);
-          display: flex !important;
-          flex-direction: row !important;
-          justify-content: space-around !important; /* توزيع متساوي للأيقونات */
-          align-items: center !important;
-          padding: 0 !important;
-          z-index: 99999;
-          transform: none !important; /* إلغاء حركة السلايدر القديمة */
-        }
-
-        /* تنسيق الأزرار في البار السفلي */
-        .nav-item {
-          flex-direction: column !important;
-          gap: 4px !important;
-          font-size: 10px !important;
-          padding: 5px !important;
-          margin: 0 !important;
-          background: transparent !important;
-          color: #94a3b8;
-          border-radius: 0 !important;
-          width: 100%;
-          text-align: center;
-        }
-
-        .nav-item i {
-            font-size: 20px !important;
-            margin: 0 !important;
-            display: block;
-        }
-
-        .nav-item.active {
-            color: var(--primary) !important;
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-        
-        /* إخفاء العناصر غير المهمة في البار السفلي */
-        .sidebar .logo, 
-        .sidebar .nav-item:last-child, /* زر الخروج */
-        .sidebar div[style*="margin-top"] {
-            display: none !important;
-        }
-
-        /* 4. تحويل الجداول إلى كروت أنيقة */
-        .table-wrapper {
-            background: transparent !important;
-            border: none !important;
-            overflow: visible !important;
-        }
-        
-        table, thead, tbody, th, td, tr { 
-            display: block; 
-            width: 100%; 
-            box-sizing: border-box;
-        }
-        
-        thead { display: none; } /* إخفاء عناوين الجدول */
-
-        tr {
-            background: #fff;
-            margin-bottom: 15px;
-            border-radius: 16px;
-            padding: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            border: 1px solid #f1f5f9;
-        }
-
-        td {
-            padding: 8px 0 !important;
-            border-bottom: 1px dashed #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            text-align: right;
-            font-size: 14px;
-        }
-        
-        td:last-child {
-            border-bottom: none;
-            padding-top: 15px !important;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        /* 5. ضبط الأزرار والإدخالات لتناسب الشاشة */
-        input, select, textarea, .btn {
-            width: 100% !important; /* عرض كامل دائماً */
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-            height: 48px; /* ارتفاع مريح للمس */
-            font-size: 16px !important; /* منع الزووم في الآيفون */
-        }
-        
-        /* تصغير أزرار الجدول */
-        td .btn {
-            width: auto !important;
-            height: 35px;
-            padding: 0 15px;
-            font-size: 12px !important;
-        }
-
-        .form-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        /* إصلاح الهيدر الداخلي */
-        .header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .page-title {
-            font-size: 20px !important;
-        }
-
-        /* إصلاح قسم التصميم والطلبات */
-        .phone-frame {
-            width: 100% !important;
-            height: 500px !important;
-            border-width: 5px !important;
-        }
-        
-        #orders-grid {
-            grid-template-columns: 1fr !important;
-        }
-
-        /* إصلاح كروت الإضافة الجماعية */
-        .bulk-card {
-            padding: 15px !important;
-        }
-        
-        .bulk-card div[style*="display:flex"] {
-            flex-wrap: wrap;
-        }
-        
-        .btn-remove-row {
-            left: 5px !important;
-            top: 5px !important;
-        }
-
-        /* إخفاء الـ Overlay القديم */
-        .overlay { display: none !important; }
-        .mobile-menu-btn { display: none !important; }
-      }
-      /* === 📱 Mobile App Experience v3.0 === */
+      /* === 📱 Mobile App Experience (واجهة منفصلة للتليفون) === */
       @media (max-width: 768px) {
         
-        /* 1. إصلاح الهيكل والسكرول (Scroll Fix) */
+        /* 1. هيكل الصفحة: تحويلها لنظام تطبيق */
         html, body {
-            overflow-x: hidden !important; /* منع الحركة الجانبية تماماً */
-            overflow-y: auto !important;   /* السماح بالسكرول الرأسي */
-            height: auto !important;       /* إلغاء الطول الثابت */
-            position: relative !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            height: auto !important;
             display: block !important;
-            background: #f8fafc;
-            padding-bottom: 70px !important; /* مساحة للبار السفلي */
+            background: #f4f6f8; /* لون رمادي فاتح جداً للتطبيقات */
+            padding-bottom: 80px !important; /* مساحة للبار السفلي */
+            -webkit-tap-highlight-color: transparent; /* إزالة الوميض عند اللمس */
         }
 
-        /* 2. تحويل القائمة الجانبية إلى بار سفلي (Bottom Navigation) */
+        /* 2. تحويل القائمة الجانبية إلى شريط تنقل سفلي (Bottom Nav) */
         .sidebar {
             position: fixed !important;
             bottom: 0 !important;
@@ -848,18 +436,18 @@
             left: 0 !important;
             right: 0 !important;
             width: 100% !important;
-            height: 65px !important;
+            height: 70px !important;
             background: #ffffff !important;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.08) !important;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.08) !important;
             border-top: 1px solid #f1f5f9;
             flex-direction: row !important;
             padding: 0 10px !important;
             z-index: 99999;
-            /* تمكين السكرول الناعم للأيقونات الكثيرة */
-            overflow-x: auto !important; 
-            justify-content: flex-start !important; 
+            overflow-x: auto !important; /* سكرول أفقي للأيقونات الكثيرة */
+            justify-content: space-between !important; 
             gap: 5px !important;
             transform: none !important;
+            border-left: none !important;
         }
         
         /* إخفاء شريط السكرول في البار السفلي */
@@ -869,103 +457,46 @@
         .nav-item {
             flex-direction: column !important;
             justify-content: center !important;
-            min-width: 60px !important; /* عرض ثابت لكل أيقونة */
+            align-items: center !important;
+            min-width: 65px !important;
             height: 100% !important;
             margin: 0 !important;
             padding: 5px !important;
             border-radius: 12px !important;
             font-size: 10px !important;
-            color: #64748b !important;
+            color: #94a3b8 !important;
             background: transparent !important;
+            box-shadow: none !important;
         }
 
         .nav-item i {
-            font-size: 20px !important;
+            font-size: 22px !important;
             margin-bottom: 4px !important;
-            color: #94a3b8;
+            width: auto !important;
         }
 
         .nav-item.active {
             color: var(--primary) !important;
-            background: rgba(67, 56, 202, 0.05) !important;
+            background: transparent !important;
         }
-        .nav-item.active i { color: var(--primary) !important; }
+        .nav-item.active i {
+            transform: translateY(-2px);
+            transition: 0.2s;
+        }
 
-        /* إخفاء اللوجو وزر الخروج من الأسفل */
+        /* إخفاء العناصر غير الضرورية في البار السفلي */
         .sidebar .logo, .sidebar div[style*="margin-top"] { display: none !important; }
 
-        /* 3. إصلاح المحتوى الرئيسي */
+        /* 3. تنسيق المحتوى الرئيسي */
         .main-content {
             width: 100% !important;
-            padding: 80px 15px 20px 15px !important; /* تظبيط المسافات */
+            padding: 70px 15px 20px 15px !important; /* مساحة للهيدر العلوي */
             box-sizing: border-box !important;
             margin: 0 !important;
             overflow: visible !important;
         }
 
-        /* 4. إصلاح الجداول (المشكلة الرئيسية في العرض) */
-        .table-wrapper {
-            background: transparent !important;
-            border: none !important;
-            padding: 0 !important;
-            overflow: visible !important;
-        }
-
-        table {
-            display: block !important;
-            width: 100% !important;
-            min-width: 0 !important; /* 🔥 هذا السطر يحل مشكلة العرض الزائد */
-        }
-
-        thead { display: none !important; }
-
-        tr {
-            display: block !important;
-            background: #fff;
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            border: 1px solid #e2e8f0;
-            position: relative;
-        }
-
-        td {
-            display: flex !important;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0 !important;
-            border-bottom: 1px dashed #f1f5f9;
-            font-size: 14px;
-            text-align: right;
-            width: 100% !important;
-            box-sizing: border-box !important;
-        }
-
-        td:last-child {
-            border-bottom: none !important;
-            padding-top: 15px !important;
-            justify-content: flex-end; /* جعل الأزرار في اليسار */
-            gap: 10px;
-        }
-
-        /* 5. تصغير أزرار التحكم (تعديل/حذف) لتناسب الموبايل */
-        td .btn {
-            width: 40px !important;
-            height: 40px !important;
-            border-radius: 50% !important; /* شكل دائري */
-            padding: 0 !important;
-            display: flex !important;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px !important;
-            background: #f8fafc; /* خلفية رمادية فاتحة */
-        }
-        /* تلوين أيقونات الأزرار */
-        td .btn .fa-pen { color: var(--primary); }
-        td .btn .fa-trash { color: var(--danger); }
-
-        /* 6. تحسينات الهيدر العلوي */
+        /* 4. الهيدر العلوي (App Header) */
         .mobile-header {
             display: flex !important;
             position: fixed;
@@ -974,20 +505,84 @@
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(0,0,0,0.05);
-            z-index: 9999;
+            z-index: 9990;
             padding: 0 15px;
             box-sizing: border-box;
             justify-content: space-between;
+            align-items: center;
         }
+        
+        /* إخفاء زر القائمة والـ overlay */
         .mobile-menu-btn { display: none !important; }
         .overlay { display: none !important; }
+        
+        /* تحسين مظهر اللوجو في الموبايل */
+        .mobile-header .logo {
+            font-size: 16px !important;
+            font-weight: 800;
+            color: var(--text-main);
+        }
 
-        /* 7. تحسينات عامة للنماذج (Forms) */
+        /* 5. تحويل الجداول إلى كروت (Cards) */
+        .table-wrapper {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+        table, thead, tbody, th, td, tr { 
+            display: block !important; 
+            width: 100% !important; 
+        }
+
+        thead { display: none !important; } /* إخفاء عناوين الجدول */
+
+        tr {
+            background: #fff;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eef2f6;
+            position: relative;
+        }
+        
+        tr:hover { background: #fff !important; }
+
+        td {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0 !important;
+            border-bottom: 1px dashed #f1f5f9;
+            font-size: 14px;
+            text-align: right;
+        }
+
+        td:last-child {
+            border-bottom: none !important;
+            padding-top: 15px !important;
+            justify-content: flex-end; 
+            gap: 10px;
+        }
+        
+        td::before {
+            /* إضافة عناوين الحقول تلقائياً إذا لزم الأمر، أو الاعتماد على التصميم الحالي */
+            content: attr(data-label);
+            font-weight: bold;
+            color: var(--secondary);
+            font-size: 12px;
+        }
+
+        /* 6. تحسين النماذج والأزرار (Touch Friendly) */
         .card {
             padding: 20px !important;
-            border-radius: 20px !important;
+            border-radius: 16px !important;
             border: none !important;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.03) !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02) !important;
+            margin-bottom: 20px !important;
         }
 
         .form-grid {
@@ -996,40 +591,382 @@
         }
 
         input, select, textarea, .custom-file-upload {
-            height: 50px !important;
+            height: 50px !important; /* ارتفاع مريح للإصبع */
             border-radius: 12px !important;
-            font-size: 15px !important;
+            font-size: 16px !important; /* منع التكبير التلقائي في آيفون */
             width: 100% !important;
             box-sizing: border-box !important;
         }
 
-        /* أزرار الحفظ والإضافة تكون كاملة العرض */
-        .btn-primary, .btn-success {
-            width: 100% !important;
+        .btn {
             height: 50px !important;
             font-size: 16px !important;
             border-radius: 12px !important;
+            width: 100%; /* الأزرار بعرض الشاشة دائماً */
             justify-content: center;
+            margin-bottom: 5px;
         }
+        
+        /* أزرار الإجراءات داخل الكروت (تعديل/حذف) تكون صغيرة */
+        td .btn {
+            width: 40px !important;
+            height: 40px !important;
+            border-radius: 50% !important;
+            padding: 0 !important;
+            font-size: 14px !important;
+            background: #f1f5f9;
+            margin: 0 !important;
+        }
+        td .btn i { margin: 0; }
 
-        /* إصلاح صفحة التصميم */
+        /* 7. إصلاحات صفحات محددة */
+        
+        /* صفحة الطلبات */
+        #orders-grid {
+            grid-template-columns: 1fr !important;
+        }
+        
+        /* صفحة التصميم */
         .phone-frame {
             width: 100% !important;
             height: 550px !important;
-            border-width: 4px !important;
+            border: 4px solid #333 !important;
+            border-radius: 20px !important;
+        }
+        
+        /* صفحة المنتجات والإضافة الجماعية */
+        .bulk-card {
+            padding: 15px !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+        .btn-remove-row {
+            left: 5px !important;
+            top: 5px !important;
+            width: 35px !important; 
+            height: 35px !important;
+        }
+        
+        /* إخفاء زر المعاينة في الهيدر لأنه يأخذ مساحة */
+        #preview-link {
+            display: none !important; 
         }
         
         .header {
             flex-direction: column !important;
             align-items: flex-start !important;
+            gap: 10px;
+            margin-bottom: 20px;
         }
+      }
+      /* === 📱 Mobile Sidebar & Cards Mode (تصميم منفصل للتليفون) === */
+      @media (max-width: 768px) {
+        
+        /* 1. ضبط الحاوية الأساسية */
+        body {
+            display: block !important;
+            height: auto !important;
+            overflow-y: auto !important;
+            background: #f3f4f6;
+        }
+
+        .main-content {
+            padding: 80px 15px 20px 15px !important; /* مساحة للهيدر */
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        /* 2. القائمة الجانبية (Sidebar) - تظهر بالضغط */
+        .sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            right: -280px !important; /* مخفية يمين الشاشة */
+            left: auto !important;
+            width: 260px !important;
+            height: 100% !important;
+            z-index: 2000 !important;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1) !important;
+            border: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background: var(--surface) !important;
+            padding-top: 20px !important;
+        }
+
+        .sidebar.active {
+            right: 0 !important; /* تظهر عند التفعيل */
+        }
+        
+        /* إظهار اللوجو وأزرار القائمة داخل السايدبار */
+        .sidebar .logo, .sidebar div[style*="margin-top"] {
+            display: flex !important;
+        }
+
+        .nav-item {
+            flex-direction: row !important; /* رجوع الأيقونة بجانب النص */
+            justify-content: flex-start !important;
+            padding: 12px 20px !important;
+            margin: 5px 10px !important;
+            border-radius: 10px !important;
+            font-size: 14px !important;
+            height: auto !important;
+        }
+        
+        .nav-item i {
+            margin-left: 10px !important;
+            font-size: 18px !important;
+        }
+
+        /* 3. الهيدر العلوي (Mobile Header) */
+        .mobile-header {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            padding: 0 15px;
+            background: var(--surface);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1500;
+        }
+        
+        .mobile-menu-btn {
+            display: block !important; /* إظهار زر القائمة */
+            font-size: 24px;
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .overlay {
+            z-index: 1900 !important; /* خلف السايدبار مباشرة */
+        }
+
+        /* 4. تحويل الجداول إلى كروت (Cards) للأقسام والمنتجات والموظفين */
+        .table-wrapper {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+
+        table, thead, tbody, th, td, tr { 
+            display: block !important; 
+            width: 100% !important; 
+        }
+
+        thead { display: none !important; } /* إخفاء عناوين الجدول */
+
+        tr {
+            background: #fff;
+            margin-bottom: 15px;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        td {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0 !important;
+            border-bottom: 1px solid #f3f4f6;
+            text-align: right;
+            font-size: 14px;
+        }
+        
+        td:last-child {
+            border-bottom: none !important;
+            padding-top: 15px !important;
+            justify-content: center; /* أزرار التحكم في المنتصف */
+            gap: 15px;
+        }
+        
+        /* تنسيق خاص للصور داخل الكروت */
+        td img {
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 10px !important;
+        }
+
+        /* تحسين أزرار التحكم (تعديل/حذف) على الموبايل */
+        td .btn {
+            padding: 8px 20px !important;
+            width: auto !important;
+            border-radius: 8px !important;
+            font-size: 13px !important;
+        }
+
+        /* 5. تحسينات النماذج (Forms) لتناسب التليفون */
+        .form-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 15px !important;
+        }
+        
+        input, select, textarea {
+            height: 50px !important;
+            font-size: 16px !important; /* لمنع الزووم في الآيفون */
+        }
+        
+        .card {
+            padding: 20px !important;
+            margin-bottom: 20px !important;
+        }
+        
+        /* 6. إصلاحات محددة للصفحات */
+        
+        /* صفحة الطلبات: شبكة عمود واحد */
+        #orders-grid { grid-template-columns: 1fr !important; }
+        
+        /* صفحة التصميم: تصغير فريم الهاتف */
+        .phone-frame {
+            width: 100% !important;
+            height: 500px !important;
+            border-width: 5px !important;
+        }
+        
+        /* زر المعاينة */
+        #preview-link { display: none !important; }
+
+        /* صفحة الجرد: إخفاء الفلاتر المعقدة أو ترتيبها */
+        #owner-filters {
+            flex-direction: column !important;
+            width: 100% !important;
+            align-items: stretch !important;
+        }
+        #owner-filters input, #owner-filters button {
+            width: 100% !important;
+            margin-bottom: 5px;
+        }
+      }
+      /* 2. القائمة الجانبية (Sidebar) - تظهر بالضغط */
+        .sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            right: -100% !important; /* إجبارها على الاختفاء تماماً خارج الشاشة */
+            left: auto !important;
+            width: 260px !important;
+            height: 100% !important;
+            z-index: 2000 !important;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; /* تحسين حركة الدخول */
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background: var(--surface) !important;
+            padding-top: 20px !important;
+            visibility: hidden; /* إخفاء العنصر تماماً لمنع التفاعل بالخطأ */
+        }
+
+        .sidebar.active {
+            right: 0 !important; /* تظهر عند التفعيل */
+            visibility: visible !important;
+        }
+        /* === 📱 Mobile Sidebar Fix (إصلاح القائمة للموبايل) === */
+      @media (max-width: 768px) {
+        
+        body {
+            overflow-x: hidden !important;
+        }
+
+        /* تنسيق الهيدر العلوي */
+        .mobile-header {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            padding: 0 15px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 1000;
+        }
+        
+        .mobile-menu-btn {
+            display: block !important;
+            font-size: 22px;
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* القائمة الجانبية - مخفية افتراضياً */
+        .sidebar {
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 280px !important;
+            height: 100vh !important;
+            background: var(--surface) !important;
+            z-index: 2000 !important;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.1) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            padding-top: 20px !important;
+            
+            /* السحر هنا: تحريك القائمة لليمين بنسبة 100% عشان تختفي */
+            transform: translateX(110%) !important; 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* كلاس التفعيل: يرجع القائمة مكانها */
+        .sidebar.active {
+            transform: translateX(0%) !important;
+        }
+
+        /* زر الإغلاق داخل القائمة */
+        .sidebar .btn-close-sidebar {
+            display: flex !important; /* يظهر فقط في الموبايل */
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .overlay {
+            z-index: 1500 !important;
+        }
+
+        /* باقي تحسينات الموبايل (الجداول والكروت) */
+        .main-content { padding-top: 80px !important; width: 100% !important; }
+        .table-wrapper, table, tbody, tr, td { display: block !important; width: 100% !important; }
+        thead { display: none !important; }
+        tr { background: #fff; margin-bottom: 15px; border-radius: 12px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+        td { display: flex !important; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 8px 0 !important; text-align: right; }
+        td:last-child { border-bottom: none !important; justify-content: center; gap: 10px; padding-top: 15px !important; }
+        .form-grid { grid-template-columns: 1fr !important; }
+        .btn, input, select { height: 48px !important; font-size: 16px !important; }
+        #preview-link { display: none !important; }
       }
     </style>
   </head>
   <body>
     <div class="mobile-header">
-      <div class="logo" style="margin: 0; font-size: 18px; display:flex; align-items:center; gap:5px;">
-        <i class="fas fa-pizza-slice" style="color:var(--primary)"></i> Smart Menu
+      <div style="display:flex; align-items:center; gap:15px;">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="logo" style="margin: 0; font-size: 18px; display:flex; align-items:center; gap:5px;">
+            <i class="fas fa-pizza-slice" style="color:var(--primary)"></i> Smart Menu
+          </div>
       </div>
       <div style="display:flex; gap:15px; align-items:center;">
           <button onclick="toggleDarkMode()" style="background:none; border:none; font-size:18px; color:var(--text-main);">
@@ -1048,6 +985,10 @@
       style="display: flex; width: 100%"
     >
       <div class="sidebar" id="sidebar">
+        <button class="btn-close-sidebar" style="display:none;" onclick="toggleSidebar()">
+            <i class="fas fa-times"></i>
+        </button>
+
         <div class="logo"><i class="fas fa-pizza-slice"></i> Smart Menu</div>
 
         <div
@@ -2432,12 +2373,17 @@
       function toggleSidebar() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.querySelector(".overlay");
-        sidebar.classList.toggle("active");
-        overlay.style.display = sidebar.classList.contains("active")
-          ? "block"
-          : "none";
+        
+        // التبديل بين الفتح والإغلاق
+        if (sidebar.classList.contains("active")) {
+            sidebar.classList.remove("active");
+            // تأخير إخفاء الـ overlay قليلاً ليتناسق مع الانيميشن
+            setTimeout(() => { overlay.style.display = "none"; }, 100); 
+        } else {
+            sidebar.classList.add("active");
+            overlay.style.display = "block";
+        }
       }
-
       function previewImage(input, previewId) {
         const preview = document.getElementById(previewId);
         if (input.files && input.files[0]) {
@@ -2454,10 +2400,17 @@
       }
 
       function switchView(viewName) {
-        // Scroll to top specifically for mobile app feel
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
         
-        localStorage.setItem("lastActiveView", viewName);
+        // إغلاق السايدبار تلقائياً عند الاختيار من الموبايل
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.querySelector(".overlay");
+            if (sidebar.classList.contains("active")) {
+                sidebar.classList.remove("active");
+                overlay.style.display = "none";
+            }
+        }
 
         [
           "categories",
@@ -3941,9 +3894,17 @@
       };
 
       if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", startApp);
+        document.addEventListener("DOMContentLoaded", () => {
+            startApp();
+            // إجبار القائمة على الإغلاق عند الفتح
+            document.getElementById('sidebar').classList.remove('active');
+            document.querySelector('.overlay').style.display = 'none';
+        });
       } else {
         startApp();
+        // إجبار القائمة على الإغلاق عند الفتح
+        document.getElementById('sidebar').classList.remove('active');
+        document.querySelector('.overlay').style.display = 'none';
       }
       window.loadHistory = async function () {
         const rId = document.getElementById("restaurant-id").value;
