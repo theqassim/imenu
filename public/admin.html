@@ -617,7 +617,39 @@
     }
 
     /* 7. إخفاء العناصر غير الضرورية */
-    #preview-link, .overlay { display: none !important; }
+    /* --- بداية كود إصلاح الفواتير السابقة --- */
+
+    /* إخفاء زر المعاينة فقط (بدون إخفاء الـ overlay) */
+    #preview-link { display: none !important; }
+
+    /* إجبار نافذة الفواتير على الظهور فوق القائمة السفلية */
+    #recent-orders-modal {
+        z-index: 999999 !important; /* رقم أعلى من القائمة السفلية */
+        background: rgba(0,0,0,0.85) !important; /* تعتيم الخلفية */
+    }
+
+    /* عندما تعمل النافذة، اجعلها في منتصف الشاشة */
+    #recent-orders-modal[style*="block"] {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ضبط حجم كارت الفاتورة نفسه */
+    #recent-orders-modal .card {
+        width: 90% !important;
+        max-width: 90% !important;
+        margin: 0 !important;
+        max-height: 80vh !important;
+    }
+
+    /* --- نهاية كود الإصلاح --- */
+    
+    /* التأكد من أن المودال يظهر فوق كل العناصر عند الفتح */
+    #recent-orders-modal.overlay { 
+        display: none; 
+        z-index: 99999 !important; /* رقم عالي جداً ليظهر فوق القوائم */
+    }
 
     /* 8. إصلاحات الصفحات */
     #orders-grid { grid-template-columns: 1fr !important; }
@@ -823,7 +855,38 @@
     }
 
     /* 7. إخفاء العناصر غير الضرورية */
-    #preview-link, .overlay { display: none !important; }
+    /* --- بداية كود إصلاح الفواتير السابقة --- */
+
+    /* إخفاء زر المعاينة فقط (بدون إخفاء الـ overlay) */
+    #preview-link { display: none !important; }
+
+    /* إجبار نافذة الفواتير على الظهور فوق القائمة السفلية */
+    #recent-orders-modal {
+        z-index: 999999 !important; /* رقم أعلى من القائمة السفلية */
+        background: rgba(0,0,0,0.85) !important; /* تعتيم الخلفية */
+    }
+
+    /* عندما تعمل النافذة، اجعلها في منتصف الشاشة */
+    #recent-orders-modal[style*="block"] {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ضبط حجم كارت الفاتورة نفسه */
+    #recent-orders-modal .card {
+        width: 90% !important;
+        max-width: 90% !important;
+        margin: 0 !important;
+        max-height: 80vh !important;
+    }
+
+    /* --- نهاية كود الإصلاح --- */
+    /* التأكد من أن المودال يظهر فوق كل العناصر عند الفتح */
+    #recent-orders-modal.overlay { 
+        display: none; 
+        z-index: 99999 !important; /* رقم عالي جداً ليظهر فوق القوائم */
+    }
 
     /* 8. إصلاحات الصفحات */
     #orders-grid { grid-template-columns: 1fr !important; }
@@ -1152,6 +1215,118 @@
       .hidden { display: none !important; }
       .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
       .img-preview { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); display:none; }
+      /* === تحسين أزرار اختيار التخطيط === */
+      .layout-options-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 10px;
+      }
+
+      .btn-layout {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 15px 10px;
+        background: var(--surface);
+        border: 2px solid var(--border-color);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--secondary);
+        font-size: 13px;
+        font-weight: 700;
+        height: 100px; /* ارتفاع موحد */
+      }
+
+      .btn-layout i {
+        font-size: 28px;
+        margin-bottom: 5px;
+        color: var(--secondary);
+        transition: 0.2s;
+      }
+
+      .btn-layout:hover {
+        border-color: var(--primary);
+        background: var(--bg);
+        transform: translateY(-3px);
+      }
+
+      .btn-layout.active {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+        box-shadow: 0 4px 12px rgba(67, 56, 202, 0.15);
+      }
+
+      .btn-layout.active i {
+        color: var(--primary);
+        transform: scale(1.1);
+      }
+
+      /* === تحسين شكل الموبايل (Phone Mockup) === */
+      .phone-mockup-wrapper {
+        flex: 1;
+        min-width: 350px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #1e293b; /* خلفية داكنة لإبراز الهاتف */
+        border-radius: 30px;
+        padding: 40px 20px;
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .phone-frame {
+        width: 340px;          /* عرض ايفون قياسي */
+        height: 700px;         /* ارتفاع ايفون قياسي */
+        background: #000;
+        border-radius: 50px;   /* حواف دائرية كبيرة */
+        box-shadow: 
+            0 0 0 12px #2d3748, /* الإطار الخارجي الرمادي */
+            0 0 0 14px #000,    /* خط أسود رفيع */
+            0 25px 50px -12px rgba(0, 0, 0, 0.6); /* ظل قوي */
+        border: 8px solid #000; /* الحواف السوداء للشاشة */
+        overflow: hidden;
+        position: relative;
+        z-index: 10;
+        transition: transform 0.3s;
+      }
+
+      /* النوتش (Notch) العلوي */
+      .phone-frame::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150px;
+        height: 30px;
+        background: #000;
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 16px;
+        z-index: 20;
+      }
+
+      iframe#live-preview {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: white;
+        border-radius: 40px; /* تدوير زوايا الـ iframe */
+        display: block;
+      }
+
+      /* تصغير الموبايل للشاشات المتوسطة */
+      @media (max-width: 1200px) {
+        .phone-frame {
+            transform: scale(0.9);
+        }
+      }
     </style>
   </head>
   <body>
@@ -2095,343 +2270,160 @@
         </div>
 
         <div id="view-design" class="hidden">
-          <div
-            style="
-              display: flex;
-              gap: 20px;
-              flex-wrap: wrap;
-              height: calc(100vh - 100px);
-            "
-          >
-            <div
-              class="card"
-              style="flex: 1; min-width: 300px; overflow-y: auto; height: 100%"
-            >
-              <h3 style="color: var(--primary); margin-top: 0">
+          <div style="display: flex; gap: 30px; flex-wrap: wrap; height: calc(100vh - 100px);">
+            
+            <div class="card" style="flex: 1; min-width: 380px; overflow-y: auto; height: 100%; padding-right:15px;">
+              <h3 style="color: var(--primary); margin-top: 0; display:flex; align-items:center; gap:10px;">
                 <i class="fas fa-paint-brush"></i> ستوديو التصميم
               </h3>
 
-              <div
-                class="form-group"
-                style="
-                  background: var(--bg);
-                  padding: 15px;
-                  border-radius: 12px;
-                  border: 1px solid var(--border-color);
-                  margin-bottom: 25px;
-                "
-              >
-                <div
-                  style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 10px;
-                  "
-                >
-                  <label
-                    class="form-label"
-                    style="color: var(--primary); margin: 0"
-                    ><i class="fas fa-magic"></i> اختر قالب جاهز</label
-                  >
-                  <small style="color: var(--secondary)"
-                    >أو صمم بنفسك من الأسفل 👇</small
-                  >
-                </div>
-                <div
-                  class="theme-grid"
-                  id="theme-library"
-                  style="
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-                    gap: 10px;
-                  "
-                ></div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">طريقة عرض المنتجات (Layout)</label>
-                <div
-                  style="
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 8px;
-                  "
-                >
-                  <button
-                    class="btn-layout active"
-                    onclick="setUiParam('layoutType', 'modern')"
-                    id="btn-layout-modern"
-                  >
-                    <i class="fas fa-bolt"></i> مودرن
-                  </button>
-                  <button
-                    class="btn-layout"
-                    onclick="setUiParam('layoutType', 'grid')"
-                    id="btn-layout-grid"
-                  >
-                    <i class="fas fa-th-large"></i> شبكة
-                  </button>
-                  <button
-                    class="btn-layout"
-                    onclick="setUiParam('layoutType', 'list')"
-                    id="btn-layout-list"
-                  >
-                    <i class="fas fa-list-ul"></i> قائمة
-                  </button>
-                  <button
-                    class="btn-layout"
-                    onclick="setUiParam('layoutType', 'focus')"
-                    id="btn-layout-focus"
-                  >
-                    <i class="fas fa-camera-retro"></i> فوكس (صور)
-                  </button>
-                  <button
-                    class="btn-layout"
-                    onclick="setUiParam('layoutType', 'minimal')"
-                    id="btn-layout-minimal"
-                  >
-                    <i class="fas fa-align-right"></i> تكست (سريع)
-                  </button>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">اللون الأساسي</label>
-                <input
-                  type="color"
-                  id="ui-primaryColor"
-                  oninput="setUiParam('primaryColor', this.value)"
-                  style="height: 50px; cursor: pointer"
-                />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">إعدادات الهيدر والغلاف</label>
-                <div
-                  style="
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    margin-bottom: 15px;
-                  "
-                >
-                  <img
-                    id="hero-preview"
-                    class="img-preview"
-                    style="width: 50px; height: 50px"
-                  />
-                  <label
-                    for="ui-heroFile"
-                    class="custom-file-upload"
-                    style="margin: 0"
-                  >
-                    <i class="fas fa-cloud-upload-alt"></i> رفع صورة الغلاف
+              <div class="form-group" style="background: var(--bg); padding: 15px; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 25px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                  <label class="form-label" style="color: var(--primary); margin: 0; font-size:16px;">
+                    <i class="fas fa-magic"></i> قوالب جاهزة
                   </label>
-                  <input
-                    type="file"
-                    id="ui-heroFile"
-                    accept="image/*"
-                    onchange="handleHeroUpload(this)"
-                  />
+                  <span class="badge" style="background:var(--primary-light); color:var(--primary)">اختر وطبق فوراً</span>
                 </div>
-
-                <div
-                  style="
-                    background: var(--bg);
-                    padding: 10px;
-                    border-radius: 10px;
-                    border: 1px solid var(--border-color);
-                  "
-                >
-                  <div
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 10px;
-                      margin-bottom: 10px;
-                    "
-                  >
-                    <i
-                      class="fas fa-adjust"
-                      style="color: var(--secondary)"
-                    ></i>
-                    <input
-                      type="range"
-                      min="0"
-                      max="90"
-                      value="30"
-                      id="ui-heroOverlay"
-                      oninput="setUiParam('heroOverlay', this.value)"
-                      style="flex: 1"
-                    />
-                    <span style="font-size: 12px; width: 50px">تعتيم</span>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 10px">
-                    <i
-                      class="fas fa-arrows-alt-v"
-                      style="color: var(--secondary)"
-                    ></i>
-                    <input
-                      type="range"
-                      min="150"
-                      max="500"
-                      value="200"
-                      id="ui-heroHeight"
-                      oninput="setUiParam('heroHeight', this.value)"
-                      style="flex: 1"
-                    />
-                    <span style="font-size: 12px; width: 50px">ارتفاع</span>
-                  </div>
-                </div>
+                <div class="theme-grid" id="theme-library" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 12px;"></div>
               </div>
 
               <div class="form-group">
+                <label class="form-label" style="font-size:15px;">طريقة عرض المنتجات (Layout)</label>
+                <div class="layout-options-grid">
+                  <button class="btn-layout active" onclick="setUiParam('layoutType', 'modern')" id="btn-layout-modern">
+                    <i class="fas fa-bolt"></i>
+                    <span>مودرن</span>
+                  </button>
+                  <button class="btn-layout" onclick="setUiParam('layoutType', 'grid')" id="btn-layout-grid">
+                    <i class="fas fa-th-large"></i>
+                    <span>شبكة</span>
+                  </button>
+                  <button class="btn-layout" onclick="setUiParam('layoutType', 'list')" id="btn-layout-list">
+                    <i class="fas fa-list-ul"></i>
+                    <span>قائمة</span>
+                  </button>
+                  <button class="btn-layout" onclick="setUiParam('layoutType', 'focus')" id="btn-layout-focus">
+                    <i class="fas fa-camera-retro"></i>
+                    <span>صور (Focus)</span>
+                  </button>
+                  <button class="btn-layout" onclick="setUiParam('layoutType', 'minimal')" id="btn-layout-minimal">
+                    <i class="fas fa-align-right"></i>
+                    <span>نصي (سريع)</span>
+                  </button>
+                  <button class="btn-layout" onclick="setUiParam('layoutType', 'magazine')" id="btn-layout-magazine">
+                    <i class="fas fa-newspaper"></i>
+                    <span>مجلة</span>
+                  </button>
+                </div>
+              </div>
+
+              <hr style="border:0; border-top:1px dashed var(--border-color); margin: 25px 0;">
+
+              <div class="form-grid">
+                 <div>
+                    <label class="form-label">اللون الأساسي</label>
+                    <div style="display:flex; align-items:center; gap:10px; border:1px solid var(--border-color); padding:5px; border-radius:12px;">
+                        <input type="color" id="ui-primaryColor" oninput="setUiParam('primaryColor', this.value)" style="height: 40px; width:40px; border:none; padding:0; background:none; cursor: pointer;">
+                        <span style="font-size:13px; color:var(--secondary);">اضغط للتغيير</span>
+                    </div>
+                 </div>
+                 <div>
+                    <label class="form-label">نوع الخط</label>
+                    <select id="ui-fontFamily" onchange="setUiParam('fontFamily', this.value)" style="height:52px;">
+                      <option value="Tajawal">Tajawal (افتراضي)</option>
+                      <option value="Cairo">Cairo (رسمي)</option>
+                      <option value="Almarai">Almarai (عصري)</option>
+                      <option value="Amiri">Amiri (كلاسيك)</option>
+                      <option value="Zain">Zain (شبابي)</option>
+                    </select>
+                 </div>
+              </div>
+
+              <div class="form-group" style="margin-top:20px;">
                 <label class="form-label">خلفية الصفحة</label>
-                <select
-                  id="ui-bgType"
-                  onchange="toggleBgInput()"
-                  style="margin-bottom: 10px"
-                >
-                  <option value="color">لون ثابت</option>
-                  <option value="pattern">نمط (Pattern)</option>
-                  <option value="image">صورة رابط</option>
-                </select>
-                <input
-                  type="color"
-                  id="ui-bgColor"
-                  oninput="setUiParam('bgValue', this.value)"
-                  style="height: 50px"
-                />
-                <div
-                  id="ui-bgImage-container"
-                  class="hidden"
-                  style="margin-top: 10px"
-                >
-                  <div style="display: flex; align-items: center; gap: 10px">
-                    <img
-                      id="bg-preview"
-                      class="img-preview"
-                      style="width: 50px; height: 50px"
-                    />
-                    <label
-                      for="ui-bgFile"
-                      class="custom-file-upload"
-                      style="margin: 0"
-                    >
-                      <i class="fas fa-cloud-upload-alt"></i> اختر صورة
-                    </label>
-                    <input
-                      type="file"
-                      id="ui-bgFile"
-                      accept="image/*"
-                      onchange="handleBgUpload(this)"
-                    />
-                  </div>
-                  <small
-                    style="
-                      color: var(--secondary);
-                      display: block;
-                      margin-top: 5px;
-                    "
-                    >يفضل صورة طولية عالية الجودة</small
-                  >
+                <div style="background:var(--bg); padding:15px; border-radius:12px; border:1px solid var(--border-color);">
+                    <select id="ui-bgType" onchange="toggleBgInput()" style="margin-bottom: 10px">
+                      <option value="color">لون ثابت</option>
+                      <option value="pattern">نمط (Pattern)</option>
+                      <option value="image">صورة خاصة</option>
+                    </select>
+                    
+                    <input type="color" id="ui-bgColor" oninput="setUiParam('bgValue', this.value)" style="height: 45px; width:100%;">
+                    
+                    <div id="ui-bgImage-container" class="hidden" style="margin-top: 10px;">
+                      <div style="display: flex; align-items: center; gap: 10px;">
+                        <img id="bg-preview" class="img-preview" style="width: 50px; height: 50px;">
+                        <label for="ui-bgFile" class="custom-file-upload" style="margin: 0; background:white;">
+                          <i class="fas fa-cloud-upload-alt"></i> رفع خلفية
+                        </label>
+                        <input type="file" id="ui-bgFile" accept="image/*" onchange="handleBgUpload(this)">
+                      </div>
+                    </div>
                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label">ستايل الكارت</label>
-                <select
-                  id="ui-cardStyle"
-                  onchange="setUiParam('cardStyle', this.value)"
-                >
-                  <option value="solid">مصمت (Solid)</option>
-                  <option value="glass">زجاجي (Glassmorphism)</option>
-                  <option value="outlined">إطار فقط</option>
-                </select>
+              <div class="form-group" style="margin-top:20px;">
+                <label class="form-label">صورة الغلاف (Header)</label>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                  <img id="hero-preview" class="img-preview" style="width: 60px; height: 60px; border-radius:10px;">
+                  <label for="ui-heroFile" class="custom-file-upload" style="margin: 0; flex:1;">
+                    <i class="fas fa-image"></i> تغيير الغلاف
+                  </label>
+                  <input type="file" id="ui-heroFile" accept="image/*" onchange="handleHeroUpload(this)">
+                </div>
+
+                <div style="background: var(--bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <i class="fas fa-adjust" style="color: var(--secondary)"></i>
+                    <input type="range" min="0" max="90" value="30" id="ui-heroOverlay" oninput="setUiParam('heroOverlay', this.value)" style="flex: 1;">
+                    <span style="font-size: 12px; font-weight:bold; width: 60px; text-align:left;">تعتيم</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-arrows-alt-v" style="color: var(--secondary)"></i>
+                    <input type="range" min="150" max="500" value="200" id="ui-heroHeight" oninput="setUiParam('heroHeight', this.value)" style="flex: 1;">
+                    <span style="font-size: 12px; font-weight:bold; width: 60px; text-align:left;">ارتفاع</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="form-group" style="margin-top:20px;">
+                 <label class="form-label">إعدادات الكروت</label>
+                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                    <div>
+                        <select id="ui-cardStyle" onchange="setUiParam('cardStyle', this.value)">
+                          <option value="solid">Solid (مصمت)</option>
+                          <option value="glass">Glass (زجاجي)</option>
+                          <option value="outlined">Outlined (إطار)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div style="display:flex; align-items:center; height:100%; gap:5px; font-size:13px; font-weight:bold; color:var(--secondary);">
+                             <span>انحناء:</span>
+                             <input type="range" min="0" max="30" id="ui-cardRadius" oninput="setUiParam('cardRadius', this.value)" style="flex:1;">
+                             <span id="radius-val">16</span>px
+                        </div>
+                    </div>
+                 </div>
               </div>
 
-              <div class="form-group">
-                <label class="form-label"
-                  >انحناء الحواف (Radius):
-                  <span id="radius-val">16</span>px</label
-                >
-                <input
-                  type="range"
-                  min="0"
-                  max="50"
-                  id="ui-cardRadius"
-                  oninput="setUiParam('cardRadius', this.value)"
-                />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">نوع الخط</label>
-                <select
-                  id="ui-fontFamily"
-                  onchange="setUiParam('fontFamily', this.value)"
-                >
-                  <option value="Tajawal">Tajawal (افتراضي)</option>
-                  <option value="Cairo">Cairo (رسمي)</option>
-                  <option value="Almarai">Almarai (عصري)</option>
-                  <option value="Amiri">Amiri (كلاسيك)</option>
-                  <option value="Zain">Zain (شبابي)</option>
-                </select>
-              </div>
-
-              <div style="display: flex; gap: 10px; margin-top: 20px">
-                <button
-                  class="btn btn-outline"
-                  onclick="resetDesign()"
-                  style="
-                    flex: 1;
-                    border-color: var(--danger);
-                    color: var(--danger);
-                  "
-                >
-                  <i class="fas fa-undo"></i> افتراضي
+              <div style="display: flex; gap: 15px; margin-top: 30px; position:sticky; bottom:0; background:var(--surface); padding-top:10px; border-top:1px solid var(--border-color);">
+                <button class="btn btn-outline" onclick="resetDesign()" style="flex: 1; border-color: var(--danger); color: var(--danger);">
+                  <i class="fas fa-undo"></i> استعادة
                 </button>
-                <button
-                  class="btn btn-success"
-                  onclick="saveDesignSettings()"
-                  style="flex: 2; font-size: 16px"
-                >
-                  <i class="fas fa-save"></i> حفظ
+                <button class="btn btn-success" onclick="saveDesignSettings()" style="flex: 2; font-size: 16px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);">
+                  <i class="fas fa-save"></i> حفظ التصميم
                 </button>
               </div>
             </div>
 
-            <div
-              style="
-                flex: 1;
-                min-width: 320px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                background: #333;
-                border-radius: 20px;
-                padding: 20px;
-              "
-            >
+            <div class="phone-mockup-wrapper">
               <div class="phone-frame">
-                <div class="notch"></div>
-                <iframe
-                  id="live-preview"
-                  src=""
-                  style="
-                    width: 100%;
-                    height: 100%;
-                    border: none;
-                    background: white;
-                  "
-                ></iframe>
+                <iframe id="live-preview" src="" scrolling="yes"></iframe>
               </div>
             </div>
+            
           </div>
         </div>
-      </div>
-    </div>
-
     <input type="hidden" id="restaurant-id" />
 
     <script>
