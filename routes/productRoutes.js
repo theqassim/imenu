@@ -1,4 +1,5 @@
 const express = require("express");
+const authController = require("../controllers/authController");
 const multer = require("multer");
 const productController = require("../controllers/productController");
 
@@ -23,17 +24,17 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
-router.post("/", upload.single("image"), productController.createProduct);
+router.use(authController.protect);
+router.use(authController.restrictTo("owner", "admin"));
 
 router.get(
   "/restaurant/:restaurantId",
   productController.getRestaurantProducts,
 );
 
+router.post("/", upload.single("image"), productController.createProduct);
 router.delete("/:id", productController.deleteProduct);
-
 router.patch("/:id/toggle", productController.toggleAvailability);
-
 router.patch("/:id", upload.single("image"), productController.updateProduct);
 
 module.exports = router;

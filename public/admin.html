@@ -15,6 +15,16 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/socket.io/socket.io.js"></script>
 
+    <script>
+      const urlParamsGate = new URLSearchParams(window.location.search);
+      const tokenGate =
+        urlParamsGate.get("t") || sessionStorage.getItem("ownerToken");
+
+      if (!tokenGate) {
+        window.location.href = "/login";
+      }
+    </script>
+
     <style>
       :root {
         --primary: #4338ca;
@@ -496,22 +506,6 @@
     </style>
   </head>
   <body>
-    <div id="login-section" class="login-wrapper">
-      <div class="login-box">
-        <div class="logo" style="justify-content: center; font-size: 28px">
-          🍕 Smart Menu
-        </div>
-        <p style="color: var(--secondary); margin-bottom: 30px">سجل دخول</p>
-        <div class="form-group">
-          <input type="email" id="email" placeholder="البريد الإلكتروني" />
-        </div>
-        <div class="form-group">
-          <input type="password" id="password" placeholder="كلمة المرور" />
-        </div>
-        <button class="btn btn-primary" onclick="login()">تسجيل الدخول</button>
-      </div>
-    </div>
-
     <div class="mobile-header">
       <div class="logo" style="margin: 0; font-size: 20px">🍕 Smart Menu</div>
       <button class="mobile-menu-btn" onclick="toggleSidebar()">
@@ -761,9 +755,19 @@
                 margin-bottom: 15px;
                 color: var(--primary);
                 font-size: 18px;
+                display: flex;
+                justify-content: space-between;
               "
             >
-              إضافة قسم جديد
+              <span id="cat-form-title">إضافة قسم جديد</span>
+              <button
+                id="btn-cancel-cat"
+                class="btn btn-outline hidden"
+                onclick="resetCategoryForm()"
+                style="font-size: 12px; padding: 2px 10px"
+              >
+                إلغاء التعديل
+              </button>
             </h3>
 
             <div
@@ -774,6 +778,8 @@
                 flex-wrap: wrap;
               "
             >
+              <input type="hidden" id="edit-cat-id" />
+
               <div style="flex-grow: 1; min-width: 200px">
                 <label class="form-label">اسم القسم</label>
                 <input type="text" id="c-name" placeholder="" />
@@ -795,12 +801,99 @@
               </div>
               <div style="width: auto">
                 <button
+                  id="btn-save-cat"
                   class="btn btn-primary"
                   style="height: 45px; padding: 0 25px"
-                  onclick="addCategory()"
+                  onclick="saveCategory()"
                 >
                   <i class="fas fa-plus"></i> حفظ
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="cat-stats-bar"
+            style="display: flex; gap: 15px; margin-bottom: 20px"
+          >
+            <div
+              style="
+                background: white;
+                padding: 15px;
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+              "
+            >
+              <div
+                style="
+                  background: var(--primary-light);
+                  color: var(--primary);
+                  width: 50px;
+                  height: 50px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 20px;
+                "
+              >
+                <i class="fas fa-layer-group"></i>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: var(--secondary)">
+                  عدد الأقسام
+                </div>
+                <div
+                  style="font-size: 20px; font-weight: 800"
+                  id="stat-total-cats"
+                >
+                  0
+                </div>
+              </div>
+            </div>
+            <div
+              style="
+                background: white;
+                padding: 15px;
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+              "
+            >
+              <div
+                style="
+                  background: #dcfce7;
+                  color: #166534;
+                  width: 50px;
+                  height: 50px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 20px;
+                "
+              >
+                <i class="fas fa-hamburger"></i>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: var(--secondary)">
+                  إجمالي المنتجات
+                </div>
+                <div
+                  style="font-size: 20px; font-weight: 800"
+                  id="stat-total-prods"
+                >
+                  0
+                </div>
               </div>
             </div>
           </div>
@@ -811,6 +904,7 @@
                 <tr>
                   <th>الغلاف</th>
                   <th>اسم القسم</th>
+                  <th>عدد المنتجات</th>
                   <th>إجراءات</th>
                 </tr>
               </thead>
@@ -1694,6 +1788,7 @@
       let categoriesData = [];
       let editingProductId = null;
       let currentUserRole = null;
+      let serverTimeOffset = 0;
 
       if (localStorage.getItem("theme") === "dark") {
         document.body.classList.add("dark-mode");
@@ -1704,6 +1799,15 @@
           const res = await fetch("/api/v1/restaurants/my-restaurant", {
             headers: { Authorization: `Bearer ${token}` },
           });
+
+          const serverDateHeader = res.headers.get("date");
+          if (serverDateHeader) {
+            const serverTime = new Date(serverDateHeader).getTime();
+            const localTime = Date.now();
+            serverTimeOffset = serverTime - localTime;
+            console.log("Server Time Offset:", serverTimeOffset);
+          }
+
           const result = await res.json();
 
           if (result.status === "success") {
@@ -1746,7 +1850,6 @@
                         </div>
                     `;
 
-            document.getElementById("login-section").style.display = "none";
             document
               .getElementById("dashboard-section")
               .classList.remove("hidden");
@@ -1774,17 +1877,15 @@
           } else {
             if (res.status === 401) {
               sessionStorage.removeItem("ownerToken");
-              document.getElementById("login-section").style.display = "flex";
-              document
-                .getElementById("dashboard-section")
-                .classList.add("hidden");
+              window.location.href = "/login";
             } else {
               Swal.fire({
                 icon: "warning",
                 title: "تنبيه",
                 text: result.message || "خطأ في البيانات",
+              }).then(() => {
+                window.location.href = "/login";
               });
-              document.getElementById("login-section").style.display = "flex";
             }
           }
         } catch (e) {
@@ -1824,79 +1925,6 @@
         }
       }
 
-      async function login() {
-        const emailInput = document.getElementById("email");
-        const passwordInput = document.getElementById("password");
-        const btn = document.querySelector("#login-section .btn-primary");
-
-        const email = emailInput.value;
-        const password = passwordInput.value;
-
-        if (!email || !password) {
-          return Swal.fire(
-            "تنبيه",
-            "من فضلك اكتب الإيميل والباسورد",
-            "warning",
-          );
-        }
-
-        const originalText = btn.innerText;
-        btn.innerText = "جاري التحقق...";
-        btn.disabled = true;
-
-        try {
-          const res = await fetch("/api/v1/users/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          });
-
-          const contentType = res.headers.get("content-type");
-          let data;
-
-          if (contentType && contentType.indexOf("application/json") !== -1) {
-            data = await res.json();
-          } else {
-            const text = await res.text();
-            console.error("Server Error (HTML):", text);
-            throw new Error(
-              "حدث خطأ في السيرفر (500). راجع الكونسول للتفاصيل.",
-            );
-          }
-
-          if (res.ok && data.status === "success") {
-            sessionStorage.setItem("ownerToken", data.token);
-
-            if (data.data && data.data.user) {
-              sessionStorage.setItem("currentUserName", data.data.user.name);
-              if (data.data.user.shiftEnd) {
-                sessionStorage.setItem("shiftEnd", data.data.user.shiftEnd);
-              } else {
-                sessionStorage.removeItem("shiftEnd");
-              }
-            }
-
-            token = data.token;
-            initDashboard();
-          } else {
-            Swal.fire({
-              icon: "error",
-              title: "تنبيه",
-              text: data.message || "بيانات الدخول غير صحيحة",
-            });
-          }
-        } catch (e) {
-          console.error("Login Error:", e);
-          Swal.fire({
-            icon: "error",
-            title: "خطأ",
-            text: e.message || "فشل الاتصال بالسيرفر",
-          });
-        } finally {
-          btn.innerText = originalText;
-          btn.disabled = false;
-        }
-      }
       function switchView(viewName) {
         localStorage.setItem("lastActiveView", viewName);
 
@@ -2027,28 +2055,72 @@
 
       async function loadCategories() {
         const rId = document.getElementById("restaurant-id").value;
-        const res = await fetch(`/api/v1/categories/${rId}`);
-        const result = await res.json();
-        categoriesData = result.data.categories;
-        updateCategoryDropdowns();
         const list = document.getElementById("categories-list");
-        list.innerHTML = "";
-        categoriesData.forEach((cat) => {
-          const img = cat.image
-            ? `<img src="${cat.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover">`
-            : '<i class="fas fa-folder" style="font-size:24px; color:#cbd5e1"></i>';
-          list.innerHTML += `
-                    <tr>
-                        <td>${img}</td>
-                        <td style="font-weight:bold">${cat.name}</td>
-                        <td>
-                            <button class="btn btn-outline" style="padding:5px 10px; color:var(--danger); border-color:var(--danger)" onclick="deleteCategory('${cat._id}')"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-        });
-      }
 
+        const statCats = document.getElementById("stat-total-cats");
+        const statProds = document.getElementById("stat-total-prods");
+
+        try {
+          const res = await fetch(`/api/v1/categories/${rId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (res.status === 401) return;
+
+          const result = await res.json();
+
+          if (result.status === "success") {
+            categoriesData = result.data.categories;
+            updateCategoryDropdowns();
+            list.innerHTML = "";
+
+            if (result.data.stats) {
+              if (statCats) statCats.innerText = result.data.stats.totalCats;
+              if (statProds) statProds.innerText = result.data.stats.totalProds;
+            }
+
+            if (categoriesData.length === 0) {
+              list.innerHTML =
+                '<tr><td colspan="4" style="text-align:center; padding:20px; color:#94a3b8">لا توجد أقسام مضافة</td></tr>';
+              return;
+            }
+
+            categoriesData.forEach((cat) => {
+              const img = cat.image
+                ? `<img src="${cat.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover">`
+                : '<i class="fas fa-folder" style="font-size:24px; color:#cbd5e1"></i>';
+
+              const countBadgeColor =
+                cat.productCount > 0
+                  ? "background:var(--primary-light); color:var(--primary)"
+                  : "background:#f1f5f9; color:#64748b";
+
+              list.innerHTML += `
+    <tr>
+        <td>${img}</td>
+        <td style="font-weight:bold">${cat.name}</td>
+        <td>
+            <span class="badge" style="${countBadgeColor}; font-size:13px">
+                ${cat.productCount || 0} منتج
+            </span>
+        </td>
+        <td>
+             <button class="btn btn-outline" style="padding:5px 10px; color:var(--primary); border-color:var(--primary)" 
+                onclick="editCategory('${cat._id}', '${cat.name}', '${cat.image || ""}')">
+                <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn btn-outline" style="padding:5px 10px; color:var(--danger); border-color:var(--danger)" onclick="deleteCategory('${cat._id}')"><i class="fas fa-trash"></i></button>
+        </td>
+    </tr>
+`;
+            });
+          }
+        } catch (e) {
+          console.error("Error loading categories:", e);
+          list.innerHTML =
+            '<tr><td colspan="4" style="text-align:center; color:red">خطأ في تحميل الأقسام</td></tr>';
+        }
+      }
       function updateCategoryDropdowns() {
         const select = document.getElementById("p-cat");
         const currentVal = select.value;
@@ -2066,34 +2138,166 @@
         const name = document.getElementById("c-name").value;
         const imageFile = document.getElementById("c-image").files[0];
         const rId = document.getElementById("restaurant-id").value;
+
         if (!name) return Swal.fire("تنبيه", "اكتب اسم القسم", "warning");
+
         const formData = new FormData();
         formData.append("name", name);
         formData.append("restaurantId", rId);
         if (imageFile) formData.append("image", imageFile);
-        Swal.showLoading();
-        await fetch("/api/v1/categories", { method: "POST", body: formData });
-        Swal.close();
-        document.getElementById("c-name").value = "";
-        document.getElementById("c-image").value = "";
-        document.getElementById("c-preview").style.display = "none";
-        loadCategories();
-        Swal.fire({ toast: true, icon: "success", title: "تمت الإضافة" });
-      }
 
+        Swal.showLoading();
+
+        try {
+          const res = await fetch("/api/v1/categories", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+
+          if (res.status === 401) {
+            sessionStorage.removeItem("ownerToken");
+            window.location.href = "/login";
+            return;
+          }
+
+          const data = await res.json();
+          Swal.close();
+
+          if (data.status === "success") {
+            document.getElementById("c-name").value = "";
+            document.getElementById("c-image").value = "";
+            document.getElementById("c-preview").style.display = "none";
+            loadCategories();
+            Swal.fire({ toast: true, icon: "success", title: "تمت الإضافة" });
+          } else {
+            Swal.fire("خطأ", data.message || "فشل إضافة القسم", "error");
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "حدث خطأ في الاتصال بالسيرفر", "error");
+        }
+      }
       async function deleteCategory(id) {
         if (
           (
             await Swal.fire({
               title: "حذف القسم؟",
+              text: "سيتم حذف القسم وجميع المنتجات بداخله!",
               icon: "warning",
               showCancelButton: true,
+              confirmButtonColor: "#ef4444",
+              confirmButtonText: "نعم، احذف",
+              cancelButtonText: "إلغاء",
             })
           ).isConfirmed
         ) {
-          await fetch(`/api/v1/categories/${id}`, { method: "DELETE" });
-          loadCategories();
+          try {
+            const res = await fetch(`/api/v1/categories/${id}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (res.status === 401) {
+              window.location.href = "/login";
+              return;
+            }
+
+            if (res.ok) {
+              Swal.fire({ toast: true, icon: "success", title: "تم الحذف" });
+              loadCategories();
+            } else {
+              Swal.fire("خطأ", "فشل الحذف", "error");
+            }
+          } catch (e) {
+            Swal.fire("خطأ", "مشكلة في الاتصال", "error");
+          }
         }
+      }
+
+      async function saveCategory() {
+        const id = document.getElementById("edit-cat-id").value;
+        const name = document.getElementById("c-name").value;
+        const imageFile = document.getElementById("c-image").files[0];
+        const rId = document.getElementById("restaurant-id").value;
+
+        if (!name) return Swal.fire("تنبيه", "اكتب اسم القسم", "warning");
+
+        const formData = new FormData();
+        formData.append("name", name);
+        if (imageFile) formData.append("image", imageFile);
+
+        let url = "/api/v1/categories";
+        let method = "POST";
+
+        if (id) {
+          url = `/api/v1/categories/${id}`;
+          method = "PATCH";
+        } else {
+          formData.append("restaurantId", rId);
+        }
+
+        Swal.showLoading();
+        try {
+          const res = await fetch(url, {
+            method: method,
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+          const data = await res.json();
+          Swal.close();
+
+          if (data.status === "success") {
+            resetCategoryForm();
+            loadCategories();
+            Swal.fire({
+              toast: true,
+              icon: "success",
+              title: id ? "تم التعديل" : "تمت الإضافة",
+            });
+          } else {
+            Swal.fire("خطأ", data.message, "error");
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "حدث خطأ في الاتصال", "error");
+        }
+      }
+
+      function editCategory(id, name, image) {
+        document.getElementById("edit-cat-id").value = id;
+        document.getElementById("c-name").value = name;
+        document.getElementById("cat-form-title").innerText =
+          "تعديل القسم: " + name;
+        document.getElementById("btn-save-cat").innerHTML =
+          '<i class="fas fa-save"></i> تحديث';
+        document.getElementById("btn-save-cat").classList.remove("btn-primary");
+        document.getElementById("btn-save-cat").style.backgroundColor =
+          "var(--warning)";
+        document.getElementById("btn-save-cat").style.color = "white";
+        document.getElementById("btn-cancel-cat").classList.remove("hidden");
+
+        if (image) {
+          document.getElementById("c-preview").src = image;
+          document.getElementById("c-preview").style.display = "block";
+        } else {
+          document.getElementById("c-preview").style.display = "none";
+        }
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function resetCategoryForm() {
+        document.getElementById("edit-cat-id").value = "";
+        document.getElementById("c-name").value = "";
+        document.getElementById("c-image").value = "";
+        document.getElementById("c-preview").style.display = "none";
+        document.getElementById("cat-form-title").innerText = "إضافة قسم جديد";
+        document.getElementById("btn-save-cat").innerHTML =
+          '<i class="fas fa-plus"></i> حفظ';
+        document.getElementById("btn-save-cat").classList.add("btn-primary");
+        document.getElementById("btn-save-cat").style.backgroundColor = "";
+        document.getElementById("btn-save-cat").style.color = "";
+        document.getElementById("btn-cancel-cat").classList.add("hidden");
       }
 
       function searchTable() {
@@ -2107,28 +2311,48 @@
 
       async function loadProducts() {
         const rId = document.getElementById("restaurant-id").value;
-        const res = await fetch(`/api/v1/products/restaurant/${rId}`);
-        const result = await res.json();
         const tbody = document.getElementById("products-list");
-        tbody.innerHTML = "";
-        if (result.data.products.length === 0) {
-          tbody.innerHTML =
-            '<tr><td colspan="6" style="text-align:center; padding:20px; color:#94a3b8">لا توجد منتجات حتى الآن</td></tr>';
-          return;
-        }
-        result.data.products.forEach((p) => {
-          const img = p.image
-            ? `<img src="${p.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover">`
-            : '<span style="color:#ccc">—</span>';
-          const pData = encodeURIComponent(JSON.stringify(p));
-          const toggleIcon = p.isAvailable
-            ? '<i class="fas fa-eye"></i>'
-            : '<i class="fas fa-eye-slash"></i>';
-          const toggleClass = p.isAvailable ? "btn-outline" : "btn-outline";
-          const toggleStyle = p.isAvailable
-            ? "color:var(--success); border-color:var(--success)"
-            : "color:#94a3b8";
-          tbody.innerHTML += `
+
+        try {
+          const res = await fetch(`/api/v1/products/restaurant/${rId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (res.status === 401) {
+            sessionStorage.removeItem("ownerToken");
+            window.location.href = "/login";
+            return;
+          }
+
+          const result = await res.json();
+
+          if (result.status === "success") {
+            tbody.innerHTML = "";
+
+            if (result.data.products.length === 0) {
+              tbody.innerHTML =
+                '<tr><td colspan="6" style="text-align:center; padding:20px; color:#94a3b8">لا توجد منتجات حتى الآن</td></tr>';
+              return;
+            }
+
+            result.data.products.forEach((p) => {
+              const img = p.image
+                ? `<img src="${p.image}" style="width:40px; height:40px; border-radius:8px; object-fit:cover">`
+                : '<span style="color:#ccc">—</span>';
+
+              const pData = encodeURIComponent(JSON.stringify(p));
+
+              const toggleIcon = p.isAvailable
+                ? '<i class="fas fa-eye"></i>'
+                : '<i class="fas fa-eye-slash"></i>';
+
+              const toggleClass = "btn-outline";
+
+              const toggleStyle = p.isAvailable
+                ? "color:var(--success); border-color:var(--success)"
+                : "color:#94a3b8";
+
+              tbody.innerHTML += `
                     <tr>
                         <td>${img}</td>
                         <td style="font-weight:bold; color:var(--text-main)">${p.name.ar}</td>
@@ -2143,7 +2367,15 @@
                         </td>
                     </tr>
                 `;
-        });
+            });
+          } else {
+            console.error("Failed to load products:", result.message);
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red">فشل تحميل المنتجات: ${result.message}</td></tr>`;
+          }
+        } catch (e) {
+          console.error("Error loading products:", e);
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red">حدث خطأ في الاتصال بالسيرفر</td></tr>`;
+        }
       }
 
       async function saveProduct(method) {
@@ -2328,33 +2560,58 @@
       function addBulkRow() {
         const container = document.getElementById("bulk-container");
         const rowId = Date.now();
+
         let catOptions = '<option value="">-- القسم --</option>';
         categoriesData.forEach((cat) => {
           catOptions += `<option value="${cat.name}">${cat.name}</option>`;
         });
+
         const html = `
-                <div class="bulk-card" id="row-${rowId}">
-                    <button class="btn-remove-row" onclick="removeBulkRow('${rowId}')"><i class="fas fa-times"></i></button>
-                   <div class="form-grid">
-                        <input type="text" class="b-name" placeholder="اسم المنتج">
-                        <div style="display: flex; gap: 5px;">
-                            <input type="number" class="b-price" placeholder="السعر الحالي (بعد الخصم)" style="flex: 1; font-weight:bold;">
-                            <input type="number" class="b-old-price" placeholder="السعر الأصلي (كان كام؟)" style="flex: 1; border:1px dashed var(--danger); background:#fff1f2; color: var(--danger);">
-                        </div>
+        <div class="bulk-card" id="row-${rowId}">
+            <button class="btn-remove-row" onclick="removeBulkRow('${rowId}')"><i class="fas fa-times"></i></button>
+            
+            <div class="form-grid">
+                <input type="text" class="b-name" placeholder="اسم المنتج">
+                
+                <div style="background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 13px;">
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="mode-${rowId}" value="single" checked onchange="toggleBulkPricing('${rowId}')"> 
+                            سعر موحد
+                        </label>
+                        <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <input type="radio" name="mode-${rowId}" value="multi" onchange="toggleBulkPricing('${rowId}')"> 
+                            أحجام متعددة
+                        </label>
                     </div>
-                    <div class="form-grid" style="margin-top:10px">
-                        <select class="b-cat">${catOptions}</select>
-                        <div style="display:flex; align-items:center;">
-                            <img id="preview-${rowId}" class="img-preview">
-                            <label for="img-${rowId}" class="custom-file-upload">
-                                <i class="fas fa-cloud-upload-alt"></i> صورة
-                            </label>
-                            <input type="file" id="img-${rowId}" class="b-image" accept="image/*" onchange="previewImage(this, 'preview-${rowId}')">
-                        </div>
+
+                    <div id="single-inputs-${rowId}" style="display: flex; gap: 5px;">
+                        <input type="number" class="b-price" placeholder="السعر" style="flex: 1; font-weight:bold;">
+                        <input type="number" class="b-old-price" placeholder="السعر قبل الخصم" style="flex: 1; border:1px dashed var(--danger); background:#fff1f2;">
                     </div>
-                    <textarea class="b-desc" rows="1" placeholder="الوصف (اختياري)" style="margin-top:10px"></textarea>
+
+                    <div id="multi-inputs-${rowId}" class="hidden">
+                        <div id="sizes-container-${rowId}" class="bulk-sizes-list"></div>
+                        <button class="btn btn-outline" style="width:100%; border-style:dashed; font-size:12px; padding:5px;" onclick="addBulkSizeRow('${rowId}')">
+                            <i class="fas fa-plus"></i> إضافة حجم
+                        </button>
+                    </div>
                 </div>
-            `;
+            </div>
+
+            <div class="form-grid" style="margin-top:10px">
+                <select class="b-cat">${catOptions}</select>
+                <div style="display:flex; align-items:center;">
+                    <img id="preview-${rowId}" class="img-preview">
+                    <label for="img-${rowId}" class="custom-file-upload">
+                        <i class="fas fa-cloud-upload-alt"></i> صورة
+                    </label>
+                    <input type="file" id="img-${rowId}" class="b-image" accept="image/*" onchange="previewImage(this, 'preview-${rowId}')">
+                </div>
+            </div>
+            <textarea class="b-desc" rows="1" placeholder="الوصف (اختياري)" style="margin-top:10px"></textarea>
+        </div>
+    `;
         container.insertAdjacentHTML("beforeend", html);
       }
 
@@ -3089,15 +3346,18 @@
       }
 
       function checkTime(shiftEndStr) {
-        const now = new Date();
+        const now = new Date(Date.now() + serverTimeOffset);
+
         const [endH, endM] = shiftEndStr.split(":").map(Number);
 
         const currentMinutes = now.getHours() * 60 + now.getMinutes();
         const endMinutes = endH * 60 + endM;
 
+        const isOvernightOverlap = currentMinutes - endMinutes > 720;
+
         const gracePeriod = 10;
 
-        if (currentMinutes > endMinutes) {
+        if (currentMinutes > endMinutes && !isOvernightOverlap) {
           const diff = currentMinutes - endMinutes;
 
           if (diff < gracePeriod) {
@@ -3915,6 +4175,143 @@
             }
           } catch (e) {}
         }, 60000);
+      }
+
+      function toggleBulkPricing(rowId) {
+        const mode = document.querySelector(
+          `input[name="mode-${rowId}"]:checked`,
+        ).value;
+        const singleDiv = document.getElementById(`single-inputs-${rowId}`);
+        const multiDiv = document.getElementById(`multi-inputs-${rowId}`);
+
+        if (mode === "single") {
+          singleDiv.classList.remove("hidden");
+          multiDiv.classList.add("hidden");
+        } else {
+          singleDiv.classList.add("hidden");
+          multiDiv.classList.remove("hidden");
+
+          const container = document.getElementById(`sizes-container-${rowId}`);
+          if (container.innerHTML.trim() === "") {
+            addBulkSizeRow(rowId);
+          }
+        }
+      }
+
+      function addBulkSizeRow(rowId) {
+        const container = document.getElementById(`sizes-container-${rowId}`);
+        const sizeHtml = `
+        <div class="b-size-row" style="display:flex; gap:5px; margin-bottom:5px; align-items:center;">
+            <input type="text" class="bs-name" placeholder="الاسم (مثال: وسط)" style="flex:2; font-size:12px;">
+            <input type="number" class="bs-price" placeholder="السعر" style="flex:1; font-size:12px;">
+            <input type="number" class="bs-old" placeholder="قديم" style="flex:1; font-size:12px; background:#fff1f2;">
+            <button onclick="this.parentElement.remove()" style="background:none; border:none; color:red; cursor:pointer;"><i class="fas fa-times"></i></button>
+        </div>
+    `;
+        container.insertAdjacentHTML("beforeend", sizeHtml);
+      }
+      async function submitBulkAll() {
+        const rows = document.querySelectorAll(".bulk-card");
+        const rId = document.getElementById("restaurant-id").value;
+        let promises = [];
+        let validCount = 0;
+
+        for (const row of rows) {
+          const rowId = row.id.split("-")[1];
+
+          const name = row.querySelector(".b-name").value;
+          const cat = row.querySelector(".b-cat").value;
+          const desc = row.querySelector(".b-desc").value;
+          const imageFile = row.querySelector(".b-image").files[0];
+          const mode = row.querySelector(
+            `input[name="mode-${rowId}"]:checked`,
+          ).value;
+
+          if (!name || !cat) continue;
+
+          let finalPrice = 0;
+          let finalOldPrice = 0;
+          let finalSizes = [];
+
+          if (mode === "single") {
+            const priceVal = row.querySelector(".b-price").value;
+            if (!priceVal) continue;
+
+            finalPrice = parseFloat(priceVal);
+            finalOldPrice =
+              parseFloat(row.querySelector(".b-old-price").value) || 0;
+            if (finalOldPrice <= finalPrice) finalOldPrice = 0;
+          } else {
+            const sizeRows = row.querySelectorAll(
+              `#sizes-container-${rowId} .b-size-row`,
+            );
+            if (sizeRows.length === 0) continue;
+
+            let hasValidSize = false;
+            sizeRows.forEach((sr) => {
+              const sName = sr.querySelector(".bs-name").value;
+              const sPrice = parseFloat(sr.querySelector(".bs-price").value);
+              let sOld = parseFloat(sr.querySelector(".bs-old").value) || 0;
+
+              if (sName && sPrice) {
+                if (sOld <= sPrice) sOld = 0;
+                finalSizes.push({ name: sName, price: sPrice, oldPrice: sOld });
+                hasValidSize = true;
+              }
+            });
+
+            if (!hasValidSize) continue;
+
+            finalPrice = finalSizes[0].price;
+            finalOldPrice = 0;
+          }
+
+          validCount++;
+          const formData = new FormData();
+          formData.append("restaurantId", rId);
+          formData.append("name", JSON.stringify({ ar: name, en: name }));
+          formData.append("description", JSON.stringify({ ar: desc, en: "" }));
+          formData.append("category", cat);
+          formData.append("price", finalPrice);
+          formData.append("oldPrice", finalOldPrice);
+          formData.append("sizes", JSON.stringify(finalSizes));
+
+          if (imageFile) formData.append("image", imageFile);
+
+          promises.push(
+            fetch("/api/v1/products", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              body: formData,
+            }),
+          );
+        }
+
+        if (validCount === 0)
+          return Swal.fire(
+            "تنبيه",
+            "تأكد من إدخال الاسم، القسم، والسعر لمنتج واحد على الأقل",
+            "warning",
+          );
+
+        Swal.showLoading();
+
+        try {
+          await Promise.all(promises);
+          Swal.close();
+          Swal.fire({
+            toast: true,
+            icon: "success",
+            title: `تم رفع ${validCount} منتجات بنجاح`,
+          });
+
+          document.getElementById("bulk-container").innerHTML = "";
+          addBulkRow();
+          loadProducts();
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "حدث خطأ أثناء الرفع، راجع المدخلات", "error");
+        }
       }
     </script>
   </body>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تسجيل الدخول | Smart Menu</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+      :root {
+        --primary: #6366f1;
+        --accent: #8b5cf6;
+        --bg-color: #0f172a;
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text: #f8fafc;
+      }
+
+      body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: "Tajawal", sans-serif;
+        background-color: var(--bg-color);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .background-anim {
+        position: absolute;
+        width: 200vw;
+        height: 200vh;
+        background:
+          radial-gradient(circle, var(--primary) 0%, transparent 50%),
+          radial-gradient(circle, var(--accent) 0%, transparent 50%);
+        background-size:
+          50% 50%,
+          60% 60%;
+        background-position:
+          0 0,
+          100% 100%;
+        opacity: 0.15;
+        animation: bgMove 15s linear infinite alternate;
+        z-index: 0;
+      }
+
+      @keyframes bgMove {
+        0% {
+          transform: translate(-20%, -20%) rotate(0deg);
+        }
+        100% {
+          transform: translate(0%, 0%) rotate(10deg);
+        }
+      }
+
+      .container {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+      }
+
+      .login-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        padding: 40px 30px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        transform: translateY(20px);
+        opacity: 0;
+        animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes slideUp {
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      .logo {
+        text-align: center;
+        font-size: 32px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #94a3b8;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .form-group i {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        transition: 0.3s;
+      }
+
+      input {
+        width: 100%;
+        padding: 14px 45px 14px 15px;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        color: white;
+        font-family: inherit;
+        font-size: 15px;
+        box-sizing: border-box;
+        transition: 0.3s;
+        outline: none;
+      }
+
+      input:focus {
+        border-color: var(--primary);
+        background: rgba(15, 23, 42, 0.8);
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+      }
+
+      input:focus + i {
+        color: var(--primary);
+      }
+
+      .btn-login {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--accent) 100%
+        );
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.3s;
+        position: relative;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+
+      .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+      }
+
+      .btn-login::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: 0.5s;
+      }
+
+      .btn-login:hover::after {
+        left: 100%;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 25px;
+        color: #64748b;
+        font-size: 12px;
+      }
+
+      .shape {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(50px);
+        z-index: 1;
+        opacity: 0.4;
+      }
+      .shape-1 {
+        width: 300px;
+        height: 300px;
+        background: var(--primary);
+        top: -100px;
+        left: -100px;
+        animation: float 8s ease-in-out infinite;
+      }
+      .shape-2 {
+        width: 250px;
+        height: 250px;
+        background: var(--accent);
+        bottom: -50px;
+        right: -50px;
+        animation: float 10s ease-in-out infinite reverse;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-30px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="background-anim"></div>
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+
+    <div class="container">
+      <div class="login-card">
+        <div class="logo">🍕 Smart Menu</div>
+        <div class="subtitle">سجل دخولك لإدارة مطعمك باحترافية</div>
+
+        <form
+          id="loginForm"
+          onsubmit="
+            event.preventDefault();
+            handleLogin();
+          "
+        >
+          <div class="form-group">
+            <input
+              type="email"
+              id="email"
+              placeholder="البريد الإلكتروني"
+              required
+            />
+            <i class="fas fa-envelope"></i>
+          </div>
+
+          <div class="form-group">
+            <input
+              type="password"
+              id="password"
+              placeholder="كلمة المرور"
+              required
+            />
+            <i class="fas fa-lock"></i>
+          </div>
+
+          <button type="submit" class="btn-login" id="btn-submit">
+            تسجيل الدخول
+            <i
+              class="fas fa-arrow-left"
+              style="margin-right: 8px; font-size: 12px"
+            ></i>
+          </button>
+        </form>
+
+        <div class="footer">© 2026 Smart Menu System. All rights reserved.</div>
+      </div>
+    </div>
+
+    <script>
+      async function handleLogin() {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const btn = document.getElementById("btn-submit");
+
+        if (!email || !password) return;
+
+        const originalText = btn.innerHTML;
+        btn.innerHTML =
+          '<i class="fas fa-circle-notch fa-spin"></i> جاري التحقق...';
+        btn.style.opacity = "0.8";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch("/api/v1/users/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await res.json();
+
+          if (data.status === "success") {
+            const user = data.data.user;
+
+            if (user.role === "admin") {
+              localStorage.setItem("superAdminToken", data.token);
+
+              Swal.fire({
+                icon: "success",
+                title: "مرحباً، Super Admin",
+                showConfirmButton: false,
+                timer: 1000,
+                background: "#1e293b",
+                color: "#fff",
+              }).then(() => {
+                window.location.href = "/super-admin";
+              });
+            } else if (["owner", "cashier", "kitchen"].includes(user.role)) {
+              sessionStorage.setItem("ownerToken", data.token);
+              sessionStorage.setItem("currentUserName", user.name);
+
+              if (user.shiftEnd)
+                sessionStorage.setItem("shiftEnd", user.shiftEnd);
+              else sessionStorage.removeItem("shiftEnd");
+
+              Swal.fire({
+                icon: "success",
+                title: `أهلاً بك، ${user.name}`,
+                text: "جاري توجيهك للوحة التحكم...",
+                showConfirmButton: false,
+                timer: 1000,
+                background: "#1e293b",
+                color: "#fff",
+              }).then(() => {
+                window.location.href = "/owner";
+              });
+            } else {
+              Swal.fire(
+                "تنبيه",
+                "ليس لديك صلاحية الوصول للوحة التحكم",
+                "warning",
+              );
+              btn.innerHTML = originalText;
+              btn.disabled = false;
+            }
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "خطأ",
+              text: data.message || "بيانات الدخول غير صحيحة",
+              background: "#1e293b",
+              color: "#fff",
+            });
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "حدث خطأ في الاتصال بالسيرفر", "error");
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      }
+    </script>
+  </body>
+</html>

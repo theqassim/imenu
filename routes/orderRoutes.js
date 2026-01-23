@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 const Order = require("../models/Order");
+const Restaurant = require("../models/Restaurant");
 const authController = require("../controllers/authController");
 
 router.post("/", async (req, res) => {
@@ -17,7 +18,6 @@ router.post("/", async (req, res) => {
       discountAmount,
     } = req.body;
     const Coupon = require("../models/Coupon");
-    const Order = require("../models/Order");
 
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
@@ -69,11 +69,41 @@ router.post("/", async (req, res) => {
   }
 });
 
+const checkPermission = async (user, restaurantId) => {
+  if (user.role === "admin") return true;
+
+  if (user.role === "owner") {
+    const isOwner = await Restaurant.exists({
+      _id: restaurantId,
+      owner: user._id,
+    });
+    return !!isOwner;
+  } else {
+    return (
+      user.restaurant && user.restaurant.toString() === restaurantId.toString()
+    );
+  }
+};
+
 router.get(
   "/:restaurantId/active",
   authController.protect,
   async (req, res) => {
     try {
+      const hasAccess = await checkPermission(
+        req.user,
+        req.params.restaurantId,
+      );
+
+      if (!hasAccess) {
+        return res
+          .status(403)
+          .json({
+            status: "fail",
+            message: "ليس لديك صلاحية لرؤية طلبات هذا المطعم",
+          });
+      }
+
       const orders = await Order.find({
         restaurant: req.params.restaurantId,
         status: { $in: ["pending", "preparing"] },
@@ -91,6 +121,16 @@ router.get(
   authController.protect,
   async (req, res) => {
     try {
+      const hasAccess = await checkPermission(
+        req.user,
+        req.params.restaurantId,
+      );
+      if (!hasAccess) {
+        return res
+          .status(403)
+          .json({ status: "fail", message: "ليس لديك صلاحية" });
+      }
+
       const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
       const orders = await Order.find({
@@ -111,6 +151,16 @@ router.get(
   authController.protect,
   async (req, res) => {
     try {
+      const hasAccess = await checkPermission(
+        req.user,
+        req.params.restaurantId,
+      );
+      if (!hasAccess) {
+        return res
+          .status(403)
+          .json({ status: "fail", message: "ليس لديك صلاحية" });
+      }
+
       let query = {
         restaurant: req.params.restaurantId,
         status: { $in: ["completed", "canceled"] },
@@ -168,24 +218,45 @@ router.get(
   },
 );
 
-router.patch("/:id/status", async (req, res) => {
-  try {
-    const { status } = req.body;
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true },
-    );
+router.patch(
+  "/:id/status",
+  authController.protect,
+  authController.restrictTo("owner", "cashier", "kitchen", "admin"),
+  async (req, res) => {
+    try {
+      const { status } = req.body;
 
-    if (req.io) {
-      req.io.to(req.params.id).emit("status-changed", order.status);
-      req.io.to(order.restaurant.toString()).emit("order-updated", order);
+      const orderToUpdate = await Order.findById(req.params.id);
+      if (!orderToUpdate)
+        return res.status(404).json({ message: "الطلب غير موجود" });
+
+      const hasAccess = await checkPermission(
+        req.user,
+        orderToUpdate.restaurant,
+      );
+
+      if (!hasAccess) {
+        return res
+          .status(403)
+          .json({ message: "لا تملك صلاحية لتحديث هذا الطلب" });
+      }
+
+      const order = await Order.findByIdAndUpdate(
+        req.params.id,
+        { status },
+        { new: true },
+      );
+
+      if (req.io) {
+        req.io.to(req.params.id).emit("status-changed", order.status);
+        req.io.to(order.restaurant.toString()).emit("order-updated", order);
+      }
+
+      res.status(200).json({ status: "success", data: { order } });
+    } catch (err) {
+      res.status(400).json({ status: "fail", message: err.message });
     }
-
-    res.status(200).json({ status: "success", data: { order } });
-  } catch (err) {
-    res.status(400).json({ status: "fail", message: err.message });
-  }
-});
+  },
+);
 
 module.exports = router;

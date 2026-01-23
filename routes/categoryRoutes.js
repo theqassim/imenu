@@ -1,4 +1,5 @@
 const express = require("express");
+const authController = require("../controllers/authController");
 const multer = require("multer");
 const categoryController = require("../controllers/categoryController");
 const cloudinary = require("cloudinary").v2;
@@ -21,8 +22,27 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-router.post("/", upload.single("image"), categoryController.createCategory);
 router.get("/:restaurantId", categoryController.getRestaurantCategories);
-router.delete("/:id", categoryController.deleteCategory);
+
+router.post(
+  "/",
+  authController.protect,
+  authController.restrictTo("owner", "admin"),
+  upload.single("image"),
+  categoryController.createCategory,
+);
+router.delete(
+  "/:id",
+  authController.protect,
+  authController.restrictTo("owner", "admin"),
+  categoryController.deleteCategory,
+);
+router.patch(
+  "/:id",
+  authController.protect,
+  authController.restrictTo("owner", "admin"),
+  upload.single("image"),
+  categoryController.updateCategory,
+);
 
 module.exports = router;

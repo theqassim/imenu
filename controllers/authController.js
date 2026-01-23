@@ -29,23 +29,36 @@ const createSendToken = (user, statusCode, res) => {
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, phone, role, subscriptionExpires } =
-      req.body;
+    const {
+      name,
+      email,
+      password,
+      passwordConfirm,
+      phone,
+      role,
+      subscriptionExpires,
+    } = req.body;
+
+    if (password !== passwordConfirm) {
+      return res
+        .status(400)
+        .json({ status: "fail", message: "كلمات المرور غير متطابقة!" });
+    }
 
     if (role === "admin") {
       return res
         .status(403)
-        .json({ status: "fail", message: "غير مسموح بإنشاء أدمن" });
+        .json({
+          status: "fail",
+          message: "غير مسموح بإنشاء حساب مسؤول (Admin) بهذه الطريقة.",
+        });
     }
 
     let expiryDate = null;
-
     if (subscriptionExpires) {
       expiryDate = new Date(subscriptionExpires);
       if (!isNaN(expiryDate.getTime())) {
         expiryDate.setHours(23, 59, 59, 999);
-      } else {
-        expiryDate = null;
       }
     }
 
@@ -62,30 +75,23 @@ exports.signup = async (req, res) => {
 
     createSendToken(newUser, 201, res);
   } catch (err) {
-    res.status(400).json({ status: "fail", message: err.message });
+    let message = "حدث خطأ أثناء التسجيل";
+    if (err.code === 11000) message = "هذا البريد الإلكتروني مسجل بالفعل!";
+    res.status(400).json({ status: "fail", message });
   }
 };
 
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password) {
       return res
         .status(400)
-        .json({ status: "fail", message: "من فضلك اكتب الإيميل والباسورد" });
-    }
-
-    if (
-      email === process.env.SUPER_ADMIN_EMAIL &&
-      password === process.env.SUPER_ADMIN_PASSWORD
-    ) {
-      const superAdminUser = {
-        _id: SUPER_ADMIN_ID,
-        name: "Super Admin",
-        email: email,
-        role: "admin",
-      };
-      return createSendToken(superAdminUser, 200, res);
+        .json({
+          status: "fail",
+          message: "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+        });
     }
 
     const user = await User.findOne({ email }).select("+password");
@@ -93,94 +99,32 @@ exports.login = async (req, res) => {
     if (!user || !(await user.correctPassword(password, user.password))) {
       return res
         .status(401)
-        .json({ status: "fail", message: "الإيميل أو كلمة المرور خطأ" });
+        .json({ status: "fail", message: "بيانات الدخول غير صحيحة" });
     }
 
-    if (user.role === "owner") {
-      if (user.subscriptionExpires && new Date() > user.subscriptionExpires) {
-        user.active = false;
-        await user.save({ validateBeforeSave: false });
-        return res
-          .status(403)
-          .json({ status: "fail", message: "انتهت مدة اشتراكك" });
-      }
-      if (user.active === false) {
+    if (!user.active) {
+      if (
+        user.role === "owner" &&
+        user.subscriptionExpires &&
+        new Date() > user.subscriptionExpires
+      ) {
         return res
           .status(401)
-          .json({ status: "fail", message: "هذا الحساب معطل حالياً" });
+          .json({
+            status: "fail",
+            message: "عذراً، انتهت فترة الاشتراك الخاصة بك",
+          });
       }
+      return res
+        .status(401)
+        .json({ status: "fail", message: "هذا الحساب معطل حالياً" });
     }
 
-    if (user.role === "cashier" || user.role === "kitchen") {
-      try {
-        const cairoTime = new Date().toLocaleString("en-US", {
-          timeZone: "Africa/Cairo",
-        });
-        const now = new Date(cairoTime);
-
-        const currentDay = now.getDay();
-        const currentHours = now.getHours();
-        const currentMinutes = now.getMinutes();
-        const currentTimeVal = currentHours * 60 + currentMinutes;
-
-        const userRestDays = user.restDays || [];
-
-        if (userRestDays.includes(currentDay)) {
-          return res
-            .status(403)
-            .json({
-              status: "fail",
-              message: "⛔ اليوم هو يوم إجازتك، لا يمكن تسجيل الدخول.",
-            });
-        }
-
-        if (user.shiftStart && user.shiftEnd) {
-          const [sH, sM] = user.shiftStart.split(":").map(Number);
-          const [eH, eM] = user.shiftEnd.split(":").map(Number);
-
-          const startVal = sH * 60 + sM;
-          const endVal = eH * 60 + eM;
-
-          let isInsideShift = false;
-          if (endVal < startVal) {
-            isInsideShift =
-              currentTimeVal >= startVal || currentTimeVal <= endVal;
-          } else {
-            isInsideShift =
-              currentTimeVal >= startVal && currentTimeVal <= endVal;
-          }
-
-          if (!isInsideShift) {
-            let diffMinutes =
-              currentTimeVal < startVal
-                ? startVal - currentTimeVal
-                : 24 * 60 - currentTimeVal + startVal;
-            const hoursLeft = Math.floor(diffMinutes / 60);
-            const minsLeft = diffMinutes % 60;
-
-            return res.status(403).json({
-              status: "fail",
-              message: `⛔ خارج وقت الشيفت! شيفتك يبدأ كمان ${hoursLeft} ساعة و ${minsLeft} دقيقة.`,
-            });
-          }
-        }
-      } catch (shiftError) {
-        console.error("Shift Logic Error:", shiftError);
-
-        return res
-          .status(500)
-          .json({ status: "error", message: "خطأ في التحقق من مواعيد الشيفت" });
-      }
-    }
     createSendToken(user, 200, res);
   } catch (err) {
-    console.error("Login Error:", err);
-    res
-      .status(500)
-      .json({ status: "error", message: "حدث خطأ في السيرفر: " + err.message });
+    res.status(500).json({ status: "error", message: err.message });
   }
 };
-
 exports.protect = async (req, res, next) => {
   let token;
   if (
@@ -237,12 +181,10 @@ exports.protect = async (req, res, next) => {
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res
-        .status(403)
-        .json({
-          status: "fail",
-          message: "ليس لديك صلاحية للقيام بهذا الإجراء",
-        });
+      return res.status(403).json({
+        status: "fail",
+        message: "ليس لديك صلاحية للقيام بهذا الإجراء",
+      });
     }
     next();
   };
@@ -341,12 +283,10 @@ exports.changeUserPasswordByAdmin = async (req, res) => {
     const { password } = req.body;
 
     if (!password || password.length < 6) {
-      return res
-        .status(400)
-        .json({
-          status: "fail",
-          message: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
-        });
+      return res.status(400).json({
+        status: "fail",
+        message: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -379,12 +319,10 @@ exports.updateMyPassword = async (req, res) => {
     const { password } = req.body;
 
     if (!password || password.length < 6) {
-      return res
-        .status(400)
-        .json({
-          status: "fail",
-          message: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
-        });
+      return res.status(400).json({
+        status: "fail",
+        message: "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+      });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -477,12 +415,10 @@ exports.deleteStaff = async (req, res) => {
     }
 
     if (staffMember.role === "owner" || staffMember.role === "admin") {
-      return res
-        .status(403)
-        .json({
-          status: "fail",
-          message: "لا يمكن حذف المالك أو الأدمن من هنا",
-        });
+      return res.status(403).json({
+        status: "fail",
+        message: "لا يمكن حذف المالك أو الأدمن من هنا",
+      });
     }
 
     await User.findByIdAndDelete(req.params.id);

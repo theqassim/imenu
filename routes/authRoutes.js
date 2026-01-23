@@ -6,7 +6,7 @@ const router = express.Router();
 router.post("/signup", authController.signup);
 router.post("/login", authController.login);
 
-router.patch("/:id", authController.updateUser);
+router.patch("/:id", authController.protect, authController.updateUser);
 router.patch(
   "/:id/toggle-status",
   authController.protect,
@@ -21,23 +21,28 @@ router.post(
 );
 
 const User = require("../models/User");
-router.get("/", async (req, res) => {
-  let users = await User.find();
+router.get(
+  "/",
+  authController.protect,
+  authController.restrictTo("admin"),
+  async (req, res) => {
+    let users = await User.find();
 
-  const updatedUsers = await Promise.all(
-    users.map(async (user) => {
-      if (user.role === "owner" && user.active && user.subscriptionExpires) {
-        if (new Date() > user.subscriptionExpires) {
-          user.active = false;
-          await user.save({ validateBeforeSave: false });
+    const updatedUsers = await Promise.all(
+      users.map(async (user) => {
+        if (user.role === "owner" && user.active && user.subscriptionExpires) {
+          if (new Date() > user.subscriptionExpires) {
+            user.active = false;
+            await user.save({ validateBeforeSave: false });
+          }
         }
-      }
-      return user;
-    }),
-  );
+        return user;
+      }),
+    );
 
-  res.status(200).json({ status: "success", data: { users: updatedUsers } });
-});
+    res.status(200).json({ status: "success", data: { users: updatedUsers } });
+  },
+);
 
 router.patch(
   "/:id/change-password-admin",

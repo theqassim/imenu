@@ -60,9 +60,29 @@ exports.getRestaurantProducts = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findByIdAndDelete(req.params.id);
+    const product = await Product.findById(req.params.id);
 
-    if (product && req.io) {
+    if (!product) {
+      return res
+        .status(404)
+        .json({ status: "fail", message: "المنتج غير موجود" });
+    }
+
+    const Restaurant = require("../models/Restaurant");
+    const restaurant = await Restaurant.findOne({
+      _id: product.restaurant,
+      owner: req.user._id,
+    });
+
+    if (!restaurant && req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ status: "fail", message: "ليس لديك صلاحية لمسح هذا المنتج" });
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+
+    if (req.io) {
       req.io.to(product.restaurant.toString()).emit("menu_updated");
     }
 
@@ -92,6 +112,24 @@ exports.toggleAvailability = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
+    const product = await Product.findById(req.params.id);
+    if (!product)
+      return res
+        .status(404)
+        .json({ status: "fail", message: "المنتج غير موجود" });
+
+    const Restaurant = require("../models/Restaurant");
+    const restaurant = await Restaurant.findOne({
+      _id: product.restaurant,
+      owner: req.user._id,
+    });
+
+    if (!restaurant && req.user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ status: "fail", message: "ليس لديك صلاحية لتعديل هذا المنتج" });
+    }
+
     const { name, description, price, oldPrice, sizes, category } = req.body;
 
     let updateData = {};

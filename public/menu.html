@@ -1191,6 +1191,36 @@
       .style-neon .cat-chip.active {
         box-shadow: 0 0 10px var(--primary);
       }
+      .cat-chip {
+        background: var(--card-bg);
+        color: var(--text-sub);
+        padding: 6px 15px 6px 6px;
+        border-radius: 30px;
+        font-size: 14px;
+        border: 1px solid var(--border);
+        white-space: nowrap;
+        cursor: pointer;
+        transition: 0.3s;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .cat-chip img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--input-bg);
+      }
+      .cat-chip.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        padding-left: 20px;
+      }
     </style>
   </head>
   <body>
@@ -1348,7 +1378,7 @@
     </div>
 
     <div class="powered-footer">
-     <a href="/promo" class="powered-link">
+      <a href="/promo" class="powered-link">
         <i class="fas fa-bolt brand-icon-anim"></i>
         <span>Powered by</span>
         <span class="brand-gradient">iMenu</span>
@@ -1407,6 +1437,7 @@
       let cart = {};
       let productsData = [];
       let restaurantId = "";
+      let categoryImages = {};
       let storeSettings = {
         mode: "whatsapp",
         whatsappNumber: "",
@@ -1517,6 +1548,18 @@
               restaurant.restaurantName;
             restaurantId = restaurant._id;
 
+            try {
+              const catRes = await fetch(`/api/v1/categories/${restaurantId}`);
+              const catData = await catRes.json();
+              if (catData.status === "success") {
+                catData.data.categories.forEach((c) => {
+                  categoryImages[c.name] = c.image;
+                });
+              }
+            } catch (e) {
+              console.log("Silent Error: Failed to load category images");
+            }
+
             storeSettings.mode = restaurant.orderMode || "whatsapp";
             storeSettings.whatsappNumber =
               restaurant.contactInfo?.whatsapp || "";
@@ -1562,17 +1605,36 @@
         let first = true;
         for (const [cat, items] of Object.entries(grouped)) {
           const activeClass = first ? "active" : "";
-          catScroll.innerHTML += `<div class="cat-chip ${activeClass}" onclick="scrollToSection('${cat}', this)">${cat}</div>`;
+
+          let imgHtml = "";
+          if (categoryImages[cat]) {
+            imgHtml = `<img src="${categoryImages[cat]}">`;
+          } else {
+            imgHtml = `<div style="width:28px; height:28px; background:var(--input-bg); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px;"><i class="fas fa-utensils"></i></div>`;
+          }
+
+          catScroll.innerHTML += `
+            <div class="cat-chip ${activeClass}" onclick="scrollToSection('${cat}', this)">
+                ${imgHtml}
+                <span>${cat}</span>
+            </div>`;
+
           first = false;
 
           let sectionHTML = `<div class="menu-section" data-category="${cat}">`;
-          sectionHTML += `<div class="section-label" id="sec-${cat}"><i class="fas fa-certificate" style="font-size:14px; margin-left:8px; color:var(--primary)"></i> ${cat}</div>`;
+
+          const secImg = categoryImages[cat]
+            ? `<img src="${categoryImages[cat]}" style="width:25px; height:25px; border-radius:5px; object-fit:cover; margin-left:10px;">`
+            : '<i class="fas fa-certificate" style="font-size:14px; margin-left:8px; color:var(--primary)"></i>';
+
+          sectionHTML += `<div class="section-label" id="sec-${cat}" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
 
           items.forEach((p) => {
-            const img =
+            const imgHTML =
               p.image && p.image !== ""
-                ? p.image
-                : "https://placehold.co/150x150/333/D4AF37?text=Dish";
+                ? `<img src="${p.image}" class="prod-img" onclick="addToCart('${p._id}')" loading="lazy">`
+                : "";
+
             const hasDiscount =
               p.oldPrice && Number(p.oldPrice) > Number(p.price);
 
@@ -1580,7 +1642,7 @@
                     <div class="prod-card" data-name="${p.name.ar}">
                         ${hasDiscount ? `<div style="position:absolute; top:10px; right:10px; background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; z-index:10;">خصم</div>` : ""}
                         
-                        <img src="${img}" class="prod-img" onclick="addToCart('${p._id}')" loading="lazy">
+                        ${imgHTML}
                         
                         <div class="prod-content">
                             <div style="flex:1">
@@ -2057,7 +2119,11 @@
           }
         }
       }
-      const socket = io();
+      const socket = io({
+        auth: {
+          token: sessionStorage.getItem("ownerToken"),
+        },
+      });
 
       socket.on("menu_updated", () => {
         loadMenu();

@@ -78,12 +78,10 @@ exports.validateCoupon = async (req, res) => {
         .status(400)
         .json({ status: "fail", message: "انتهى عدد مرات استخدام الكوبون" });
     if (orderTotal < coupon.minOrderVal)
-      return res
-        .status(400)
-        .json({
-          status: "fail",
-          message: `الحد الأدنى للطلب ${coupon.minOrderVal}`,
-        });
+      return res.status(400).json({
+        status: "fail",
+        message: `الحد الأدنى للطلب ${coupon.minOrderVal}`,
+      });
 
     let discount = 0;
     if (coupon.discountType === "percent") {

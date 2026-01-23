@@ -9,7 +9,13 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+    <script src="/socket.io/socket.io.js"></script> <script>
+        const superToken = localStorage.getItem('superAdminToken');
+        if (!superToken) {
+            window.location.href = '/login';
+        }
+    </script>
+
     <style>
         :root {
             --primary: #6366f1;
@@ -68,21 +74,17 @@
     </style>
 </head>
 <body>
-
-    <div id="login-section" class="login-wrapper">
-        <div class="login-box">
-            <h2 style="color:var(--primary); margin-bottom:5px">لوحة التحكم 🔐</h2>
-            <p style="color:#6b7280; margin-bottom:20px">سجل دخولك كـ Super Admin</p>
-            <input type="email" id="email" placeholder="admin@test.com" style="margin-bottom:10px">
-            <input type="password" id="password" placeholder="********" style="margin-bottom:20px">
-            <button class="btn-primary" onclick="login()">دخول</button>
-        </div>
-    </div>
-
     <div class="sidebar">
         <div class="brand"><i class="fas fa-layer-group"></i> Super Admin</div>
         <button class="nav-btn active" onclick="switchTab('owners')" id="btn-owners"><i class="fas fa-user-plus"></i> إدارة الملاك</button>
         <button class="nav-btn" onclick="switchTab('restaurants')" id="btn-restaurants"><i class="fas fa-store"></i> إنشاء متجر جديد</button>
+        
+        <button class="nav-btn" onclick="switchTab('ai-upload')" id="btn-ai-upload">
+            <i class="fas fa-magic"></i> رفع بالذكاء الاصطناعي
+        </button>
+        <button class="nav-btn" onclick="switchTab('requests')" id="btn-requests">
+            <i class="fas fa-bell"></i> طلبات الانضمام <span id="req-badge" style="background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:10px; display:none;">New</span>
+        </button>
         
         <div style="margin-top:auto">
           <button class="nav-btn" onclick="logoutSuperAdmin()" style="color:#ef4444"><i class="fas fa-sign-out-alt"></i> خروج</button>
@@ -94,6 +96,11 @@
             <div class="page-title">
                 <h2>إدارة النظام</h2>
                 <p style="color:var(--text-sub)">التحكم في الملاك والمطاعم والاشتراكات</p>
+            </div>
+            <div>
+                <button id="enable-push-btn" onclick="subscribeUser()" class="action-btn" style="background:#6366f1; padding:10px 20px; font-size:14px; display:none;">
+                    <i class="fas fa-bell"></i> تفعيل إشعارات الجهاز
+                </button>
             </div>
         </div>
 
@@ -210,41 +217,264 @@
                 </div>
             </div>
         </div>
+        <button class="nav-btn" onclick="switchTab('ai-upload')" id="btn-ai-upload">
+    <i class="fas fa-magic"></i> رفع بالذكاء الاصطناعي
+</button>
+
+<div id="tab-ai-upload" class="hidden">
+    <div class="content-card">
+        <h3 style="color:var(--primary)">سحر الذكاء الاصطناعي ✨</h3>
+        <p>ارفع صور المنيو وسنقوم بتصنيفها ورفعها بدلاً عنك.</p>
+        
+        <div class="form-group">
+            <label class="label">اختيار المطعم المستهدف</label>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="ai-res-name" readonly placeholder="اضغط لاختيار المطعم..." 
+                       style="background: #f9fafb; flex: 1; cursor: pointer;" onclick="openOwnerModalForAI()">
+                <input type="hidden" id="ai-res-id">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="label">صور المنيو (يمكنك اختيار أكثر من صورة)</label>
+            <input type="file" id="ai-menu-images" multiple accept="image/*" 
+                   style="padding:15px; border:2px dashed var(--primary); width:100%">
+        </div>
+
+        <button class="btn-primary" id="start-ai-btn" onclick="startAiProcessing()">
+            ابدأ التحليل والرفع الصاروخي 🚀
+        </button>
+    </div>
+</div>
+
+<div id="tab-requests" class="hidden">
+    <div class="content-card" style="max-width:100%">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h3 style="color:var(--primary); margin:0;">طلبات الانضمام الجديدة</h3>
+            <div style="display:flex; gap:10px;">
+                <button class="action-btn" onclick="deleteSelectedRequests()" style="background:#ef4444; display:none;" id="btn-delete-all">
+                    <i class="fas fa-trash"></i> حذف المحدد
+                </button>
+                <button class="action-btn" onclick="loadRequests()" style="background:#6b7280">
+                    <i class="fas fa-sync"></i> تحديث
+                </button>
+            </div>
+        </div>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px; text-align: center;">
+                            <input type="checkbox" id="select-all-req" onchange="toggleSelectAll(this)">
+                        </th>
+                        <th>الاسم</th>
+                        <th>المتجر</th>
+                        <th>الهاتف</th>
+                        <th>العنوان</th>
+                        <th>التوقيت</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <script>
-
-        
         let token = localStorage.getItem('superAdminToken') || '';
+        const socket = io();
+
         document.addEventListener('DOMContentLoaded', () => {
             if (token) {
-                document.getElementById('login-section').style.display = 'none';
                 loadOwnersList();
+                loadRequests();
+                checkPushSubscription();
+            } else {
+                window.location.href = '/login';
             }
         });
 
-       async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try {
-                const res = await fetch('/api/v1/users/login', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await res.json();
-               if(data.status === 'success') {
-                token = data.token;
-                 localStorage.setItem('superAdminToken', token);
-                    localStorage.setItem('superAdminToken', token); 
-                    document.getElementById('login-section').style.display = 'none';
-                    loadOwnersList();
-                } else {
-                    Swal.fire('خطأ', 'بيانات الدخول غير صحيحة', 'error');
+        async function checkPushSubscription() {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                const reg = await navigator.serviceWorker.register('/sw.js');
+                const sub = await reg.pushManager.getSubscription();
+                if (!sub) {
+                    document.getElementById('enable-push-btn').style.display = 'inline-block';
                 }
-          } catch(e) { 
-        console.error(e);
-        Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
-    }
-}
+            }
+        }
+
+        async function subscribeUser() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const reg = await navigator.serviceWorker.register('/sw.js');
+                    
+                    const keyRes = await fetch('/api/v1/vapid-key');
+                    const { publicKey } = await keyRes.json();
+                    
+                    const subscription = await reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(publicKey)
+                    });
+
+                    await fetch('/api/v1/subscribe', {
+                        method: 'POST',
+                        body: JSON.stringify(subscription),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+
+                    Swal.fire('تم التفعيل', 'ستصلك الإشعارات حتى لو الموقع مغلق!', 'success');
+                    document.getElementById('enable-push-btn').style.display = 'none';
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('خطأ', 'فشل تفعيل الإشعارات', 'error');
+                }
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        socket.on('new-menu-request', (data) => {
+            const audio = document.getElementById('notif-sound');
+            audio.play().catch(e => console.log('Audio play failed', e));
+
+            if (Notification.permission === "granted") {
+                new Notification("طلب منيو جديد! 🚀", {
+                    body: `العميل: ${data.name} - المطعم: ${data.storeName}`,
+                    icon: '/favicon.ico'
+                });
+            } else {
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'طلب جديد!',
+                    text: `${data.name} يريد الانضمام`,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    toast: true
+                });
+            }
+
+            const badge = document.getElementById('req-badge');
+            badge.style.display = 'inline-block';
+            
+            prependRequestRow(data);
+        });
+
+        async function loadRequests() {
+            try {
+                const res = await fetch('/api/v1/requests', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const response = await res.json();
+                const tbody = document.getElementById('requests-tbody');
+                tbody.innerHTML = '';
+                
+                response.data.forEach(req => {
+                    prependRequestRow(req, false);
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        function prependRequestRow(data, animate = true) {
+            const tbody = document.getElementById('requests-tbody');
+            const tr = document.createElement('tr');
+            if(animate) tr.style.animation = "highlightRow 2s";
+            
+            const date = new Date(data.createdAt).toLocaleString('ar-EG');
+            
+            tr.innerHTML = `
+                <td style="text-align: center;">
+                    <input type="checkbox" class="req-checkbox" value="${data._id}" onchange="toggleDeleteButton()">
+                </td>
+                <td style="font-weight:bold">${data.name}</td>
+                <td style="color:var(--primary)">${data.storeName}</td>
+                <td><a href="https://wa.me/20${data.phone}" target="_blank" style="text-decoration:none; color:var(--text-main)">${data.phone} <i class="fab fa-whatsapp" style="color:#25d366"></i></a></td>
+                <td>${data.address}</td>
+                <td style="font-size:12px; color:#6b7280">${date}</td>
+                <td>
+                    <button class="action-btn" style="background:#10b981" onclick="copyToClipboard('${data.name}', '${data.phone}')">
+                        <i class="fas fa-copy"></i> نسخ
+                    </button>
+                </td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+
+        function toggleSelectAll(source) {
+            const checkboxes = document.querySelectorAll('.req-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            toggleDeleteButton();
+        }
+
+        function toggleDeleteButton() {
+            const checkedCount = document.querySelectorAll('.req-checkbox:checked').length;
+            const btn = document.getElementById('btn-delete-all');
+            if (checkedCount > 0) {
+                btn.style.display = 'block';
+                btn.innerHTML = `<i class="fas fa-trash"></i> حذف المحدد (${checkedCount})`;
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        async function deleteSelectedRequests() {
+            const selected = Array.from(document.querySelectorAll('.req-checkbox:checked')).map(cb => cb.value);
+            
+            if (selected.length === 0) return;
+
+            const confirm = await Swal.fire({
+                title: 'حذف الطلبات؟',
+                text: `سيتم حذف ${selected.length} طلبات نهائياً`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'نعم، احذف',
+                cancelButtonText: 'إلغاء'
+            });
+
+            if (confirm.isConfirmed) {
+                try {
+                    const res = await fetch('/api/v1/requests', {
+                        method: 'DELETE',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ ids: selected })
+                    });
+                    
+                    if (res.ok) {
+                        Swal.fire('تم الحذف', 'تم حذف الطلبات المحددة', 'success');
+                        document.getElementById('select-all-req').checked = false;
+                        document.getElementById('btn-delete-all').style.display = 'none';
+                        loadRequests();
+                    }
+                } catch (e) {
+                    Swal.fire('خطأ', 'فشل في عملية الحذف', 'error');
+                }
+            }
+        }
+
+        function copyToClipboard(name, phone) {
+            navigator.clipboard.writeText(`الاسم: ${name}\nالهاتف: ${phone}`);
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+            Toast.fire({ icon: 'success', title: 'تم نسخ البيانات' });
+        }
+
        async function createOwner() {
     const name = document.getElementById('u-name').value;
     const email = document.getElementById('u-email').value;
@@ -682,24 +912,41 @@ async function loginAsOwner(userId) {
 
 function logoutSuperAdmin() {
             localStorage.removeItem('superAdminToken');
-            location.reload();
+            window.location.href = '/login';
         }
 
       function switchTab(tab) {
             document.getElementById('tab-owners').classList.add('hidden');
             document.getElementById('tab-restaurants').classList.add('hidden');
+            document.getElementById('tab-ai-upload').classList.add('hidden');
+            document.getElementById('tab-requests').classList.add('hidden');
+
             document.getElementById('btn-owners').classList.remove('active');
             document.getElementById('btn-restaurants').classList.remove('active');
+            document.getElementById('btn-ai-upload').classList.remove('active');
+            document.getElementById('btn-requests').classList.remove('active');
 
             document.getElementById(`tab-${tab}`).classList.remove('hidden');
             document.getElementById(`btn-${tab}`).classList.add('active');
-
-            if (tab === 'restaurants') {
+            
+            if(tab === 'requests') {
+                document.getElementById('req-badge').style.display = 'none';
+                loadRequests();
+            } else if (tab === 'restaurants') {
                 loadRestaurantsList();
-            } else {
+            } else if (tab === 'owners') {
                 loadOwnersList();
             }
         }
+        
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes highlightRow {
+                0% { background-color: #e0e7ff; }
+                100% { background-color: transparent; }
+            }
+        `;
+        document.head.appendChild(style);
 async function toggleUserStatus(id) {
     try {
         Swal.fire({
@@ -1077,6 +1324,78 @@ function downloadSavedQR(imgUrl, name) {
     link.href = imgUrl;
     link.download = `QR-${name}.png`;
     link.click();
+}
+function openOwnerModalForAI() {
+    window.selectingForAI = true; 
+    openOwnerModal();
+}
+
+function renderModalOwners(owners) {
+    const list = document.getElementById('modal-owners-list');
+    list.innerHTML = '';
+    owners.forEach(u => {
+        if(u.role === 'admin') return;
+        const div = document.createElement('div');
+        div.className = 'owner-item';
+        div.style.padding = '12px';
+        div.style.borderBottom = '1px solid var(--border)';
+        div.style.cursor = 'pointer';
+        div.innerHTML = `
+            <div style="font-weight:bold">${u.name}</div>
+            <div style="font-size:12px; color:var(--text-sub)">${u.email} | ${u.phone || 'بدون هاتف'}</div>
+        `;
+        
+        div.onclick = () => {
+            if(window.selectingForAI) {
+                document.getElementById('ai-res-id').value = u._id; 
+                document.getElementById('ai-res-name').value = u.name;
+                window.selectingForAI = false;
+            } else {
+                document.getElementById('r-owner').value = u._id;
+                document.getElementById('selected-owner-name').value = u.name;
+            }
+            closeOwnerModal();
+        };
+        list.appendChild(div);
+    });
+}
+
+async function startAiProcessing() {
+    const ownerId = document.getElementById('ai-res-id').value;
+    const files = document.getElementById('ai-menu-images').files;
+    const btn = document.getElementById('start-ai-btn');
+
+    if(!ownerId || files.length === 0) return Swal.fire('تنبيه', 'اختر المطعم والصور أولاً', 'warning');
+
+    const formData = new FormData();
+    formData.append('ownerId', ownerId); 
+    for (let i = 0; i < files.length; i++) {
+        formData.append('menuImages', files[i]);
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري تحليل المنيو.. قد يستغرق دقيقة';
+    
+    try {
+        const res = await fetch('/api/v1/ai/process-menu', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        const data = await res.json();
+        
+        if(data.status === 'success') {
+            Swal.fire('نجاح مذهل!', 'تم استخراج البيانات ورفع المنيو بنجاح', 'success');
+            document.getElementById('ai-menu-images').value = '';
+        } else {
+            Swal.fire('خطأ', data.message, 'error');
+        }
+    } catch(e) {
+        Swal.fire('خطأ', 'حدث خطأ في الاتصال بالسيرفر', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'ابدأ التحليل والرفع الصاروخي 🚀';
+    }
 }
     </script>
 <div id="owner-modal" class="login-wrapper hidden" style="z-index: 3000; background: rgba(0,0,0,0.5);">
