@@ -3,7 +3,7 @@ const Product = require("../models/Product");
 
 exports.createRestaurant = async (req, res) => {
   try {
-    const { restaurantName, businessType, slug, contactInfo, owner } = req.body;
+    const { restaurantName, businessType, slug, contactInfo, owner, hasStock } = req.body;
 
     const newRestaurant = await Restaurant.create({
       restaurantName,
@@ -11,6 +11,7 @@ exports.createRestaurant = async (req, res) => {
       slug,
       contactInfo,
       owner: owner,
+      hasStock: hasStock !== undefined ? hasStock : true,
       image: req.file ? req.file.path : undefined,
     });
 

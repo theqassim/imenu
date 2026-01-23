@@ -24,6 +24,7 @@ const restaurantSchema = new mongoose.Schema({
   serviceRate: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   enableCoupons: { type: Boolean, default: false },
+  hasStock: { type: Boolean, default: true },
   qrImage: { type: String, default: "" },
   qrName: { type: String, default: "" },
 

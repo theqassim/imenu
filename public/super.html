@@ -79,9 +79,6 @@
         <button class="nav-btn active" onclick="switchTab('owners')" id="btn-owners"><i class="fas fa-user-plus"></i> إدارة الملاك</button>
         <button class="nav-btn" onclick="switchTab('restaurants')" id="btn-restaurants"><i class="fas fa-store"></i> إنشاء متجر جديد</button>
         
-        <button class="nav-btn" onclick="switchTab('ai-upload')" id="btn-ai-upload">
-            <i class="fas fa-magic"></i> رفع بالذكاء الاصطناعي
-        </button>
         <button class="nav-btn" onclick="switchTab('requests')" id="btn-requests">
             <i class="fas fa-bell"></i> طلبات الانضمام <span id="req-badge" style="background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:10px; display:none;">New</span>
         </button>
@@ -499,7 +496,6 @@
     const subscriptionExpires = document.getElementById('u-date').value; 
     const password = document.getElementById('u-pass').value;
     const passwordConfirm = document.getElementById('u-pass-conf').value;
-    // [New] قيمة الباقة
     const productLimit = document.getElementById('u-limit').value;
 
     if(!name || !email || !password) return Swal.fire('تنبيه', 'املأ البيانات الأساسية', 'warning');
@@ -517,7 +513,7 @@
                 password, 
                 passwordConfirm, 
                 hasStock: document.getElementById('u-stock').checked,
-                productLimit: productLimit, // إرسال الباقة
+                productLimit: productLimit,
                 role: 'owner' 
             })
         });
@@ -557,7 +553,6 @@
             const statusColor = isActive ? '#10b981' : '#ef4444';
             const statusText = isActive ? 'نشط' : 'معطل';
             const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
-            // [New] استخراج الباقة الحالية
             const pLimit = u.productLimit || 75;
 
             tbody.innerHTML += `
@@ -572,7 +567,7 @@
                             <i class="fas ${statusIcon}"></i> ${statusText}
                         </button>
 
-                        <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}')">
+                        <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock})">
                             <i class="fas fa-edit"></i>
                         </button>
 
@@ -680,7 +675,7 @@ function switchTab(tab) {
     }
 }
 
-async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit) {
+async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit, currentHasStock) {
     const { value: formValues } = await Swal.fire({
         title: 'تعديل بيانات المالك',
         html:
@@ -702,7 +697,14 @@ async function editUser(id, currentName, currentEmail, currentPhone, currentWhat
             `</select>` +
 
             `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px; color:var(--primary); font-weight:bold;">تاريخ انتهاء الاشتراك:</div>` +
-            `<input id="swal-expiry" type="date" class="swal2-input" value="${currentExpiryDate}">`,
+            `<input id="swal-expiry" type="date" class="swal2-input" value="${currentExpiryDate}">` +
+
+            `<div style="margin-top: 15px; text-align: right; background: #e0e7ff; padding: 10px; border-radius: 8px;">` +
+                `<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">` +
+                    `<input type="checkbox" id="swal-stock" style="width: 20px; height: 20px;" ${currentHasStock ? 'checked' : ''}>` +
+                    `<span style="font-weight: bold; color: var(--primary);">تفعيل نظام المخازن (Stock)</span>` +
+                `</label>` +
+            `</div>`,
         
         focusConfirm: false,
         showCancelButton: true,
@@ -714,8 +716,9 @@ async function editUser(id, currentName, currentEmail, currentPhone, currentWhat
                 email: document.getElementById('swal-email').value,
                 phone: document.getElementById('swal-phone').value,
                 whatsapp: document.getElementById('swal-whatsapp').value,
-                productLimit: document.getElementById('swal-limit').value, // [New]
-                subscriptionExpires: document.getElementById('swal-expiry').value
+                productLimit: document.getElementById('swal-limit').value,
+                subscriptionExpires: document.getElementById('swal-expiry').value,
+                hasStock: document.getElementById('swal-stock').checked
             };
         }
     });

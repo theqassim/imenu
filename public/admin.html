@@ -29,7 +29,7 @@
     </script>
 
     <style>
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box; } /* هذا السطر سيضبط مقاسات العناصر تماماً */
       :root {
         --primary: #4338ca;
         --primary-light: #e0e7ff;
@@ -418,15 +418,20 @@
         display: none !important;
       }
 
+/* ================================================= */
+/* 📱 نظام التطبيق الكامل (Mobile App System) */
+/* ================================================= */
 
+/* إخفاء البار السفلي في الكمبيوتر */
 .mobile-bottom-nav { display: none; }
 
 @media (max-width: 768px) {
     
+    /* 1. إخفاء القائمة الجانبية وتحويلها لقائمة "المزيد" */
     .sidebar {
-        position: fixed !important;
+        position: fixed !important; /* هذا السطر هو الحل لتثبيت القائمة وإخفائها */
         z-index: 9999 !important;
-        width: 100% !important;
+        width: 100% !important; /* تغطي الشاشة بالكامل عند الفتح */
         right: -100% !important;
         top: 0 !important;
         background: rgba(255,255,255,0.98) !important;
@@ -435,6 +440,7 @@
     }
     .sidebar.active { right: 0 !important; }
 
+    /* 2. تصميم البار السفلي (App Bar) */
     .mobile-bottom-nav {
         display: flex;
         position: fixed;
@@ -446,7 +452,7 @@
         justify-content: space-around;
         align-items: center;
         border-top: 1px solid #f1f5f9;
-        padding-bottom: 5px;
+        padding-bottom: 5px; /* عشان الـ iPhone Home Indicator */
     }
 
     .nav-icon {
@@ -466,14 +472,16 @@
     .nav-icon.active { color: var(--primary); font-weight: bold; }
     .nav-icon.active i { transform: translateY(-3px); }
 
-    body { background: #f8fafc; padding-bottom: 80px; }
+    /* 3. ضبط جسم الصفحة ليتناسب مع البار السفلي */
+    body { background: #f8fafc; padding-bottom: 80px; } /* مساحة للبار */
     
     .main-content {
         width: 100% !important;
-        padding: 70px 15px 20px 15px !important;
+        padding: 70px 15px 20px 15px !important; /* مساحة للهيدر */
         margin: 0 !important;
     }
 
+    /* 4. الهيدر العلوي (App Header) */
     .mobile-header {
         height: 60px;
         background: #ffffff;
@@ -486,18 +494,21 @@
         justify-content: space-between;
     }
     
+    /* إخفاء زر القائمة القديم في الهيدر لأننا نقلناه تحت */
     .mobile-menu-btn { display: none !important; }
 
+    /* 5. تحويل الجداول إلى كروت (Cards UI) - نسخة مدمجة */
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
+    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px;
+        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
         border-radius: 12px;
-        padding: 12px;
+        padding: 12px; /* تقليل الحشو الداخلي للكارت */
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -507,29 +518,31 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important;
+        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px;
+        font-size: 13px; /* تصغير الخط قليلاً */
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
+    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
+    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important;
+        padding: 15px !important; /* تقليل حشو النماذج */
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important;
+        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -537,6 +550,7 @@
         padding: 0 10px !important;
     }
 
+    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -544,15 +558,16 @@
         padding: 0 15px !important;
     }
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
+    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px;
+        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
         border-radius: 12px;
-        padding: 12px;
+        padding: 12px; /* تقليل الحشو الداخلي للكارت */
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -562,29 +577,31 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important;
+        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px;
+        font-size: 13px; /* تصغير الخط قليلاً */
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
+    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
+    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important;
+        padding: 15px !important; /* تقليل حشو النماذج */
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important;
+        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -592,6 +609,7 @@
         padding: 0 10px !important;
     }
 
+    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -599,20 +617,26 @@
         padding: 0 15px !important;
     }
 
+    /* 7. إخفاء العناصر غير الضرورية */
+    /* --- بداية كود إصلاح الفواتير السابقة --- */
 
+    /* إخفاء زر المعاينة فقط (بدون إخفاء الـ overlay) */
     #preview-link { display: none !important; }
 
+    /* إجبار نافذة الفواتير على الظهور فوق القائمة السفلية */
     #recent-orders-modal {
-        z-index: 999999 !important;
-        background: rgba(0,0,0,0.85) !important;
+        z-index: 999999 !important; /* رقم أعلى من القائمة السفلية */
+        background: rgba(0,0,0,0.85) !important; /* تعتيم الخلفية */
     }
 
+    /* عندما تعمل النافذة، اجعلها في منتصف الشاشة */
     #recent-orders-modal[style*="block"] {
         display: flex !important;
         align-items: center;
         justify-content: center;
     }
 
+    /* ضبط حجم كارت الفاتورة نفسه */
     #recent-orders-modal .card {
         width: 90% !important;
         max-width: 90% !important;
@@ -620,24 +644,32 @@
         max-height: 80vh !important;
     }
 
+    /* --- نهاية كود الإصلاح --- */
     
+    /* التأكد من أن المودال يظهر فوق كل العناصر عند الفتح */
     #recent-orders-modal.overlay { 
         display: none; 
-        z-index: 99999 !important;
+        z-index: 99999 !important; /* رقم عالي جداً ليظهر فوق القوائم */
     }
 
+    /* 8. إصلاحات الصفحات */
     #orders-grid { grid-template-columns: 1fr !important; }
     .phone-frame { width: 100% !important; height: 550px !important; border-width: 4px !important; }
 }
+/* ================================================= */
+/* 📱 نظام التطبيق الكامل (Mobile App System) */
+/* ================================================= */
 
+/* إخفاء البار السفلي في الكمبيوتر */
 .mobile-bottom-nav { display: none; }
 
 @media (max-width: 768px) {
     
+    /* 1. إخفاء القائمة الجانبية وتحويلها لقائمة "المزيد" */
     .sidebar {
-        position: fixed !important;
+        position: fixed !important; /* هذا السطر هو الحل لتثبيت القائمة وإخفائها */
         z-index: 9999 !important;
-        width: 100% !important;
+        width: 100% !important; /* تغطي الشاشة بالكامل عند الفتح */
         right: -100% !important;
         top: 0 !important;
         background: rgba(255,255,255,0.98) !important;
@@ -646,6 +678,7 @@
     }
     .sidebar.active { right: 0 !important; }
 
+    /* 2. تصميم البار السفلي (App Bar) */
     .mobile-bottom-nav {
         display: flex;
         position: fixed;
@@ -657,7 +690,7 @@
         justify-content: space-around;
         align-items: center;
         border-top: 1px solid #f1f5f9;
-        padding-bottom: 5px;
+        padding-bottom: 5px; /* عشان الـ iPhone Home Indicator */
     }
 
     .nav-icon {
@@ -677,14 +710,16 @@
     .nav-icon.active { color: var(--primary); font-weight: bold; }
     .nav-icon.active i { transform: translateY(-3px); }
 
-    body { background: #f8fafc; padding-bottom: 80px; }
+    /* 3. ضبط جسم الصفحة ليتناسب مع البار السفلي */
+    body { background: #f8fafc; padding-bottom: 80px; } /* مساحة للبار */
     
     .main-content {
         width: 100% !important;
-        padding: 70px 15px 20px 15px !important;
+        padding: 70px 15px 20px 15px !important; /* مساحة للهيدر */
         margin: 0 !important;
     }
 
+    /* 4. الهيدر العلوي (App Header) */
     .mobile-header {
         height: 60px;
         background: #ffffff;
@@ -697,18 +732,21 @@
         justify-content: space-between;
     }
     
+    /* إخفاء زر القائمة القديم في الهيدر لأننا نقلناه تحت */
     .mobile-menu-btn { display: none !important; }
 
+    /* 5. تحويل الجداول إلى كروت (Cards UI) - نسخة مدمجة */
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
+    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px;
+        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
         border-radius: 12px;
-        padding: 12px;
+        padding: 12px; /* تقليل الحشو الداخلي للكارت */
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -718,29 +756,31 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important;
+        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px;
+        font-size: 13px; /* تصغير الخط قليلاً */
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
+    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
+    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important;
+        padding: 15px !important; /* تقليل حشو النماذج */
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important;
+        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -748,6 +788,7 @@
         padding: 0 10px !important;
     }
 
+    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -755,15 +796,16 @@
         padding: 0 15px !important;
     }
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
+    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px;
+        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
         border-radius: 12px;
-        padding: 12px;
+        padding: 12px; /* تقليل الحشو الداخلي للكارت */
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -773,29 +815,31 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important;
+        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px;
+        font-size: 13px; /* تصغير الخط قليلاً */
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
+    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
+    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important;
+        padding: 15px !important; /* تقليل حشو النماذج */
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important;
+        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -803,6 +847,7 @@
         padding: 0 10px !important;
     }
 
+    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -810,20 +855,26 @@
         padding: 0 15px !important;
     }
 
+    /* 7. إخفاء العناصر غير الضرورية */
+    /* --- بداية كود إصلاح الفواتير السابقة --- */
 
+    /* إخفاء زر المعاينة فقط (بدون إخفاء الـ overlay) */
     #preview-link { display: none !important; }
 
+    /* إجبار نافذة الفواتير على الظهور فوق القائمة السفلية */
     #recent-orders-modal {
-        z-index: 999999 !important;
-        background: rgba(0,0,0,0.85) !important;
+        z-index: 999999 !important; /* رقم أعلى من القائمة السفلية */
+        background: rgba(0,0,0,0.85) !important; /* تعتيم الخلفية */
     }
 
+    /* عندما تعمل النافذة، اجعلها في منتصف الشاشة */
     #recent-orders-modal[style*="block"] {
         display: flex !important;
         align-items: center;
         justify-content: center;
     }
 
+    /* ضبط حجم كارت الفاتورة نفسه */
     #recent-orders-modal .card {
         width: 90% !important;
         max-width: 90% !important;
@@ -831,11 +882,14 @@
         max-height: 80vh !important;
     }
 
+    /* --- نهاية كود الإصلاح --- */
+    /* التأكد من أن المودال يظهر فوق كل العناصر عند الفتح */
     #recent-orders-modal.overlay { 
         display: none; 
-        z-index: 99999 !important;
+        z-index: 99999 !important; /* رقم عالي جداً ليظهر فوق القوائم */
     }
 
+    /* 8. إصلاحات الصفحات */
     #orders-grid { grid-template-columns: 1fr !important; }
     .phone-frame { width: 100% !important; height: 550px !important; border-width: 4px !important; }
 }
@@ -843,14 +897,14 @@
         --primary: #4338ca;
         --primary-light: #e0e7ff;
         --secondary: #64748b;
-        --bg: #f8fafc;
+        --bg: #f8fafc; /* لون خلفية أفتح قليلاً */
         --surface: #ffffff;
         --border-color: #e2e8f0;
         --text-main: #1e293b;
         --success: #10b981;
         --danger: #ef4444;
         --warning: #f59e0b;
-        --radius: 16px;
+        --radius: 16px; /* توحيد الانحناءات */
         --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
       }
 
@@ -878,6 +932,7 @@
         transition: background 0.3s, color 0.3s;
       }
 
+      /* === Animations === */
       @keyframes fadeInScale {
         0% { opacity: 0; transform: scale(0.98) translateY(10px); }
         100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -892,6 +947,7 @@
         animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
+      /* === Sidebar & Nav === */
       .sidebar {
         width: 280px;
         background: var(--surface);
@@ -899,11 +955,12 @@
         border-left: 1px solid var(--border-color);
         display: flex;
         flex-direction: column;
-        padding: 15px 10px;
+        padding: 15px 10px; /* تقليل الحشو الداخلي لتوفير مساحة */
         z-index: 1001;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-y: auto;
+        overflow-y: auto; /* [هام] السماح بالسكرول إذا كانت العناصر كثيرة */
       }
+      /* تحسين شكل السكرول بار للقائمة */
       .sidebar::-webkit-scrollbar { width: 4px; }
       .sidebar::-webkit-scrollbar-track { background: transparent; }
       .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
@@ -920,8 +977,8 @@
       }
 
       .nav-item {
-        padding: 10px 14px;
-        margin-bottom: 4px;
+        padding: 10px 14px; /* تصغير حجم الزر */
+        margin-bottom: 4px; /* تقليل المسافة بين الأزرار */
         cursor: pointer;
         border-radius: 10px;
         color: var(--secondary);
@@ -930,7 +987,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        font-size: 14px;
+        font-size: 14px; /* تصغير الخط درجة واحدة */
       }
 
       .nav-item:hover {
@@ -946,9 +1003,10 @@
         transform: translateX(-5px);
       }
 
+      /* === Main Content === */
       .main-content {
         flex: 1;
-        padding: 30px;
+        padding: 30px; /* Default desktop padding */
         overflow-y: auto;
         width: 100%;
         scroll-behavior: smooth;
@@ -967,6 +1025,7 @@
         color: var(--text-main);
       }
 
+      /* === Cards & Inputs === */
       .card {
         background: var(--surface);
         border-radius: var(--radius);
@@ -1011,6 +1070,7 @@
         transform: translateY(-2px);
       }
 
+      /* === Buttons === */
       .btn {
         padding: 14px 24px;
         border: none;
@@ -1054,10 +1114,11 @@
         font-weight: 600;
         transition: 0.2s;
         width: 100%;
-        height: 50px;
+        height: 50px; /* Fixed height for alignment */
       }
       .custom-file-upload:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 
+      /* === Tables === */
       .table-wrapper {
         overflow-x: auto;
         background: var(--surface);
@@ -1069,6 +1130,7 @@
       th { background: var(--bg); text-align: right; padding: 18px; color: var(--secondary); font-weight: 700; }
       td { padding: 18px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
       
+      /* === Mobile Specific Styles === */
       .mobile-header, .mobile-bottom-nav, .overlay { display: none; }
 
       @media (max-width: 768px) {
@@ -1089,9 +1151,10 @@
         .overlay.visible { display: block; opacity: 1; }
 
         .main-content {
-            padding: 80px 15px 100px 15px !important;
+            padding: 80px 15px 100px 15px !important; /* مساحة للهيدر والفوتر */
         }
 
+        /* Mobile Header */
         .mobile-header {
             display: flex; justify-content: space-between; align-items: center;
             position: fixed; top: 0; left: 0; width: 100%; height: 65px;
@@ -1102,10 +1165,11 @@
         }
         body.dark-mode .mobile-header { background: rgba(30, 41, 59, 0.95); }
 
+        /* Mobile Bottom Nav */
         .mobile-bottom-nav {
             display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
             background: var(--surface); border-top: 1px solid var(--border-color);
-            padding: 10px 0 25px 0;
+            padding: 10px 0 25px 0; /* Extra padding for iPhone home indicator */
             z-index: 900; justify-content: space-around;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
         }
@@ -1118,6 +1182,7 @@
         .nav-icon.active { color: var(--primary); font-weight: bold; background: var(--primary-light); }
         .nav-icon.active i { transform: translateY(-2px); }
 
+        /* Transform Tables to Cards on Mobile */
         .table-wrapper { background: transparent; border: none; box-shadow: none; overflow: visible; }
         table, thead, tbody, th, td, tr { display: block; }
         thead { display: none; }
@@ -1141,18 +1206,22 @@
         }
         td:last-child { border-bottom: none; padding-top: 15px; justify-content: flex-end; gap: 8px; }
         
+        /* Mobile Input & Form Adjustments */
         .form-grid { grid-template-columns: 1fr; gap: 15px; }
-        input, select, textarea { height: 48px; font-size: 16px; }
+        input, select, textarea { height: 48px; font-size: 16px; /* Prevent zoom on iOS */ }
         .btn { height: 48px; width: 100%; margin-top: 5px; }
         
-        .btn-preview { display: none; }
+        /* Specific Fixes */
+        .btn-preview { display: none; } /* Hide preview button on mobile header */
         .phone-frame { width: 100% !important; height: 500px !important; }
         #live-preview { border-radius: 20px; }
       }
 
+      /* Utilities */
       .hidden { display: none !important; }
       .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
       .img-preview { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); display:none; }
+      /* === تحسين أزرار اختيار التخطيط === */
       .layout-options-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -1175,7 +1244,7 @@
         color: var(--secondary);
         font-size: 13px;
         font-weight: 700;
-        height: 100px;
+        height: 100px; /* ارتفاع موحد */
       }
 
       .btn-layout i {
@@ -1203,13 +1272,14 @@
         transform: scale(1.1);
       }
 
+      /* === تحسين شكل الموبايل (Phone Mockup) === */
       .phone-mockup-wrapper {
         flex: 1;
         min-width: 350px;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: #1e293b;
+        background: #1e293b; /* خلفية داكنة لإبراز الهاتف */
         border-radius: 30px;
         padding: 40px 20px;
         box-shadow: inset 0 0 50px rgba(0,0,0,0.3);
@@ -1218,21 +1288,22 @@
       }
 
       .phone-frame {
-        width: 340px;
-        height: 700px;
+        width: 340px;          /* عرض ايفون قياسي */
+        height: 700px;         /* ارتفاع ايفون قياسي */
         background: #000;
-        border-radius: 50px;
+        border-radius: 50px;   /* حواف دائرية كبيرة */
         box-shadow: 
-            0 0 0 12px #2d3748,
-            0 0 0 14px #000,
-            0 25px 50px -12px rgba(0, 0, 0, 0.6);
-        border: 8px solid #000;
+            0 0 0 12px #2d3748, /* الإطار الخارجي الرمادي */
+            0 0 0 14px #000,    /* خط أسود رفيع */
+            0 25px 50px -12px rgba(0, 0, 0, 0.6); /* ظل قوي */
+        border: 8px solid #000; /* الحواف السوداء للشاشة */
         overflow: hidden;
         position: relative;
         z-index: 10;
         transition: transform 0.3s;
       }
 
+      /* النوتش (Notch) العلوي */
       .phone-frame::before {
         content: '';
         position: absolute;
@@ -1252,10 +1323,11 @@
         height: 100%;
         border: none;
         background: white;
-        border-radius: 40px;
+        border-radius: 40px; /* تدوير زوايا الـ iframe */
         display: block;
       }
 
+      /* تصغير الموبايل للشاشات المتوسطة */
       @media (max-width: 1200px) {
         .phone-frame {
             transform: scale(0.9);
@@ -2596,6 +2668,7 @@
             document.getElementById("set-enableCoupons").checked =
               result.data.restaurant.enableCoupons === true;
             
+            // تحميل إعداد طباعة الرقم (الأولوية للذاكرة المحلية ثم السيرفر)
             const localPrintSetting = localStorage.getItem("localPrintOrderNum");
             let shouldPrintNum;
 
@@ -2646,11 +2719,12 @@
               loadProducts();
               initDesignStudio(result.data.restaurant);
               
+              // التحقق من تفعيل ميزة المخازن
               if(result.data.restaurant.owner.hasStock || result.data.restaurant.hasStock) {
                   document.getElementById('nav-stock').classList.remove('hidden');
-                  document.getElementById('nav-recipes').classList.remove('hidden');
+                  document.getElementById('nav-recipes').classList.remove('hidden'); // إظهار زر إدارة المقادير
                   document.getElementById('ingredients-section').classList.remove('hidden');
-                  loadStockItems();
+                  loadStockItems(); // تحميل مواد المخزن
               }
             }
 
@@ -2700,6 +2774,7 @@
             setTimeout(() => { overlay.style.display = "none"; }, 300);
         } else {
             overlay.style.display = "block";
+            // Timeout to allow display:block to apply before opacity transition
             setTimeout(() => { 
                 sidebar.classList.add("active");
                 overlay.classList.add("visible");
@@ -2722,37 +2797,46 @@
       }
 
 function switchView(viewName) {
+        // 1. Scroll to top automatically
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
+        // 2. Hide all views and remove active states
+        // تمت إضافة "recipes" للقائمة
 const allViews = ["categories", "products", "recipes", "bulk", "design", "orders", "history", "stock", "settings", "staff", "coupons"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
             if (el) {
                 el.classList.add("hidden");
-                el.classList.remove("view-animate");
+                el.classList.remove("view-animate"); // Reset animation
             }
 
+            // Desktop Sidebar
             const nav = document.getElementById(`nav-${v}`);
             if (nav) nav.classList.remove("active");
             
+            // Mobile Bottom Nav
             const mobNav = document.getElementById(`mob-nav-${v}`);
             if (mobNav) mobNav.classList.remove("active");
         });
 
+        // 3. Show Target View with Animation
         const targetEl = document.getElementById(`view-${viewName}`);
         if (targetEl) {
             targetEl.classList.remove("hidden");
+            // Trigger reflow to restart animation
             void targetEl.offsetWidth; 
             targetEl.classList.add("view-animate");
         }
 
+        // 4. Update Active Buttons
         const targetNav = document.getElementById(`nav-${viewName}`);
         if (targetNav) targetNav.classList.add("active");
 
         const targetMobNav = document.getElementById(`mob-nav-${viewName}`);
         if (targetMobNav) targetMobNav.classList.add("active");
 
+        // 5. Close Mobile Sidebar if Open
         if (window.innerWidth <= 768) {
             const sidebar = document.getElementById("sidebar");
             const overlay = document.querySelector(".overlay");
@@ -2765,6 +2849,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
             }
         }
 
+        // 6. View Specific Logic (Load Data)
         if (viewName === "orders") {
             const badge = document.getElementById("live-badge");
             if (badge) { badge.innerText = "0"; badge.classList.add("hidden"); }
@@ -2814,7 +2899,9 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         ).checked;
         const enableCoupons =
           document.getElementById("set-enableCoupons").checked;
+        // قراءة قيمة طباعة الرقم
         const printOrderNum = document.getElementById("set-printOrderNum").checked;
+        // تحديث الحقل المخفي وتخزين القيمة محلياً لضمان عدم ضياعها
         document.getElementById("setting-print-num").value = printOrderNum;
         localStorage.setItem("localPrintOrderNum", printOrderNum);
 
@@ -2828,7 +2915,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
           serviceRate: serviceRate,
           useTableNumbers: useTables,
           enableCoupons: enableCoupons,
-          printOrderNumber: printOrderNum,
+          printOrderNumber: printOrderNum, // إضافة الإعداد الجديد للباك اند
           contactInfo: {
             whatsapp: whatsapp,
           },
@@ -3135,6 +3222,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
           const result = await res.json();
 
           if (result.status === "success") {
+            // حفظ المنتجات في متغير عام لاستخدامها في الأوردر اليدوي
             window.allProductsGlobal = result.data.products;
             
             tbody.innerHTML = "";
@@ -3212,6 +3300,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         formData.append("category", cat);
         formData.append("name", JSON.stringify({ ar: name, en: name }));
         formData.append("description", JSON.stringify({ ar: desc, en: "" }));
+        // إضافة المقادير للـ FormData
         if(currentIngredients.length > 0) {
             formData.append("ingredients", JSON.stringify(currentIngredients));
         }
@@ -3325,6 +3414,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
           `تعديل: ${p.name.ar}`;
         document.getElementById("btn-add-prod").classList.add("hidden");
         document.getElementById("btn-update-prod").classList.remove("hidden");
+        // تحميل المقادير
         currentIngredients = p.ingredients || [];
         renderIngredientsList();
 
@@ -3441,10 +3531,11 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
     const rows = document.querySelectorAll(".bulk-card");
     const rId = document.getElementById("restaurant-id").value;
 
+    // 1. التأكد من وجود ID للمطعم
     if (!rId) {
         return Swal.fire("خطأ جسيم", "لا يوجد ID للمطعم! قم بعمل Refresh للصفحة وحاول مرة أخرى.", "error");
     }
-    console.log("🚀 Starting Upload for Restaurant ID:", rId);
+    console.log("🚀 Starting Upload for Restaurant ID:", rId); // Log ID
 
     let hasValidRow = false;
     for (const row of rows) {
@@ -3484,6 +3575,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         let finalOldPrice = 0;
         let finalSizes = [];
 
+        // تجهيز البيانات
         if (mode === "single") {
             const priceVal = row.querySelector(".b-price").value;
             if (!priceVal) continue;
@@ -3520,7 +3612,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         if (imageFile) formData.append("image", imageFile);
 
         try {
-            console.log(`⏳ Uploading: ${name}...`);
+            console.log(`⏳ Uploading: ${name}...`); // Log before fetch
 
             const res = await fetch("/api/v1/products", {
                 method: "POST",
@@ -3528,9 +3620,10 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
                 body: formData,
             });
 
+            // قراءة الرد كـ JSON حتى لو كان خطأ
             const responseData = await res.json(); 
 
-            console.log(`📬 Server Response for ${name}:`, responseData);
+            console.log(`📬 Server Response for ${name}:`, responseData); // Log response
 
             if (res.status === 403) {
                 console.warn("⛔ Limit Reached!");
@@ -4277,13 +4370,14 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         const table = document.getElementById(tableId);
         if (!table) return;
 
+        // 1. استخراج البيانات من الجدول
         const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
 
-       
+        // 2. إنشاء اسم الملف بالتاريخ الحالي
         const date = new Date().toLocaleDateString('ar-EG').replace(/\//g, "-");
         const fullName = `${filename}_${date}.xlsx`;
 
-        
+        // 3. تحميل الملف
         XLSX.writeFile(wb, fullName);
       }
       
@@ -4312,11 +4406,13 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
             startApp();
+            // إجبار القائمة على الإغلاق عند الفتح
             document.getElementById('sidebar').classList.remove('active');
             document.querySelector('.overlay').style.display = 'none';
         });
       } else {
         startApp();
+        // إجبار القائمة على الإغلاق عند الفتح
         document.getElementById('sidebar').classList.remove('active');
         document.querySelector('.overlay').style.display = 'none';
       }
@@ -4633,6 +4729,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
           ? order.orderNum
           : String(order._id).slice(-4);
         
+        // قراءة الإعداد من الحقل المخفي
         const showOrderNum = document.getElementById("setting-print-num").value === "true";
         const orderNumHTML = showOrderNum ? `<div style="font-size:12px">أوردر #${orderNumDisplay}</div>` : '';
 
@@ -5222,6 +5319,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
           Swal.fire("خطأ", "حدث خطأ أثناء الرفع، راجع المدخلات", "error");
         }
       }
+      // --- 📦 دوال نظام المخازن (المبسطة) ---
 
 async function loadStockItems() {
     const rId = document.getElementById("restaurant-id").value;
@@ -5253,6 +5351,7 @@ function renderStockTable() {
     }
 
     stockItemsData.forEach(item => {
+        // تنبيه لو الكمية قليلة
         const isLow = item.quantity <= item.alertLevel;
         const qtyStyle = isLow ? 'color:red; font-weight:bold; background:#fee2e2; padding:2px 8px; border-radius:4px;' : 'font-weight:bold; color:green;';
         const alertIcon = isLow ? '<i class="fas fa-exclamation-circle" style="color:red" title="كمية منخفضة"></i>' : '';
@@ -5281,6 +5380,7 @@ function renderStockTable() {
 }
 
 function renderStockDropdown() {
+    // تحديث القوائم المنسدلة في صفحة المنتجات وصفحة المقادير
     const selectors = ['stock-select', 'recipe-stock-select'];
     
     selectors.forEach(selId => {
@@ -5294,6 +5394,7 @@ function renderStockDropdown() {
     });
 }
 
+// إضافة خامة جديدة
 async function openStockModal() {
     const { value: formValues } = await Swal.fire({
         title: '📝 إضافة خامة جديدة',
@@ -5344,6 +5445,7 @@ async function openStockModal() {
     }
 }
 
+// تحديث الكمية (جرد)
 async function adjustStock(id, name) {
     const { value: adjustment } = await Swal.fire({
         title: `جرد: ${name}`,
@@ -5362,6 +5464,7 @@ async function adjustStock(id, name) {
     });
 
     if (adjustment) {
+        // لو الرقم موجب يبقى شراء، لو سالب يبقى عجز/جرد
         const type = Number(adjustment) > 0 ? 'restock' : 'adjustment';
         try {
             await fetch(`/api/v1/stock/${id}/adjust`, {
@@ -5375,6 +5478,7 @@ async function adjustStock(id, name) {
     }
 }
 
+// حذف خامة (الدالة التي كانت ناقصة)
 async function deleteStockItem(id) {
     const result = await Swal.fire({
         title: 'حذف الخامة؟',
@@ -5453,19 +5557,24 @@ async function loadStockLogs() {
     }
 }
 
+// --- 🍲 دوال ربط المقادير (لصفحة المنتجات القديمة فقط) ---
+// ملاحظة: تم تطوير صفحة "إدارة المقادير" المنفصلة لتكون أسهل، هذه الدوال هنا فقط لدعم صفحة "إضافة منتج" التقليدية.
 
 function addIngredientRow(stockItem = null, qty = null) {
     const select = document.getElementById('stock-select');
     const qtyInput = document.getElementById('stock-qty');
     
+    // الحصول على البيانات سواء من البراميتر أو من الـ input
     let id, name, unit, amount;
 
     if (stockItem) {
+        // حالة التحميل عند التعديل
         id = stockItem.stockItem._id || stockItem.stockItem; 
         name = stockItem.stockItem.name || 'خامة';
         unit = stockItem.stockItem.unit || '';
         amount = stockItem.quantity;
     } else {
+        // حالة الإضافة اليدوية
         id = select.value;
         const selectedOpt = select.options[select.selectedIndex];
         name = selectedOpt.getAttribute('data-name');
@@ -5478,6 +5587,7 @@ function addIngredientRow(stockItem = null, qty = null) {
     currentIngredients.push({ stockItem: id, quantity: Number(amount) });
     renderIngredientsList();
     
+    // تفريغ الحقول
     qtyInput.value = '';
     select.value = '';
 }
@@ -5487,6 +5597,7 @@ function renderIngredientsList() {
     container.innerHTML = '';
     
     currentIngredients.forEach((ing, index) => {
+        // محاولة العثور على الاسم من القائمة المحملة
         let stockObj = stockItemsData.find(s => s._id === ing.stockItem || s._id === ing.stockItem._id);
         
         let displayName = stockObj ? stockObj.name : 'خامة';
@@ -5505,16 +5616,19 @@ function removeIngredient(index) {
     currentIngredients.splice(index, 1);
     renderIngredientsList();
 }
+// === Recipe Manager Logic ===
       let activeRecipeProduct = null;
       let activeIngredients = [];
 
+      // تشغيل القسم عند الفتح
       function initRecipesView() {
           loadStockItems().then(() => {
-              renderRecipeStockSelect();
+              renderRecipeStockSelect(); // ملء قائمة الخامات
           });
-          loadRecipeProducts();
+          loadRecipeProducts(); // ملء قائمة المنتجات
       }
 
+      // 1. تحميل المنتجات وعرضها في القائمة الجانبية
       async function loadRecipeProducts() {
           const rId = document.getElementById("restaurant-id").value;
           const container = document.getElementById("recipe-products-list");
@@ -5527,7 +5641,7 @@ function removeIngredient(index) {
               const data = await res.json();
               
               if (data.status === "success") {
-                  window.allRecipeProducts = data.data.products;
+                  window.allRecipeProducts = data.data.products; // حفظ المنتجات للبحث
                   renderRecipeProductList(window.allRecipeProducts);
               }
           } catch (e) {
@@ -5563,6 +5677,7 @@ function removeIngredient(index) {
               `;
               
               div.onclick = () => {
+                  // تظليل العنصر المختار
                   document.querySelectorAll("#recipe-products-list > div").forEach(d => d.style.borderColor = "transparent");
                   div.style.borderColor = "var(--primary)";
                   div.style.background = "var(--primary-light)";
@@ -5572,15 +5687,17 @@ function removeIngredient(index) {
           });
       }
 
+      // بحث في المنتجات
       function filterRecipeProducts() {
           const term = document.getElementById("recipe-search").value.toLowerCase();
           const filtered = window.allRecipeProducts.filter(p => p.name.ar.toLowerCase().includes(term));
           renderRecipeProductList(filtered);
       }
 
+      // 2. فتح المحرر لمنتج معين
       function openRecipeEditor(product) {
           activeRecipeProduct = product;
-          activeIngredients = product.ingredients ? [...product.ingredients] : [];
+          activeIngredients = product.ingredients ? [...product.ingredients] : []; // نسخ المقادير الحالية
 
           document.getElementById("recipe-editor-empty").classList.add("hidden");
           document.getElementById("recipe-editor-content").classList.remove("hidden");
@@ -5589,22 +5706,26 @@ function removeIngredient(index) {
           renderActiveIngredientsTable();
       }
 
+      // 3. ملء قائمة الخامات (Dropdown)
       function renderRecipeStockSelect() {
           const select = document.getElementById("recipe-stock-select");
           select.innerHTML = '<option value="">-- اختر الخامة --</option>';
           
+          // stockItemsData يجب أن تكون محملة من دالة loadStockItems الموجودة مسبقاً
           if(typeof stockItemsData !== 'undefined') {
               stockItemsData.forEach(item => {
                   select.innerHTML += `<option value="${item._id}" data-unit="${item.unit}" data-name="${item.name}">${item.name} (${item.unit})</option>`;
               });
           }
 
+          // تحديث هند الوحدة عند الاختيار
           select.onchange = function() {
               const unit = this.options[this.selectedIndex].getAttribute("data-unit");
               document.getElementById("recipe-unit-hint").innerText = unit ? `الوحدة المستخدمة: ${unit}` : "";
           };
       }
 
+      // 4. إضافة مكون للقائمة المؤقتة
       function addIngredientToActive() {
           const select = document.getElementById("recipe-stock-select");
           const qtyInput = document.getElementById("recipe-stock-qty");
@@ -5616,10 +5737,12 @@ function removeIngredient(index) {
 
           if(!stockId || !qty || qty <= 0) return Swal.fire("تنبيه", "اختر الخامة والكمية الصحيحة", "warning");
 
+          // التحقق من التكرار (مع تجاهل العناصر التالفة)
           const existing = activeIngredients.find(i => i.stockItem && (i.stockItem._id || i.stockItem) === stockId);
           if(existing) {
-              existing.quantity = qty;
+              existing.quantity = qty; // تحديث الكمية لو موجود
           } else {
+              // إضافة هيكل يشبه المرتجع من الداتابيز للعرض
               activeIngredients.push({
                   stockItem: { _id: stockId, name: name, unit: unit }, 
                   quantity: qty
@@ -5632,11 +5755,13 @@ function removeIngredient(index) {
           document.getElementById("recipe-unit-hint").innerText = "";
       }
 
+      // 5. رسم جدول المكونات
       function renderActiveIngredientsTable() {
           const tbody = document.getElementById("recipe-active-list");
           tbody.innerHTML = "";
 
           activeIngredients.forEach((ing, index) => {
+              // [Fix] إذا كانت الخامة محذوفة (null)
               if (!ing.stockItem) {
                   tbody.innerHTML += `
                       <tr style="background:#fff1f2;">
@@ -5650,12 +5775,14 @@ function removeIngredient(index) {
                           </td>
                       </tr>
                   `;
-                  return;
+                  return; // تخطي هذا الصف
               }
 
+              // التعامل مع البيانات سواء كانت populated أو مجرد ID (للعرض الفوري)
               let name = ing.stockItem.name || "خامة";
               let unit = ing.stockItem.unit || "-";
               
+              // محاولة إيجاد الاسم من القائمة المحملة لو كان مجرد ID
               if(!ing.stockItem.name && typeof stockItemsData !== 'undefined') {
                   const s = stockItemsData.find(x => x._id === ing.stockItem);
                   if(s) { name = s.name; unit = s.unit; }
@@ -5685,18 +5812,28 @@ function removeIngredient(index) {
           renderActiveIngredientsTable();
       }
 
+      // 6. حفظ التغييرات في السيرفر
       async function saveActiveRecipe() {
           if(!activeRecipeProduct) return;
 
-          const cleanIngredients = activeIngredients.map(i => ({
-              stockItem: i.stockItem._id || i.stockItem,
-              quantity: i.quantity
-          }));
+          // تحضير البيانات بالشكل الذي يقبله الباك اند (ID والكمية فقط)
+          // [Fix] تصفية العناصر التالفة (null) قبل المعالجة لتجنب توقف النظام
+          const cleanIngredients = activeIngredients
+              .filter(i => i.stockItem) // نأخذ فقط العناصر السليمة
+              .map(i => ({
+                  stockItem: i.stockItem._id || i.stockItem, 
+                  quantity: i.quantity
+              }));
 
+          // بناء FormData كما في دالة saveProduct القديمة
           const formData = new FormData();
+          // نحتاج نرسل فقط المقادير، لكن الـ Controller الحالي يتوقع باقي البيانات أو يتجاهلها.
+          // بفضل التعديل السابق في productController، سيبحث عن ingredients ويحدثها.
           
           formData.append("ingredients", JSON.stringify(cleanIngredients));
           
+          // ملاحظة: الـ controller قد يحتاج لحقول أخرى إلزامية مثل الاسم والقسم، 
+          // لذا سنرسل البيانات القديمة كما هي لتجنب مشاكل الـ Validation
           formData.append("name", JSON.stringify(activeRecipeProduct.name));
           formData.append("category", activeRecipeProduct.category);
           formData.append("restaurantId", document.getElementById("restaurant-id").value);
@@ -5715,11 +5852,12 @@ function removeIngredient(index) {
               if (data.status === "success") {
                   Swal.fire({ toast: true, icon: "success", title: "تم حفظ المقادير بنجاح" });
                   
+                  // تحديث المنتج في القائمة المحلية
                   const updatedProd = data.data.product;
                   const idx = window.allRecipeProducts.findIndex(p => p._id === updatedProd._id);
                   if(idx !== -1) window.allRecipeProducts[idx] = updatedProd;
                   
-                  renderRecipeProductList(window.allRecipeProducts);
+                  renderRecipeProductList(window.allRecipeProducts); // إعادة رسم القائمة لتحديث الأيقونة
               } else {
                   Swal.fire("خطأ", data.message, "error");
               }
@@ -5790,6 +5928,7 @@ function removeIngredient(index) {
         let manualCart = [];
 
         function openManualOrderModal() {
+            // التأكد من تحميل المنتجات أولاً
             if (!window.allProductsGlobal || window.allProductsGlobal.length === 0) {
                 loadProducts().then(() => {
                     document.getElementById('manual-order-modal').style.display = 'block';
@@ -5823,6 +5962,7 @@ function removeIngredient(index) {
                 filtered.forEach(p => {
                     const price = p.sizes && p.sizes.length > 0 ? p.sizes[0].price : p.price;
                     const name = p.name.ar;
+                    // تمرير البيانات كـ String
                     const pData = encodeURIComponent(JSON.stringify(p));
                     
                     const div = document.createElement('div');
@@ -5846,6 +5986,8 @@ function removeIngredient(index) {
             let finalPrice = product.price;
             let finalName = product.name.ar;
 
+            // لو فيه أحجام، ناخد أول حجم تلقائي (للسهولة) أو ممكن نعمل مودال تاني للأحجام
+            // هنا هناخد السعر الافتراضي أو سعر أول حجم
             if (product.sizes && product.sizes.length > 0) {
                 finalPrice = product.sizes[0].price;
                 finalName += ` (${product.sizes[0].name})`;
@@ -5888,6 +6030,7 @@ function removeIngredient(index) {
                 `;
             });
 
+            // الحسابات
             const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
             const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
 
@@ -5917,10 +6060,12 @@ function removeIngredient(index) {
             const tableNum = document.getElementById('manual-table').value || 'تيك أواي';
             const rId = document.getElementById('restaurant-id').value;
 
+            // تجهيز البيانات بنفس هيكل الـ API
             const subTotal = parseFloat(document.getElementById('manual-subtotal').innerText);
             const taxServ = parseFloat(document.getElementById('manual-tax-serv').innerText);
             const finalTotal = parseFloat(document.getElementById('manual-final').innerText);
 
+            // تقسيم الضريبة والخدمة تقريبياً
             const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
             const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
             
@@ -5958,7 +6103,7 @@ function removeIngredient(index) {
                 if (data.status === 'success') {
                     Swal.fire({ icon: 'success', title: 'تم إنشاء الطلب', timer: 1500, showConfirmButton: false });
                     closeManualOrderModal();
-                    loadOrders();
+                    loadOrders(); // تحديث قائمة الطلبات
                 } else {
                     Swal.fire('خطأ', data.message, 'error');
                 }
