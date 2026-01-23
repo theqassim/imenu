@@ -71,9 +71,54 @@
         .hidden { display: none !important; }
         
         .swal2-input { margin: 10px auto !important; width: 80% !important; }
+        @media (max-width: 768px) {
+    .super-mobile-header {
+        display: flex !important;
+    }
+
+    .sidebar {
+        position: fixed;
+        right: -280px;
+        top: 0;
+        height: 100%;
+        width: 260px;
+        transition: 0.3s;
+        box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    }
+
+    .main {
+        padding: 80px 15px 20px 15px;
+        width: 100%;
+    }
+
+    .content-card {
+        padding: 15px;
+        overflow: hidden;
+    }
+    
+    div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    
+    .action-btn {
+        padding: 8px 10px;
+        margin: 2px;
+    }
+}
     </style>
 </head>
 <body>
+    <div class="super-mobile-header" style="display:none; background:#fff; padding:15px; border-bottom:1px solid #e5e7eb; align-items:center; justify-content:space-between; position:fixed; top:0; width:100%; z-index:1000; box-sizing:border-box;">
+    <div style="font-weight:800; color:#6366f1; font-size:18px;">Super Admin</div>
+    <button onclick="toggleSuperSidebar()" style="background:none; border:none; font-size:24px; cursor:pointer;"><i class="fas fa-bars"></i></button>
+</div>
+<div class="overlay" onclick="toggleSuperSidebar()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99;"></div>
     <div class="sidebar">
         <div class="brand"><i class="fas fa-layer-group"></i> Super Admin</div>
         <button class="nav-btn active" onclick="switchTab('owners')" id="btn-owners"><i class="fas fa-user-plus"></i> إدارة الملاك</button>
@@ -1395,6 +1440,18 @@ async function startAiProcessing() {
     } finally {
         btn.disabled = false;
         btn.innerText = 'ابدأ التحليل والرفع الصاروخي 🚀';
+    }
+}
+function toggleSuperSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.overlay');
+    
+    if (sidebar.style.right === '0px') {
+        sidebar.style.right = '-280px';
+        overlay.style.display = 'none';
+    } else {
+        sidebar.style.right = '0px';
+        overlay.style.display = 'block';
     }
 }
     </script>
