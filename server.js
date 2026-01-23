@@ -99,6 +99,11 @@ app.get("/promo", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "promo.html"));
 });
 
+// في ملف server.js
+app.get("/admin-mobile", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "mobile.html"));
+});
+
 app.use("/api/v1/users", authRoutes);
 app.use("/api/v1/restaurants", restaurantRoutes);
 app.use("/api/v1/products", productRoutes);

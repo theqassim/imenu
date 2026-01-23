@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Menu | لوحة الإدارة</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <link rel="stylesheet" href="mobile.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="logo-area">
+            <i class="fas fa-pizza-slice text-primary"></i>
+            <h1 id="page-title">الرئيسية</h1>
+        </div>
+        <div class="actions-area">
+            <div class="notification-bell hidden" id="live-badge-container">
+                <span class="badge-dot"></span>
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="profile-pic" onclick="toggleDarkMode()">
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-content" id="main-container">
+        
+        <section id="view-orders" class="view-section active">
+            <div class="section-header">
+                <h2>الطلبات الحية</h2>
+                <button class="btn-icon" onclick="loadOrders()"><i class="fas fa-sync-alt"></i></button>
+            </div>
+            
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="number" id="live-order-search" placeholder="بحث برقم الطلب..." onkeydown="if(event.key === 'Enter') searchOrderHistory()">
+            </div>
+
+            <div id="orders-grid" class="cards-container">
+                <div class="loading-spinner"><i class="fas fa-circle-notch fa-spin"></i></div>
+            </div>
+        </section>
+
+        <section id="view-products" class="view-section hidden">
+            <div class="section-header">
+                <h2>إدارة المنتجات</h2>
+                <div class="filter-group">
+                    <select id="p-cat-filter" onchange="filterProductsByCat()">
+                        <option value="all">الكل</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="product-search" placeholder="ابحث عن منتج..." onkeyup="searchProductsMobile()">
+            </div>
+
+            <div id="products-list" class="cards-container">
+                </div>
+
+            <button class="fab" onclick="openProductSheet()">
+                <i class="fas fa-plus"></i>
+            </button>
+        </section>
+
+        <section id="view-categories" class="view-section hidden">
+            <div class="section-header">
+                <h2>الأقسام</h2>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stat-card">
+                    <i class="fas fa-layer-group"></i>
+                    <span id="stat-cats-count">0</span>
+                    <small>الأقسام</small>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-hamburger"></i>
+                    <span id="stat-prods-count">0</span>
+                    <small>المنتجات</small>
+                </div>
+            </div>
+
+            <div id="categories-list" class="grid-2-col">
+                </div>
+
+             <button class="fab" onclick="openCategorySheet()">
+                <i class="fas fa-plus"></i>
+            </button>
+        </section>
+
+        <section id="view-more" class="view-section hidden">
+            <div class="menu-grid">
+                <div class="menu-item" onclick="switchView('history')">
+                    <div class="icon-box bg-purple"><i class="fas fa-history"></i></div>
+                    <span>سجل الجرد</span>
+                </div>
+                <div class="menu-item" onclick="switchView('settings')">
+                    <div class="icon-box bg-blue"><i class="fas fa-cog"></i></div>
+                    <span>الإعدادات</span>
+                </div>
+                <div class="menu-item" onclick="switchView('staff')">
+                    <div class="icon-box bg-orange"><i class="fas fa-users-cog"></i></div>
+                    <span>الموظفين</span>
+                </div>
+                <div class="menu-item" onclick="switchView('design')">
+                    <div class="icon-box bg-pink"><i class="fas fa-paint-brush"></i></div>
+                    <span>التصميم</span>
+                </div>
+                <div class="menu-item" onclick="switchView('coupons')">
+                    <div class="icon-box bg-green"><i class="fas fa-ticket-alt"></i></div>
+                    <span>الكوبونات</span>
+                </div>
+                <div class="menu-item" onclick="switchView('bulk')">
+                    <div class="icon-box bg-teal"><i class="fas fa-boxes"></i></div>
+                    <span>إضافة جملة</span>
+                </div>
+                <div class="menu-item" onclick="window.open(document.getElementById('preview-link').href, '_blank')">
+                    <div class="icon-box bg-indigo"><i class="fas fa-external-link-alt"></i></div>
+                    <span>معاينة المنيو</span>
+                </div>
+                <div class="menu-item" onclick="logout()">
+                    <div class="icon-box bg-red"><i class="fas fa-sign-out-alt"></i></div>
+                    <span>خروج</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-settings" class="view-section hidden">
+             <div class="section-header">
+                <button class="btn-back" onclick="switchView('more')"><i class="fas fa-arrow-right"></i></button>
+                <h2>الإعدادات</h2>
+            </div>
+            <div class="card p-20">
+                <div class="form-group">
+                    <label>نظام الطلبات</label>
+                    <select id="set-orderMode" class="form-control">
+                        <option value="whatsapp">واتساب</option>
+                        <option value="system">النظام الذكي (Live)</option>
+                        <option value="view_only">منيو للعرض فقط</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>الضريبة %</label>
+                    <input type="number" id="set-taxRate" class="form-control" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>الخدمة %</label>
+                    <input type="number" id="set-serviceRate" class="form-control" placeholder="0">
+                </div>
+                <div class="switch-row">
+                    <span>أرقام الطاولات</span>
+                    <label class="switch">
+                        <input type="checkbox" id="set-useTableNumbers">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                 <div class="switch-row">
+                    <span>الكوبونات</span>
+                    <label class="switch">
+                        <input type="checkbox" id="set-enableCoupons">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                 <div class="form-group mt-20">
+                    <label>رقم الواتساب</label>
+                    <input type="text" id="set-whatsapp" class="form-control">
+                </div>
+                <button class="btn-primary full-width mt-20" onclick="saveSettings()">حفظ الإعدادات</button>
+            </div>
+        </section>
+        
+        <section id="view-history" class="view-section hidden">
+            <div class="section-header">
+                <button class="btn-back" onclick="switchView('more')"><i class="fas fa-arrow-right"></i></button>
+                <h2>سجل الجرد</h2>
+            </div>
+            <div class="sales-card">
+                 <span>إجمالي المبيعات</span>
+                 <h1 id="total-sales-display">0 ج.م</h1>
+            </div>
+            <div id="history-list" class="cards-container"></div>
+        </section>
+
+         <section id="view-staff" class="view-section hidden">
+             <div class="section-header">
+                <button class="btn-back" onclick="switchView('more')"><i class="fas fa-arrow-right"></i></button>
+                <h2>الموظفين</h2>
+            </div>
+             <div id="staff-list" class="cards-container"></div>
+             <button class="btn-primary full-width mt-20" onclick="openStaffSheet()">إضافة موظف</button>
+        </section>
+        
+        <section id="view-design" class="view-section hidden">
+            <div class="section-header">
+                <button class="btn-back" onclick="switchView('more')"><i class="fas fa-arrow-right"></i></button>
+                <h2>التصميم</h2>
+            </div>
+            <div class="card p-20">
+                <p>يفضل استخدام الكمبيوتر لتعديل التصميم بدقة، لكن يمكنك تغيير القالب الأساسي من هنا.</p>
+                <div id="theme-library" class="theme-grid-mobile"></div>
+            </div>
+        </section>
+
+        <input type="hidden" id="restaurant-id">
+        <a id="preview-link" class="hidden"></a>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchView('orders')" id="nav-orders">
+            <i class="fas fa-bell"></i>
+            <span>الطلبات</span>
+        </div>
+        <div class="nav-item" onclick="switchView('products')" id="nav-products">
+            <i class="fas fa-hamburger"></i>
+            <span>المنتجات</span>
+        </div>
+        <div class="nav-item" onclick="switchView('categories')" id="nav-categories">
+            <i class="fas fa-layer-group"></i>
+            <span>الأقسام</span>
+        </div>
+        <div class="nav-item" onclick="switchView('more')" id="nav-more">
+            <i class="fas fa-th-large"></i>
+            <span>المزيد</span>
+        </div>
+    </nav>
+
+    <div id="sheet-product" class="bottom-sheet">
+        <div class="sheet-content">
+            <div class="sheet-header">
+                <h3 id="prod-sheet-title">منتج جديد</h3>
+                <button class="btn-close" onclick="closeSheet('sheet-product')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="sheet-body">
+                <input type="hidden" id="p-id">
+                <div class="form-group">
+                    <label>صورة المنتج</label>
+                    <div class="image-upload-box">
+                        <img id="p-preview" class="hidden">
+                        <input type="file" id="p-image" onchange="previewImage(this, 'p-preview')">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>الاسم</label>
+                    <input type="text" id="p-name" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>القسم</label>
+                    <select id="p-cat" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>السعر (ج.م)</label>
+                    <input type="number" id="p-price" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>السعر القديم (اختياري)</label>
+                    <input type="number" id="p-old-price" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>الوصف</label>
+                    <textarea id="p-desc" class="form-control" rows="2"></textarea>
+                </div>
+                <button class="btn-primary full-width" onclick="saveProductMobile()">حفظ المنتج</button>
+            </div>
+        </div>
+    </div>
+    <div class="sheet-overlay" onclick="closeAllSheets()"></div>
+
+    <div id="sheet-category" class="bottom-sheet">
+        <div class="sheet-content">
+            <div class="sheet-header">
+                <h3 id="cat-sheet-title">قسم جديد</h3>
+                <button class="btn-close" onclick="closeSheet('sheet-category')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="sheet-body">
+                <input type="hidden" id="c-id">
+                 <div class="form-group">
+                    <label>الغلاف</label>
+                    <div class="image-upload-box">
+                        <img id="c-preview" class="hidden">
+                        <input type="file" id="c-image" onchange="previewImage(this, 'c-preview')">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>اسم القسم</label>
+                    <input type="text" id="c-name" class="form-control">
+                </div>
+                <button class="btn-primary full-width" onclick="saveCategoryMobile()">حفظ القسم</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="order-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+    <script src="mobile.js"></script>
+</body>
+</html>
