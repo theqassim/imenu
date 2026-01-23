@@ -826,20 +826,225 @@
         .overlay { display: none !important; }
         .mobile-menu-btn { display: none !important; }
       }
+      @media (max-width: 768px) {
+    :root {
+        --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+        --app-bg: #f8f9fa;
+        --card-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+
+    body {
+        display: block !important;
+        height: auto !important;
+        overflow-y: auto !important;
+        background-color: var(--app-bg) !important;
+        padding-bottom: calc(80px + var(--safe-area-bottom)) !important;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 1. Native Header */
+    .mobile-header {
+        display: flex !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        padding: 0 20px;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 10000;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .mobile-header .logo {
+        margin: 0 !important;
+        font-size: 20px !important;
+        font-weight: 800 !important;
+    }
+
+    /* 2. Bottom Tab Bar (Native Navigation) */
+    .sidebar {
+        position: fixed !important;
+        bottom: 0 !important;
+        top: auto !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        height: calc(65px + var(--safe-area-bottom)) !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(15px) !important;
+        -webkit-backdrop-filter: blur(15px) !important;
+        flex-direction: row !important;
+        padding: 0 10px !important;
+        padding-bottom: var(--safe-area-bottom) !important;
+        border-left: none !important;
+        border-top: 1px solid rgba(0,0,0,0.05) !important;
+        box-shadow: 0 -2px 15px rgba(0,0,0,0.05) !important;
+        justify-content: space-around !important;
+        align-items: center !important;
+        z-index: 10001 !important;
+    }
+
+    /* Hide unnecessary sidebar elements on mobile */
+    .sidebar .logo, 
+    .sidebar div[style*="margin-top: auto"],
+    .sidebar .nav-item:last-child {
+        display: none !important;
+    }
+
+    .nav-item {
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 8px 0 !important;
+        margin: 0 !important;
+        gap: 4px !important;
+        color: #8e8e93 !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        background: transparent !important;
+        flex: 1 !important;
+        border-radius: 0 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .nav-item i {
+        font-size: 22px !important;
+        margin: 0 !important;
+        width: auto !important;
+    }
+
+    .nav-item.active {
+        color: var(--primary) !important;
+        box-shadow: none !important;
+    }
+
+    /* 3. Main Content Area */
+    .main-content {
+        padding: 80px 16px 20px 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+        margin-bottom: 24px !important;
+    }
+
+    .page-title {
+        font-size: 24px !important;
+        font-weight: 800 !important;
+    }
+
+    /* 4. Card-Based UI for Tables (Native Look) */
+    .table-wrapper {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    table, thead, tbody, th, td, tr {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    thead {
+        display: none !important;
+    }
+
+    tr {
+        background: var(--surface) !important;
+        border-radius: 18px !important;
+        margin-bottom: 16px !important;
+        padding: 16px !important;
+        box-shadow: var(--card-shadow) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+
+    td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 10px 0 !important;
+        border-bottom: 1px dashed var(--border-color) !important;
+        text-align: left !important;
+    }
+
+    td:last-child {
+        border-bottom: none !important;
+        padding-top: 16px !important;
+        justify-content: flex-end !important;
+        gap: 12px !important;
+    }
+
+    /* Add labels for table data */
+    td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--secondary);
+        font-size: 13px;
+    }
+
+    /* 5. Form & Input Enhancements */
+    .card {
+        border-radius: 20px !important;
+        padding: 20px !important;
+        box-shadow: var(--card-shadow) !important;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    input, select, textarea {
+        height: 52px !important;
+        font-size: 16px !important; /* Prevents iOS zoom */
+        border-radius: 14px !important;
+        background: #f1f3f5 !important;
+        border: 1px solid transparent !important;
+    }
+
+    input:focus {
+        background: var(--surface) !important;
+        border-color: var(--primary) !important;
+    }
+
+    .btn {
+        height: 52px !important;
+        border-radius: 14px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+    }
+
+    /* 6. Floating Action Button (FAB) Style for Add buttons */
+    .btn-primary:not(.btn-save-cat) {
+        /* Optional: can make specific buttons look like FABs */
+    }
+
+    /* 7. Hide Desktop-only elements */
+    .btn-preview {
+        width: 100% !important;
+        justify-content: center !important;
+        background: var(--primary-light) !important;
+        color: var(--primary) !important;
+        border: none !important;
+    }
+}
     </style>
   </head>
   <body>
-    <div class="mobile-header">
-      <div class="logo" style="margin: 0; font-size: 18px; display:flex; align-items:center; gap:5px;">
-        <i class="fas fa-pizza-slice" style="color:var(--primary)"></i> Smart Menu
-      </div>
-      <div style="display:flex; gap:15px; align-items:center;">
-          <button onclick="toggleDarkMode()" style="background:none; border:none; font-size:18px; color:var(--text-main);">
-            <i class="fas fa-adjust"></i>
-          </button>
-          <button onclick="logout()" style="background:none; border:none; font-size:18px; color:var(--danger);">
-            <i class="fas fa-sign-out-alt"></i>
-          </button>
+    <div class="mobile-header" style="display:none;">
+      <div class="logo"><i class="fas fa-pizza-slice"></i> Smart Menu</div>
+      <div style="display:flex; gap:15px;">
+        <i class="fas fa-adjust" onclick="toggleDarkMode()"></i>
+        <i class="fas fa-sign-out-alt" onclick="logout()"></i>
       </div>
     </div>
     <div class="overlay" onclick="toggleSidebar()"></div>
@@ -4646,6 +4851,48 @@
           Swal.fire("خطأ", "حدث خطأ أثناء الرفع، راجع المدخلات", "error");
         }
       }
+      function applyMobileFixes() {
+    // Add data-labels to table cells for mobile card view
+    const tables = document.querySelectorAll('table');
+    tables.forEach(table => {
+        const headers = Array.from(table.querySelectorAll('th')).map(th => th.innerText.trim());
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (headers[index]) {
+                    cell.setAttribute('data-label', headers[index]);
+                }
+            });
+        });
+    });
+
+    // Ensure mobile header and nav are visible if on mobile
+    if (window.innerWidth <= 768) {
+        const mobileHeader = document.querySelector('.mobile-header');
+        if (mobileHeader) mobileHeader.style.display = 'flex';
+        
+        // Adjust sidebar to be bottom nav
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+            sidebar.style.display = 'flex';
+            // Add active class to the current nav item
+            const activeItem = sidebar.querySelector('.nav-item.active');
+            if (activeItem) activeItem.classList.add('active');
+        }
+    }
+}
+
+// Run on load and when view switches
+window.addEventListener('load', applyMobileFixes);
+// If the app uses a custom switchView function, we should wrap it
+const originalSwitchView = window.switchView;
+if (typeof originalSwitchView === 'function') {
+    window.switchView = function(view) {
+        originalSwitchView(view);
+        setTimeout(applyMobileFixes, 100); // Wait for DOM update
+    };
+}
     </script>
   </body>
 </html>
