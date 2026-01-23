@@ -25,49 +25,38 @@
 
       body {
         margin: 0;
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
         font-family: "Tajawal", sans-serif;
         background-color: var(--bg-color);
-        overflow: hidden;
+        overflow-x: hidden;
         position: relative;
+        -webkit-tap-highlight-color: transparent;
       }
 
       .background-anim {
-        position: absolute;
-        width: 200vw;
-        height: 200vh;
+        position: fixed;
+        width: 100vw;
+        height: 100vh;
         background:
           radial-gradient(circle, var(--primary) 0%, transparent 50%),
           radial-gradient(circle, var(--accent) 0%, transparent 50%);
-        background-size:
-          50% 50%,
-          60% 60%;
-        background-position:
-          0 0,
-          100% 100%;
+        background-size: 80% 80%;
+        background-position: center;
         opacity: 0.15;
-        animation: bgMove 15s linear infinite alternate;
         z-index: 0;
-      }
-
-      @keyframes bgMove {
-        0% {
-          transform: translate(-20%, -20%) rotate(0deg);
-        }
-        100% {
-          transform: translate(0%, 0%) rotate(10deg);
-        }
       }
 
       .container {
         position: relative;
         z-index: 10;
         width: 100%;
-        max-width: 400px;
         padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
       }
 
       .login-card {
@@ -78,12 +67,17 @@
         border-radius: 24px;
         padding: 40px 30px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        transform: translateY(20px);
-        opacity: 0;
-        animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        width: 100%;
+        max-width: 400px;
+        box-sizing: border-box;
+        animation: slideUp 0.6s ease-out forwards;
       }
 
       @keyframes slideUp {
+        from {
+          transform: translateY(30px);
+          opacity: 0;
+        }
         to {
           transform: translateY(0);
           opacity: 1;
@@ -95,10 +89,8 @@
         font-size: 32px;
         font-weight: 800;
         margin-bottom: 10px;
-        background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        color: white;
+        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
       }
 
       .subtitle {
@@ -112,83 +104,53 @@
         margin-bottom: 20px;
         position: relative;
       }
-
       .form-group i {
         position: absolute;
         right: 15px;
         top: 50%;
         transform: translateY(-50%);
-        color: #64748b;
-        transition: 0.3s;
+        color: #94a3b8;
+        pointer-events: none;
       }
 
       input {
         width: 100%;
-        padding: 14px 45px 14px 15px;
+        padding: 16px 50px 16px 15px;
         background: rgba(15, 23, 42, 0.6);
         border: 1px solid var(--glass-border);
-        border-radius: 12px;
+        border-radius: 14px;
         color: white;
         font-family: inherit;
-        font-size: 15px;
+        font-size: 16px;
         box-sizing: border-box;
         transition: 0.3s;
         outline: none;
       }
-
       input:focus {
         border-color: var(--primary);
-        background: rgba(15, 23, 42, 0.8);
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-      }
-
-      input:focus + i {
-        color: var(--primary);
+        background: rgba(15, 23, 42, 0.9);
       }
 
       .btn-login {
         width: 100%;
-        padding: 14px;
+        padding: 16px;
         background: linear-gradient(
           135deg,
           var(--primary) 0%,
           var(--accent) 100%
         );
         border: none;
-        border-radius: 12px;
+        border-radius: 14px;
         color: white;
         font-weight: bold;
         font-size: 16px;
         cursor: pointer;
-        transition: 0.3s;
-        position: relative;
-        overflow: hidden;
+        transition: 0.2s;
         margin-top: 10px;
       }
-
-      .btn-login:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
-      }
-
-      .btn-login::after {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(255, 255, 255, 0.2),
-          transparent
-        );
-        transition: 0.5s;
-      }
-
-      .btn-login:hover::after {
-        left: 100%;
+      .btn-login:active {
+        transform: scale(0.98);
+        opacity: 0.9;
       }
 
       .footer {
@@ -198,59 +160,13 @@
         font-size: 12px;
       }
 
-      .shape {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(50px);
-        z-index: 1;
-        opacity: 0.4;
-      }
-      .shape-1 {
-        width: 300px;
-        height: 300px;
-        background: var(--primary);
-        top: -100px;
-        left: -100px;
-        animation: float 8s ease-in-out infinite;
-      }
-      .shape-2 {
-        width: 250px;
-        height: 250px;
-        background: var(--accent);
-        bottom: -50px;
-        right: -50px;
-        animation: float 10s ease-in-out infinite reverse;
-      }
-
-      @keyframes float {
-        0%,
-        100% {
-          transform: translateY(0);
-        }
-        50% {
-          transform: translateY(-30px);
-        }
-      }
       @media (max-width: 480px) {
-        .container {
-          padding: 15px;
-        }
         .login-card {
           padding: 30px 20px;
-          width: 100%;
-          box-sizing: border-box;
+          border-radius: 20px;
         }
         .logo {
-          font-size: 26px;
-        }
-        input {
-          font-size: 16px !important;
-        }
-
-        .shape {
-          opacity: 0.2;
-          width: 150px;
-          height: 150px;
+          font-size: 28px;
         }
       }
     </style>
