@@ -25,6 +25,12 @@ const productSchema = new mongoose.Schema({
       oldPrice: { type: Number, default: 0 },
     },
   ],
+  ingredients: [
+    {
+      stockItem: { type: mongoose.Schema.Types.ObjectId, ref: "StockItem" },
+      quantity: Number,
+    },
+  ],
   category: {
     type: String,
     required: true,

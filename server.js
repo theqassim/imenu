@@ -14,6 +14,7 @@ const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const couponRoutes = require("./routes/couponRoutes");
+const stockRoutes = require("./routes/stockRoutes");
 const authController = require("./controllers/authController");
 const aiController = require("./controllers/aiController");
 const webPush = require("web-push");
@@ -99,17 +100,13 @@ app.get("/promo", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "promo.html"));
 });
 
-// في ملف server.js
-app.get("/admin-mobile", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "mobile.html"));
-});
-
 app.use("/api/v1/users", authRoutes);
 app.use("/api/v1/restaurants", restaurantRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/coupons", couponRoutes);
+app.use("/api/v1/stock", stockRoutes);
 
 app.post("/api/v1/subscribe", async (req, res) => {
   const subscription = req.body;

@@ -37,6 +37,8 @@ exports.signup = async (req, res) => {
       phone,
       role,
       subscriptionExpires,
+      hasStock,
+      productLimit,
     } = req.body;
 
     if (password !== passwordConfirm) {
@@ -46,12 +48,10 @@ exports.signup = async (req, res) => {
     }
 
     if (role === "admin") {
-      return res
-        .status(403)
-        .json({
-          status: "fail",
-          message: "غير مسموح بإنشاء حساب مسؤول (Admin) بهذه الطريقة.",
-        });
+      return res.status(403).json({
+        status: "fail",
+        message: "غير مسموح بإنشاء حساب مسؤول (Admin) بهذه الطريقة.",
+      });
     }
 
     let expiryDate = null;
@@ -68,9 +68,12 @@ exports.signup = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      passwordConfirm,
       phone,
-      role: role || "owner",
-      subscriptionExpires: expiryDate,
+      role,
+      subscriptionExpires,
+      hasStock: hasStock || false,
+      productLimit: productLimit || 75,
     });
 
     createSendToken(newUser, 201, res);
@@ -86,12 +89,10 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res
-        .status(400)
-        .json({
-          status: "fail",
-          message: "يرجى إدخال البريد الإلكتروني وكلمة المرور",
-        });
+      return res.status(400).json({
+        status: "fail",
+        message: "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+      });
     }
 
     const user = await User.findOne({ email }).select("+password");
@@ -108,12 +109,10 @@ exports.login = async (req, res) => {
         user.subscriptionExpires &&
         new Date() > user.subscriptionExpires
       ) {
-        return res
-          .status(401)
-          .json({
-            status: "fail",
-            message: "عذراً، انتهت فترة الاشتراك الخاصة بك",
-          });
+        return res.status(401).json({
+          status: "fail",
+          message: "عذراً، انتهت فترة الاشتراك الخاصة بك",
+        });
       }
       return res
         .status(401)
@@ -193,6 +192,10 @@ exports.restrictTo = (...roles) => {
 exports.updateUser = async (req, res) => {
   try {
     if (req.body.password) delete req.body.password;
+
+    if (req.body.productLimit !== undefined) {
+      req.body.productLimit = Number(req.body.productLimit);
+    }
 
     if (req.body.subscriptionExpires) {
       const newExpiry = new Date(req.body.subscriptionExpires);

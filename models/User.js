@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
+  productLimit: { type: Number, default: 75 },
   name: {
     type: String,
     required: true,
@@ -46,6 +47,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  hasStock: { type: Boolean, default: false },
   createdAt: {
     type: Date,
     default: Date.now,

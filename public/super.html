@@ -142,6 +142,23 @@
             <input type="password" id="u-pass-conf">
         </div>
     </div>
+    
+    <div class="form-group" style="margin-top: 15px; background: #e0e7ff; padding: 10px; border-radius: 8px;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="u-stock" style="width: 20px; height: 20px;">
+            <span style="font-weight: bold; color: var(--primary);">تفعيل نظام إدارة المخازن والجرد (Stock System)</span>
+        </label>
+    </div>
+
+    <div class="form-group" style="margin-top: 10px;">
+        <label class="label">باقة المنتجات المسموحة</label>
+        <select id="u-limit" style="font-weight:bold; color:var(--primary);">
+            <option value="75">باقة صغرى (75 منتج)</option>
+            <option value="120">باقة وسطى (120 منتج)</option>
+            <option value="200">باقة كبرى (200 منتج)</option>
+            <option value="-1">باقة مفتوحة (Unlimited)</option>
+        </select>
+    </div>
 
     <div style="margin-top: 20px;">
         <button class="btn-primary" onclick="createOwner()">إنشاء الحساب</button>
@@ -479,12 +496,11 @@
     const name = document.getElementById('u-name').value;
     const email = document.getElementById('u-email').value;
     const phone = document.getElementById('u-phone').value;
-     
-    
     const subscriptionExpires = document.getElementById('u-date').value; 
-    
     const password = document.getElementById('u-pass').value;
     const passwordConfirm = document.getElementById('u-pass-conf').value;
+    // [New] قيمة الباقة
+    const productLimit = document.getElementById('u-limit').value;
 
     if(!name || !email || !password) return Swal.fire('تنبيه', 'املأ البيانات الأساسية', 'warning');
     
@@ -500,6 +516,8 @@
                 subscriptionExpires,
                 password, 
                 passwordConfirm, 
+                hasStock: document.getElementById('u-stock').checked,
+                productLimit: productLimit, // إرسال الباقة
                 role: 'owner' 
             })
         });
@@ -511,7 +529,7 @@
             document.getElementById('u-name').value = '';
             document.getElementById('u-email').value = '';
             document.getElementById('u-phone').value = '';
-            document.getElementById('r-whatsapp').value = '';
+            if(document.getElementById('r-whatsapp')) document.getElementById('r-whatsapp').value = '';
             document.getElementById('u-date').value = '';
             document.getElementById('u-pass').value = '';
             document.getElementById('u-pass-conf').value = '';
@@ -538,22 +556,23 @@
             const statusIcon = isActive ? 'fa-user-check' : 'fa-user-slash';
             const statusColor = isActive ? '#10b981' : '#ef4444';
             const statusText = isActive ? 'نشط' : 'معطل';
-
             const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
+            // [New] استخراج الباقة الحالية
+            const pLimit = u.productLimit || 75;
 
             tbody.innerHTML += `
                 <tr>
                     <td style="font-weight:bold">${u.name}</td>
                     <td>
                         <div style="font-size:13px">${u.email}</div>
-                        <div style="font-size:12px; color:#6b7280">${u.phone || 'لا يوجد هاتف'}</div>
+                        <div style="font-size:12px; color:#6b7280">${u.phone || 'لا يوجد هاتف'} <span style="background:#e0e7ff; color:var(--primary); padding:2px 5px; border-radius:4px; font-weight:bold">${pLimit == -1 ? 'مفتوح' : pLimit}</span></div>
                     </td>
                     <td>
                         <button class="action-btn" style="background:${statusColor}" onclick="toggleUserStatus('${u._id}')" title="تغيير حالة الحساب">
                             <i class="fas ${statusIcon}"></i> ${statusText}
                         </button>
 
-                        <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}')">
+                        <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}')">
                             <i class="fas fa-edit"></i>
                         </button>
 
@@ -661,7 +680,7 @@ function switchTab(tab) {
     }
 }
 
-async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate) {
+async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit) {
     const { value: formValues } = await Swal.fire({
         title: 'تعديل بيانات المالك',
         html:
@@ -674,6 +693,14 @@ async function editUser(id, currentName, currentEmail, currentPhone, currentWhat
             `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px;">واتساب المطعم:</div>` +
             `<input id="swal-whatsapp" class="swal2-input" value="${currentWhatsapp}">` +
             
+            `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px; color:var(--primary); font-weight:bold;">باقة المنتجات:</div>` +
+            `<select id="swal-limit" class="swal2-input">` +
+                `<option value="75" ${currentLimit == 75 ? 'selected' : ''}>75 منتج</option>` +
+                `<option value="120" ${currentLimit == 120 ? 'selected' : ''}>120 منتج</option>` +
+                `<option value="200" ${currentLimit == 200 ? 'selected' : ''}>200 منتج</option>` +
+                `<option value="-1" ${currentLimit == -1 ? 'selected' : ''}>مفتوح (Unlimited)</option>` +
+            `</select>` +
+
             `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px; color:var(--primary); font-weight:bold;">تاريخ انتهاء الاشتراك:</div>` +
             `<input id="swal-expiry" type="date" class="swal2-input" value="${currentExpiryDate}">`,
         
@@ -687,6 +714,7 @@ async function editUser(id, currentName, currentEmail, currentPhone, currentWhat
                 email: document.getElementById('swal-email').value,
                 phone: document.getElementById('swal-phone').value,
                 whatsapp: document.getElementById('swal-whatsapp').value,
+                productLimit: document.getElementById('swal-limit').value, // [New]
                 subscriptionExpires: document.getElementById('swal-expiry').value
             };
         }
@@ -707,7 +735,7 @@ async function editUser(id, currentName, currentEmail, currentPhone, currentWhat
             Swal.close();
             
             if(result.status === 'success') {
-                Swal.fire('تم!', 'تم تحديث البيانات وتاريخ الاشتراك', 'success');
+                Swal.fire('تم!', 'تم تحديث البيانات بنجاح', 'success');
                 loadOwnersList();
             } else {
                 Swal.fire('خطأ', result.message, 'error');

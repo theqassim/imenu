@@ -4,6 +4,7 @@ const router = express.Router();
 const Order = require("../models/Order");
 const Restaurant = require("../models/Restaurant");
 const authController = require("../controllers/authController");
+const orderController = require("../controllers/orderController");
 
 router.post("/", async (req, res) => {
   try {
@@ -96,12 +97,10 @@ router.get(
       );
 
       if (!hasAccess) {
-        return res
-          .status(403)
-          .json({
-            status: "fail",
-            message: "ليس لديك صلاحية لرؤية طلبات هذا المطعم",
-          });
+        return res.status(403).json({
+          status: "fail",
+          message: "ليس لديك صلاحية لرؤية طلبات هذا المطعم",
+        });
       }
 
       const orders = await Order.find({
@@ -217,46 +216,42 @@ router.get(
     }
   },
 );
-
 router.patch(
   "/:id/status",
   authController.protect,
   authController.restrictTo("owner", "cashier", "kitchen", "admin"),
-  async (req, res) => {
-    try {
-      const { status } = req.body;
-
-      const orderToUpdate = await Order.findById(req.params.id);
-      if (!orderToUpdate)
-        return res.status(404).json({ message: "الطلب غير موجود" });
-
-      const hasAccess = await checkPermission(
-        req.user,
-        orderToUpdate.restaurant,
-      );
-
-      if (!hasAccess) {
-        return res
-          .status(403)
-          .json({ message: "لا تملك صلاحية لتحديث هذا الطلب" });
-      }
-
-      const order = await Order.findByIdAndUpdate(
-        req.params.id,
-        { status },
-        { new: true },
-      );
-
-      if (req.io) {
-        req.io.to(req.params.id).emit("status-changed", order.status);
-        req.io.to(order.restaurant.toString()).emit("order-updated", order);
-      }
-
-      res.status(200).json({ status: "success", data: { order } });
-    } catch (err) {
-      res.status(400).json({ status: "fail", message: err.message });
-    }
-  },
+  orderController.updateOrderStatus,
 );
+(async (req, res) => {
+  try {
+    const { status } = req.body;
 
-module.exports = router;
+    const orderToUpdate = await Order.findById(req.params.id);
+    if (!orderToUpdate)
+      return res.status(404).json({ message: "الطلب غير موجود" });
+
+    const hasAccess = await checkPermission(req.user, orderToUpdate.restaurant);
+
+    if (!hasAccess) {
+      return res
+        .status(403)
+        .json({ message: "لا تملك صلاحية لتحديث هذا الطلب" });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true },
+    );
+
+    if (req.io) {
+      req.io.to(req.params.id).emit("status-changed", order.status);
+      req.io.to(order.restaurant.toString()).emit("order-updated", order);
+    }
+
+    res.status(200).json({ status: "success", data: { order } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+},
+  (module.exports = router));
