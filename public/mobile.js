@@ -56,24 +56,32 @@ async function initApp() {
 
 // --- Navigation Logic ---
 function switchView(viewName) {
-    // 1. Hide all sections
-    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+    // 1. إخفاء جميع الأقسام وإضافة hidden لها
+    document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.remove('active');
+        el.classList.add('hidden'); // إجبار الإخفاء
+    });
     
-    // 2. Show target section
+    // 2. إظهار القسم المطلوب وإزالة hidden منه
     const target = document.getElementById(`view-${viewName}`);
-    if (target) target.classList.add('active');
+    if (target) {
+        target.classList.remove('hidden'); // هذه هي الخطوة المهمة جداً التي كانت ناقصة
+        target.classList.add('active');
+    }
 
-    // 3. Update Bottom Nav
+    // 3. تحديث البار السفلي (Bottom Nav)
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    
     const navItem = document.getElementById(`nav-${viewName}`);
-    // If it's a sub-page (like settings), highlight 'More'
     if (navItem) {
         navItem.classList.add('active');
     } else {
-        document.getElementById('nav-more').classList.add('active');
+        // إذا كنا في صفحة فرعية (مثل الإعدادات)، ننشط زر "المزيد"
+        const moreBtn = document.getElementById('nav-more');
+        if(moreBtn) moreBtn.classList.add('active');
     }
 
-    // 4. Specific View Loaders
+    // 4. تحميل البيانات الخاصة بالصفحة
     if (viewName === 'orders') loadOrders();
     if (viewName === 'products') loadProducts();
     if (viewName === 'categories') loadCategories();
@@ -81,10 +89,9 @@ function switchView(viewName) {
     if (viewName === 'staff') loadStaff();
     if (viewName === 'design') loadThemes();
 
-    // Scroll top
+    // العودة لأعلى الصفحة
     window.scrollTo(0,0);
 }
-
 // --- Orders Logic ---
 async function loadOrders() {
     const container = document.getElementById("orders-grid");
