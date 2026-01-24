@@ -1954,171 +1954,176 @@
         else wrapper.style.display = "block";
       }
 
-      async function submitOrder() {
-        if (Object.keys(cart).length === 0) return;
+     async function submitOrder() {
+    if (Object.keys(cart).length === 0) return;
 
-        const orderType = document.querySelector(
-          'input[name="orderType"]:checked',
-        ).value;
-        let finalTableValue = "";
+    const orderType = document.querySelector('input[name="orderType"]:checked').value;
+    let finalTableValue = "";
 
-        if (orderType === "takeaway") {
-          finalTableValue = "تيك أواي";
-        } else {
-          const inputVal = document.getElementById("table-number").value;
-          if (window.useTableNumbers !== false && !inputVal) {
+    if (orderType === "takeaway") {
+        finalTableValue = "تيك أواي";
+    } else {
+        const inputVal = document.getElementById("table-number").value;
+        if (window.useTableNumbers !== false && !inputVal) {
             Swal.fire({
-              icon: "warning",
-              title: "تنبيه",
-              text: "من فضلك اكتب رقم الطاولة لاستكمال طلب الصالة",
+                icon: "warning",
+                title: "تنبيه",
+                text: "من فضلك اكتب رقم الطاولة لاستكمال طلب الصالة",
             });
             return;
-          }
-          finalTableValue = inputVal;
         }
+        finalTableValue = inputVal;
+    }
 
-        if (storeSettings.mode === "whatsapp") {
-          let msg = `مرحباً، أريد طلب جديد (${orderType === "takeaway" ? "تيك أواي 🛍️" : "صالة 🍽️"}):\n`;
-          if (orderType === "dining")
+    if (storeSettings.mode === "whatsapp") {
+        let msg = `مرحباً، أريد طلب جديد (${orderType === "takeaway" ? "تيك أواي 🛍️" : "صالة 🍽️"}):\n`;
+        if (orderType === "dining")
             msg += `*رقم الطاولة:* ${finalTableValue}\n`;
-          msg += `----------------\n`;
+        msg += `----------------\n`;
 
-          let total = 0;
-          for (const id in cart) {
+        let total = 0;
+        for (const id in cart) {
             const item = cart[id];
             const subtotal = item.price * item.qty;
             total += subtotal;
             msg += `▫️ ${item.name.ar} (x${item.qty}) - ${subtotal} ج.م\n`;
-          }
-
-          const taxVal = (total * accounting.tax) / 100;
-          const serviceVal =
-            orderType === "dining" ? (total * accounting.service) / 100 : 0;
-
-          let discountVal = 0;
-          if (appliedCoupon) {
-            discountVal = appliedCoupon.amount;
-            msg += `🎟️ خصم كوبون (${appliedCoupon.code}): -${discountVal} ج.م\n`;
-          }
-
-          const grandTotal = total + taxVal + serviceVal - discountVal;
-
-          if (accounting.tax > 0)
-            msg += `ضريبة (${accounting.tax}%): ${taxVal} ج.م\n`;
-          if (accounting.service > 0)
-            msg += `خدمة (${accounting.service}%): ${serviceVal} ج.م\n`;
-
-          msg += `----------------\n*الإجمالي النهائي: ${grandTotal} ج.م*`;
-
-          let phone = storeSettings.whatsappNumber || "";
-          if (phone.startsWith("01")) phone = "2" + phone;
-
-          const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-
-          if (appliedCoupon && appliedCoupon.code) {
-            const couponKey = "used_coupon_" + appliedCoupon.code.toUpperCase();
-            localStorage.setItem(couponKey, "true");
-          }
-
-          window.open(url, "_blank");
-
-          cart = {};
-          appliedCoupon = null;
-          updateCartUI();
-          closeCart();
-          return;
         }
 
-        if (storeSettings.mode === "system") {
-          const items = [];
-          let subTotal = 0;
-          for (const id in cart) {
+        const taxVal = (total * accounting.tax) / 100;
+        const serviceVal =
+            orderType === "dining" ? (total * accounting.service) / 100 : 0;
+
+        let discountVal = 0;
+        if (appliedCoupon) {
+            discountVal = appliedCoupon.amount;
+            msg += `🎟️ خصم كوبون (${appliedCoupon.code}): -${discountVal} ج.م\n`;
+        }
+
+        const grandTotal = total + taxVal + serviceVal - discountVal;
+
+        if (accounting.tax > 0)
+            msg += `ضريبة (${accounting.tax}%): ${taxVal} ج.م\n`;
+        if (accounting.service > 0)
+            msg += `خدمة (${accounting.service}%): ${serviceVal} ج.م\n`;
+
+        msg += `----------------\n*الإجمالي النهائي: ${grandTotal} ج.م*`;
+
+        let phone = storeSettings.whatsappNumber || "";
+        if (phone.startsWith("01")) phone = "2" + phone;
+
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+
+        if (appliedCoupon && appliedCoupon.code) {
+            const couponKey = "used_coupon_" + appliedCoupon.code.toUpperCase();
+            localStorage.setItem(couponKey, "true");
+        }
+
+        window.open(url, "_blank");
+
+        cart = {};
+        appliedCoupon = null;
+        updateCartUI();
+        closeCart();
+        return;
+    }
+
+    if (storeSettings.mode === "system") {
+        const items = [];
+        let subTotal = 0;
+        for (const id in cart) {
             items.push({
-              name: cart[id].name.ar,
-              qty: cart[id].qty,
-              price: cart[id].price,
+                name: cart[id].name.ar,
+                qty: cart[id].qty,
+                price: cart[id].price,
             });
             subTotal += cart[id].price * cart[id].qty;
-          }
+        }
 
-          const taxVal = (subTotal * accounting.tax) / 100;
-          const serviceVal =
-            orderType === "dining" ? (subTotal * accounting.service) / 100 : 0;
-          const discountVal = appliedCoupon ? appliedCoupon.amount : 0;
+        const taxVal = (subTotal * accounting.tax) / 100;
+        const serviceVal = orderType === "dining" ? (subTotal * accounting.service) / 100 : 0;
+        const discountVal = appliedCoupon ? appliedCoupon.amount : 0;
 
-          let finalTotal = subTotal + taxVal + serviceVal - discountVal;
-          if (finalTotal < 0) finalTotal = 0;
+        let finalTotal = subTotal + taxVal + serviceVal - discountVal;
+        if (finalTotal < 0) finalTotal = 0;
 
-          Swal.fire({
+        Swal.fire({
             title: "جاري إرسال الطلب للتحضير...",
             didOpen: () => Swal.showLoading(),
-          });
+        });
 
-          try {
+        try {
             const res = await fetch("/api/v1/orders", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                restaurantId: restaurantId,
-                tableNumber: finalTableValue,
-                items: items,
-                subTotal: subTotal,
-                taxAmount: taxVal,
-                serviceAmount: serviceVal,
-                couponCode: appliedCoupon ? appliedCoupon.code : null,
-                discountAmount: discountVal,
-                totalPrice: finalTotal,
-              }),
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    restaurantId: restaurantId,
+                    tableNumber: finalTableValue,
+                    items: items,
+                    subTotal: subTotal,
+                    taxAmount: taxVal,
+                    serviceAmount: serviceVal,
+                    couponCode: appliedCoupon ? appliedCoupon.code : null,
+                    discountAmount: discountVal,
+                    totalPrice: finalTotal,
+                }),
             });
 
             const data = await res.json();
 
             if (data.status === "success") {
-              if (appliedCoupon && appliedCoupon.code) {
-                const couponKey =
-                  "used_coupon_" + appliedCoupon.code.toUpperCase();
-                localStorage.setItem(couponKey, "true");
-              }
+                if (appliedCoupon && appliedCoupon.code) {
+                    const couponKey = "used_coupon_" + appliedCoupon.code.toUpperCase();
+                    localStorage.setItem(couponKey, "true");
+                }
 
-              cart = {};
-              appliedCoupon = null;
-              document.getElementById("coupon-code-input").value = "";
-              if (document.getElementById("coupon-msg"))
-                document.getElementById("coupon-msg").innerHTML = "";
+                cart = {};
+                appliedCoupon = null;
+                document.getElementById("coupon-code-input").value = "";
+                if (document.getElementById("coupon-msg"))
+                    document.getElementById("coupon-msg").innerHTML = "";
 
-              updateCartUI();
-              closeCart();
+                updateCartUI();
+                closeCart();
 
-              const myOrder = {
-                _id: data.data.order._id,
-                orderNum: data.data.order.orderNum,
-                table: finalTableValue,
-                items: items,
-                total: finalTotal,
-                discount: discountVal,
-                status: "pending",
-                timestamp: new Date().getTime(),
-              };
-              localStorage.setItem("myActiveOrder", JSON.stringify(myOrder));
+                // 🟢 التغيير الأساسي هنا: الحفظ في قائمة بدلاً من استبدال الطلب
+                const myOrder = {
+                    _id: data.data.order._id,
+                    orderNum: data.data.order.orderNum,
+                    table: finalTableValue,
+                    items: items,
+                    total: finalTotal,
+                    discount: discountVal,
+                    status: "pending",
+                    timestamp: new Date().getTime(),
+                };
 
-              checkActiveOrder();
-              trackOrder(data.data.order._id);
+                // جلب القائمة القديمة أو إنشاء جديدة
+                let history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
+                history.unshift(myOrder); // إضافة الجديد في المقدمة
+                
+                // (اختياري) الاحتفاظ بآخر 20 طلب فقط
+                if(history.length > 20) history = history.slice(0, 20);
 
-              Swal.fire({
-                icon: "success",
-                title: "تم استلام طلبك! 🎉",
-                html: `رقم الطلب: <b>#${data.data.order.orderNum}</b><br>انتظر القبول وبدء التحضير.`,
-                confirmButtonText: "تمام",
-                allowOutsideClick: false,
-              });
+                localStorage.setItem("myOrdersHistory", JSON.stringify(history));
+
+                checkActiveOrder();
+                trackOrder(data.data.order._id);
+
+                Swal.fire({
+                    icon: "success",
+                    title: "تم استلام طلبك! 🎉",
+                    html: `رقم الطلب: <b>#${data.data.order.orderNum}</b><br>تمت إضافته لقائمة طلباتك.`,
+                    confirmButtonText: "تمام",
+                    allowOutsideClick: false,
+                });
             } else {
-              throw new Error(data.message);
+                throw new Error(data.message);
             }
-          } catch (err) {
+        } catch (err) {
             Swal.fire("خطأ", "حدث مشكلة في الاتصال، حاول مرة أخرى", "error");
-          }
         }
-      }
+    }
+}
       const socket = io({
         auth: {
           token: sessionStorage.getItem("ownerToken"),
@@ -2176,107 +2181,174 @@
           });
         });
       }
-      function checkActiveOrder() {
-        const savedOrder = localStorage.getItem("myActiveOrder");
-        const btn = document.getElementById("active-order-btn");
-        if (savedOrder) {
-          const order = JSON.parse(savedOrder);
-          if (new Date().getTime() - order.timestamp > 86400000) {
-            localStorage.removeItem("myActiveOrder");
-            btn.classList.remove("visible");
-            return;
-          }
-          btn.classList.add("visible");
-          socket.emit("join-order", order._id);
-          listenToStatus(order._id);
-        } else {
-          btn.classList.remove("visible");
-        }
-      }
+    function checkActiveOrder() {
+    const history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
+    const btn = document.getElementById("active-order-btn");
+    
+    // تنظيف الطلبات القديمة جداً (أكثر من 24 ساعة)
+    const now = new Date().getTime();
+    const validOrders = history.filter(o => (now - o.timestamp) < 86400000);
+    
+    // تحديث التخزين إذا تم حذف شيء قديم
+    if (validOrders.length < history.length) {
+        localStorage.setItem("myOrdersHistory", JSON.stringify(validOrders));
+    }
+
+    if (validOrders.length > 0) {
+        btn.classList.add("visible");
+        
+        // إعادة تفعيل التتبع لكل الطلبات غير المكتملة
+        validOrders.forEach(order => {
+            if (order.status !== 'completed' && order.status !== 'canceled') {
+                socket.emit("join-order", order._id);
+            }
+        });
+
+        // تشغيل مستمع الحالة مرة واحدة
+        listenToStatus();
+
+        // تحديث النص ليظهر عدد الطلبات
+        btn.innerHTML = `<i class=\"fas fa-receipt\"></i> <span>طلباتي (${validOrders.length})</span>`;
+    } else {
+        btn.classList.remove("visible");
+    }
+}
 
       function showMyReceipt() {
-        const savedOrder = localStorage.getItem("myActiveOrder");
-        if (!savedOrder) return;
-        const order = JSON.parse(savedOrder);
+    const history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
+    if (history.length === 0) return;
 
-        let statusText = "قيد الانتظار";
-        let statusColor = "#f59e0b";
+    let htmlContent = '<div style="text-align:right; font-family:var(--font); max-height:60vh; overflow-y:auto; padding:5px;">';
+
+    history.forEach((order) => {
+        let statusText = "قيد الانتظار ⏳";
+        let statusColor = "#f59e0b"; 
+        let headerColor = "#fffbeb"; 
+
         if (order.status === "preparing") {
-          statusText = "جاري التحضير";
-          statusColor = "#3b82f6";
-        }
-        if (order.status === "completed") {
-          statusText = "جاهز / مكتمل";
-          statusColor = "#10b981";
-        }
-        if (order.status === "canceled") {
-          statusText = "ملغي";
-          statusColor = "#ef4444";
-        }
-
-        let itemsHtml =
-          '<ul style="list-style:none; padding:0; margin:15px 0; text-align:right;">';
-        order.items.forEach((item) => {
-          itemsHtml += `<li style="display:flex; justify-content:space-between; border-bottom:1px dashed #eee; padding:5px 0;">
-                        <span>${item.name} (x${item.qty})</span><span>${item.price * item.qty}</span></li>`;
-        });
-        itemsHtml += "</ul>";
-
-        let discountHtml = "";
-        if (order.discount > 0) {
-          discountHtml = `<div style="display:flex; justify-content:space-between; color:red; margin-bottom:5px;">
-                                    <span>خصم كوبون:</span> <span>-${order.discount}</span>
-                                </div>`;
+            statusText = "جاري التحضير 👨‍🍳";
+            statusColor = "#3b82f6";
+            headerColor = "#eff6ff";
+        } else if (order.status === "completed") {
+            statusText = "جاهز / مكتمل ✅";
+            statusColor = "#10b981";
+            headerColor = "#f0fdf4";
+        } else if (order.status === "canceled") {
+            statusText = "ملغي ❌";
+            statusColor = "#ef4444";
+            headerColor = "#fef2f2";
         }
 
-        Swal.fire({
-          title: `طلب رقم #${order.orderNum || String(order._id).slice(-4)}`,
-          html: `<div style="text-align:right; font-family:var(--font);">
-                        <div style="background:${statusColor}20; color:${statusColor}; padding:5px; border-radius:5px; text-align:center; font-weight:bold; margin-bottom:10px;">${statusText}</div>
-                        <div style="display:flex; justify-content:space-between;"><span>الطاولة:</span> <span>${order.table}</span></div>
-                        ${itemsHtml}
-                        ${discountHtml}
-                        <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #ddd; padding-top:10px;">
-                            <span>الإجمالي:</span> <span>${order.total} ج.م</span>
-                        </div>
-                    </div>`,
-          confirmButtonText: "إغلاق",
-          showDenyButton: true,
-          denyButtonText: "مسح وبدء جديد",
-        }).then((result) => {
-          if (result.isDenied) {
-            localStorage.removeItem("myActiveOrder");
+        const dateObj = new Date(order.timestamp);
+        const timeStr = dateObj.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
+        
+        let itemsSummary = order.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:13px; border-bottom:1px dashed #eee; padding:3px 0;"><span>${i.name} (x${i.qty})</span><span>${i.price * i.qty}</span></div>`).join('');
+
+        htmlContent += `
+        <div style="border:1px solid #e5e7eb; border-radius:12px; margin-bottom:15px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.05); background:white;">
+            <div style="background:${headerColor}; padding:10px 15px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e5e7eb;">
+                <span style="font-weight:bold; color:var(--text-main); font-size:15px;">طلب #${order.orderNum || String(order._id).slice(-4)}</span>
+                <span style="font-size:12px; color:#6b7280; direction:ltr;">${timeStr}</span>
+            </div>
+            
+            <div style="padding:15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px; background:${statusColor}15; padding:5px 10px; border-radius:6px;">
+                    <span style="font-weight:bold; color:${statusColor}; font-size:13px;">${statusText}</span>
+                    <span style="font-weight:bold; color:var(--primary)">${order.total} ج.م</span>
+                </div>
+
+                <div style="margin-bottom:10px;">
+                    ${itemsSummary}
+                </div>
+
+                <div style="font-size:12px; color:#6b7280; display:flex; justify-content:space-between; align-items:center;">
+                   <span>${order.table === 'تيك أواي' || order.table === '' ? '🛍️ تيك أواي' : '🍽️ طاولة: ' + order.table}</span>
+                </div>
+            </div>
+        </div>
+        `;
+    });
+
+    htmlContent += '</div>';
+
+    Swal.fire({
+        title: 'سجل طلباتك اليوم',
+        html: htmlContent,
+        showCloseButton: true,
+        showConfirmButton: false,
+        showDenyButton: true,
+        denyButtonText: "مسح السجل",
+        denyButtonColor: "#ef4444",
+        customClass: {
+            popup: 'swal-wide' // يمكنك إضافة تنسيق CSS لهذا الكلاس لعرض أوسع إذا أردت
+        }
+    }).then((result) => {
+        if (result.isDenied) {
+            localStorage.removeItem("myOrdersHistory");
             checkActiveOrder();
-          }
-        });
-      }
-      function listenToStatus(orderId) {
-        socket.off("status-changed");
-        socket.on("status-changed", (status) => {
-          const savedOrder = localStorage.getItem("myActiveOrder");
-          if (savedOrder) {
-            const order = JSON.parse(savedOrder);
-            if (order._id === orderId) {
-              order.status = status;
-              localStorage.setItem("myActiveOrder", JSON.stringify(order));
+            Swal.fire({toast:true, icon:"success", title:"تم مسح السجل", position:"top-end", showConfirmButton:false, timer:1500});
+        }
+    });
+}
+     function listenToStatus() {
+    // إزالة أي مستمعين سابقين لتجنب التكرار
+    socket.off("status-changed");
+    
+    socket.on("status-changed", (status) => {
+        // جلب السجل
+        let history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
+        
+        // البحث عن أحدث طلب في القائمة لم ينتهِ بعد
+        // (نفترض أن التحديث يخص أحدث طلب قمت به)
+        const activeOrderIndex = history.findIndex(o => o.status !== 'completed' && o.status !== 'canceled');
+        
+        if (activeOrderIndex !== -1) {
+            const oldStatus = history[activeOrderIndex].status;
+            
+            // تحديث الحالة فقط إذا كانت مختلفة
+            if (oldStatus !== status) {
+                history[activeOrderIndex].status = status;
+                localStorage.setItem("myOrdersHistory", JSON.stringify(history));
+                
+                // رسالة التنبيه
+                let msg = "";
+                let icon = "info";
+                
+                if (status === "preparing") {
+                    msg = `بدأ تحضير طلبك #${history[activeOrderIndex].orderNum}`;
+                } else if (status === "completed") {
+                    msg = `طلبك #${history[activeOrderIndex].orderNum} جاهز الآن!`;
+                    icon = "success";
+                } else if (status === "canceled") {
+                    msg = `تم إلغاء الطلب #${history[activeOrderIndex].orderNum}`;
+                    icon = "error";
+                }
+                
+                if(msg) {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: icon,
+                        title: msg,
+                        timer: 5000,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
+                    
+                    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                }
+                
+                // تحديث الواجهة (الزر العائم)
+                checkActiveOrder();
+                
+                // لو نافذة الفاتورة مفتوحة، نقوم بتحديثها (اختياري، يتطلب إعادة فتحها)
+                if(Swal.isVisible() && Swal.getTitle()?.innerText.includes('سجل')) {
+                    showMyReceipt();
+                }
             }
-          }
-          let msg =
-            status === "preparing"
-              ? "بدأ التحضير"
-              : status === "completed"
-                ? "الطلب جاهز"
-                : "تم الإلغاء";
-          Swal.fire({
-            toast: true,
-            position: "top-end",
-            icon: "info",
-            title: msg,
-            timer: 3000,
-            showConfirmButton: false,
-          });
-        });
-      }
+        }
+    });
+}
 
       checkActiveOrder();
       loadMenu();

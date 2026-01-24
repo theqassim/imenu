@@ -2688,6 +2688,8 @@
 
             applyPermissions(result.data.userRole);
             currentUserRole = result.data.userRole;
+            if (result.data.shiftStart) sessionStorage.setItem("shiftStart", result.data.shiftStart);
+            if (result.data.shiftEnd) sessionStorage.setItem("shiftEnd", result.data.shiftEnd);
 
             const roleNames = {
               owner: "المالك",
@@ -4313,58 +4315,96 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         });
       };
 
-      function startShiftMonitor() {
-        const shiftEndStr = sessionStorage.getItem("shiftEnd");
-        if (!shiftEndStr) return;
+     function startShiftMonitor() {
+        // التأكد من وجود المواعيد
+        const startStr = sessionStorage.getItem("shiftStart");
+        const endStr = sessionStorage.getItem("shiftEnd");
+        
+        if (!startStr || !endStr) return;
 
-        checkTime(shiftEndStr);
+        // تشغيل الفحص فوراً
+        checkTime(startStr, endStr);
 
+        // تشغيل الفحص كل دقيقة
         setInterval(() => {
-          checkTime(shiftEndStr);
-        }, 30000);
+          if (typeof currentUserRole !== 'undefined' && currentUserRole !== 'owner') {
+            checkTime(startStr, endStr);
+          }
+        }, 60000);
       }
 
-      function checkTime(shiftEndStr) {
+      function checkTime(startStr, endStr) {
+        if (typeof currentUserRole !== 'undefined' && currentUserRole === 'owner') {
+            return;
+        }
+
         const now = new Date(Date.now() + serverTimeOffset);
+        const currentMins = now.getHours() * 60 + now.getMinutes();
 
-        const [endH, endM] = shiftEndStr.split(":").map(Number);
+        const [sh, sm] = startStr.split(":").map(Number);
+        const [eh, em] = endStr.split(":").map(Number);
 
-        const currentMinutes = now.getHours() * 60 + now.getMinutes();
-        const endMinutes = endH * 60 + endM;
+        const startMins = sh * 60 + sm;
+        const endMins = eh * 60 + em;
 
-        const isOvernightOverlap = currentMinutes - endMinutes > 720;
+        let isWorking = false;
 
-        const gracePeriod = 10;
+        // التعامل مع الشيفت اللي بيعدي نص الليل (مثلاً من 8 مساءً لـ 2 صباحاً)
+        if (endMins < startMins) {
+            // يعتبر شغال لو الوقت أكبر من البداية (بالليل) أو أصغر من النهاية (الفجر)
+            if (currentMins >= startMins || currentMins < endMins) isWorking = true;
+        } else {
+            // شيفت نهاري عادي
+            if (currentMins >= startMins && currentMins < endMins) isWorking = true;
+        }
 
-        if (currentMinutes > endMinutes && !isOvernightOverlap) {
-          const diff = currentMinutes - endMinutes;
-
-          if (diff < gracePeriod) {
-            const remaining = gracePeriod - diff;
-            if (remaining === 5 || remaining === 1) {
-              Swal.fire({
-                icon: "warning",
-                title: "انتهى وقت الشيفت!",
-                text: `سيتم تسجيل الخروج تلقائياً خلال ${remaining} دقائق.`,
-                timer: 3000,
-                showConfirmButton: false,
-                toast: true,
-                position: "top",
-              });
-            }
-          } else {
+        if (!isWorking) {
             Swal.fire({
-              icon: "error",
-              title: "انتهت فترة السماح",
-              text: "انتهى الشيفت وتم إغلاق النظام.",
-              allowOutsideClick: false,
-              confirmButtonText: "حسناً",
+                icon: "warning",
+                title: "انتهى وقت العمل",
+                text: `أنت خارج ساعات العمل الرسمية (${startStr} - ${endStr})، سيتم تسجيل الخروج.`,
+                timer: 4000,
+                showConfirmButton: false,
+                allowOutsideClick: false
             }).then(() => {
-              logout();
+                logout();
             });
-          }
+            return; // توقف هنا
+        }
+
+        // --- منطق التنبيه قبل الانتهاء بـ 10 دقائق ---
+        // نحسب الوقت المتبقي فقط لغرض التنبيه
+        let remaining = 0;
+        if (endMins < startMins) { 
+             // لو شيفت ليلي
+             let tempCurrent = currentMins < startMins ? currentMins + 1440 : currentMins;
+             let tempEnd = endMins + 1440;
+             remaining = tempEnd - tempCurrent;
+        } else {
+             remaining = endMins - currentMins;
+        }
+
+        if (remaining <= 10 && remaining > 0) {
+            if (!sessionStorage.getItem('shift_warning_shown')) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'تنبيه انتهاء الدوام',
+                    text: `متبقي ${remaining} دقائق على انتهاء شيفتك.`,
+                    toast: true,
+                    position: 'top-end',
+                    timer: 8000,
+                    showConfirmButton: false,
+                    background: '#fffbeb',
+                    color: '#92400e'
+                });
+                const audio = document.getElementById("order-sound");
+                if(audio) { audio.play().catch(e=>{}); }
+                sessionStorage.setItem('shift_warning_shown', 'true');
+            }
         }
       }
+
+    
 
       function exportToExcel(tableId, filename) {
         const table = document.getElementById(tableId);
@@ -4624,15 +4664,26 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
                 ? `<div style="font-size:11px; color:var(--secondary); margin-top:5px;"><i class="far fa-clock"></i> ${u.shiftStart} - ${u.shiftEnd}</div>`
                 : "";
 
+            // تشفير البيانات لإرسالها لدالة التعديل
+            const staffData = encodeURIComponent(JSON.stringify(u));
+
             list.innerHTML += `
                     <tr>
-                        <td>
-                            ${u.name}
-                            ${shiftInfo}
-                        </td>
+                        <td>${u.name}${shiftInfo}</td>
                         <td>${u.email}</td>
                         <td>${roleBadge}</td>
-                        <td><button class="btn btn-outline" style="color:red" onclick="deleteStaff('${u._id}')"><i class="fas fa-trash"></i></button></td>
+                        <td>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn btn-outline" style="color:var(--primary); border-color:var(--primary); padding:5px 10px;" 
+                                    onclick="editStaff('${staffData}')" title="تعديل">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline" style="color:red; padding:5px 10px;" 
+                                    onclick="deleteStaff('${u._id}')" title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 `;
           });
@@ -4641,13 +4692,14 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         }
       }
 
+      let editingStaffId = null;
+
       async function addStaff() {
         const name = document.getElementById("staff-name").value;
         const email = document.getElementById("staff-email").value;
         const password = document.getElementById("staff-password").value;
         const role = document.getElementById("staff-role").value;
         const rId = document.getElementById("restaurant-id").value;
-
         const shiftStart = document.getElementById("staff-start").value;
         const shiftEnd = document.getElementById("staff-end").value;
 
@@ -4658,43 +4710,109 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
             restDays.push(parseInt(cb.value));
           });
 
-        if (!name || !email || !password)
+        if (!name || !email)
           return Swal.fire("تنبيه", "أكمل البيانات الأساسية", "warning");
 
+        // الباسورد مطلوب فقط في حالة الإضافة الجديدة
+        if (!editingStaffId && !password)
+           return Swal.fire("تنبيه", "كلمة المرور مطلوبة للموظف الجديد", "warning");
+
+        const bodyData = {
+            name, email, role, restaurantId: rId,
+            shiftStart, shiftEnd, restDays
+        };
+        // إرسال الباسورد فقط إذا تم كتابته (لتجنب تغييره لفارغ)
+        if(password) bodyData.password = password;
+
         try {
-          const res = await fetch("/api/v1/users/create-staff", {
-            method: "POST",
+          let url = "/api/v1/users/create-staff";
+          let method = "POST";
+
+          if (editingStaffId) {
+              url = `/api/v1/users/staff/${editingStaffId}`;
+              method = "PATCH";
+          }
+
+          const res = await fetch(url, {
+            method: method,
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({
-              name,
-              email,
-              password,
-              role,
-              restaurantId: rId,
-              shiftStart,
-              shiftEnd,
-              restDays,
-            }),
+            body: JSON.stringify(bodyData),
           });
           const data = await res.json();
+          
           if (data.status === "success") {
-            Swal.fire("تم", "تم إضافة الموظف وتحديد الشيفت", "success");
-            document.getElementById("staff-name").value = "";
-            document.getElementById("staff-email").value = "";
-            document.getElementById("staff-password").value = "";
-            document
-              .querySelectorAll("#rest-days-container input")
-              .forEach((cb) => (cb.checked = false));
+            Swal.fire("تم", editingStaffId ? "تم تعديل بيانات الموظف" : "تم إضافة الموظف", "success");
+            resetStaffForm();
             loadStaff();
           } else {
             Swal.fire("خطأ", data.message, "error");
           }
         } catch (e) {
           console.error(e);
+          Swal.fire("خطأ", "حدث خطأ في الاتصال", "error");
         }
+      }
+
+      function editStaff(staffDataEncoded) {
+          const u = JSON.parse(decodeURIComponent(staffDataEncoded));
+          editingStaffId = u._id;
+
+          // تعبئة البيانات في الفورم
+          document.getElementById("staff-name").value = u.name;
+          document.getElementById("staff-email").value = u.email;
+          document.getElementById("staff-password").value = ""; // تفريغ الباسورد
+          document.getElementById("staff-role").value = u.role;
+          document.getElementById("staff-start").value = u.shiftStart || "09:00";
+          document.getElementById("staff-end").value = u.shiftEnd || "17:00";
+
+          // تحديد أيام الإجازة
+          const checkboxes = document.querySelectorAll("#rest-days-container input");
+          checkboxes.forEach(cb => cb.checked = false); // تصفير أولاً
+          if (u.restDays) {
+              checkboxes.forEach(cb => {
+                  if (u.restDays.includes(parseInt(cb.value))) cb.checked = true;
+              });
+          }
+
+          // تغيير شكل الزر
+          const btn = document.querySelector("#view-staff .btn-primary");
+          btn.innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
+          btn.style.backgroundColor = "var(--warning)";
+          btn.style.borderColor = "var(--warning)";
+
+          // إضافة زر إلغاء إذا لم يكن موجوداً
+          if (!document.getElementById("btn-cancel-staff")) {
+              const cancelBtn = document.createElement("button");
+              cancelBtn.id = "btn-cancel-staff";
+              cancelBtn.className = "btn btn-outline";
+              cancelBtn.innerHTML = "إلغاء";
+              cancelBtn.style.marginRight = "10px";
+              cancelBtn.onclick = resetStaffForm;
+              btn.parentNode.insertBefore(cancelBtn, btn.nextSibling);
+          }
+          
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      function resetStaffForm() {
+          editingStaffId = null;
+          document.getElementById("staff-name").value = "";
+          document.getElementById("staff-email").value = "";
+          document.getElementById("staff-password").value = "";
+          document.getElementById("staff-start").value = "09:00";
+          document.getElementById("staff-end").value = "17:00";
+          document.querySelectorAll("#rest-days-container input").forEach(cb => cb.checked = false);
+
+          const btn = document.querySelector("#view-staff .btn-primary");
+          btn.innerHTML = 'حفظ البيانات';
+          btn.style.backgroundColor = "";
+          btn.style.borderColor = "";
+
+          const cancelBtn = document.getElementById("btn-cancel-staff");
+          if (cancelBtn) cancelBtn.remove();
       }
 
       async function deleteStaff(id) {

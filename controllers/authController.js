@@ -104,6 +104,7 @@ exports.login = async (req, res) => {
     }
 
     if (!user.active) {
+     // التحقق من اشتراك المالك (خاص بالمالك فقط)
       if (
         user.role === "owner" &&
         user.subscriptionExpires &&
@@ -118,6 +119,53 @@ exports.login = async (req, res) => {
         .status(401)
         .json({ status: "fail", message: "هذا الحساب معطل حالياً" });
     }
+
+    // ============================================================
+    // 🔴 قيود الدخول (تطبق فقط على الكاشير والمطبخ)
+    // ============================================================
+    if (user.role === 'cashier' || user.role === 'kitchen') {
+        // 🟢 ضبط التوقيت على القاهرة (مصر) لحل مشكلة فرق التوقيت
+        const cairoDateStr = new Date().toLocaleString("en-US", {timeZone: "Africa/Cairo"});
+        const now = new Date(cairoDateStr);
+        
+        // 1. فحص أيام الإجازة
+        const today = now.getDay(); 
+        if (user.restDays && user.restDays.includes(today)) {
+            return res.status(403).json({
+                status: "fail",
+                message: "عذراً، لا يمكنك الدخول اليوم (يوم إجازة).",
+            });
+        }
+
+        // 2. فحص ساعات العمل (إذا كانت محددة في حساب الموظف)
+        if (user.shiftStart && user.shiftEnd) {
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            
+            const [sh, sm] = user.shiftStart.split(':').map(Number);
+            const [eh, em] = user.shiftEnd.split(':').map(Number);
+            
+            const startMins = sh * 60 + sm;
+            const endMins = eh * 60 + em;
+
+            let isWorking = false;
+            
+            // التعامل مع الشيفت اللي بيعدي نص الليل (مثلاً من 8 مساءً لـ 2 صباحاً)
+            if (endMins < startMins) { 
+                if (currentMins >= startMins || currentMins < endMins) isWorking = true;
+            } else {
+                // شيفت نهاري عادي
+                if (currentMins >= startMins && currentMins < endMins) isWorking = true;
+            }
+
+            if (!isWorking) {
+                return res.status(403).json({
+                    status: "fail",
+                    message: `عذراً، أنت خارج مواعيد عملك (${user.shiftStart} - ${user.shiftEnd})`,
+                });
+            }
+        }
+    }
+    // ============================================================
 
     createSendToken(user, 200, res);
   } catch (err) {
@@ -407,21 +455,103 @@ exports.getMyStaff = async (req, res) => {
   }
 };
 
-exports.deleteStaff = async (req, res) => {
+exports.updateStaff = async (req, res) => {
   try {
-    const staffMember = await User.findById(req.params.id);
-
-    if (!staffMember) {
-      return res
-        .status(404)
-        .json({ status: "fail", message: "الموظف غير موجود" });
+    if (req.user.role !== 'owner') {
+        return res.status(403).json({ message: "غير مسموح لك بتعديل الموظفين" });
     }
 
-    if (staffMember.role === "owner" || staffMember.role === "admin") {
-      return res.status(403).json({
-        status: "fail",
-        message: "لا يمكن حذف المالك أو الأدمن من هنا",
-      });
+    const staffId = req.params.id;
+    // التأكد أن الموظف يتبع لهذا المالك
+    const staffMember = await User.findOne({ _id: staffId, owner: req.user._id });
+
+    if (!staffMember) {
+        return res.status(404).json({ message: "الموظف غير موجود أو لا يتبع لك" });
+    }
+
+    const updates = { ...req.body };
+
+    // تحديث الباسورد فقط لو تم إرساله، وإلا نحذفه من التحديث
+    if (updates.password && updates.password.trim() !== "") {
+        const bcrypt = require('bcryptjs');
+        updates.password = await bcrypt.hash(updates.password, 12);
+    } else {
+        delete updates.password;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(staffId, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({ status: "success", data: { user: updatedUser } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+};
+
+// 🟢 دالة تعديل الموظف (تم إصلاح مشكلة الربط)
+exports.updateStaff = async (req, res) => {
+  try {
+    // 1. التأكد أنك المالك
+    if (req.user.role !== 'owner') {
+        return res.status(403).json({ message: "غير مسموح لك بتعديل الموظفين" });
+    }
+
+    // 2. جلب مطعم المالك الحالي للتأكد من الملكية
+    const Restaurant = require("../models/Restaurant");
+    const myRestaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!myRestaurant) {
+        return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+    }
+
+    const staffId = req.params.id;
+    
+    // 3. البحث عن الموظف داخل مطعم هذا المالك (أضمن طريقة)
+    const staffMember = await User.findOne({ _id: staffId, restaurant: myRestaurant._id });
+
+    if (!staffMember) {
+        return res.status(404).json({ message: "الموظف غير موجود أو لا يتبع لمطعمك" });
+    }
+
+    // 4. تجهيز البيانات للتحديث
+    const updates = { ...req.body };
+
+    // عدم السماح بتغيير المطعم أو المالك
+    delete updates.restaurant;
+    delete updates.owner;
+
+    // تحديث الباسورد فقط لو المالك كتب باسورد جديد
+    if (updates.password && updates.password.trim() !== "") {
+        const bcrypt = require('bcryptjs');
+        updates.password = await bcrypt.hash(updates.password, 12);
+    } else {
+        delete updates.password; // لو فاضي، شيله عشان ميبوظش القديم
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(staffId, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({ status: "success", data: { user: updatedUser } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+};
+
+exports.deleteStaff = async (req, res) => {
+  try {
+    // أيضاً نستخدم المطعم للتحقق عند الحذف
+    const Restaurant = require("../models/Restaurant");
+    const myRestaurant = await Restaurant.findOne({ owner: req.user._id });
+    
+    if (!myRestaurant) return res.status(404).json({message: "لا تملك مطعم"});
+
+    const staffMember = await User.findOne({ _id: req.params.id, restaurant: myRestaurant._id });
+
+    if (!staffMember) {
+      return res.status(404).json({ status: "fail", message: "الموظف غير موجود أو لا يتبع لك" });
     }
 
     await User.findByIdAndDelete(req.params.id);

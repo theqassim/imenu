@@ -61,6 +61,7 @@ router.post(
   authController.createStaff,
 );
 router.get("/my-staff", authController.protect, authController.getMyStaff);
+router.patch("/staff/:id", authController.protect, authController.updateStaff); 
 router.delete("/staff/:id", authController.protect, authController.deleteStaff);
 
 module.exports = router;

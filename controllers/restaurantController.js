@@ -11,7 +11,6 @@ exports.createRestaurant = async (req, res) => {
       slug,
       contactInfo,
       owner: owner,
-      hasStock: hasStock !== undefined ? hasStock : true,
       image: req.file ? req.file.path : undefined,
     });
 
@@ -95,6 +94,8 @@ exports.getMyRestaurant = async (req, res) => {
       data: {
         restaurant,
         userRole: req.user.role,
+        shiftStart: req.user.shiftStart,
+        shiftEnd: req.user.shiftEnd,
       },
     });
   } catch (err) {
