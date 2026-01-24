@@ -24,7 +24,10 @@ const restaurantSchema = new mongoose.Schema({
   serviceRate: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   enableCoupons: { type: Boolean, default: false },
-  hasStock: { type: Boolean, default: true },
+
+  // 🟢 تم الإصلاح: تعريف الحقل مرة واحدة بقيمة افتراضية false
+  hasStock: { type: Boolean, default: false },
+
   qrImage: { type: String, default: "" },
   qrName: { type: String, default: "" },
 

@@ -1401,6 +1401,7 @@
         </div>
         <div class="nav-item hidden" onclick="switchView('stock')" id="nav-stock">
           <i class="fas fa-boxes"></i> إدارة المخزن
+          <span id="stock-badge-count" class="badge" style="background:var(--danger); color:white; display:none; margin-right:auto; font-size:10px;">0</span>
         </div>
         <div class="nav-item" onclick="switchView('history')" id="nav-history">
           <i class="fas fa-history"></i> سجل المبيعات
@@ -2023,6 +2024,9 @@
                     <div id="recipe-editor-content" class="hidden" style="height:100%; display:flex; flex-direction:column;">
                         <h3 style="margin-top:0; color:var(--primary); display:flex; justify-content:space-between; align-items:center;">
                             <span><i class="fas fa-edit"></i> مقادير: <span id="recipe-active-name" style="color:var(--text-main)">--</span></span>
+                            <div style="font-size:13px; font-weight:bold; color:var(--primary); background:var(--primary-light); padding:5px 12px; border-radius:20px;" id="recipe-cost-display">
+                                التكلفة: 0.00 ج.م
+                            </div>
                             <button class="btn btn-success" onclick="saveActiveRecipe()" style="width:auto; padding:5px 20px;">
                                 <i class="fas fa-save"></i> حفظ التعديلات
                             </button>
@@ -2646,111 +2650,99 @@
             const serverTime = new Date(serverDateHeader).getTime();
             const localTime = Date.now();
             serverTimeOffset = serverTime - localTime;
-            console.log("Server Time Offset:", serverTimeOffset);
           }
 
           const result = await res.json();
 
           if (result.status === "success") {
-            document.getElementById("restaurant-id").value =
-              result.data.restaurant._id;
-            document.getElementById("preview-link").href =
-              `/menu/${result.data.restaurant.slug}`;
+            const data = result.data;
+            document.getElementById("restaurant-id").value = data.restaurant._id;
+            document.getElementById("preview-link").href = `/menu/${data.restaurant.slug}`;
 
-            document.getElementById("set-orderMode").value =
-              result.data.restaurant.orderMode || "whatsapp";
-            document.getElementById("set-taxRate").value =
-              result.data.restaurant.taxRate || 0;
-            document.getElementById("set-serviceRate").value =
-              result.data.restaurant.serviceRate || 0;
-            document.getElementById("set-useTableNumbers").checked =
-              result.data.restaurant.useTableNumbers === true;
-            document.getElementById("set-enableCoupons").checked =
-              result.data.restaurant.enableCoupons === true;
+            // إعدادات المتجر
+            document.getElementById("set-orderMode").value = data.restaurant.orderMode || "whatsapp";
+            document.getElementById("set-taxRate").value = data.restaurant.taxRate || 0;
+            document.getElementById("set-serviceRate").value = data.restaurant.serviceRate || 0;
+            document.getElementById("set-useTableNumbers").checked = data.restaurant.useTableNumbers === true;
+            document.getElementById("set-enableCoupons").checked = data.restaurant.enableCoupons === true;
             
-            // تحميل إعداد طباعة الرقم (الأولوية للذاكرة المحلية ثم السيرفر)
+            // إعداد طباعة الرقم
             const localPrintSetting = localStorage.getItem("localPrintOrderNum");
-            let shouldPrintNum;
-
-            if (localPrintSetting !== null) {
-                shouldPrintNum = (localPrintSetting === "true");
-            } else {
-                shouldPrintNum = result.data.restaurant.printOrderNumber !== false;
-            }
-
+            let shouldPrintNum = localPrintSetting !== null ? (localPrintSetting === "true") : (data.restaurant.printOrderNumber !== false);
             document.getElementById("set-printOrderNum").checked = shouldPrintNum;
             document.getElementById("setting-print-num").value = shouldPrintNum;
 
-            if (result.data.restaurant.contactInfo) {
-              document.getElementById("set-whatsapp").value =
-                result.data.restaurant.contactInfo.whatsapp || "";
+            if (data.restaurant.contactInfo) {
+              document.getElementById("set-whatsapp").value = data.restaurant.contactInfo.whatsapp || "";
             }
 
-            applyPermissions(result.data.userRole);
-            currentUserRole = result.data.userRole;
-            if (result.data.shiftStart) sessionStorage.setItem("shiftStart", result.data.shiftStart);
-            if (result.data.shiftEnd) sessionStorage.setItem("shiftEnd", result.data.shiftEnd);
+            applyPermissions(data.userRole);
+            currentUserRole = data.userRole;
+            if (data.shiftStart) sessionStorage.setItem("shiftStart", data.shiftStart);
+            if (data.shiftEnd) sessionStorage.setItem("shiftEnd", data.shiftEnd);
 
-            const roleNames = {
-              owner: "المالك",
-              cashier: "الكاشير",
-              kitchen: "المطبخ",
-            };
+            // عرض اسم المستخدم
+            const roleNames = { owner: "المالك", cashier: "الكاشير", kitchen: "المطبخ" };
             const roleAr = roleNames[currentUserRole] || currentUserRole;
-            const userName =
-              sessionStorage.getItem("currentUserName") || "مستخدم";
+            const userName = sessionStorage.getItem("currentUserName") || "مستخدم";
 
             document.getElementById("page-title").innerHTML = `
-                        <div>${result.data.restaurant.restaurantName}</div>
-                        <div style="font-size:14px; color:var(--secondary); font-weight:normal; margin-top:5px;">
-                            <i class="fas fa-user-circle"></i> ${userName} <span class="badge" style="background:var(--primary); color:white; font-size:12px;">${roleAr}</span>
-                        </div>
-                    `;
+                <div>${data.restaurant.restaurantName}</div>
+                <div style="font-size:14px; color:var(--secondary); font-weight:normal; margin-top:5px;">
+                    <i class="fas fa-user-circle"></i> ${userName} <span class="badge" style="background:var(--primary); color:white; font-size:12px;">${roleAr}</span>
+                </div>
+            `;
 
-            document
-              .getElementById("dashboard-section")
-              .classList.remove("hidden");
-            if (
-              result.data.userRole === "cashier" ||
-              result.data.userRole === "kitchen"
-            ) {
-              checkShiftStatus(result.data.userRole);
+            document.getElementById("dashboard-section").classList.remove("hidden");
+            
+            if (data.userRole === "cashier" || data.userRole === "kitchen") {
+              checkShiftStatus(data.userRole);
             }
-            if (result.data.userRole === "owner") {
+            
+            if (data.userRole === "owner") {
               loadCategories();
               loadProducts();
-              initDesignStudio(result.data.restaurant);
+              initDesignStudio(data.restaurant);
               
-              // التحقق من تفعيل ميزة المخازن
-              if(result.data.restaurant.owner.hasStock || result.data.restaurant.hasStock) {
-                  document.getElementById('nav-stock').classList.remove('hidden');
-                  document.getElementById('nav-recipes').classList.remove('hidden'); // إظهار زر إدارة المقادير
-                  document.getElementById('ingredients-section').classList.remove('hidden');
-                  loadStockItems(); // تحميل مواد المخزن
+              // 🟢 إصلاح منطق عرض المخازن (يعتمد الآن على القيمة القادمة من السيرفر)
+              const isStockEnabled = data.hasStock;
+
+              if (isStockEnabled) {
+                // إظهار العناصر
+                document.getElementById('nav-stock').classList.remove('hidden');
+                document.getElementById('nav-recipes').classList.remove('hidden');
+                document.getElementById('ingredients-section').classList.remove('hidden');
+                if(document.getElementById('mob-nav-stock')) document.getElementById('mob-nav-stock').classList.remove('hidden');
+                
+                loadStockItems(); 
+              } else {
+                // إخفاء العناصر (لضمان اختفائها لو الميزة اتلغت)
+                document.getElementById('nav-stock').classList.add('hidden');
+                document.getElementById('nav-recipes').classList.add('hidden');
+                document.getElementById('ingredients-section').classList.add('hidden');
+                if(document.getElementById('mob-nav-stock')) document.getElementById('mob-nav-stock').classList.add('hidden');
               }
             }
 
+            // توجيه المستخدم لآخر صفحة كان فيها
             const lastView = localStorage.getItem("lastActiveView");
-            if (result.data.userRole === "kitchen") switchView("orders");
-            else if (result.data.userRole === "cashier") {
+            if (data.userRole === "kitchen") switchView("orders");
+            else if (data.userRole === "cashier") {
               if (lastView === "history") switchView("history");
               else switchView("orders");
             } else {
               if (lastView && lastView !== "orders") switchView(lastView);
               else switchView("categories");
             }
+
           } else {
-            if (res.status === 401) {
+             // Handle Errors
+             if (res.status === 401) {
               sessionStorage.removeItem("ownerToken");
               window.location.href = "/login";
             } else {
-              Swal.fire({
-                icon: "warning",
-                title: "تنبيه",
-                text: result.message || "خطأ في البيانات",
-              }).then(() => {
-                window.location.href = "/login";
-              });
+              Swal.fire({ icon: "warning", title: "تنبيه", text: result.message || "خطأ في البيانات" })
+              .then(() => { window.location.href = "/login"; });
             }
           }
         } catch (e) {
@@ -5451,6 +5443,25 @@ async function loadStockItems() {
         
         if(data.status === 'success') {
             stockItemsData = data.data.items;
+            
+            // === [New] تحديث عداد النواقص في القائمة الجانبية ===
+            let lowStockCount = 0;
+            if(stockItemsData) {
+                stockItemsData.forEach(item => {
+                    if (item.quantity <= item.alertLevel) lowStockCount++;
+                });
+            }
+            const badge = document.getElementById('stock-badge-count');
+            if(badge) {
+                if(lowStockCount > 0) {
+                    badge.innerText = lowStockCount;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            // ====================================================
+
             renderStockTable();
             renderStockDropdown();
         } else {
@@ -5923,6 +5934,25 @@ function removeIngredient(index) {
           if(activeIngredients.length === 0) {
               tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:gray;">لم يتم إضافة مقادير بعد</td></tr>';
           }
+
+          // === [New] حساب التكلفة الإجمالية للمقادير ===
+          let totalCost = 0;
+          activeIngredients.forEach(ing => {
+              if(ing.stockItem) {
+                  // محاولة العثور على السعر من القائمة المحملة (لأن الـ object الحالي قد لا يحتوي على السعر)
+                  let cost = ing.stockItem.costPerUnit || 0;
+                  
+                  // لو السعر 0 (ربما لم يتم عمل populate)، نبحث في القائمة الرئيسية stockItemsData
+                  if(!cost && typeof stockItemsData !== 'undefined') {
+                      const originalItem = stockItemsData.find(x => x._id === (ing.stockItem._id || ing.stockItem));
+                      if(originalItem) cost = originalItem.costPerUnit;
+                  }
+                  totalCost += (ing.quantity * cost);
+              }
+          });
+          const costDisplay = document.getElementById('recipe-cost-display');
+          if(costDisplay) costDisplay.innerText = `التكلفة: ${totalCost.toFixed(2)} ج.م`;
+          // =============================================
       }
 
       function removeActiveIngredient(index) {
@@ -6230,34 +6260,90 @@ function removeIngredient(index) {
                 Swal.fire('خطأ', 'فشل الاتصال', 'error');
             }
         }
+        function applyUserPermissions(user) {
+        const stockSidebar = document.getElementById('nav-stock'); // تأكد أن لديك ID للزر في السايد بار
+        const stockMobile = document.getElementById('mob-nav-stock');
+
+        // الوضع الافتراضي: إخفاء العناصر
+        if (stockSidebar) stockSidebar.style.display = 'none';
+        if (stockMobile) stockMobile.style.display = 'none';
+
+        // إذا كانت الميزة مفعلة، قم بإظهارها
+        if (user.hasStock === true) {
+            if (stockSidebar) stockSidebar.style.display = 'flex'; // أو block حسب تصميمك
+            if (stockMobile) stockMobile.style.display = 'flex';
+        }
+    }
+
+    // مثال: أين تضع هذه الدالة؟
+    // استدعِ هذه الدالة فور الحصول على بيانات المستخدم من السيرفر
+    // مثلاً داخل getMyRestaurant() أو checkAuth()
+    
+    async function initPage() {
+        try {
+            const res = await fetch("/api/v1/restaurants/my-restaurant", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const result = await res.json();
+            
+            if (result.status === 'success') {
+                const restaurant = result.data.restaurant;
+                const userRole = result.data.userRole;
+                
+                // التحقق من تفعيل ميزة المخازن للمالك أو المطعم
+                const isStockEnabled = restaurant.owner.hasStock || restaurant.hasStock;
+
+                if (isStockEnabled && userRole === 'owner') {
+                    // إظهار في القائمة الجانبية (Sidebar)
+                    if (document.getElementById('nav-stock')) document.getElementById('nav-stock').classList.remove('hidden');
+                    if (document.getElementById('nav-recipes')) document.getElementById('nav-recipes').classList.remove('hidden');
+                    
+                    // إظهار في القائمة السفلية للموبايل (Mobile Nav)
+                    const stockMobile = document.getElementById('mob-nav-stock');
+                    if (stockMobile) stockMobile.classList.remove('hidden');
+                    
+                    // إظهار قسم المقادير في صفحة المنتجات
+                    if (document.getElementById('ingredients-section')) document.getElementById('ingredients-section').classList.remove('hidden');
+                } else {
+                    // التأكد من إخفائها تماماً إذا لم تكن مفعلة
+                    if (document.getElementById('nav-stock')) document.getElementById('nav-stock').classList.add('hidden');
+                    if (document.getElementById('nav-recipes')) document.getElementById('nav-recipes').classList.add('hidden');
+                    if (document.getElementById('mob-nav-stock')) document.getElementById('mob-nav-stock').classList.add('hidden');
+                    if (document.getElementById('ingredients-section')) document.getElementById('ingredients-section').classList.add('hidden');
+                }
+            }
+        } catch (err) {
+            console.error("Error in initPage permissions:", err);
+        }
+    }
     </script>
 
     <div class="mobile-bottom-nav">
-    <div class="nav-icon active" onclick="switchView('orders')" id="mob-nav-orders">
-        <i class="fas fa-bell"></i>
-        <span>الطلبات</span>
-        <span id="mob-badge" class="hidden" style="position:absolute; top:5px; right:30%; width:8px; height:8px; background:red; border-radius:50%;"></span>
-    </div>
-    <div class="nav-icon" onclick="switchView('products')" id="mob-nav-products">
-        <i class="fas fa-hamburger"></i>
-        <span>المنتجات</span>
-    </div>
-    <div class="nav-icon" onclick="switchView('categories')" id="mob-nav-categories">
-        <i class="fas fa-layer-group"></i>
-        <span>الأقسام</span>
-    </div>
-    <div class="nav-icon hidden" onclick="switchView('stock')" id="mob-nav-stock">
+        <div class="nav-icon active" onclick="switchView('orders')" id="mob-nav-orders">
+            <i class="fas fa-bell"></i>
+            <span>الطلبات</span>
+            <span id="mob-badge" class="hidden" style="position:absolute; top:5px; right:30%; width:8px; height:8px; background:red; border-radius:50%;"></span>
+        </div>
+        <div class="nav-icon" onclick="switchView('products')" id="mob-nav-products">
+            <i class="fas fa-hamburger"></i>
+            <span>المنتجات</span>
+        </div>
+        <div class="nav-icon" onclick="switchView('categories')" id="mob-nav-categories">
+            <i class="fas fa-layer-group"></i>
+            <span>الأقسام</span>
+        </div>
+        <div class="nav-icon hidden" onclick="switchView('stock')" id="mob-nav-stock">
             <i class="fas fa-boxes"></i>
             <span>المخزن</span>
         </div>
-    <div class="nav-icon" onclick="switchView('settings')" id="mob-nav-settings">
-        <i class="fas fa-cog"></i>
-        <span>الإعدادات</span>
-    </div>
-    <div class="nav-icon" onclick="toggleSidebar()">
-        <i class="fas fa-bars"></i>
-        <span>المزيد</span>
-    </div>
+        <div class="nav-icon" onclick="switchView('settings')" id="mob-nav-settings">
+            <i class="fas fa-cog"></i>
+            <span>الإعدادات</span>
+        </div>
+        <div class="nav-icon" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+            <span>المزيد</span>
+        </div>
 </div>
   </body>
 </html>

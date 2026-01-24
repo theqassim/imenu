@@ -161,11 +161,15 @@ exports.updateProduct = async (req, res) => {
     if (oldPrice !== undefined) updateData.oldPrice = oldPrice;
     if (category) updateData.category = category;
 
-    if (ingredients) {
-      try {
-        updateData.ingredients = JSON.parse(ingredients);
-      } catch (e) {
-        updateData.ingredients = [];
+    // التحقق من الصلاحية قبل تحديث المقادير
+    // (الحماية لمنع التلاعب بالمخزون من مستخدمين غير مصرح لهم)
+    if (req.user.hasStock || (req.user.role === "owner" && req.user.hasStock)) {
+      if (ingredients) {
+        try {
+          updateData.ingredients = JSON.parse(ingredients);
+        } catch (e) {
+          updateData.ingredients = [];
+        }
       }
     }
 

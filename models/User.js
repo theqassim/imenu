@@ -47,7 +47,9 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  // 🟢 التأكد من أن القيمة الافتراضية هي false
   hasStock: { type: Boolean, default: false },
+
   createdAt: {
     type: Date,
     default: Date.now,

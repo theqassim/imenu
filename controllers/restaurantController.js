@@ -3,7 +3,8 @@ const Product = require("../models/Product");
 
 exports.createRestaurant = async (req, res) => {
   try {
-    const { restaurantName, businessType, slug, contactInfo, owner, hasStock } = req.body;
+    const { restaurantName, businessType, slug, contactInfo, owner, hasStock } =
+      req.body;
 
     const newRestaurant = await Restaurant.create({
       restaurantName,
@@ -11,6 +12,7 @@ exports.createRestaurant = async (req, res) => {
       slug,
       contactInfo,
       owner: owner,
+      hasStock: hasStock,
       image: req.file ? req.file.path : undefined,
     });
 
@@ -77,7 +79,11 @@ exports.getMyRestaurant = async (req, res) => {
         .json({ status: "fail", message: "ليس لديك صلاحية الوصول لمطعم." });
     }
 
-    const restaurant = await Restaurant.findOne(query);
+    // [Mod] تم إضافة populate لجلب إعدادات المالك (خاصة hasStock)
+    const restaurant = await Restaurant.findOne(query).populate(
+      "owner",
+      "hasStock subscriptionExpires active",
+    );
 
     if (!restaurant) {
       return res.status(404).json({
@@ -89,6 +95,12 @@ exports.getMyRestaurant = async (req, res) => {
       });
     }
 
+    // تحديد صلاحية المخزون بناءً على حساب المالك
+    // إذا كان هناك مالك مرتبط بالمطعم نأخذ صلاحيته، وإلا نأخذ صلاحية المستخدم الحالي (في حال كان هو المالك ولم يتم الربط بعد)
+    const stockPermission = restaurant.owner
+      ? restaurant.owner.hasStock
+      : req.user.hasStock;
+
     res.status(200).json({
       status: "success",
       data: {
@@ -96,6 +108,7 @@ exports.getMyRestaurant = async (req, res) => {
         userRole: req.user.role,
         shiftStart: req.user.shiftStart,
         shiftEnd: req.user.shiftEnd,
+        hasStock: stockPermission, // إرسال الصلاحية بشكل صريح
       },
     });
   } catch (err) {

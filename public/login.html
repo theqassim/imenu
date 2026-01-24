@@ -160,6 +160,27 @@
         font-size: 12px;
       }
 
+      /* Renew Subscription Button Animation */
+      @keyframes pulse-btn {
+        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); transform: scale(1); }
+        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); transform: scale(1.05); }
+        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); transform: scale(1); }
+      }
+      .renew-btn {
+        display: inline-block;
+        background: #10b981;
+        color: white;
+        padding: 12px 25px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        margin-top: 20px;
+        animation: pulse-btn 2s infinite;
+        transition: 0.3s;
+        border: 2px solid #10b981;
+      }
+      .renew-btn:hover { background: #059669; border-color: #059669; }
+
       @media (max-width: 480px) {
         .login-card {
           padding: 30px 20px;
@@ -205,7 +226,7 @@
               placeholder="كلمة المرور"
               required
             />
-            <i class="fas fa-lock"></i>
+            <i class="fas fa-eye" id="togglePassword" style="cursor: pointer; pointer-events: auto; transition: color 0.3s;" onclick="togglePasswordVisibility()"></i>
           </div>
 
           <button type="submit" class="btn-login" id="btn-submit">
@@ -289,13 +310,35 @@
               btn.disabled = false;
             }
           } else {
-            Swal.fire({
-              icon: "error",
-              title: "خطأ",
-              text: data.message || "بيانات الدخول غير صحيحة",
-              background: "#1e293b",
-              color: "#fff",
-            });
+            // فحص خاص لرسالة انتهاء الاشتراك
+            if (data.message && data.message.includes("انتهت فترة الاشتراك")) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "انتهت صلاحية الاشتراك",
+                    html: `
+                        <div style="line-height:1.6; color:#cbd5e1; font-size:15px;">
+                            عذراً، لقد انتهت فترة اشتراكك الحالية. <br>
+                            لاستعادة الوصول للنظام والبيانات، يرجى التجديد.
+                        </div>
+                        <a href="https://wa.me/201040761680" target="_blank" class="renew-btn">
+                            <i class="fab fa-whatsapp"></i> تجديد الاشتراك الآن
+                        </a>
+                    `,
+                    background: "#1e293b",
+                    color: "#fff",
+                    showConfirmButton: false,
+                    showCloseButton: true
+                });
+            } else {
+                // رسائل الخطأ العادية
+                Swal.fire({
+                  icon: "error",
+                  title: "خطأ",
+                  text: data.message || "بيانات الدخول غير صحيحة",
+                  background: "#1e293b",
+                  color: "#fff",
+                });
+            }
             btn.innerHTML = originalText;
             btn.disabled = false;
           }
@@ -304,6 +347,23 @@
           Swal.fire("خطأ", "حدث خطأ في الاتصال بالسيرفر", "error");
           btn.innerHTML = originalText;
           btn.disabled = false;
+        }
+      }
+
+      function togglePasswordVisibility() {
+        const passwordInput = document.getElementById("password");
+        const toggleIcon = document.getElementById("togglePassword");
+        
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            toggleIcon.classList.remove("fa-eye");
+            toggleIcon.classList.add("fa-eye-slash");
+            toggleIcon.style.color = "var(--primary)";
+        } else {
+            passwordInput.type = "password";
+            toggleIcon.classList.remove("fa-eye-slash");
+            toggleIcon.classList.add("fa-eye");
+            toggleIcon.style.color = "#94a3b8";
         }
       }
     </script>
