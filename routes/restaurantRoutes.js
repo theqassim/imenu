@@ -10,6 +10,7 @@ const router = express.Router();
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: { folder: "restaurants-covers", allowed_formats: ["jpg", "png"] },
+  transformation: [{ width: 1000, quality: "auto" }]
 });
 const upload = multer({ storage: storage });
 
