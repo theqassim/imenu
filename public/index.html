@@ -173,6 +173,21 @@
         color: #fff;
         margin-left: 10px;
       }
+      .btn-sales {
+        border: 1px solid var(--gold);
+        color: var(--gold);
+        background: transparent;
+        transition: 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .btn-sales:hover {
+        background: var(--gold);
+        color: #fff;
+        box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        transform: translateY(-2px);
+      }
       .btn-login:hover {
         border-color: #fff;
         background: rgba(255, 255, 255, 0.05);
@@ -549,7 +564,11 @@
       <div class="nav-links">
         <a href="#features">المميزات</a>
       </div>
-      <div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <a href="/join-sales" class="btn-nav btn-sales">
+            <i class="fas fa-handshake"></i> انضم كمسوق
+        </a>
+        
         <a href="/login" class="btn-nav btn-login">دخول</a>
         <button
           onclick="openRequestModal()"

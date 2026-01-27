@@ -81,6 +81,9 @@
         <button class="nav-btn" onclick="switchTab('ai-upload')" id="btn-ai-upload">
     <i class="fas fa-magic"></i> رفع بالذكاء الاصطناعي
 </button>
+<button class="nav-btn" onclick="switchTab('sales')" id="btn-sales">
+    <i class="fas fa-users-cog"></i> طلبات السيلز
+</button>
         <button class="nav-btn" onclick="switchTab('requests')" id="btn-requests">
             <i class="fas fa-bell"></i> طلبات الانضمام <span id="req-badge" style="background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:10px; display:none;">New</span>
         </button>
@@ -260,6 +263,57 @@
     </div>
 </div>
 
+<div id="tab-sales" class="hidden">
+    <div class="content-card" style="max-width:100%">
+        <h3 style="color:var(--primary); margin-top:0;">إدارة فريق المبيعات (Sales Agents)</h3>
+        <button class="action-btn" onclick="loadSalesRequests()" style="background:#6b7280; margin-bottom:15px;">
+            <i class="fas fa-sync"></i> تحديث القائمة
+        </button>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الصورة</th>
+                        <th>الاسم</th>
+                        <th>الهاتف (واتساب)</th>
+                        <th>المحفظة</th>
+                        <th>الحالة</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-tbody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="tab-sales" class="hidden">
+    <div class="content-card" style="max-width:100%">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+            <h3 style="color:var(--primary); margin:0;">إدارة فريق المبيعات (Sales Agents)</h3>
+            <button class="action-btn" onclick="loadSalesRequests()" style="background:#6b7280">
+                <i class="fas fa-sync"></i> تحديث
+            </button>
+        </div>
+        <div style="overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الصورة</th>
+                        <th>الاسم</th>
+                        <th>بيانات الاتصال</th>
+                        <th>المحفظة</th>
+                        <th>الحالة</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-tbody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 <div id="tab-requests" class="hidden">
     <div class="content-card" style="max-width:100%">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
@@ -659,17 +713,33 @@ async function deleteRestaurant(id) {
 }
 
 function switchTab(tab) {
-    document.getElementById('tab-owners').classList.add('hidden');
-    document.getElementById('tab-restaurants').classList.add('hidden');
-    document.getElementById('btn-owners').classList.remove('active');
-    document.getElementById('btn-restaurants').classList.remove('active');
+    // 1. قائمة بكل التبويبات اللي عندك
+    const allTabs = ['owners', 'restaurants', 'ai-upload', 'requests', 'sales'];
 
-    document.getElementById(`tab-${tab}`).classList.remove('hidden');
-    document.getElementById(`btn-${tab}`).classList.add('active');
+    // 2. أخفي كل التبويبات وشيل التفعيل من كل الأزرار
+    allTabs.forEach(t => {
+        const tabEl = document.getElementById(`tab-${t}`);
+        const btnEl = document.getElementById(`btn-${t}`);
+        if(tabEl) tabEl.classList.add('hidden');
+        if(btnEl) btnEl.classList.remove('active');
+    });
 
-    if (tab === 'restaurants') {
+    // 3. اظهر التبويب المختار فقط وفعل زراره
+    const selectedTab = document.getElementById(`tab-${tab}`);
+    const selectedBtn = document.getElementById(`btn-${tab}`);
+    
+    if(selectedTab) selectedTab.classList.remove('hidden');
+    if(selectedBtn) selectedBtn.classList.add('active');
+
+    // 4. تحميل البيانات الخاصة بكل صفحة
+    if (tab === 'sales') {
+        loadSalesRequests();
+    } else if (tab === 'requests') {
+        document.getElementById('req-badge').style.display = 'none';
+        loadRequests();
+    } else if (tab === 'restaurants') {
         loadRestaurantsList();
-    } else {
+    } else if (tab === 'owners') {
         loadOwnersList();
     }
 }
@@ -945,29 +1015,7 @@ function logoutSuperAdmin() {
             window.location.href = '/login';
         }
 
-      function switchTab(tab) {
-            document.getElementById('tab-owners').classList.add('hidden');
-            document.getElementById('tab-restaurants').classList.add('hidden');
-            document.getElementById('tab-ai-upload').classList.add('hidden');
-            document.getElementById('tab-requests').classList.add('hidden');
-
-            document.getElementById('btn-owners').classList.remove('active');
-            document.getElementById('btn-restaurants').classList.remove('active');
-            document.getElementById('btn-ai-upload').classList.remove('active');
-            document.getElementById('btn-requests').classList.remove('active');
-
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.getElementById(`btn-${tab}`).classList.add('active');
-            
-            if(tab === 'requests') {
-                document.getElementById('req-badge').style.display = 'none';
-                loadRequests();
-            } else if (tab === 'restaurants') {
-                loadRestaurantsList();
-            } else if (tab === 'owners') {
-                loadOwnersList();
-            }
-        }
+     
         
         const style = document.createElement('style');
         style.innerHTML = `
@@ -1426,6 +1474,91 @@ async function startAiProcessing() {
         btn.disabled = false;
         btn.innerText = 'ابدأ التحليل والرفع الصاروخي 🚀';
     }
+}
+
+async function loadSalesRequests() {
+    try {
+        const res = await fetch('/api/v1/sales', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const response = await res.json();
+        const tbody = document.getElementById('sales-tbody');
+        tbody.innerHTML = '';
+
+        if(response.data && response.data.length > 0) {
+            response.data.forEach(req => {
+                let statusBadge = req.status === 'pending' ? '<span style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:12px">انتظار</span>' :
+                                  req.status === 'approved' ? '<span style="background:#10b981; color:white; padding:2px 8px; border-radius:10px; font-size:12px">مقبول</span>' :
+                                  '<span style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px">مرفوض</span>';
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td><img src="${req.image}" onclick="viewSalesImage('${req.image}', '${req.name}')" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #ddd; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></td>
+                        <td style="font-weight:bold">${req.name}</td>
+                        <td>
+                            <div>${req.phone}</div>
+                            <a href="https://wa.me/20${req.phone.replace(/^0+/, '')}" target="_blank" style="color:#25d366; font-size:13px; text-decoration:none">
+                                <i class="fab fa-whatsapp"></i> تواصل واتساب
+                            </a>
+                        </td>
+                        <td style="font-family:monospace; color:var(--primary); font-weight:bold">${req.walletNumber}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            ${req.status === 'pending' ? `
+                            <button class="action-btn" style="background:#10b981" onclick="updateSalesStatus('${req._id}', 'approved')" title="قبول"><i class="fas fa-check"></i></button>
+                            <button class="action-btn" style="background:#ef4444" onclick="updateSalesStatus('${req._id}', 'rejected')" title="رفض"><i class="fas fa-times"></i></button>
+                            ` : ''}
+                            <button class="action-btn" style="background:#6b7280" onclick="deleteSalesRequest('${req._id}')"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#6b7280">لا توجد طلبات حالياً</td></tr>';
+        }
+    } catch(e) { console.error(e); }
+}
+
+async function updateSalesStatus(id, status) {
+    try {
+        Swal.showLoading();
+        const res = await fetch(`/api/v1/sales/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ status })
+        });
+        Swal.close();
+        if(res.ok) {
+            Swal.fire('تم', 'تم تحديث الحالة بنجاح', 'success');
+            loadSalesRequests();
+        }
+    } catch(e) { Swal.fire('خطأ', 'فشل الاتصال', 'error'); }
+}
+
+async function deleteSalesRequest(id) {
+    if(!confirm('هل أنت متأكد من الحذف؟')) return;
+    try {
+        await fetch(`/api/v1/sales/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        loadSalesRequests();
+    } catch(e) { alert('فشل الحذف'); }
+}
+function viewSalesImage(url, name) {
+    Swal.fire({
+        title: name,
+        imageUrl: url,
+        imageWidth: 400,
+        imageAlt: name,
+        confirmButtonText: 'إغلاق',
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp'
+        }
+    });
 }
     </script>
 <div id="owner-modal" class="login-wrapper hidden" style="z-index: 3000; background: rgba(0,0,0,0.5);">

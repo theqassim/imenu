@@ -15,6 +15,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const stockRoutes = require("./routes/stockRoutes");
+const salesRoutes = require("./routes/salesRoutes"); // 🟢 إضافة الراوت الجديد
 const authController = require("./controllers/authController");
 const aiController = require("./controllers/aiController");
 const webPush = require("web-push");
@@ -96,6 +97,11 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
+// 🟢 صفحة تسجيل السيلز الجديدة
+app.get("/join-sales", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "sales-register.html"));
+});
+
 app.get("/promo", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "promo.html"));
 });
@@ -107,6 +113,7 @@ app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/coupons", couponRoutes);
 app.use("/api/v1/stock", stockRoutes);
+app.use("/api/v1/sales", salesRoutes); // 🟢 تفعيل الراوت
 
 app.post("/api/v1/subscribe", async (req, res) => {
   const subscription = req.body;
