@@ -594,55 +594,66 @@
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
-        allOwners = data.data.users;
-        const tbody = document.getElementById('owners-tbody');
-        tbody.innerHTML = '';
 
-        data.data.users.forEach(u => {
-            if(u.role === 'admin') return;
+        // حماية الكود: التأكد إن الطلب نجح والبيانات موجودة
+        if (data.status === 'success' && data.data && data.data.users) {
+            allOwners = data.data.users;
+            const tbody = document.getElementById('owners-tbody');
+            tbody.innerHTML = '';
 
-            const isActive = u.active !== false; 
-            const statusIcon = isActive ? 'fa-user-check' : 'fa-user-slash';
-            const statusColor = isActive ? '#10b981' : '#ef4444';
-            const statusText = isActive ? 'نشط' : 'معطل';
-            const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
-            const pLimit = u.productLimit || 75;
+            data.data.users.forEach(u => {
+                if(u.role === 'admin') return;
 
-            tbody.innerHTML += `
-                <tr>
-                    <td style="font-weight:bold">${u.name}</td>
-                    <td>
-                        <div style="font-size:13px">${u.email}</div>
-                        <div style="font-size:12px; color:#6b7280">${u.phone || 'لا يوجد هاتف'} <span style="background:#e0e7ff; color:var(--primary); padding:2px 5px; border-radius:4px; font-weight:bold">${pLimit == -1 ? 'مفتوح' : pLimit}</span></div>
-                    </td>
-                    <td>
-                        <button class="action-btn" style="background:${statusColor}" onclick="toggleUserStatus('${u._id}')" title="تغيير حالة الحساب">
-                            <i class="fas ${statusIcon}"></i> ${statusText}
-                        </button>
+                const isActive = u.active !== false; 
+                const statusIcon = isActive ? 'fa-user-check' : 'fa-user-slash';
+                const statusColor = isActive ? '#10b981' : '#ef4444';
+                const statusText = isActive ? 'نشط' : 'معطل';
+                const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
+                const pLimit = u.productLimit || 75;
 
-                        <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock})">
-                            <i class="fas fa-edit"></i>
-                        </button>
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:bold">${u.name}</td>
+                        <td>
+                            <div style="font-size:13px">${u.email}</div>
+                            <div style="font-size:12px; color:#6b7280">${u.phone || 'لا يوجد هاتف'} <span style="background:#e0e7ff; color:var(--primary); padding:2px 5px; border-radius:4px; font-weight:bold">${pLimit == -1 ? 'مفتوح' : pLimit}</span></div>
+                        </td>
+                        <td>
+                            <button class="action-btn" style="background:${statusColor}" onclick="toggleUserStatus('${u._id}')" title="تغيير حالة الحساب">
+                                <i class="fas ${statusIcon}"></i> ${statusText}
+                            </button>
 
-                        <button class="action-btn btn-qr" onclick="generateQRPopup('${u.name}')" title="إنشاء QR Code">
-                            <i class="fas fa-qrcode"></i>
-                        </button>
+                            <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock})">
+                                <i class="fas fa-edit"></i>
+                            </button>
 
-                        <button class="action-btn btn-login-as" onclick="loginAsOwner('${u._id}')">
-                            <i class="fas fa-utensils"></i>
-                        </button>
+                            <button class="action-btn btn-qr" onclick="generateQRPopup('${u.name}')" title="إنشاء QR Code">
+                                <i class="fas fa-qrcode"></i>
+                            </button>
 
-                        <button class="action-btn" style="background:#ef4444" onclick="deleteUser('${u._id}')" title="حذف نهائي">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                            <button class="action-btn btn-login-as" onclick="loginAsOwner('${u._id}')">
+                                <i class="fas fa-utensils"></i>
+                            </button>
 
-                        <button class="action-btn" style="background:#4b5563" onclick="changePasswordPrompt('${u._id}', '${u.name}')" title="تغيير كلمة المرور">
-                            <i class="fas fa-key"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
+                            <button class="action-btn" style="background:#ef4444" onclick="deleteUser('${u._id}')" title="حذف نهائي">
+                                <i class="fas fa-trash"></i>
+                            </button>
+
+                            <button class="action-btn" style="background:#4b5563" onclick="changePasswordPrompt('${u._id}', '${u.name}')" title="تغيير كلمة المرور">
+                                <i class="fas fa-key"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            console.error('فشل تحميل الملاك:', data);
+            // لو المشكلة إن التوكن انتهى، نرجعه لصفحة الدخول
+            if (res.status === 401 || data.message === 'jwt malformed') {
+                localStorage.removeItem('superAdminToken');
+                window.location.href = '/login';
+            }
+        }
     } catch(e) { console.error('Error loading owners:', e); }
 }
 async function loadRestaurantsList() {
