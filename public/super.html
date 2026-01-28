@@ -12,6 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/socket.io/socket.io.js"></script> 
     <script>
+        // --- FIX ADDED HERE ---
+        // This ID must match the one defined in server.js
+        const SUPER_ADMIN_ID = "000000000000000000000000"; 
+
         const superToken = localStorage.getItem('superAdminToken');
         if (!superToken) {
             window.location.href = '/login';
@@ -650,6 +654,7 @@
 
     <script>
         let token = localStorage.getItem('superAdminToken') || '';
+        
         const socket = io();
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -898,21 +903,36 @@
                     tbody.innerHTML = '';
 
                     data.data.users.forEach(u => {
-                        if(u.role === 'admin') return;
+                        if(u.role === 'admin' && u._id === SUPER_ADMIN_ID) return; // إخفاء السوبر أدمن نفسه فقط
 
                         const isActive = u.active !== false; 
                         const statusIcon = isActive ? 'fa-user-check' : 'fa-user-slash';
                         const statusColor = isActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
-                        const statusText = isActive ? 'نشط' : 'معطل';
+                        
+                        // تعيين لون وشكل الـ Badge بناءً على الرتبة
+                        let roleBadge = '';
+                        if(u.role === 'owner') roleBadge = '<span style="background:rgba(212, 175, 55, 0.15); color:var(--primary); padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold; border:1px solid rgba(212, 175, 55, 0.3);">مالك مطعم</span>';
+                        else if(u.role === 'sales') roleBadge = '<span style="background:rgba(99, 102, 241, 0.15); color:#818cf8; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold; border:1px solid rgba(99, 102, 241, 0.3);">وكيل مبيعات</span>';
+                        else roleBadge = `<span style="background:rgba(255,255,255,0.1); color:#fff; padding:2px 8px; border-radius:6px; font-size:11px;">${u.role}</span>`;
+
                         const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
                         const pLimit = u.productLimit || 75;
 
+                        // تحديد وجهة زر "الدخول كـ" بناءً على الرتبة
+                        const loginTarget = u.role === 'sales' ? '/sales-dashboard' : '/owner';
+
                         tbody.innerHTML += `
                             <tr>
-                                <td style="font-weight:bold">${u.name}</td>
+                                <td style="font-weight:bold">
+                                    ${u.name}
+                                    <div style="margin-top:5px;">${roleBadge}</div>
+                                </td>
                                 <td>
                                     <div style="font-size:13px">${u.email}</div>
-                                    <div style="font-size:12px; color:var(--text-muted)">${u.phone || 'لا يوجد هاتف'} <span style="background:rgba(99, 102, 241, 0.2); color:#818cf8; padding:2px 5px; border-radius:4px; font-weight:bold">${pLimit == -1 ? 'مفتوح' : pLimit}</span></div>
+                                    <div style="font-size:12px; color:var(--text-muted)">
+                                        ${u.phone || '---'} 
+                                        ${u.role === 'owner' ? `| <span style="background:rgba(255,255,255,0.05); padding:1px 4px; border-radius:3px;">باقة: ${pLimit == -1 ? '∞' : pLimit}</span>` : ''}
+                                    </div>
                                 </td>
                                 <td>
                                     <div style="display:flex; flex-wrap:wrap; gap:5px;">
@@ -924,20 +944,12 @@
                                             <i class="fas fa-edit"></i>
                                         </button>
 
-                                        <button class="action-btn btn-qr" onclick="generateQRPopup('${u.name}')" title="إنشاء QR Code">
-                                            <i class="fas fa-qrcode"></i>
+                                        <button class="action-btn btn-login-as" onclick="loginAsAny('${u._id}', '${loginTarget}')" title="دخول كـ ${u.role}">
+                                            <i class="fas ${u.role === 'sales' ? 'fa-user-tie' : 'fa-utensils'}"></i>
                                         </button>
 
-                                        <button class="action-btn btn-login-as" onclick="loginAsOwner('${u._id}')">
-                                            <i class="fas fa-utensils"></i>
-                                        </button>
-
-                                        <button class="action-btn" style="background:rgba(239, 68, 68, 0.2); color:#f87171; border:1px solid rgba(239, 68, 68, 0.3)" onclick="deleteUser('${u._id}')" title="حذف نهائي">
+                                        <button class="action-btn" style="background:rgba(239, 68, 68, 0.2); color:#f87171;" onclick="deleteUser('${u._id}')" title="حذف نهائي">
                                             <i class="fas fa-trash"></i>
-                                        </button>
-
-                                        <button class="action-btn" style="background:rgba(255,255,255,0.1); color:#fff;" onclick="changePasswordPrompt('${u._id}', '${u.name}')" title="تغيير كلمة المرور">
-                                            <i class="fas fa-key"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -1256,9 +1268,9 @@
             }
         }
 
-        async function loginAsOwner(userId) {
+        async function loginAsAny(userId, targetPath) {
             try {
-                Swal.showLoading();
+                Swal.fire({ title: 'جاري التحويل...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 const res = await fetch(`/api/v1/users/impersonate/${userId}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -1268,7 +1280,15 @@
                 Swal.close();
                 
                 if(data.status === 'success') {
-                    window.open(`/owner?t=${data.token}`, '_blank');
+                    // تخزين التوكن المناسب بناءً على نوع الحساب
+                    if(targetPath.includes('sales')) {
+                        localStorage.setItem('salesToken', data.token);
+                    } else {
+                        // للملاك نستخدم t= في الرابط كما هو مبرمج سابقاً في صفحة admin.html
+                        window.open(`${targetPath}?t=${data.token}`, '_blank');
+                        return;
+                    }
+                    window.open(targetPath, '_blank');
                 } else {
                     Swal.fire('تنبيه', data.message || 'لا يمكن الدخول لهذا الحساب', 'warning');
                 }

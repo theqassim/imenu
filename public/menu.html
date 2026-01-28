@@ -814,11 +814,12 @@
         box-shadow: var(--shadow);
       }
 
-      .layout-modern .prod-card {
-        display: flex;
-        margin-bottom: 15px;
-        height: 120px;
-      }
+     .layout-modern .prod-card {
+  display: flex;
+  margin-bottom: 15px;
+  min-height: 120px; /* تغيير من height إلى min-height */
+  height: auto;      /* السماح للكارت بالتمدد */
+}
       .layout-modern .prod-img {
         width: 120px;
         height: 100%;
@@ -1646,33 +1647,50 @@
             const hasDiscount =
               p.oldPrice && Number(p.oldPrice) > Number(p.price);
 
-            sectionHTML += `
-                    <div class="prod-card" data-name="${p.name.ar}">
-                        ${hasDiscount ? `<div style="position:absolute; top:10px; left:10px; background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; z-index:10;">خصم</div>` : ""}
-                        
-                        ${imgHTML}
-                        
-                        <div class="prod-content">
+           // أضفنا حدث onclick للكارت لعرض الأحجام حتى في وضع العرض فقط
+const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSelectionModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p))}')))"` : "";
+
+                    sectionHTML += `
+                        <div class="prod-card" data-name="${p.name.ar}" ${clickableAction} style="${p.sizes && p.sizes.length > 0 ? 'cursor:pointer;' : ''}">
+                            ${hasDiscount ? `<div style="position:absolute; top:10px; left:10px; background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; z-index:10;">خصم</div>` : ""}
+                            
+                            ${imgHTML}
+                            
+                            <div class="prod-content">
                             <div style="flex:1">
                                 <h3 class="prod-title">${p.name.ar}</h3>
                                 <p class="prod-desc">${p.description.ar}</p>
                             </div>
                             
-                            <div class="prod-footer">
-                                <div class="prod-price">
-                                    ${hasDiscount ? `<span style="text-decoration:line-through; color:var(--text-sub); font-size:12px; margin-left:5px; opacity:0.7">${p.oldPrice}</span>` : ""}
-                                    <span>${p.price} <small style="font-size:11px">ج.م</small></span>
-                                </div>
-                                
-                                ${
-                                  storeSettings.mode !== "view_only"
-                                    ? `
-                                <button class="add-btn" id="btn-${p._id}" onclick="addToCart('${p._id}')">
-                                    ${p.sizes && p.sizes.length > 0 ? '<i class="fas fa-ellipsis-h"></i>' : '<i class="fas fa-plus"></i>'}
-                                </button>`
-                                    : ""
-                                }
-                            </div>
+                            <div class="prod-footer" style="${p.sizes && p.sizes.length > 0 ? 'display:block;' : ''}">
+    ${p.sizes && p.sizes.length > 0 ? 
+        // إذا كان هناك أحجام، نعرضها في قائمة صغيرة تحت بعضها
+        `<div class="prod-sizes-display" style="margin-top:5px; border-top:1px dashed var(--border); padding-top:5px;">
+            ${p.sizes.map(s => `
+                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px;">
+                    <span style="color:var(--text-sub)">${s.name}:</span>
+                    <span style="color:var(--primary); font-weight:bold;">
+                        ${s.oldPrice > s.price ? `<span style="text-decoration:line-through; font-size:10px; opacity:0.6; margin-left:4px;">${s.oldPrice}</span>` : ""}
+                        ${s.price} ج.م
+                    </span>
+                </div>
+            `).join('')}
+        </div>` 
+        : 
+        // إذا كان سعراً مفرداً، نعرض التنسيق القديم
+        `<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div class="prod-price">
+                ${hasDiscount ? `<span style="text-decoration:line-through; color:var(--text-sub); font-size:12px; margin-left:5px; opacity:0.7">${p.oldPrice}</span>` : ""}
+                <span>${p.price} <small style="font-size:11px">ج.م</small></span>
+            </div>
+            ${storeSettings.mode !== "view_only" ? `
+                <button class="add-btn" id="btn-${p._id}" onclick="addToCart('${p._id}')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            ` : ""}
+        </div>`
+    }
+</div>
                         </div>
                     </div>
                     `;
@@ -1764,61 +1782,59 @@
       saveCart();
 
       function showSizeSelectionModal(product) {
-        let sizesHtml =
-          '<div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">';
+    let sizesHtml = '<div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">';
 
-        product.sizes.forEach((s) => {
-          let priceDisplay = "";
-          let badgeHtml = "";
-          let btnClass = "";
-          let btnStyle =
-            "background:var(--input-bg); border:1px solid var(--border);";
+    product.sizes.forEach((s) => {
+        let priceDisplay = "";
+        let badgeHtml = "";
+        let btnClass = "";
+        let btnStyle = "background:var(--input-bg); border:1px solid var(--border);";
 
-          if (s.oldPrice && s.oldPrice > s.price) {
-            const discountPercent = Math.round(
-              ((s.oldPrice - s.price) / s.oldPrice) * 100,
-            );
-
+        if (s.oldPrice && s.oldPrice > s.price) {
+            const discountPercent = Math.round(((s.oldPrice - s.price) / s.oldPrice) * 100);
             if (discountPercent >= 15) {
-              btnClass = "hot-deal-btn";
-              badgeHtml = `<span class="fire-badge">🔥 خصم ${discountPercent}%</span>`;
+                btnClass = "hot-deal-btn";
+                badgeHtml = `<span class="fire-badge">🔥 خصم ${discountPercent}%</span>`;
             } else {
-              badgeHtml = `<span style="background:#fee2e2; color:#d32f2f; font-size:12px; padding:3px 8px; border-radius:6px; font-weight:bold;">وفر ${s.oldPrice - s.price}ج</span>`;
+                badgeHtml = `<span style="background:#fee2e2; color:#d32f2f; font-size:12px; padding:3px 8px; border-radius:6px; font-weight:bold;">وفر ${s.oldPrice - s.price}ج</span>`;
             }
 
             priceDisplay = `
-                            <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.1;">
-                                <span style="text-decoration: line-through; color: #ef5350; font-size: 13px; opacity:0.8">${s.oldPrice}</span>
-                                <span style="color:var(--primary); font-weight:900; font-size:18px">${s.price} <small style="font-size:12px; font-weight:normal">ج.م</small></span>
-                            </div>
-                        `;
-          } else {
+                <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.1;">
+                    <span style="text-decoration: line-through; color: #ef5350; font-size: 13px; opacity:0.8">${s.oldPrice}</span>
+                    <span style="color:var(--primary); font-weight:900; font-size:18px">${s.price} <small style="font-size:12px; font-weight:normal">ج.م</small></span>
+                </div>
+            `;
+        } else {
             priceDisplay = `<span style="color:var(--primary); font-weight:800; font-size:16px">${s.price} ج.م</span>`;
-          }
+        }
 
-          sizesHtml += `
-                        <button onclick="addToCart('${product._id}', '${s.name}', ${s.price})" 
-                            class="${btnClass}"
-                            style="${btnStyle} padding:12px 15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; width:100%; font-family:var(--font); margin-bottom:10px; position:relative; overflow:hidden;">
-                            
-                            <div style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
-                                <span style="font-weight:800; font-size:15px">${s.name}</span>
-                                ${badgeHtml}
-                            </div>
+        // إذا كان الوضع "عرض فقط"، نجعل الزر غير قابل للضغط لإضافة عناصر
+        const clickAction = (storeSettings.mode === "view_only") ? "" : `onclick="addToCart('${product._id}', '${s.name}', ${s.price})"`;
 
-                            ${priceDisplay}
-                        </button>
-                    `;
-        });
-        sizesHtml += "</div>";
+        sizesHtml += `
+            <div ${clickAction} 
+                class="${btnClass}"
+                style="${btnStyle} padding:12px 15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; cursor:${storeSettings.mode === "view_only" ? 'default' : 'pointer'}; width:100%; font-family:var(--font); margin-bottom:10px; position:relative; overflow:hidden;">
+                
+                <div style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
+                    <span style="font-weight:800; font-size:15px">${s.name}</span>
+                    ${badgeHtml}
+                </div>
 
-        Swal.fire({
-          title: product.name.ar,
-          html: `اختر الحجم المناسب:${sizesHtml}`,
-          showConfirmButton: false,
-          showCloseButton: true,
-        });
-      }
+                ${priceDisplay}
+            </div>
+        `;
+    });
+    sizesHtml += "</div>";
+
+    Swal.fire({
+        title: product.name.ar,
+        html: `${storeSettings.mode === "view_only" ? 'الأحجام والأسعار المتاحة:' : 'اختر الحجم المناسب:'} ${sizesHtml}`,
+        showConfirmButton: false,
+        showCloseButton: true,
+    });
+}
 
       function decreaseQty(id) {
         if (cart[id]) {
