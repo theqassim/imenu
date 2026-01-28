@@ -2681,6 +2681,17 @@
             if (data.shiftStart) sessionStorage.setItem("shiftStart", data.shiftStart);
             if (data.shiftEnd) sessionStorage.setItem("shiftEnd", data.shiftEnd);
 
+            // تشغيل تحذير الفترة التجريبية إذا وجد
+            if (data.restaurant.owner && data.restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
+                // نصنع كائن تحذير وهمي بناء على البيانات
+                const trialWarning = { message: "أنت تستخدم حساب تجريبي. ستفقد البيانات بعد انتهاء الفترة." };
+                checkTrialWarning(trialWarning);
+            }
+            // لو الباك اند بيبعت warning جاهز
+            if (data.warning && typeof checkTrialWarning === 'function') {
+                 checkTrialWarning(data.warning);
+            }
+
             // عرض اسم المستخدم
             const roleNames = { owner: "المالك", cashier: "الكاشير", kitchen: "المطبخ" };
             const roleAr = roleNames[currentUserRole] || currentUserRole;
@@ -4031,6 +4042,9 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
       window.loadOrders = async function () {
         const rId = document.getElementById("restaurant-id").value;
 
+        // 1. إصلاح: لو الـ ID مش موجود (لسه مالحقش يحمل)، نوقف الدالة فوراً عشان مايحصلش خطأ
+        if (!rId) return;
+
         const badge = document.getElementById("live-badge");
         if (badge) {
           badge.classList.add("hidden");
@@ -4040,17 +4054,28 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         const container = document.getElementById("orders-grid");
         if (!container) return;
 
-        container.innerHTML =
-          '<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>';
+        // إظهار التحميل فقط لو الكونتينر فاضي
+        if(container.innerHTML.trim() === "") {
+            container.innerHTML = '<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>';
+        }
 
         try {
-          const res = await fetch(`/api/v1/orders/${rId}/active`, {
+          const res = await fetch(`/api/v1/orders/active/${rId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
+
+          // 2. إصلاح نهائي: التأكد إن الرد JSON مش HTML قبل ما نفكه
+          const contentType = res.headers.get("content-type");
+          if (!res.ok || !contentType || !contentType.includes("application/json")) {
+             console.warn("Server returned HTML/Error instead of JSON");
+             // ممكن نوقف هنا أو نمسح اللودينج بس عشان مايضربش ايرور
+             return; 
+          }
+
           const data = await res.json();
           container.innerHTML = "";
 
-          if (!data.data || data.data.orders.length === 0) {
+          if (!data.data || !data.data.orders || data.data.orders.length === 0) {
             container.innerHTML =
               '<div style="grid-column: 1/-1; text-align:center; padding:40px; color:var(--secondary)"><i class="fas fa-clipboard-list fa-3x" style="margin-bottom:15px; opacity:0.5"></i><p>لا توجد طلبات نشطة حالياً.</p></div>';
             return;
@@ -4192,7 +4217,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
           }
 
-          await fetch(`/api/v1/orders/${orderId}/status`, {
+          await fetch(`/api/v1/orders/status/${orderId}`, {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
@@ -4487,7 +4512,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
 
         try {
           const res = await fetch(
-            `/api/v1/orders/${rId}/history${queryParams}`,
+            `/api/v1/orders/history/${rId}${queryParams}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             },
@@ -4717,7 +4742,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         if(password) bodyData.password = password;
 
         try {
-          let url = "/api/v1/users/create-staff";
+          let url = "/api/v1/users/staff";
           let method = "POST";
 
           if (editingStaffId) {
@@ -4970,6 +4995,8 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
     <script>
       window.showRecentOrders = async function () {
         const rId = document.getElementById("restaurant-id").value;
+        if (!rId) return; // 🛑 Safety Check
+
         const modal = document.getElementById("recent-orders-modal");
         const container = document.getElementById("recent-orders-list");
 
@@ -4978,7 +5005,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
           '<div style="text-align:center"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
 
         try {
-          const res = await fetch(`/api/v1/orders/${rId}/recent-completed`, {
+          const res = await fetch(`/api/v1/orders/recent-completed/${rId}`, {
             headers: {
               Authorization: `Bearer ${sessionStorage.getItem("ownerToken")}`,
             },
@@ -5203,38 +5230,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "design", "orders
         }
       };
 
-      window.showRecentOrders = async function () {
-        const rId = document.getElementById("restaurant-id").value;
-        const modal = document.getElementById("recent-orders-modal");
-        const container = document.getElementById("recent-orders-list");
-
-        modal.style.display = "block";
-        container.innerHTML =
-          '<div style="text-align:center"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>';
-
-        try {
-          const res = await fetch(`/api/v1/orders/${rId}/recent-completed`, {
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem("ownerToken")}`,
-            },
-          });
-          const data = await res.json();
-
-          container.innerHTML = "";
-          if (data.data.orders.length === 0) {
-            container.innerHTML =
-              '<p style="text-align:center; color:var(--secondary)">لا توجد طلبات مكتملة حديثاً</p>';
-            return;
-          }
-
-          data.data.orders.forEach((order) => {
-            container.innerHTML += createRecentOrderHTML(order);
-          });
-        } catch (e) {
-          container.innerHTML =
-            '<p style="color:red; text-align:center">حدث خطأ</p>';
-        }
-      };
       function applyTheme(themeId) {
         const theme = themesLibrary.find((t) => t.id === themeId);
         if (!theme) return;
@@ -6345,5 +6340,42 @@ function removeIngredient(index) {
             <span>المزيد</span>
         </div>
 </div>
+<script>
+  function checkTrialWarning(warningData) {
+    if (!warningData) return;
+
+    const warningDiv = document.createElement("div");
+    warningDiv.style.cssText = `
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #d32f2f;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      z-index: 99999;
+      font-family: 'Tajawal', sans-serif;
+      font-weight: bold;
+      box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+      direction: rtl;
+    `;
+    
+    warningDiv.innerHTML = `
+      ⚠️ ${warningData.message}
+      <br>
+      <a href="tel:01145435095" style="color: #fff; text-decoration: underline; margin: 0 5px;">01145435095</a> | 
+      <a href="tel:01040761680" style="color: #fff; text-decoration: underline; margin: 0 5px;">01040761680</a>
+    `;
+
+    document.body.appendChild(warningDiv);
+    // رفع المحتوى قليلاً لكي لا يغطيه الشريط
+    document.body.style.paddingBottom = "80px";
+  }
+
+  // دمج هذه الوظيفة مع الفيتش الموجود في صفحاتك
+  // مثال: عند جلب بيانات المطعم، إذا وجدت data.warning استدعِ هذه الدالة
+  // if (data.warning) checkTrialWarning(data.warning);
+</script>
   </body>
 </html>

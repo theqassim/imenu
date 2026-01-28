@@ -4,38 +4,191 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>انضم لفريق المبيعات | Sales Team</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        :root { --primary: #6366f1; --dark: #0f172a; --glass: rgba(255, 255, 255, 0.05); }
-        body { margin: 0; min-height: 100vh; font-family: 'Tajawal', sans-serif; background: var(--dark); color: white; display: flex; align-items: center; justify-content: center; overflow-x: hidden; position: relative; }
-        
-        .bg-animate { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at 50% 50%, #1e1b4b, #000); overflow: hidden; }
-        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; animation: float 10s infinite alternate; }
-        .orb-1 { width: 300px; height: 300px; background: #4338ca; top: -50px; left: -50px; }
-        .orb-2 { width: 400px; height: 400px; background: #be123c; bottom: -100px; right: -100px; animation-delay: -5s; }
-        @keyframes float { 0% { transform: translate(0, 0); } 100% { transform: translate(30px, 50px); } }
+        :root {
+            /* Palette: Deep Luxury Space */
+            --bg-dark: #0f1115;
+            --bg-panel: rgba(30, 35, 45, 0.7);
+            --primary: #d4af37; /* Royal Gold */
+            --primary-glow: rgba(212, 175, 55, 0.4);
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            
+            --radius-xl: 24px;
+            --radius-md: 16px;
+        }
 
-        .container { width: 90%; max-width: 450px; background: var(--glass); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); transform: translateY(20px); opacity: 0; animation: slideUp 0.8s forwards; }
+        body { 
+            margin: 0; 
+            min-height: 100vh; 
+            font-family: 'Tajawal', sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-main); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow-x: hidden; 
+            position: relative; 
+            
+            /* خلفية الفضاء الفخم */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(60, 80, 100, 0.1) 0%, transparent 40%);
+        }
+        
+        .bg-animate { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; animation: float 10s infinite ease-in-out; }
+        .orb-1 { width: 300px; height: 300px; background: rgba(212, 175, 55, 0.15); top: -50px; left: -50px; }
+        .orb-2 { width: 400px; height: 400px; background: rgba(60, 80, 100, 0.2); bottom: -100px; right: -100px; animation-delay: -5s; }
+        @keyframes float { 
+            0%, 100% { transform: translate(0, 0); } 
+            50% { transform: translate(30px, 50px); } 
+        }
+
+        .container { 
+            width: 90%; 
+            max-width: 450px; 
+            background: var(--bg-panel); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); 
+            padding: 40px; 
+            border-radius: var(--radius-xl); 
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5); 
+            transform: translateY(30px); 
+            opacity: 0; 
+            animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+            position: relative;
+        }
+        
+        /* Shine effect */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+        }
+
         @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
 
-        h1 { text-align: center; margin-bottom: 10px; font-weight: 900; background: linear-gradient(to right, #fff, #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p { text-align: center; color: #94a3b8; margin-bottom: 30px; }
+        h1 { 
+            text-align: center; 
+            margin-bottom: 10px; 
+            font-weight: 900; 
+            font-size: 32px;
+            /* Gold Gradient Text */
+            background: linear-gradient(135deg, #fff 20%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        p { text-align: center; color: var(--text-muted); margin-bottom: 35px; font-size: 15px; }
 
-        .form-group { margin-bottom: 20px; position: relative; }
-        .form-group label { display: block; margin-bottom: 8px; font-size: 14px; color: #cbd5e1; }
+        .form-group { margin-bottom: 25px; position: relative; }
+        .form-group label { display: block; margin-bottom: 10px; font-size: 14px; color: var(--text-muted); font-weight: 500; }
+        
         .input-box { position: relative; }
-        .input-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #6366f1; }
-        input { width: 100%; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); padding: 15px 45px 15px 15px; border-radius: 12px; color: white; font-family: inherit; outline: none; transition: 0.3s; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+        .input-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); transition: 0.3s; }
+        
+        input { 
+            width: 100%; 
+            background: rgba(0, 0, 0, 0.3); 
+            border: 1px solid var(--glass-border); 
+            padding: 16px 50px 16px 15px; 
+            border-radius: 14px; 
+            color: white; 
+            font-family: inherit; 
+            outline: none; 
+            transition: 0.3s; 
+            box-sizing: border-box;
+            font-size: 15px; 
+        }
+        
+        input:focus { 
+            border-color: var(--primary); 
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.15); 
+        }
+        input:focus + i { color: var(--primary); }
 
-        .file-upload { border: 2px dashed rgba(255,255,255,0.2); padding: 20px; text-align: center; border-radius: 12px; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
-        .file-upload:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
-        .file-upload img { max-width: 100px; max-height: 100px; border-radius: 50%; margin-top: 10px; display: none; object-fit: cover; }
+        .file-upload { 
+            border: 2px dashed var(--glass-border); 
+            padding: 25px; 
+            text-align: center; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            position: relative; 
+            overflow: hidden; 
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .file-upload:hover { 
+            border-color: var(--primary); 
+            background: rgba(212, 175, 55, 0.05); 
+            transform: translateY(-2px);
+        }
+        
+        .file-upload i { transition: 0.3s; color: var(--text-muted); }
+        .file-upload:hover i { color: var(--primary); transform: scale(1.1); }
 
-        button { width: 100%; padding: 16px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3); }
+        .file-upload img { 
+            width: 100px; 
+            height: 100px; 
+            border-radius: 50%; 
+            margin-top: 10px; 
+            display: none; 
+            object-fit: cover; 
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+        }
+
+        button { 
+            width: 100%; 
+            padding: 18px; 
+            background: linear-gradient(135deg, var(--primary), #966f1e); 
+            border: none; 
+            border-radius: 14px; 
+            color: #000; 
+            font-weight: 800; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            margin-top: 10px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Shine effect on button */
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
+        }
+        
+        button:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3); 
+            color: #fff;
+        }
+        
+        button:hover::after { left: 100%; }
+
+        /* Custom Scrollbar for dropdowns if needed */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -52,8 +205,8 @@
             <div class="form-group">
                 <label>الصورة الشخصية</label>
                 <div class="file-upload" onclick="document.getElementById('image').click()">
-                    <i class="fas fa-cloud-upload-alt fa-2x" style="color: #94a3b8;"></i>
-                    <div style="margin-top: 10px; font-size: 13px; color: #94a3b8;" id="upload-text">اضغط لرفع صورة</div>
+                    <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                    <div style="margin-top: 15px; font-size: 13px; color: var(--text-muted);" id="upload-text">اضغط لرفع صورة</div>
                     <input type="file" id="image" hidden accept="image/*" onchange="previewImage(this)">
                     <img id="preview" src="" alt="Preview">
                 </div>
@@ -62,28 +215,31 @@
             <div class="form-group">
                 <label>الاسم بالكامل</label>
                 <div class="input-box">
-                    <i class="fas fa-user"></i>
                     <input type="text" id="name" placeholder="اسمك الثلاثي" required>
+                    <i class="fas fa-user"></i>
                 </div>
             </div>
 
             <div class="form-group">
                 <label>رقم الهاتف (للتواصل)</label>
                 <div class="input-box">
-                    <i class="fas fa-phone"></i>
                     <input type="tel" id="phone" placeholder="01xxxxxxxxx" required>
+                    <i class="fas fa-phone"></i>
                 </div>
             </div>
 
             <div class="form-group">
-                <label>رقم المحفظة (فودافون كاش/انستا)</label>
+                <label>رقم المحفظة (لتحويل الأرباح)</label>
                 <div class="input-box">
+                    <input type="tel" id="wallet" placeholder="فودافون كاش / انستا باي" required>
                     <i class="fas fa-wallet"></i>
-                    <input type="tel" id="wallet" placeholder="لتحويل الأرباح عليه" required>
                 </div>
             </div>
 
-            <button type="submit" id="submitBtn">إرسال الطلب <i class="fas fa-paper-plane"></i></button>
+            <button type="submit" id="submitBtn">
+                <span>إرسال الطلب</span>
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </form>
     </div>
 
@@ -92,10 +248,17 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('preview').src = e.target.result;
-                    document.getElementById('preview').style.display = 'inline-block';
+                    const preview = document.getElementById('preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'inline-block';
                     document.getElementById('upload-text').style.display = 'none';
                     document.querySelector('.file-upload i').style.display = 'none';
+                    
+                    // Add animation to the image
+                    preview.animate([
+                        { transform: 'scale(0.8)', opacity: 0 },
+                        { transform: 'scale(1)', opacity: 1 }
+                    ], { duration: 400, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' });
                 }
                 reader.readAsDataURL(input.files[0]);
             }
@@ -104,10 +267,20 @@
         async function submitForm(e) {
             e.preventDefault();
             const btn = document.getElementById('submitBtn');
-            const originalText = btn.innerHTML;
+            const originalHTML = btn.innerHTML;
             
             const imageFile = document.getElementById('image').files[0];
-            if (!imageFile) return Swal.fire('تنبيه', 'يرجى اختيار صورة شخصية', 'warning');
+            if (!imageFile) {
+                Swal.fire({
+                    title: 'تنبيه',
+                    text: 'يرجى اختيار صورة شخصية',
+                    icon: 'warning',
+                    background: '#1e293b',
+                    color: '#fff',
+                    confirmButtonColor: '#d4af37'
+                });
+                return;
+            }
 
             const formData = new FormData();
             formData.append('name', document.getElementById('name').value);
@@ -115,11 +288,12 @@
             formData.append('walletNumber', document.getElementById('wallet').value);
             formData.append('image', imageFile);
 
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> جاري الرفع...';
             btn.disabled = true;
+            btn.style.opacity = '0.8';
 
             try {
-                const res = await fetch('/api/v1/sales', {
+                const res = await fetch('/api/v1/sales/join', {
                     method: 'POST',
                     body: formData
                 });
@@ -130,18 +304,26 @@
                         icon: 'success',
                         title: 'تم الإرسال بنجاح!',
                         text: 'سيتم مراجعة طلبك والتواصل معك قريباً',
-                        background: '#1e1b4b',
+                        background: '#1e293b',
                         color: '#fff',
-                        confirmButtonColor: '#6366f1'
+                        confirmButtonColor: '#d4af37'
                     }).then(() => location.reload());
                 } else {
                     throw new Error(data.message);
                 }
             } catch (err) {
-                Swal.fire('خطأ', err.message || 'حدث خطأ في الاتصال', 'error');
+                Swal.fire({
+                    title: 'خطأ',
+                    text: err.message || 'حدث خطأ في الاتصال بالسيرفر',
+                    icon: 'error',
+                    background: '#1e293b',
+                    color: '#fff',
+                    confirmButtonColor: '#d4af37'
+                });
             } finally {
-                btn.innerHTML = originalText;
+                btn.innerHTML = originalHTML;
                 btn.disabled = false;
+                btn.style.opacity = '1';
             }
         }
     </script>

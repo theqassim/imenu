@@ -3,24 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تسجيل الدخول | Smart Menu</title>
+    <title>تسجيل الدخول | iMenu Partner</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap"
       rel="stylesheet"
     />
     <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       :root {
-        --primary: #6366f1;
-        --accent: #8b5cf6;
-        --bg-color: #0f172a;
-        --glass-bg: rgba(255, 255, 255, 0.05);
-        --glass-border: rgba(255, 255, 255, 0.1);
-        --text: #f8fafc;
+        /* Palette: Deep Luxury Space (مطابقة لصفحة السيلز) */
+        --bg-dark: #0f1115;
+        --bg-panel: rgba(30, 35, 45, 0.7);
+        --primary: #d4af37; /* Royal Gold */
+        --primary-glow: rgba(212, 175, 55, 0.4);
+        --text-main: #ffffff;
+        --text-muted: #9ca3af;
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-highlight: rgba(255, 255, 255, 0.03);
+        --danger: #ef4444;
+
+        --radius-xl: 24px;
+        --radius-md: 16px;
+        
+        --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+        outline: none;
       }
 
       body {
@@ -30,23 +44,38 @@
         justify-content: center;
         align-items: center;
         font-family: "Tajawal", sans-serif;
-        background-color: var(--bg-color);
-        overflow-x: hidden;
-        position: relative;
-        -webkit-tap-highlight-color: transparent;
+        background-color: var(--bg-dark);
+        /* خلفية الفضاء الفخم */
+        background-image: 
+            radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(60, 80, 100, 0.1) 0%, transparent 40%);
+        overflow: hidden;
+        color: var(--text-main);
       }
 
-      .background-anim {
-        position: fixed;
-        width: 100vw;
-        height: 100vh;
-        background:
-          radial-gradient(circle, var(--primary) 0%, transparent 50%),
-          radial-gradient(circle, var(--accent) 0%, transparent 50%);
-        background-size: 80% 80%;
-        background-position: center;
-        opacity: 0.15;
+      /* تأثيرات بصرية إضافية للخلفية */
+      .orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(80px);
         z-index: 0;
+        animation: float 10s infinite ease-in-out;
+      }
+      .orb-1 {
+        top: -10%; left: -10%;
+        width: 300px; height: 300px;
+        background: rgba(212, 175, 55, 0.1);
+      }
+      .orb-2 {
+        bottom: -10%; right: -10%;
+        width: 400px; height: 400px;
+        background: rgba(60, 80, 100, 0.1);
+        animation-delay: -5s;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(20px, 20px); }
       }
 
       .container {
@@ -54,153 +83,192 @@
         z-index: 10;
         width: 100%;
         padding: 20px;
-        box-sizing: border-box;
         display: flex;
         justify-content: center;
       }
 
       .login-card {
-        background: var(--glass-bg);
+        background: var(--bg-panel);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid var(--glass-border);
-        border-radius: 24px;
-        padding: 40px 30px;
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        border-radius: var(--radius-xl);
+        padding: 50px 40px;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
         width: 100%;
-        max-width: 400px;
-        box-sizing: border-box;
-        animation: slideUp 0.6s ease-out forwards;
+        max-width: 420px;
+        position: relative;
+        overflow: hidden;
+        animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+
+      /* تأثير اللمعان العلوي */
+      .login-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
       }
 
       @keyframes slideUp {
-        from {
-          transform: translateY(30px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
+        from { transform: translateY(40px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      .logo-area {
+        text-align: center;
+        margin-bottom: 40px;
       }
 
       .logo {
-        text-align: center;
-        font-size: 32px;
-        font-weight: 800;
-        margin-bottom: 10px;
-        color: white;
-        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        font-size: 36px;
+        font-weight: 900;
+        margin-bottom: 5px;
+        background: linear-gradient(135deg, #fff 20%, var(--primary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: -1px;
       }
 
       .subtitle {
         text-align: center;
-        color: #94a3b8;
-        margin-bottom: 30px;
+        color: var(--text-muted);
         font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
       }
 
       .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         position: relative;
       }
-      .form-group i {
+
+      .form-group label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 500;
+        color: var(--text-muted);
+        font-size: 13px;
+        padding-right: 5px;
+      }
+
+      .input-wrapper {
+        position: relative;
+      }
+
+      .input-wrapper i {
         position: absolute;
-        right: 15px;
+        left: 20px;
         top: 50%;
         transform: translateY(-50%);
-        color: #94a3b8;
-        pointer-events: none;
+        color: var(--text-muted);
+        transition: var(--transition);
+        font-size: 16px;
       }
 
       input {
         width: 100%;
-        padding: 16px 50px 16px 15px;
-        background: rgba(15, 23, 42, 0.6);
+        padding: 18px 20px 18px 50px; /* عكسنا البادينج عشان الأيقونة */
+        background: rgba(0, 0, 0, 0.3);
         border: 1px solid var(--glass-border);
-        border-radius: 14px;
-        color: white;
+        border-radius: 16px;
+        color: #fff;
         font-family: inherit;
-        font-size: 16px;
-        box-sizing: border-box;
-        transition: 0.3s;
-        outline: none;
+        font-size: 15px;
+        transition: var(--transition);
       }
+
       input:focus {
+        background: rgba(0, 0, 0, 0.5);
         border-color: var(--primary);
-        background: rgba(15, 23, 42, 0.9);
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+      }
+
+      input:focus + i {
+        color: var(--primary);
       }
 
       .btn-login {
         width: 100%;
-        padding: 16px;
-        background: linear-gradient(
-          135deg,
-          var(--primary) 0%,
-          var(--accent) 100%
-        );
+        padding: 18px;
+        background: linear-gradient(135deg, var(--primary), #966f1e);
         border: none;
-        border-radius: 14px;
-        color: white;
-        font-weight: bold;
+        border-radius: 16px;
+        color: #000; /* نص داكن ليتناسب مع الخلفية الذهبية */
+        font-weight: 800;
         font-size: 16px;
         cursor: pointer;
-        transition: 0.2s;
-        margin-top: 10px;
+        transition: var(--transition);
+        margin-top: 15px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
       }
-      .btn-login:active {
-        transform: scale(0.98);
-        opacity: 0.9;
+      
+      /* تأثير اللمعان عند التمرير */
+      .btn-login::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -100%;
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: 0.5s;
+      }
+
+      .btn-login:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+        color: #fff;
+      }
+
+      .btn-login:hover::after {
+        left: 100%;
       }
 
       .footer {
         text-align: center;
-        margin-top: 25px;
-        color: #64748b;
+        margin-top: 35px;
+        color: var(--text-muted);
         font-size: 12px;
+        opacity: 0.6;
       }
 
-      /* Renew Subscription Button Animation */
-      @keyframes pulse-btn {
-        0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); transform: scale(1); }
-        70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); transform: scale(1.05); }
-        100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); transform: scale(1); }
-      }
+      /* Renew Subscription Button Style Updated */
       .renew-btn {
-        display: inline-block;
-        background: #10b981;
-        color: white;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
         padding: 12px 25px;
         border-radius: 50px;
         text-decoration: none;
         font-weight: bold;
         margin-top: 20px;
-        animation: pulse-btn 2s infinite;
         transition: 0.3s;
-        border: 2px solid #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
       }
-      .renew-btn:hover { background: #059669; border-color: #059669; }
-
-      @media (max-width: 480px) {
-        .login-card {
-          padding: 30px 20px;
-          border-radius: 20px;
-        }
-        .logo {
-          font-size: 28px;
-        }
+      .renew-btn:hover { 
+        background: rgba(16, 185, 129, 0.25); 
+        transform: translateY(-2px);
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
       }
     </style>
   </head>
   <body>
-    <div class="background-anim"></div>
-    <div class="shape shape-1"></div>
-    <div class="shape shape-2"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
 
     <div class="container">
       <div class="login-card">
-        <div class="logo">🍕 Smart Menu</div>
-        <div class="subtitle">سجل دخولك لإدارة مطعمك باحترافية</div>
+        <div class="logo-area">
+            <div class="logo">iMenu System</div>
+            <div class="subtitle">سجل دخولك لإدارة مطعمك باحترافية</div>
+        </div>
 
         <form
           id="loginForm"
@@ -210,35 +278,38 @@
           "
         >
           <div class="form-group">
-            <input
-              type="email"
-              id="email"
-              placeholder="البريد الإلكتروني"
-              required
-            />
-            <i class="fas fa-envelope"></i>
+            <label>البريد الإلكتروني</label>
+            <div class="input-wrapper">
+                <input
+                  type="email"
+                  id="email"
+                  placeholder="name@example.com"
+                  required
+                />
+                <i class="fas fa-envelope"></i>
+            </div>
           </div>
 
           <div class="form-group">
-            <input
-              type="password"
-              id="password"
-              placeholder="كلمة المرور"
-              required
-            />
-            <i class="fas fa-eye" id="togglePassword" style="cursor: pointer; pointer-events: auto; transition: color 0.3s;" onclick="togglePasswordVisibility()"></i>
+            <label>كلمة المرور</label>
+            <div class="input-wrapper">
+                <input
+                  type="password"
+                  id="password"
+                  placeholder="••••••••"
+                  required
+                />
+                <i class="fas fa-eye" id="togglePassword" style="cursor: pointer; pointer-events: auto;" onclick="togglePasswordVisibility()"></i>
+            </div>
           </div>
 
           <button type="submit" class="btn-login" id="btn-submit">
-            تسجيل الدخول
-            <i
-              class="fas fa-arrow-left"
-              style="margin-right: 8px; font-size: 12px"
-            ></i>
+            <span>تسجيل الدخول</span>
+            <i class="fas fa-arrow-left" style="font-size: 14px"></i>
           </button>
         </form>
 
-        <div class="footer">© 2026 Smart Menu System. All rights reserved.</div>
+        <div class="footer">© 2026 iMenu System. All rights reserved.</div>
       </div>
     </div>
 
@@ -250,7 +321,7 @@
 
         if (!email || !password) return;
 
-        const originalText = btn.innerHTML;
+        const originalHTML = btn.innerHTML;
         btn.innerHTML =
           '<i class="fas fa-circle-notch fa-spin"></i> جاري التحقق...';
         btn.style.opacity = "0.8";
@@ -281,6 +352,20 @@
               }).then(() => {
                 window.location.href = "/super-admin";
               });
+            } else if (user.role === "sales") {
+              localStorage.setItem("salesToken", data.token);
+
+              Swal.fire({
+                icon: "success",
+                title: `مرحباً، ${user.name}`,
+                text: "جاري توجيهك للوحة المبيعات...",
+                showConfirmButton: false,
+                timer: 1000,
+                background: "#1e293b",
+                color: "#fff",
+              }).then(() => {
+                window.location.href = "/sales-dashboard";
+              });
             } else if (["owner", "cashier", "kitchen"].includes(user.role)) {
               sessionStorage.setItem("ownerToken", data.token);
               sessionStorage.setItem("currentUserName", user.name);
@@ -301,12 +386,14 @@
                 window.location.href = "/owner";
               });
             } else {
-              Swal.fire(
-                "تنبيه",
-                "ليس لديك صلاحية الوصول للوحة التحكم",
-                "warning",
-              );
-              btn.innerHTML = originalText;
+              Swal.fire({
+                title: "تنبيه",
+                text: "ليس لديك صلاحية الوصول للوحة التحكم",
+                icon: "warning",
+                background: "#1e293b",
+                color: "#fff"
+              });
+              btn.innerHTML = originalHTML;
               btn.disabled = false;
             }
           } else {
@@ -316,7 +403,7 @@
                     icon: "warning",
                     title: "انتهت صلاحية الاشتراك",
                     html: `
-                        <div style="line-height:1.6; color:#cbd5e1; font-size:15px;">
+                        <div style="line-height:1.6; color:#cbd5e1; font-size:15px; margin-bottom: 15px;">
                             عذراً، لقد انتهت فترة اشتراكك الحالية. <br>
                             لاستعادة الوصول للنظام والبيانات، يرجى التجديد.
                         </div>
@@ -324,7 +411,7 @@
                             <i class="fab fa-whatsapp"></i> تجديد الاشتراك الآن
                         </a>
                     `,
-                    background: "#1e293b",
+                    background: "#0f172a", // Dark background for modal
                     color: "#fff",
                     showConfirmButton: false,
                     showCloseButton: true
@@ -337,15 +424,23 @@
                   text: data.message || "بيانات الدخول غير صحيحة",
                   background: "#1e293b",
                   color: "#fff",
+                  confirmButtonColor: "#d4af37" // Matching gold color
                 });
             }
-            btn.innerHTML = originalText;
+            btn.innerHTML = originalHTML;
             btn.disabled = false;
           }
         } catch (e) {
           console.error(e);
-          Swal.fire("خطأ", "حدث خطأ في الاتصال بالسيرفر", "error");
-          btn.innerHTML = originalText;
+          Swal.fire({
+              title: "خطأ",
+              text: "حدث خطأ في الاتصال بالسيرفر",
+              icon: "error",
+              background: "#1e293b",
+              color: "#fff",
+              confirmButtonColor: "#d4af37"
+          });
+          btn.innerHTML = originalHTML;
           btn.disabled = false;
         }
       }
@@ -363,7 +458,7 @@
             passwordInput.type = "password";
             toggleIcon.classList.remove("fa-eye-slash");
             toggleIcon.classList.add("fa-eye");
-            toggleIcon.style.color = "#94a3b8";
+            toggleIcon.style.color = "var(--text-muted)";
         }
       }
     </script>

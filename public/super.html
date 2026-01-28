@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Admin | Dashboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script> <script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script> 
+    <script>
         const superToken = localStorage.getItem('superAdminToken');
         if (!superToken) {
             window.location.href = '/login';
@@ -18,78 +20,330 @@
 
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg-body: #f3f4f6;
-            --surface: #ffffff;
-            --text-main: #111827;
-            --text-sub: #6b7280;
-            --border: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            --radius: 12px;
+            /* Palette: Deep Luxury Space */
+            --bg-dark: #0f1115;
+            --bg-panel: rgba(30, 35, 45, 0.7);
+            --primary: #d4af37; /* Royal Gold */
+            --primary-glow: rgba(212, 175, 55, 0.4);
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+
+            --radius-xl: 24px;
+            --radius-md: 16px;
+            
+            --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        body { font-family: 'Tajawal', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        * {
+            box-sizing: border-box;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        .sidebar { width: 260px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px; transition: 0.3s; z-index: 100; }
-        .brand { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
-        .nav-btn { background: transparent; border: none; width: 100%; text-align: right; padding: 12px 16px; border-radius: var(--radius); cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 500; color: var(--text-sub); display: flex; align-items: center; gap: 12px; margin-bottom: 5px; transition: 0.2s; }
-        .nav-btn:hover { background: #f9fafb; color: var(--primary); }
-        .nav-btn.active { background: #eef2ff; color: var(--primary); font-weight: 700; }
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(60, 80, 100, 0.1) 0%, transparent 40%);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
-        .main { flex: 1; padding: 30px 40px; overflow-y: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .page-title h2 { margin: 0; font-size: 24px; }
+        /* --- Scrollbar --- */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        .content-card { background: var(--surface); padding: 30px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow); max-width: 800px; margin-bottom: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
-        input, select { width: 100%; padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; outline: none; background: #fff; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px #eef2ff; }
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-panel);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            transition: var(--transition);
+            z-index: 100;
+            box-shadow: 0 0 40px rgba(0,0,0,0.2);
+        }
+
+        .brand {
+            font-size: 26px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 20%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: right;
+            padding: 14px 20px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 8px;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.15), transparent);
+            color: var(--primary);
+            border-right: 3px solid var(--primary);
+            font-weight: 700;
+        }
         
-        .btn-primary { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .btn-primary:hover { background: var(--primary-hover); }
+        .nav-btn.active i {
+            text-shadow: 0 0 15px var(--primary);
+        }
 
-        .login-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f3f4f6; z-index: 2000; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 40px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        /* --- Main Content --- */
+        .main {
+            flex: 1;
+            padding: 30px 40px;
+            overflow-y: auto;
+            position: relative;
+        }
 
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f9fafb; padding: 12px; text-align: right; color: var(--text-sub); font-size: 13px; border-bottom: 2px solid var(--border); }
-       td { 
-    padding: 12px; 
-    border-bottom: 1px solid var(--border); 
-    font-size: 14px; 
-    vertical-align: middle; 
-    text-align: right;
-}
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .page-title h2 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 800;
+            color: #fff;
+        }
+        .page-title p {
+            color: var(--primary);
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* --- Cards --- */
+        .content-card {
+            background: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+            backdrop-filter: blur(20px);
+            padding: 35px;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            max-width: 900px;
+            margin-bottom: 30px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Forms --- */
+        .form-group { margin-bottom: 20px; }
+        .label { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
         
-        .action-btn { border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-left: 5px; color: white; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-edit { background: #f59e0b; } .btn-edit:hover { background: #d97706; }
-        .btn-qr { background: #10b981; } .btn-qr:hover { background: #059669; }
-        .btn-login-as { background: #6366f1; } .btn-login-as:hover { background: #4f46e5; }
+        input, select {
+            width: 100%;
+            padding: 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            font-family: inherit;
+            outline: none;
+            color: #fff;
+            transition: var(--transition);
+        }
+        
+        input:focus, select:focus {
+            border-color: var(--primary);
+            background: rgba(0,0,0,0.5);
+            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1);
+        }
+
+        input[type="file"] {
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px dashed var(--glass-border);
+            cursor: pointer;
+        }
+
+        /* --- Buttons --- */
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--primary), #966f1e);
+            color: #000;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 10px 20px rgba(212, 175, 55, 0.15);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(212, 175, 55, 0.3);
+            color: #fff;
+        }
+
+        /* --- Tables --- */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
+        
+        th {
+            background: transparent;
+            padding: 0 20px 10px;
+            text-align: right;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        tbody tr {
+            background: rgba(255,255,255,0.03);
+            transition: var(--transition);
+        }
+
+        tbody tr:hover {
+            transform: scale(1.01);
+            background: rgba(255,255,255,0.06);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        td {
+            padding: 20px;
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+            color: #fff;
+            vertical-align: middle;
+        }
+
+        td:first-child { border-right: 1px solid var(--glass-border); border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+        td:last-child { border-left: 1px solid var(--glass-border); border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
+
+        /* --- Action Buttons --- */
+        .action-btn { border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; margin-left: 5px; color: white; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-edit { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); } 
+        .btn-edit:hover { background: #fbbf24; color: #000; }
+        
+        .btn-qr { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); } 
+        .btn-qr:hover { background: #34d399; color: #000; }
+        
+        .btn-login-as { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); } 
+        .btn-login-as:hover { background: #818cf8; color: #fff; }
+
+        /* --- Modals & Utilities --- */
+        .login-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .login-box { 
+            background: var(--bg-dark); 
+            border: 1px solid var(--glass-border);
+            padding: 40px; 
+            border-radius: var(--radius-xl); 
+            width: 90%; 
+            max-width: 500px; 
+            text-align: center; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5); 
+        }
 
         .hidden { display: none !important; }
         
-        .swal2-input { margin: 10px auto !important; width: 80% !important; }
+        .slug-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--primary);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        /* --- SweetAlert Customization for Dark Theme --- */
+        div:where(.swal2-container) div:where(.swal2-popup) {
+            background: #1a1d24 !important;
+            border: 1px solid var(--glass-border);
+            color: #fff !important;
+            border-radius: 20px !important;
+        }
+        div:where(.swal2-container) input.swal2-input, 
+        div:where(.swal2-container) select.swal2-input {
+            background: rgba(0,0,0,0.4) !important;
+            color: #fff !important;
+            border: 1px solid var(--glass-border) !important;
+            margin: 10px auto !important; 
+            width: 80% !important;
+        }
+        div:where(.swal2-container) h2.swal2-title { color: var(--primary) !important; }
+        div:where(.swal2-container) div:where(.swal2-html-container) { color: #ccc !important; }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; overflow: auto; padding-bottom: 80px; }
+            .sidebar { 
+                position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; 
+                flex-direction: row; padding: 10px; justify-content: space-around;
+                border-left: none; border-top: 1px solid var(--glass-border);
+                background: rgba(15, 17, 21, 0.95);
+            }
+            .brand, .nav-btn span, .logout-btn span { display: none; }
+            .nav-btn { width: auto; padding: 10px; margin: 0; justify-content: center; border-radius: 50%; width: 50px; height: 50px; }
+            .nav-btn.active { border-right: none; background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+            .main { padding: 20px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 20px; }
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <div class="brand"><i class="fas fa-layer-group"></i> Super Admin</div>
-        <button class="nav-btn active" onclick="switchTab('owners')" id="btn-owners"><i class="fas fa-user-plus"></i> إدارة الملاك</button>
-        <button class="nav-btn" onclick="switchTab('restaurants')" id="btn-restaurants"><i class="fas fa-store"></i> إنشاء متجر جديد</button>
-        <button class="nav-btn" onclick="switchTab('ai-upload')" id="btn-ai-upload">
-    <i class="fas fa-magic"></i> رفع بالذكاء الاصطناعي
-</button>
-<button class="nav-btn" onclick="switchTab('sales')" id="btn-sales">
-    <i class="fas fa-users-cog"></i> طلبات السيلز
-</button>
+        <div class="brand"><i class="fas fa-layer-group" style="color: var(--primary)"></i> Super Admin</div>
+        <button class="nav-btn active" onclick="switchTab('owners')" id="btn-owners"><i class="fas fa-user-plus"></i> <span>إدارة الملاك</span></button>
+        <button class="nav-btn" onclick="switchTab('restaurants')" id="btn-restaurants"><i class="fas fa-store"></i> <span>إنشاء متجر</span></button>
+        <button class="nav-btn" onclick="switchTab('ai-upload')" id="btn-ai-upload"><i class="fas fa-magic"></i> <span>رفع بالذكاء AI</span></button>
+        <button class="nav-btn" onclick="switchTab('sales-stats')" id="btn-sales-stats"><i class="fas fa-chart-pie"></i> <span>أداء المبيعات</span></button>
+        <button class="nav-btn" onclick="switchTab('sales-agents')" id="btn-sales-agents"><i class="fas fa-users"></i> <span>الوكلاء والطلبات</span></button>
         <button class="nav-btn" onclick="switchTab('requests')" id="btn-requests">
-            <i class="fas fa-bell"></i> طلبات الانضمام <span id="req-badge" style="background:#ef4444; color:white; font-size:10px; padding:2px 6px; border-radius:10px; display:none;">New</span>
+            <i class="fas fa-bell"></i> <span>طلبات الانضمام</span> 
+            <span id="req-badge" style="background:var(--danger); color:white; font-size:10px; padding:2px 6px; border-radius:10px; display:none; margin-right:5px;">New</span>
         </button>
         
         <div style="margin-top:auto">
-          <button class="nav-btn" onclick="logoutSuperAdmin()" style="color:#ef4444"><i class="fas fa-sign-out-alt"></i> خروج</button>
+            <button class="nav-btn logout-btn" onclick="logoutSuperAdmin()" style="color:var(--danger)"><i class="fas fa-sign-out-alt"></i> <span>خروج</span></button>
         </div>
     </div>
 
@@ -97,81 +351,83 @@
         <div class="header">
             <div class="page-title">
                 <h2>إدارة النظام</h2>
-                <p style="color:var(--text-sub)">التحكم في الملاك والمطاعم والاشتراكات</p>
+                <p>التحكم الكامل في الملاك، المتاجر، والاشتراكات</p>
             </div>
             <div>
-                <button id="enable-push-btn" onclick="subscribeUser()" class="action-btn" style="background:#6366f1; padding:10px 20px; font-size:14px; display:none;">
+                <button id="enable-push-btn" onclick="subscribeUser()" class="action-btn" style="background:#6366f1; padding:12px 25px; font-size:14px; display:none;">
                     <i class="fas fa-bell"></i> تفعيل إشعارات الجهاز
                 </button>
             </div>
         </div>
 
         <div id="tab-owners">
-           <div class="content-card">
-    <h3 style="margin-top:0; margin-bottom:20px; color:var(--primary)">إضافة مالك جديد</h3>
+            <div class="content-card">
+                <h3 style="margin-top:0; margin-bottom:25px; color:var(--primary); font-size: 20px;"><i class="fas fa-plus-circle"></i> إضافة مالك جديد</h3>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-        <div class="form-group">
-            <label class="label">الاسم</label>
-            <input type="text" id="u-name">
-        </div>
-        <div class="form-group">
-    <label class="label">رقم الهاتف</label>
-    <input type="text" id="u-phone" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-</div>
-    </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label class="label">الاسم</label>
+                        <input type="text" id="u-name" placeholder="الاسم الكامل">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">رقم الهاتف</label>
+                        <input type="text" id="u-phone" oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="01xxxxxxxxx">
+                    </div>
+                </div>
 
-   
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label class="label">البريد الإلكتروني</label>
+                        <input type="email" id="u-email" placeholder="email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">تاريخ انتهاء الاشتراك</label>
+                        <input type="date" id="u-date" style="color-scheme: dark;">
+                    </div>
+                </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-        <div class="form-group">
-            <label class="label">البريد الإلكتروني</label>
-            <input type="email" id="u-email">
-        </div>
-        <div class="form-group">
-            <label class="label">تاريخ انتهاء الاشتراك (اتركه فارغاً ليكون مدى الحياة)</label>
-            <input type="date" id="u-date">
-        </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-        <div class="form-group">
-            <label class="label">كلمة المرور</label>
-            <input type="password" id="u-pass">
-        </div>
-        <div class="form-group">
-            <label class="label">تأكيد كلمة المرور</label>
-            <input type="password" id="u-pass-conf">
-        </div>
-    </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div class="form-group">
+                        <label class="label">كلمة المرور</label>
+                        <input type="password" id="u-pass" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label class="label">تأكيد كلمة المرور</label>
+                        <input type="password" id="u-pass-conf" placeholder="••••••••">
+                    </div>
+                </div>
     
-    <div class="form-group" style="margin-top: 15px; background: #e0e7ff; padding: 10px; border-radius: 8px;">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="u-stock" style="width: 20px; height: 20px;">
-            <span style="font-weight: bold; color: var(--primary);">تفعيل نظام إدارة المخازن والجرد (Stock System)</span>
-        </label>
-    </div>
+                <div class="form-group" style="margin-top: 15px; background: rgba(99, 102, 241, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.3);">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; color: #fff;">
+                        <input type="checkbox" id="u-stock" style="width: 20px; height: 20px;">
+                        <span>تفعيل نظام إدارة المخازن والجرد (Stock System)</span>
+                    </label>
+                </div>
 
-    <div class="form-group" style="margin-top: 10px;">
-        <label class="label">باقة المنتجات المسموحة</label>
-        <select id="u-limit" style="font-weight:bold; color:var(--primary);">
-            <option value="75">باقة صغرى (75 منتج)</option>
-            <option value="120">باقة وسطى (120 منتج)</option>
-            <option value="200">باقة كبرى (200 منتج)</option>
-            <option value="-1">باقة مفتوحة (Unlimited)</option>
-        </select>
-    </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label class="label">باقة المنتجات المسموحة</label>
+                    <select id="u-limit" style="font-weight:bold; color:var(--primary);">
+                        <option value="75">باقة صغرى (75 منتج)</option>
+                        <option value="120">باقة وسطى (120 منتج)</option>
+                        <option value="200">باقة كبرى (200 منتج)</option>
+                        <option value="-1">باقة مفتوحة (Unlimited)</option>
+                    </select>
+                </div>
 
-    <div style="margin-top: 20px;">
-        <button class="btn-primary" onclick="createOwner()">إنشاء الحساب</button>
-    </div>
-</div>
+                <div style="margin-top: 25px;">
+                    <button class="btn-primary" onclick="createOwner()">إنشاء الحساب الآن</button>
+                </div>
+            </div>
 
             <div class="content-card" style="max-width: 100%;">
-                <h3 style="color:var(--primary); margin-top:0;">قائمة الملاك المسجلين</h3>
-<div style="margin-bottom:15px;">
-    <input type="text" id="owner-table-search" onkeyup="filterTable('owners-tbody', 'owner-table-search')" placeholder="ابحث باسم المالك أو الإيميل..." style="padding:10px; border-radius:8px; border:1px solid var(--border); width:100%;">
-</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap: wrap; gap:15px;">
+                    <h3 style="color:var(--text-main); margin:0;">قائمة الملاك المسجلين</h3>
+                    <div style="position:relative; width: 300px;">
+                        <input type="text" id="owner-table-search" onkeyup="filterTable('owners-tbody', 'owner-table-search')" placeholder="بحث سريع..." style="padding-right: 40px;">
+                        <i class="fas fa-search" style="position:absolute; top:18px; right:15px; color:var(--text-muted);"></i>
+                    </div>
+                </div>
+                
                 <div style="overflow-x:auto;">
                     <table>
                         <thead>
@@ -188,168 +444,209 @@
             </div>
         </div>
 
-       <div id="tab-restaurants" class="hidden">
+        <div id="tab-restaurants" class="hidden">
             <div class="content-card">
-                <h3 style="margin-top:0; margin-bottom:20px; color:var(--primary)">بيانات النشاط (مطعم/كافيه)</h3>
+                <h3 style="margin-top:0; margin-bottom:25px; color:var(--primary)">بيانات النشاط (مطعم/كافيه)</h3>
                 <div class="form-group">
                     <label class="label">اسم النشاط</label>
-                    <input type="text" id="r-name" onkeyup="generateSlug()">
+                    <input type="text" id="r-name" onkeyup="generateSlug()" placeholder="مثال: مطعم البركة">
                 </div>
                 <div class="form-group">
                     <label class="label">الرابط (Slug)</label>
-                    <input type="text" id="r-slug" readonly style="background:#f9fafb; color:#6b7280">
+                    <input type="text" id="r-slug" readonly style="background:rgba(255,255,255,0.05); color:var(--text-muted)">
                 </div>
                 <div class="form-group">
                     <label class="label">صورة الغلاف</label>
-                    <input type="file" id="r-cover" style="padding:10px; background:white">
+                    <input type="file" id="r-cover">
                 </div>
                 <div class="form-group">
                     <label class="label">المالك المختار</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="selected-owner-name" readonly placeholder="اضغط لاختيار المالك..." style="background: #f9fafb; flex: 1; cursor: pointer;" onclick="openOwnerModal()">
+                        <input type="text" id="selected-owner-name" readonly placeholder="اضغط لاختيار المالك..." style="background: rgba(255,255,255,0.05); flex: 1; cursor: pointer;" onclick="openOwnerModal()">
                         <input type="hidden" id="r-owner"> 
-                        <button class="btn-primary" onclick="openOwnerModal()" style="width: auto; padding: 0 20px;">اختيار</button>
+                        <button class="btn-primary" onclick="openOwnerModal()" style="width: auto; padding: 0 25px; background: var(--text-muted); color: #000;">اختيار</button>
                     </div>
                 </div>
                 <button class="btn-primary" onclick="createRestaurant()">إطلاق المطعم</button>
             </div>
 
             <div class="content-card" style="max-width: 100%;">
-                <h3 style="color:var(--primary); margin-top:0;">قائمة المتاجر المسجلة</h3>
-<div style="margin-bottom:15px;">
-    <input type="text" id="res-table-search" onkeyup="filterTable('restaurants-tbody', 'res-table-search')" placeholder="ابحث باسم النشاط، المالك، أو الرابط (Slug)..." style="padding:10px; border-radius:8px; border:1px solid var(--border); width:100%; box-sizing: border-box;">
-</div>
+                <h3 style="color:var(--text-main); margin-top:0;">قائمة المتاجر المسجلة</h3>
+                <div style="margin-bottom:20px; position:relative;">
+                    <input type="text" id="res-table-search" onkeyup="filterTable('restaurants-tbody', 'res-table-search')" placeholder="ابحث باسم النشاط، المالك، أو الرابط (Slug)...">
+                    <i class="fas fa-search" style="position:absolute; top:18px; left:15px; color:var(--text-muted);"></i>
+                </div>
                 <div style="overflow-x:auto;">
                     <table>
                        <thead>
-    <tr>
-        <th style="width: 25%;">المطعم</th>
-        <th style="width: 20%;">المالك</th>
-        <th style="width: 20%; text-align: center;">الرابط (Slug)</th>
-        <th style="width: 15%; text-align: center;">QR المحفوظ</th>
-        <th style="width: 20%; text-align: left; padding-left: 20px;">الإجراءات</th>
-    </tr>
-</thead>
+                            <tr>
+                                <th style="width: 25%;">المطعم</th>
+                                <th style="width: 20%;">المالك</th>
+                                <th style="width: 20%; text-align: center;">الرابط (Slug)</th>
+                                <th style="width: 15%; text-align: center;">QR المحفوظ</th>
+                                <th style="width: 20%; text-align: left; padding-left: 20px;">الإجراءات</th>
+                            </tr>
+                        </thead>
                         <tbody id="restaurants-tbody">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-<div id="tab-ai-upload" class="hidden">
-    <div class="content-card">
-        <h3 style="color:var(--primary)">سحر الذكاء الاصطناعي ✨</h3>
-        <p>ارفع صور المنيو وسنقوم بتصنيفها ورفعها بدلاً عنك.</p>
-        
-        <div class="form-group">
-            <label class="label">اختيار المطعم المستهدف</label>
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="ai-res-name" readonly placeholder="اضغط لاختيار المطعم..." 
-                       style="background: #f9fafb; flex: 1; cursor: pointer;" onclick="openOwnerModalForAI()">
-                <input type="hidden" id="ai-res-id">
-            </div>
-        </div>
+        <div id="tab-ai-upload" class="hidden">
+            <div class="content-card">
+                <h3 style="color:var(--primary); display:flex; align-items:center; gap:10px;"><i class="fas fa-magic"></i> سحر الذكاء الاصطناعي</h3>
+                <p style="color:var(--text-muted); margin-bottom:20px;">ارفع صور المنيو وسنقوم بتصنيفها ورفعها بدلاً عنك.</p>
+                
+                <div class="form-group">
+                    <label class="label">اختيار المطعم المستهدف</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="ai-res-name" readonly placeholder="اضغط لاختيار المطعم..." 
+                               style="background: rgba(255,255,255,0.05); flex: 1; cursor: pointer;" onclick="openOwnerModalForAI()">
+                        <input type="hidden" id="ai-res-id">
+                    </div>
+                </div>
 
-        <div class="form-group">
-            <label class="label">صور المنيو (يمكنك اختيار أكثر من صورة)</label>
-            <input type="file" id="ai-menu-images" multiple accept="image/*" 
-                   style="padding:15px; border:2px dashed var(--primary); width:100%">
-        </div>
+                <div class="form-group">
+                    <label class="label">صور المنيو (يمكنك اختيار أكثر من صورة)</label>
+                    <input type="file" id="ai-menu-images" multiple accept="image/*" 
+                           style="padding:25px; border:2px dashed var(--primary); width:100%; text-align:center;">
+                </div>
 
-        <button class="btn-primary" id="start-ai-btn" onclick="startAiProcessing()">
-            ابدأ التحليل والرفع الصاروخي 🚀
-        </button>
-    </div>
-</div>
-
-<div id="tab-sales" class="hidden">
-    <div class="content-card" style="max-width:100%">
-        <h3 style="color:var(--primary); margin-top:0;">إدارة فريق المبيعات (Sales Agents)</h3>
-        <button class="action-btn" onclick="loadSalesRequests()" style="background:#6b7280; margin-bottom:15px;">
-            <i class="fas fa-sync"></i> تحديث القائمة
-        </button>
-        <div style="overflow-x:auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>الصورة</th>
-                        <th>الاسم</th>
-                        <th>الهاتف (واتساب)</th>
-                        <th>المحفظة</th>
-                        <th>الحالة</th>
-                        <th>الإجراء</th>
-                    </tr>
-                </thead>
-                <tbody id="sales-tbody">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<div id="tab-sales" class="hidden">
-    <div class="content-card" style="max-width:100%">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-            <h3 style="color:var(--primary); margin:0;">إدارة فريق المبيعات (Sales Agents)</h3>
-            <button class="action-btn" onclick="loadSalesRequests()" style="background:#6b7280">
-                <i class="fas fa-sync"></i> تحديث
-            </button>
-        </div>
-        <div style="overflow-x:auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>الصورة</th>
-                        <th>الاسم</th>
-                        <th>بيانات الاتصال</th>
-                        <th>المحفظة</th>
-                        <th>الحالة</th>
-                        <th>الإجراء</th>
-                    </tr>
-                </thead>
-                <tbody id="sales-tbody">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<div id="tab-requests" class="hidden">
-    <div class="content-card" style="max-width:100%">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-            <h3 style="color:var(--primary); margin:0;">طلبات الانضمام الجديدة</h3>
-            <div style="display:flex; gap:10px;">
-                <button class="action-btn" onclick="deleteSelectedRequests()" style="background:#ef4444; display:none;" id="btn-delete-all">
-                    <i class="fas fa-trash"></i> حذف المحدد
-                </button>
-                <button class="action-btn" onclick="loadRequests()" style="background:#6b7280">
-                    <i class="fas fa-sync"></i> تحديث
+                <button class="btn-primary" id="start-ai-btn" onclick="startAiProcessing()">
+                    ابدأ التحليل والرفع الصاروخي 🚀
                 </button>
             </div>
         </div>
-        <div style="overflow-x:auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 40px; text-align: center;">
-                            <input type="checkbox" id="select-all-req" onchange="toggleSelectAll(this)">
-                        </th>
-                        <th>الاسم</th>
-                        <th>المتجر</th>
-                        <th>الهاتف</th>
-                        <th>العنوان</th>
-                        <th>التوقيت</th>
-                        <th>الإجراء</th>
-                    </tr>
-                </thead>
-                <tbody id="requests-tbody">
-                </tbody>
-            </table>
+
+        <div id="tab-sales-stats" class="hidden">
+            <div class="content-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h3 style="color:var(--primary); margin:0;">📊 إحصائيات وأداء الفريق</h3>
+                    <button class="action-btn" onclick="loadSalesStats()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: #fff;">
+                        <i class="fas fa-sync"></i> تحديث
+                    </button>
+                </div>
+                <div id="salesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;"></div>
+            </div>
+            
+            <div id="salesDetailsModal" class="login-wrapper hidden" style="display:none;">
+                <div class="login-box" style="width:650px; max-width:95%; height:80vh; overflow-y:auto; text-align:right;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--glass-border); padding-bottom:15px;">
+                        <h3 id="detailTitle" style="margin:0; color:var(--primary);">تفاصيل العملاء</h3>
+                        <button onclick="document.getElementById('salesDetailsModal').style.display='none'" style="background:transparent; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+                    </div>
+                    <div id="clientsListContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-sales-agents" class="hidden">
+            <div id="createSalesModal" class="login-wrapper hidden" style="display:none;">
+                <div class="login-box" style="width:400px;">
+                    <h3 style="color:var(--primary); margin-top:0; margin-bottom:20px;">✨ تسجيل موظف جديد</h3>
+                    <input type="text" id="salesName" placeholder="الاسم بالكامل" style="margin-bottom:10px;">
+                    <input type="email" id="salesEmail" placeholder="البريد الإلكتروني" style="margin-bottom:10px;">
+                    <input type="text" id="salesPhone" placeholder="رقم الهاتف" style="margin-bottom:10px;">
+                    <input type="password" id="salesPass" placeholder="كلمة المرور" style="margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; gap:10px;">
+                        <button onclick="createSalesAgent()" class="btn-primary" style="flex:1;">حفظ</button>
+                        <button onclick="document.getElementById('createSalesModal').style.display='none'" style="flex:1; background:rgba(255,255,255,0.1); border:none; padding:12px; border-radius:12px; cursor:pointer; color:#fff;">إلغاء</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-card" style="max-width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap:wrap; gap:10px;">
+                    <button onclick="document.getElementById('createSalesModal').style.display='flex'" class="btn-primary" style="width:auto; padding: 12px 24px;">
+                        <i class="fas fa-user-plus"></i> إضافة وكيل جديد
+                    </button>
+                    <button class="action-btn" onclick="loadSalesRequests()" style="background: rgba(255,255,255,0.1); padding: 12px 20px;">
+                        <i class="fas fa-sync"></i> تحديث القائمة
+                    </button>
+                </div>
+
+                <h4 style="color:var(--text-muted); margin-bottom:15px;">📋 الوكلاء وطلبات الانضمام</h4>
+                
+                <div style="margin-bottom: 15px; position: relative;">
+                    <i class="fas fa-search" style="position: absolute; top: 18px; right: 15px; color: var(--text-muted);"></i>
+                    <input type="text" id="sales-search-input" onkeyup="filterSalesTable()" 
+                           placeholder="ابحث باسم الوكيل، رقم الهاتف، أو البريد الإلكتروني..." 
+                           style="padding-right: 40px;">
+                </div>
+                <div style="overflow-x:auto;">
+                    <table style="min-width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="padding:15px;">الصورة</th>
+                                <th style="padding:15px;">الاسم</th>
+                                <th style="padding:15px;">بيانات الاتصال</th>
+                                <th style="padding:15px;">المحفظة</th>
+                                <th style="padding:15px;">الحالة</th>
+                                <th style="padding:15px;">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sales-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-requests" class="hidden">
+            <div class="content-card" style="max-width:100%">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                    <h3 style="color:var(--primary); margin:0;">طلبات الانضمام الجديدة</h3>
+                    <div style="display:flex; gap:10px;">
+                        <button class="action-btn" onclick="deleteSelectedRequests()" style="background:var(--danger); display:none;" id="btn-delete-all">
+                            <i class="fas fa-trash"></i> حذف المحدد
+                        </button>
+                        <button class="action-btn" onclick="loadRequests()" style="background:rgba(255,255,255,0.1)">
+                            <i class="fas fa-sync"></i> تحديث
+                        </button>
+                    </div>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;">
+                                    <input type="checkbox" id="select-all-req" onchange="toggleSelectAll(this)" style="width:18px; height:18px;">
+                                </th>
+                                <th>الاسم</th>
+                                <th>المتجر</th>
+                                <th>الهاتف</th>
+                                <th>العنوان</th>
+                                <th>التوقيت</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+    <div id="owner-modal" class="login-wrapper hidden">
+        <div class="login-box" style="padding: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; color: var(--primary);">اختر مالك المطعم</h3>
+                <button onclick="closeOwnerModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #fff;">&times;</button>
+            </div>
+            
+            <div class="search-container" style="max-width: 100%; margin-bottom: 15px;">
+                <input type="text" class="search-input" id="owner-search" onkeyup="filterOwners()" placeholder="ابحث بالاسم، الرقم، أو الإيميل..."/>
+            </div>
+
+            <div id="modal-owners-list" style="max-height: 300px; overflow-y: auto; text-align: right; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(0,0,0,0.2);">
+            </div>
+        </div>
+    </div>
 
     <script>
         let token = localStorage.getItem('superAdminToken') || '';
@@ -465,15 +762,15 @@
             
             tr.innerHTML = `
                 <td style="text-align: center;">
-                    <input type="checkbox" class="req-checkbox" value="${data._id}" onchange="toggleDeleteButton()">
+                    <input type="checkbox" class="req-checkbox" value="${data._id}" onchange="toggleDeleteButton()" style="width:18px; height:18px;">
                 </td>
                 <td style="font-weight:bold">${data.name}</td>
                 <td style="color:var(--primary)">${data.storeName}</td>
-                <td><a href="https://wa.me/20${data.phone}" target="_blank" style="text-decoration:none; color:var(--text-main)">${data.phone} <i class="fab fa-whatsapp" style="color:#25d366"></i></a></td>
+                <td><a href="https://wa.me/20${data.phone}" target="_blank" style="text-decoration:none; color:#fff; display:flex; align-items:center; gap:5px;">${data.phone} <i class="fab fa-whatsapp" style="color:#25d366"></i></a></td>
                 <td>${data.address}</td>
-                <td style="font-size:12px; color:#6b7280">${date}</td>
+                <td style="font-size:12px; color:var(--text-muted)">${date}</td>
                 <td>
-                    <button class="action-btn" style="background:#10b981" onclick="copyToClipboard('${data.name}', '${data.phone}')">
+                    <button class="action-btn" style="background:rgba(16, 185, 129, 0.2); color:#34d399; border:1px solid #34d399;" onclick="copyToClipboard('${data.name}', '${data.phone}')">
                         <i class="fas fa-copy"></i> نسخ
                     </button>
                 </td>
@@ -542,429 +839,444 @@
             Toast.fire({ icon: 'success', title: 'تم نسخ البيانات' });
         }
 
-       async function createOwner() {
-    const name = document.getElementById('u-name').value;
-    const email = document.getElementById('u-email').value;
-    const phone = document.getElementById('u-phone').value;
-    const subscriptionExpires = document.getElementById('u-date').value; 
-    const password = document.getElementById('u-pass').value;
-    const passwordConfirm = document.getElementById('u-pass-conf').value;
-    const productLimit = document.getElementById('u-limit').value;
+        async function createOwner() {
+            const name = document.getElementById('u-name').value;
+            const email = document.getElementById('u-email').value;
+            const phone = document.getElementById('u-phone').value;
+            const subscriptionExpires = document.getElementById('u-date').value; 
+            const password = document.getElementById('u-pass').value;
+            const passwordConfirm = document.getElementById('u-pass-conf').value;
+            const productLimit = document.getElementById('u-limit').value;
 
-    if(!name || !email || !password) return Swal.fire('تنبيه', 'املأ البيانات الأساسية', 'warning');
-    
-    try {
-        Swal.showLoading();
-        const res = await fetch('/api/v1/users/signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ 
-                name, 
-                email, 
-                phone, 
-                subscriptionExpires,
-                password, 
-                passwordConfirm, 
-                hasStock: document.getElementById('u-stock').checked,
-                productLimit: productLimit,
-                role: 'owner' 
-            })
-        });
-        const data = await res.json();
-        Swal.close();
+            if(!name || !email || !password) return Swal.fire('تنبيه', 'املأ البيانات الأساسية', 'warning');
+            
+            try {
+                Swal.showLoading();
+                const res = await fetch('/api/v1/users/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ 
+                        name, 
+                        email, 
+                        phone, 
+                        subscriptionExpires,
+                        password, 
+                        passwordConfirm, 
+                        hasStock: document.getElementById('u-stock').checked,
+                        productLimit: productLimit,
+                        role: 'owner' 
+                    })
+                });
+                const data = await res.json();
+                Swal.close();
 
-        if(data.status === 'success') {
-            Swal.fire('تم بنجاح', 'تم إنشاء حساب المالك', 'success');
-            document.getElementById('u-name').value = '';
-            document.getElementById('u-email').value = '';
-            document.getElementById('u-phone').value = '';
-            if(document.getElementById('r-whatsapp')) document.getElementById('r-whatsapp').value = '';
-            document.getElementById('u-date').value = '';
-            document.getElementById('u-pass').value = '';
-            document.getElementById('u-pass-conf').value = '';
-            loadOwnersList(); 
-        } else {
-            Swal.fire('فشلت العملية', data.message || 'تأكد من البيانات', 'error');
+                if(data.status === 'success') {
+                    Swal.fire('تم بنجاح', 'تم إنشاء حساب المالك', 'success');
+                    document.getElementById('u-name').value = '';
+                    document.getElementById('u-email').value = '';
+                    document.getElementById('u-phone').value = '';
+                    document.getElementById('u-date').value = '';
+                    document.getElementById('u-pass').value = '';
+                    document.getElementById('u-pass-conf').value = '';
+                    loadOwnersList(); 
+                } else {
+                    Swal.fire('فشلت العملية', data.message || 'تأكد من البيانات', 'error');
+                }
+            } catch(e) { Swal.fire('خطأ', 'مشكلة في الاتصال', 'error'); }
         }
-    } catch(e) { Swal.fire('خطأ', 'مشكلة في الاتصال', 'error'); }
-}
-      async function loadOwnersList() {
-    try {
-        const res = await fetch('/api/v1/users', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
 
-        // حماية الكود: التأكد إن الطلب نجح والبيانات موجودة
-        if (data.status === 'success' && data.data && data.data.users) {
-            allOwners = data.data.users;
-            const tbody = document.getElementById('owners-tbody');
-            tbody.innerHTML = '';
+        async function loadOwnersList() {
+            try {
+                const res = await fetch('/api/v1/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
 
-            data.data.users.forEach(u => {
-                if(u.role === 'admin') return;
+                if (data.status === 'success' && data.data && data.data.users) {
+                    allOwners = data.data.users;
+                    const tbody = document.getElementById('owners-tbody');
+                    tbody.innerHTML = '';
 
-                const isActive = u.active !== false; 
-                const statusIcon = isActive ? 'fa-user-check' : 'fa-user-slash';
-                const statusColor = isActive ? '#10b981' : '#ef4444';
-                const statusText = isActive ? 'نشط' : 'معطل';
-                const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
-                const pLimit = u.productLimit || 75;
+                    data.data.users.forEach(u => {
+                        if(u.role === 'admin') return;
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-weight:bold">${u.name}</td>
-                        <td>
-                            <div style="font-size:13px">${u.email}</div>
-                            <div style="font-size:12px; color:#6b7280">${u.phone || 'لا يوجد هاتف'} <span style="background:#e0e7ff; color:var(--primary); padding:2px 5px; border-radius:4px; font-weight:bold">${pLimit == -1 ? 'مفتوح' : pLimit}</span></div>
-                        </td>
-                        <td>
-                            <button class="action-btn" style="background:${statusColor}" onclick="toggleUserStatus('${u._id}')" title="تغيير حالة الحساب">
-                                <i class="fas ${statusIcon}"></i> ${statusText}
-                            </button>
+                        const isActive = u.active !== false; 
+                        const statusIcon = isActive ? 'fa-user-check' : 'fa-user-slash';
+                        const statusColor = isActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                        const statusText = isActive ? 'نشط' : 'معطل';
+                        const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
+                        const pLimit = u.productLimit || 75;
 
-                            <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock})">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight:bold">${u.name}</td>
+                                <td>
+                                    <div style="font-size:13px">${u.email}</div>
+                                    <div style="font-size:12px; color:var(--text-muted)">${u.phone || 'لا يوجد هاتف'} <span style="background:rgba(99, 102, 241, 0.2); color:#818cf8; padding:2px 5px; border-radius:4px; font-weight:bold">${pLimit == -1 ? 'مفتوح' : pLimit}</span></div>
+                                </td>
+                                <td>
+                                    <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                                        <button class="action-btn" style="background:${statusColor}; color:${isActive ? '#34d399' : '#f87171'}" onclick="toggleUserStatus('${u._id}')" title="تغيير حالة الحساب">
+                                            <i class="fas ${statusIcon}"></i>
+                                        </button>
 
-                            <button class="action-btn btn-qr" onclick="generateQRPopup('${u.name}')" title="إنشاء QR Code">
-                                <i class="fas fa-qrcode"></i>
-                            </button>
+                                        <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock}, ${u.isTrial})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
 
-                            <button class="action-btn btn-login-as" onclick="loginAsOwner('${u._id}')">
-                                <i class="fas fa-utensils"></i>
-                            </button>
+                                        <button class="action-btn btn-qr" onclick="generateQRPopup('${u.name}')" title="إنشاء QR Code">
+                                            <i class="fas fa-qrcode"></i>
+                                        </button>
 
-                            <button class="action-btn" style="background:#ef4444" onclick="deleteUser('${u._id}')" title="حذف نهائي">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                                        <button class="action-btn btn-login-as" onclick="loginAsOwner('${u._id}')">
+                                            <i class="fas fa-utensils"></i>
+                                        </button>
 
-                            <button class="action-btn" style="background:#4b5563" onclick="changePasswordPrompt('${u._id}', '${u.name}')" title="تغيير كلمة المرور">
-                                <i class="fas fa-key"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                                        <button class="action-btn" style="background:rgba(239, 68, 68, 0.2); color:#f87171; border:1px solid rgba(239, 68, 68, 0.3)" onclick="deleteUser('${u._id}')" title="حذف نهائي">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+
+                                        <button class="action-btn" style="background:rgba(255,255,255,0.1); color:#fff;" onclick="changePasswordPrompt('${u._id}', '${u.name}')" title="تغيير كلمة المرور">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    console.error('فشل تحميل الملاك:', data);
+                    if (res.status === 401 || data.message === 'jwt malformed') {
+                        localStorage.removeItem('superAdminToken');
+                        window.location.href = '/login';
+                    }
+                }
+            } catch(e) { console.error('Error loading owners:', e); }
+        }
+
+        async function loadRestaurantsList() {
+            try {
+                const res = await fetch('/api/v1/restaurants', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                const tbody = document.getElementById('restaurants-tbody');
+                tbody.innerHTML = '';
+
+                if (data.status === 'success') {
+                    const restaurants = data.data.restaurants || data.data; 
+                    restaurants.forEach(r => {
+                        const qrPreview = r.qrImage ? 
+                            `<img src="${r.qrImage}" style="width:40px; height:40px; border-radius:8px; cursor:pointer; border:1px solid var(--glass-border);" onclick="viewSavedQR('${r.qrImage}', '${r.qrName}')" title="${r.qrName}">` 
+                            : '<span style="color:var(--text-muted); font-size:12px;">لا يوجد</span>';
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight:bold; color:var(--primary);">${r.restaurantName}</td>
+                                <td>${r.owner ? r.owner.name : 'غير محدد'}</td>
+                                <td style="text-align:center;"><span class="slug-badge">${r.slug}</span></td>
+                                <td style="text-align:center;">${qrPreview}</td> 
+                                <td style="text-align: left; white-space: nowrap;">
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="action-btn btn-edit" onclick="editRestaurantPrompt('${r._id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        
+                                        <button class="action-btn" style="background:rgba(59, 130, 246, 0.2); color:#60a5fa; border:1px solid rgba(59, 130, 246, 0.3)" onclick="downloadSavedQR('${r.qrImage}', '${r.slug}')" title="تحميل QR">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+
+                                        <button class="action-btn" style="background:rgba(239, 68, 68, 0.2); color:#f87171; border:1px solid rgba(239, 68, 68, 0.3)" onclick="deleteRestaurant('${r._id}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) { console.error("خطأ في تحميل المطاعم:", e); }
+        }
+
+        async function deleteRestaurant(id) {
+            const confirm = await Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: "سيتم حذف المتجر وجميع الأقسام والمنتجات التابعة له!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'نعم، احذف المطعم',
+                cancelButtonText: 'إلغاء'
             });
-        } else {
-            console.error('فشل تحميل الملاك:', data);
-            // لو المشكلة إن التوكن انتهى، نرجعه لصفحة الدخول
-            if (res.status === 401 || data.message === 'jwt malformed') {
-                localStorage.removeItem('superAdminToken');
-                window.location.href = '/login';
+
+            if (confirm.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/v1/restaurants/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        Swal.fire('تم الحذف', 'تم حذف المطعم بنجاح', 'success');
+                        loadRestaurantsList();
+                    }
+                } catch (e) { Swal.fire('خطأ', 'فشل في حذف المطعم', 'error'); }
             }
         }
-    } catch(e) { console.error('Error loading owners:', e); }
-}
-async function loadRestaurantsList() {
-    try {
-        const res = await fetch('/api/v1/restaurants', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        const tbody = document.getElementById('restaurants-tbody');
-        tbody.innerHTML = '';
 
-        if (data.status === 'success') {
-            const restaurants = data.data.restaurants || data.data; 
-            restaurants.forEach(r => {
-                const qrPreview = r.qrImage ? 
-                    `<img src="${r.qrImage}" style="width:40px; height:40px; border-radius:5px; cursor:pointer; border:1px solid #ddd" onclick="viewSavedQR('${r.qrImage}', '${r.qrName}')" title="${r.qrName}">` 
-                    : '<span style="color:#ccc; font-size:12px;">لا يوجد</span>';
+        function switchTab(tab) {
+            const allTabs = ['owners', 'restaurants', 'ai-upload', 'requests', 'sales-stats', 'sales-agents'];
 
-                tbody.innerHTML += `
-    <tr>
-        <td style="font-weight:bold;">${r.restaurantName}</td>
-        <td>${r.owner ? r.owner.name : 'غير محدد'}</td>
-        <td style="text-align:center;"><span class="slug-badge">${r.slug}</span></td>
-        <td style="text-align:center;">${qrPreview}</td> 
-        <td style="text-align: left; white-space: nowrap;">
-            <button class="action-btn btn-edit" onclick="editRestaurantPrompt('${r._id}')">
-                <i class="fas fa-edit"></i>
-            </button>
+            allTabs.forEach(t => {
+                const tabEl = document.getElementById(`tab-${t}`);
+                const btnEl = document.getElementById(`btn-${t}`);
+                if(tabEl) tabEl.classList.add('hidden');
+                if(btnEl) btnEl.classList.remove('active');
+            });
+
+            const selectedTab = document.getElementById(`tab-${tab}`);
+            const selectedBtn = document.getElementById(`btn-${tab}`);
             
-            <button class="action-btn" style="background:#3b82f6" onclick="downloadSavedQR('${r.qrImage}', '${r.slug}')" title="تحميل QR">
-                <i class="fas fa-download"></i>
-            </button>
+            if(selectedTab) selectedTab.classList.remove('hidden');
+            if(selectedBtn) selectedBtn.classList.add('active');
 
-            <button class="action-btn" style="background:#ef4444" onclick="deleteRestaurant('${r._id}')">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    </tr>
-`;
-            });
-        }
-    } catch (e) { console.error("خطأ في تحميل المطاعم:", e); }
-}
-
-async function deleteRestaurant(id) {
-    const confirm = await Swal.fire({
-        title: 'هل أنت متأكد؟',
-        text: "سيتم حذف المتجر وجميع الأقسام والمنتجات التابعة له!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        confirmButtonText: 'نعم، احذف المطعم',
-        cancelButtonText: 'إلغاء'
-    });
-
-    if (confirm.isConfirmed) {
-        try {
-            const res = await fetch(`/api/v1/restaurants/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                Swal.fire('تم الحذف', 'تم حذف المطعم بنجاح', 'success');
+            if (tab === 'sales-stats') {
+                if(typeof loadSalesStats === 'function') loadSalesStats();
+            } else if (tab === 'sales-agents') {
+                loadSalesRequests();
+            } else if (tab === 'requests') {
+                document.getElementById('req-badge').style.display = 'none';
+                loadRequests();
+            } else if (tab === 'restaurants') {
                 loadRestaurantsList();
-            }
-        } catch (e) { Swal.fire('خطأ', 'فشل في حذف المطعم', 'error'); }
-    }
-}
-
-function switchTab(tab) {
-    // 1. قائمة بكل التبويبات اللي عندك
-    const allTabs = ['owners', 'restaurants', 'ai-upload', 'requests', 'sales'];
-
-    // 2. أخفي كل التبويبات وشيل التفعيل من كل الأزرار
-    allTabs.forEach(t => {
-        const tabEl = document.getElementById(`tab-${t}`);
-        const btnEl = document.getElementById(`btn-${t}`);
-        if(tabEl) tabEl.classList.add('hidden');
-        if(btnEl) btnEl.classList.remove('active');
-    });
-
-    // 3. اظهر التبويب المختار فقط وفعل زراره
-    const selectedTab = document.getElementById(`tab-${tab}`);
-    const selectedBtn = document.getElementById(`btn-${tab}`);
-    
-    if(selectedTab) selectedTab.classList.remove('hidden');
-    if(selectedBtn) selectedBtn.classList.add('active');
-
-    // 4. تحميل البيانات الخاصة بكل صفحة
-    if (tab === 'sales') {
-        loadSalesRequests();
-    } else if (tab === 'requests') {
-        document.getElementById('req-badge').style.display = 'none';
-        loadRequests();
-    } else if (tab === 'restaurants') {
-        loadRestaurantsList();
-    } else if (tab === 'owners') {
-        loadOwnersList();
-    }
-}
-
-async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit, currentHasStock) {
-    const { value: formValues } = await Swal.fire({
-        title: 'تعديل بيانات المالك',
-        html:
-            `<div style="text-align:right; margin-bottom:5px; font-size:14px;">الاسم:</div>` +
-            `<input id="swal-name" class="swal2-input" value="${currentName}">` +
-            `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px;">البريد الإلكتروني:</div>` +
-            `<input id="swal-email" class="swal2-input" value="${currentEmail}">` +
-            `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px;">رقم الهاتف:</div>` +
-            `<input id="swal-phone" class="swal2-input" value="${currentPhone}">` +
-            `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px;">واتساب المطعم:</div>` +
-            `<input id="swal-whatsapp" class="swal2-input" value="${currentWhatsapp}">` +
-            
-            `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px; color:var(--primary); font-weight:bold;">باقة المنتجات:</div>` +
-            `<select id="swal-limit" class="swal2-input">` +
-                `<option value="75" ${currentLimit == 75 ? 'selected' : ''}>75 منتج</option>` +
-                `<option value="120" ${currentLimit == 120 ? 'selected' : ''}>120 منتج</option>` +
-                `<option value="200" ${currentLimit == 200 ? 'selected' : ''}>200 منتج</option>` +
-                `<option value="-1" ${currentLimit == -1 ? 'selected' : ''}>مفتوح (Unlimited)</option>` +
-            `</select>` +
-
-            `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px; color:var(--primary); font-weight:bold;">تاريخ انتهاء الاشتراك:</div>` +
-            `<input id="swal-expiry" type="date" class="swal2-input" value="${currentExpiryDate}">` +
-
-            `<div style="margin-top: 15px; text-align: right; background: #e0e7ff; padding: 10px; border-radius: 8px;">` +
-                `<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">` +
-                    `<input type="checkbox" id="swal-stock" style="width: 20px; height: 20px;" ${currentHasStock ? 'checked' : ''}>` +
-                    `<span style="font-weight: bold; color: var(--primary);">تفعيل نظام المخازن (Stock)</span>` +
-                `</label>` +
-            `</div>`,
-        
-        focusConfirm: false,
-        showCancelButton: true,
-        confirmButtonText: 'حفظ البيانات',
-        cancelButtonText: 'إلغاء',
-        preConfirm: () => {
-            return {
-                name: document.getElementById('swal-name').value,
-                email: document.getElementById('swal-email').value,
-                phone: document.getElementById('swal-phone').value,
-                whatsapp: document.getElementById('swal-whatsapp').value,
-                productLimit: document.getElementById('swal-limit').value,
-                subscriptionExpires: document.getElementById('swal-expiry').value,
-                hasStock: document.getElementById('swal-stock').checked
-            };
-        }
-    });
-
-    if (formValues) {
-        try {
-            Swal.showLoading();
-            const res = await fetch(`/api/v1/users/${id}`, {
-                method: 'PATCH',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formValues)
-            });
-            const result = await res.json();
-            Swal.close();
-            
-            if(result.status === 'success') {
-                Swal.fire('تم!', 'تم تحديث البيانات بنجاح', 'success');
+            } else if (tab === 'owners') {
                 loadOwnersList();
-            } else {
-                Swal.fire('خطأ', result.message, 'error');
             }
-        } catch(e) { 
-            Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error'); 
         }
-    }
-}
-     async function generateQRPopup(ownerName, slug) {
-    let finalSlug = slug;
-    if (!finalSlug) {
-        const { value: inputSlug } = await Swal.fire({
-            title: 'إنشاء QR Code',
-            text: `أدخل رابط المنيو الخاص بـ ${ownerName}`,
-            input: 'text',
-            showCancelButton: true,
-            confirmButtonText: 'متابعة',
-            cancelButtonText: 'إلغاء'
-        });
-        if (!inputSlug) return;
-        finalSlug = inputSlug;
-    }
 
-   const url = `${window.location.origin}/menu/${finalSlug}`;
-    
-    Swal.fire({
-        title: `إعداد QR Code: ${finalSlug}`,
-        html: `
-            <div id="qr-download-area" style="background:white; padding:20px; border-radius:15px; display:inline-block; margin-bottom:15px;">
-                <div id="qrcode-container"></div>
-                <p style="margin-top:10px; color:#000; font-weight:bold; font-size:14px;">${finalSlug} Menu</p>
-            </div>
-            
-            <div style="text-align:right; margin-bottom:10px; border:1px dashed var(--border); padding:10px; border-radius:10px;">
-                <label style="font-size:12px; display:block; margin-bottom:5px;">اسم ملف التحميل والحفظ:</label>
-                <input type="text" id="qr-file-name" class="swal2-input" value="QR-${finalSlug}" style="margin:0 !important; width:100% !important; height:35px; font-size:13px;">
+        async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit, currentHasStock, isTrial) {
+            const { value: formValues } = await Swal.fire({
+                title: 'تعديل بيانات المالك',
+                html:
+                    `<div style="text-align:right; margin-bottom:5px; font-size:14px;">الاسم:</div>` +
+                    `<input id="swal-name" class="swal2-input" value="${currentName}">` +
+                    `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px;">البريد الإلكتروني:</div>` +
+                    `<input id="swal-email" class="swal2-input" value="${currentEmail}">` +
+                    `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px;">رقم الهاتف:</div>` +
+                    `<input id="swal-phone" class="swal2-input" value="${currentPhone}">` +
+                    `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px;">واتساب المطعم:</div>` +
+                    `<input id="swal-whatsapp" class="swal2-input" value="${currentWhatsapp}">` +
+                    
+                    `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:15px;">` +
+                        `<div>` +
+                            `<div style="text-align:right; font-size:13px; font-weight:bold;">باقة المنتجات:</div>` +
+                            `<select id="swal-limit" class="swal2-input" style="margin-top:5px;">` +
+                                `<option value="75" ${currentLimit == 75 ? 'selected' : ''}>75 منتج</option>` +
+                                `<option value="120" ${currentLimit == 120 ? 'selected' : ''}>120 منتج</option>` +
+                                `<option value="200" ${currentLimit == 200 ? 'selected' : ''}>200 منتج</option>` +
+                                `<option value="-1" ${currentLimit == -1 ? 'selected' : ''}>مفتوح (Unlimited)</option>` +
+                            `</select>` +
+                        `</div>` +
+                        `<div>` +
+                            `<div style="text-align:right; font-size:13px; font-weight:bold;">نوع الحساب:</div>` +
+                            `<select id="swal-trial-status" class="swal2-input" style="margin-top:5px;">` +
+                                `<option value="false" ${!isTrial ? 'selected' : ''}>حساب رسمي (عادي)</option>` +
+                                `<option value="true" ${isTrial ? 'selected' : ''}>حساب تجريبي</option>` +
+                            `</select>` +
+                        `</div>` +
+                    `</div>` +
+
+                    `<div style="text-align:right; margin-top:10px; margin-bottom:5px; font-size:14px; color:var(--primary); font-weight:bold;">تاريخ انتهاء الاشتراك:</div>` +
+                    `<input id="swal-expiry" type="date" class="swal2-input" value="${currentExpiryDate}" style="color-scheme: dark;">` +
+
+                    `<div style="margin-top: 15px; text-align: right; background: rgba(99, 102, 241, 0.1); padding: 10px; border-radius: 8px;">` +
+                        `<label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff;">` +
+                            `<input type="checkbox" id="swal-stock" style="width: 20px; height: 20px;" ${currentHasStock ? 'checked' : ''}>` +
+                            `<span>تفعيل نظام المخازن (Stock)</span>` +
+                        `</label>` +
+                    `</div>`,
                 
-                <label style="font-size:12px; display:block; margin:10px 0 5px;">إضافة لوجو في المنتصف:</label>
-                <input type="file" id="qr-logo-input" accept="image/*" style="font-size:11px;" onchange="drawQRWithLogo('${url}')">
-                <button class="action-btn" style="background:#6b7280; font-size:10px; padding:2px 8px; margin-top:5px;" onclick="resetToNormalQR('${url}')">حذف اللوجو</button>
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-primary" onclick="downloadCustomQR('${finalSlug}')" style="background:#10b981; flex: 1;">
-                    <i class="fas fa-save"></i> حفظ وتحميل
-                </button>
-            </div>
-        `,
-        showConfirmButton: false,
-        didOpen: () => {
-            resetToNormalQR(url); 
-        }
-    });
-}
-
-function renderQRWindow(name, slug) {
-    const url = `${window.location.origin}/menu/${finalSlug}`;
-    Swal.fire({
-        title: `QR Code: ${name}`,
-        html: `
-            <div id="qr-download-area" style="background:white; padding:20px; border-radius:15px; display:inline-block;">
-                <div id="qrcode-container"></div>
-                <p style="margin-top:10px; color:#000; font-weight:bold;">${slug} Menu</p>
-            </div>
-            <div style="margin-top:15px;">
-                <button class="btn-primary" onclick="downloadQR('${slug}')" style="background:#10b981">تحميل الكود</button>
-            </div>`,
-        showConfirmButton: false,
-        didOpen: () => {
-            new QRCode(document.getElementById("qrcode-container"), {
-                text: url, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'حفظ البيانات',
+                cancelButtonText: 'إلغاء',
+                preConfirm: () => {
+                    return {
+                        name: document.getElementById('swal-name').value,
+                        email: document.getElementById('swal-email').value,
+                        phone: document.getElementById('swal-phone').value,
+                        whatsapp: document.getElementById('swal-whatsapp').value,
+                        productLimit: document.getElementById('swal-limit').value,
+                        subscriptionExpires: document.getElementById('swal-expiry').value,
+                        hasStock: document.getElementById('swal-stock').checked,
+                        isTrial: document.getElementById('swal-trial-status').value === 'true'
+                    };
+                }
             });
+
+            if (formValues) {
+                try {
+                    Swal.showLoading();
+                    const res = await fetch(`/api/v1/users/${id}`, {
+                        method: 'PATCH',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(formValues)
+                    });
+                    const result = await res.json();
+                    Swal.close();
+                    
+                    if(result.status === 'success') {
+                        Swal.fire('تم!', 'تم تحديث البيانات بنجاح', 'success');
+                        loadOwnersList();
+                    } else {
+                        Swal.fire('خطأ', result.message, 'error');
+                    }
+                } catch(e) { 
+                    Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error'); 
+                }
+            }
         }
-    });
-}
 
-async function downloadCustomQR(slug) {
-    const area = document.getElementById('qr-download-area');
-    const customName = document.getElementById('qr-file-name').value || 'My-QR-Code';
-    
-    try {
-        Swal.showLoading();
-        const canvas = await html2canvas(area, { 
-            backgroundColor: "#ffffff", 
-            scale: 3,
-            useCORS: true 
-        });
-        const imgData = canvas.toDataURL("image/png");
+        async function generateQRPopup(ownerName, slug) {
+            let finalSlug = slug;
+            if (!finalSlug) {
+                const { value: inputSlug } = await Swal.fire({
+                    title: 'إنشاء QR Code',
+                    text: `أدخل رابط المنيو الخاص بـ ${ownerName}`,
+                    input: 'text',
+                    showCancelButton: true,
+                    confirmButtonText: 'متابعة',
+                    cancelButtonText: 'إلغاء'
+                });
+                if (!inputSlug) return;
+                finalSlug = inputSlug;
+            }
 
-        const link = document.createElement('a');
-        link.download = `${customName}.png`;
-        link.href = imgData;
-        link.click();
-
-        const res = await fetch(`/api/v1/restaurants/update-qr/${slug}`, {
-            method: 'PATCH',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${token}` 
-            },
-            body: JSON.stringify({ 
-                qrImage: imgData, 
-                qrName: customName 
-            })
-        });
-
-        const result = await res.json();
-        
-        if(result.status === 'success') {
+           const url = `${window.location.origin}/menu/${finalSlug}`;
+            
             Swal.fire({
-                icon: 'success',
-                title: 'تم الحفظ والتحميل',
-                text: 'تم ربط تصميم الـ QR Code بالمطعم بنجاح',
-                timer: 2000
+                title: `إعداد QR Code: ${finalSlug}`,
+                html: `
+                    <div id="qr-download-area" style="background:white; padding:20px; border-radius:15px; display:inline-block; margin-bottom:15px;">
+                        <div id="qrcode-container"></div>
+                        <p style="margin-top:10px; color:#000; font-weight:bold; font-size:14px;">${finalSlug} Menu</p>
+                    </div>
+                    
+                    <div style="text-align:right; margin-bottom:10px; border:1px dashed var(--glass-border); padding:10px; border-radius:10px; background:rgba(0,0,0,0.2);">
+                        <label style="font-size:12px; display:block; margin-bottom:5px;">اسم ملف التحميل والحفظ:</label>
+                        <input type="text" id="qr-file-name" class="swal2-input" value="QR-${finalSlug}" style="margin:0 !important; width:100% !important; height:35px; font-size:13px;">
+                        
+                        <label style="font-size:12px; display:block; margin:10px 0 5px;">إضافة لوجو في المنتصف:</label>
+                        <input type="file" id="qr-logo-input" accept="image/*" style="font-size:11px;" onchange="drawQRWithLogo('${url}')">
+                        <button class="action-btn" style="background:#6b7280; font-size:10px; padding:2px 8px; margin-top:5px;" onclick="resetToNormalQR('${url}')">حذف اللوجو</button>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" onclick="downloadCustomQR('${finalSlug}')" style="background:#10b981; flex: 1;">
+                            <i class="fas fa-save"></i> حفظ وتحميل
+                        </button>
+                    </div>
+                `,
+                showConfirmButton: false,
+                didOpen: () => {
+                    resetToNormalQR(url); 
+                }
             });
-            if (typeof loadRestaurantsList === "function") loadRestaurantsList();
-        } else {
-            Swal.fire('خطأ في الحفظ', result.message, 'error');
         }
-    } catch(e) { 
-        console.error("Error saving QR:", e);
-        Swal.fire('خطأ', 'حدثت مشكلة أثناء محاولة حفظ الـ QR', 'error'); 
-    }
-}
-async function loginAsOwner(userId) {
-    try {
-        Swal.showLoading();
-        const res = await fetch(`/api/v1/users/impersonate/${userId}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        const data = await res.json();
-        Swal.close();
-        
-        if(data.status === 'success') {
-            window.open(`/owner?t=${data.token}`, '_blank');
-        } else {
-            Swal.fire('تنبيه', data.message || 'لا يمكن الدخول لهذا الحساب', 'warning');
+
+        function renderQRWindow(name, slug) {
+            const url = `${window.location.origin}/menu/${finalSlug}`;
+            Swal.fire({
+                title: `QR Code: ${name}`,
+                html: `
+                    <div id="qr-download-area" style="background:white; padding:20px; border-radius:15px; display:inline-block;">
+                        <div id="qrcode-container"></div>
+                        <p style="margin-top:10px; color:#000; font-weight:bold;">${slug} Menu</p>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <button class="btn-primary" onclick="downloadQR('${slug}')" style="background:#10b981">تحميل الكود</button>
+                    </div>`,
+                showConfirmButton: false,
+                didOpen: () => {
+                    new QRCode(document.getElementById("qrcode-container"), {
+                        text: url, width: 250, height: 250, correctLevel: QRCode.CorrectLevel.H
+                    });
+                }
+            });
         }
-    } catch(e) { 
-        console.error(e);
-        Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
-    }
-}
+
+        async function downloadCustomQR(slug) {
+            const area = document.getElementById('qr-download-area');
+            const customName = document.getElementById('qr-file-name').value || 'My-QR-Code';
+            
+            try {
+                Swal.showLoading();
+                const canvas = await html2canvas(area, { 
+                    backgroundColor: "#ffffff", 
+                    scale: 3,
+                    useCORS: true 
+                });
+                const imgData = canvas.toDataURL("image/png");
+
+                const link = document.createElement('a');
+                link.download = `${customName}.png`;
+                link.href = imgData;
+                link.click();
+
+                const res = await fetch(`/api/v1/restaurants/update-qr/${slug}`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ 
+                        qrImage: imgData, 
+                        qrName: customName 
+                    })
+                });
+
+                const result = await res.json();
+                
+                if(result.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم الحفظ والتحميل',
+                        text: 'تم ربط تصميم الـ QR Code بالمطعم بنجاح',
+                        timer: 2000
+                    });
+                    if (typeof loadRestaurantsList === "function") loadRestaurantsList();
+                } else {
+                    Swal.fire('خطأ في الحفظ', result.message, 'error');
+                }
+            } catch(e) { 
+                console.error("Error saving QR:", e);
+                Swal.fire('خطأ', 'حدثت مشكلة أثناء محاولة حفظ الـ QR', 'error'); 
+            }
+        }
+
+        async function loginAsOwner(userId) {
+            try {
+                Swal.showLoading();
+                const res = await fetch(`/api/v1/users/impersonate/${userId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await res.json();
+                Swal.close();
+                
+                if(data.status === 'success') {
+                    window.open(`/owner?t=${data.token}`, '_blank');
+                } else {
+                    Swal.fire('تنبيه', data.message || 'لا يمكن الدخول لهذا الحساب', 'warning');
+                }
+            } catch(e) { 
+                console.error(e);
+                Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+            }
+        }
 
         async function createRestaurant() {
             const restaurantName = document.getElementById('r-name').value;
@@ -1011,138 +1323,139 @@ async function loginAsOwner(userId) {
             } catch(e) { Swal.fire('خطأ', 'مشكلة في الاتصال', 'error'); }
         }
 
-      function generateSlug() {
-    const name = document.getElementById('r-name').value;
-    const slug = name.trim().toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w\u0621-\u064A-]+/g, '')
-        .replace(/--+/g, '-');
+        function generateSlug() {
+            const name = document.getElementById('r-name').value;
+            const slug = name.trim().toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\w\u0621-\u064A-]+/g, '')
+                .replace(/--+/g, '-');
 
-    document.getElementById('r-slug').value = slug;
-}
+            document.getElementById('r-slug').value = slug;
+        }
 
-function logoutSuperAdmin() {
+        function logoutSuperAdmin() {
             localStorage.removeItem('superAdminToken');
             window.location.href = '/login';
         }
 
-     
-        
         const style = document.createElement('style');
         style.innerHTML = `
             @keyframes highlightRow {
-                0% { background-color: #e0e7ff; }
+                0% { background-color: rgba(212, 175, 55, 0.3); }
                 100% { background-color: transparent; }
             }
         `;
         document.head.appendChild(style);
-async function toggleUserStatus(id) {
-    try {
-        Swal.fire({
-            title: 'جاري تحديث الحالة...',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
 
-        const res = await fetch(`/api/v1/users/${id}/toggle-status`, {
-            method: 'PATCH',
-            headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+        async function toggleUserStatus(id) {
+            try {
+                Swal.fire({
+                    title: 'جاري تحديث الحالة...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const res = await fetch(`/api/v1/users/${id}/toggle-status`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await res.json();
+                Swal.close();
+                
+                if(result.status === 'success') {
+                    Swal.fire({
+                        toast: true,
+                        icon: 'success',
+                        title: result.message,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000
+                    });
+                    
+                    await loadOwnersList(); 
+                } else {
+                    Swal.fire('خطأ', result.message, 'error');
+                }
+            } catch(e) { 
+                console.error('Error:', e);
+                Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error'); 
             }
-        });
-        
-        const result = await res.json();
-        Swal.close();
-        
-        if(result.status === 'success') {
-            Swal.fire({
-                toast: true,
-                icon: 'success',
-                title: result.message,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 2000
-            });
-            
-            await loadOwnersList(); 
-        } else {
-            Swal.fire('خطأ', result.message, 'error');
         }
-    } catch(e) { 
-        console.error('Error:', e);
-        Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error'); 
-    }
-}
-async function deleteUser(id) {
-    const confirm = await Swal.fire({
-        title: 'هل أنت متأكد؟',
-        text: "سيتم حذف حساب المالك وكل بياناته نهائياً!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#6b7280',
-        confirmButtonText: 'نعم، احذف الحساب',
-        cancelButtonText: 'إلغاء'
-    });
 
-    if (confirm.isConfirmed) {
-        try {
-            const res = await fetch(`/api/v1/users/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
+        async function deleteUser(id) {
+            const confirm = await Swal.fire({
+                title: 'هل أنت متأكد؟',
+                text: "سيتم حذف حساب المالك وكل بياناته نهائياً!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'نعم، احذف الحساب',
+                cancelButtonText: 'إلغاء'
             });
-            const result = await res.json();
-            if(res.ok) {
-                Swal.fire('تم الحذف', 'تم مسح الحساب من النظام', 'success');
-                loadOwnersList();
-            } else {
-                Swal.fire('خطأ', result.message, 'error');
-            }
-        } catch(e) { Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error'); }
-    }
-}
-async function changePasswordPrompt(id, name) {
-    const { value: newPassword } = await Swal.fire({
-        title: `تغيير كلمة مرور: ${name}`,
-        input: 'password',
-        inputLabel: 'كلمة المرور الجديدة',
-        inputPlaceholder: 'أدخل كلمة المرور الجديدة',
-        inputAttributes: {
-            autocapitalize: 'off',
-            autocorrect: 'off'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'تحديث الآن',
-        cancelButtonText: 'إلغاء'
-    });
 
-    if (newPassword) {
-        try {
-            Swal.showLoading();
-            const res = await fetch(`/api/v1/users/${id}/change-password-admin`, {
-                method: 'PATCH',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+            if (confirm.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/v1/users/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+                    if(res.ok) {
+                        Swal.fire('تم الحذف', 'تم مسح الحساب من النظام', 'success');
+                        loadOwnersList();
+                    } else {
+                        Swal.fire('خطأ', result.message, 'error');
+                    }
+                } catch(e) { Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error'); }
+            }
+        }
+
+        async function changePasswordPrompt(id, name) {
+            const { value: newPassword } = await Swal.fire({
+                title: `تغيير كلمة مرور: ${name}`,
+                input: 'password',
+                inputLabel: 'كلمة المرور الجديدة',
+                inputPlaceholder: 'أدخل كلمة المرور الجديدة',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
                 },
-                body: JSON.stringify({ password: newPassword })
+                showCancelButton: true,
+                confirmButtonText: 'تحديث الآن',
+                cancelButtonText: 'إلغاء'
             });
-            const result = await res.json();
-            Swal.close();
 
-            if (result.status === 'success') {
-                Swal.fire('تم!', 'تم تغيير كلمة المرور بنجاح', 'success');
-            } else {
-                Swal.fire('خطأ', result.message, 'error');
+            if (newPassword) {
+                try {
+                    Swal.showLoading();
+                    const res = await fetch(`/api/v1/users/${id}/change-password-admin`, {
+                        method: 'PATCH',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ password: newPassword })
+                    });
+                    const result = await res.json();
+                    Swal.close();
+
+                    if (result.status === 'success') {
+                        Swal.fire('تم!', 'تم تغيير كلمة المرور بنجاح', 'success');
+                    } else {
+                        Swal.fire('خطأ', result.message, 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+                }
             }
-        } catch (e) {
-            Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
         }
-    }
-}
 
-let allOwners = [];
+        let allOwners = [];
 
         function openOwnerModal() {
             document.getElementById('owner-modal').classList.remove('hidden');
@@ -1161,15 +1474,22 @@ let allOwners = [];
                 const div = document.createElement('div');
                 div.className = 'owner-item';
                 div.style.padding = '12px';
-                div.style.borderBottom = '1px solid var(--border)';
+                div.style.borderBottom = '1px solid var(--glass-border)';
                 div.style.cursor = 'pointer';
+                div.style.color = '#fff';
                 div.innerHTML = `
                     <div style="font-weight:bold">${u.name}</div>
-                    <div style="font-size:12px; color:var(--text-sub)">${u.email} | ${u.phone || 'بدون هاتف'}</div>
+                    <div style="font-size:12px; color:var(--text-muted)">${u.email} | ${u.phone || 'بدون هاتف'}</div>
                 `;
                 div.onclick = () => {
-                    document.getElementById('r-owner').value = u._id;
-                    document.getElementById('selected-owner-name').value = u.name;
+                    if(window.selectingForAI) {
+                        document.getElementById('ai-res-id').value = u._id; 
+                        document.getElementById('ai-res-name').value = u.name;
+                        window.selectingForAI = false;
+                    } else {
+                        document.getElementById('r-owner').value = u._id;
+                        document.getElementById('selected-owner-name').value = u.name;
+                    }
                     closeOwnerModal();
                 };
                 list.appendChild(div);
@@ -1187,406 +1507,492 @@ let allOwners = [];
         }
 
         function drawQRWithLogo(url) {
-    const input = document.getElementById('qr-logo-input');
-    const container = document.getElementById('qrcode-container');
-    
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            container.innerHTML = "";
+            const input = document.getElementById('qr-logo-input');
+            const container = document.getElementById('qrcode-container');
             
-            const tempDiv = document.createElement('div');
-            new QRCode(tempDiv, {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    container.innerHTML = "";
+                    
+                    const tempDiv = document.createElement('div');
+                    new QRCode(tempDiv, {
+                        text: url,
+                        width: 600,
+                        height: 600,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+
+                    setTimeout(() => {
+                        const qrCanvas = tempDiv.querySelector('canvas');
+                        const finalCanvas = document.createElement('canvas');
+                        finalCanvas.width = 600;
+                        finalCanvas.height = 600;
+                        const ctx = finalCanvas.getContext('2d');
+
+                        ctx.drawImage(qrCanvas, 0, 0);
+
+                        const logo = new Image();
+                        logo.src = e.target.result;
+                        logo.onload = function() {
+                            const logoSize = 140;
+                            const x = (finalCanvas.width - logoSize) / 2;
+                            const y = (finalCanvas.height - logoSize) / 2;
+
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillRect(x - 10, y - 10, logoSize + 20, logoSize + 20);
+
+                            ctx.drawImage(logo, x, y, logoSize, logoSize);
+                            
+                            const imgData = finalCanvas.toDataURL("image/png");
+                            container.innerHTML = `<img src="${imgData}" style="width:250px; height:250px;">`;
+                        };
+                    }, 100);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function resetToNormalQR(url) {
+            const container = document.getElementById('qrcode-container');
+            container.innerHTML = "";
+            new QRCode(container, {
                 text: url,
-                width: 600,
-                height: 600,
+                width: 250,
+                height: 250,
                 colorDark : "#000000",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
             });
-
-            setTimeout(() => {
-                const qrCanvas = tempDiv.querySelector('canvas');
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = 600;
-                finalCanvas.height = 600;
-                const ctx = finalCanvas.getContext('2d');
-
-                ctx.drawImage(qrCanvas, 0, 0);
-
-                const logo = new Image();
-                logo.src = e.target.result;
-                logo.onload = function() {
-                    const logoSize = 140;
-                    const x = (finalCanvas.width - logoSize) / 2;
-                    const y = (finalCanvas.height - logoSize) / 2;
-
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(x - 10, y - 10, logoSize + 20, logoSize + 20);
-
-                    ctx.drawImage(logo, x, y, logoSize, logoSize);
-                    
-                    const imgData = finalCanvas.toDataURL("image/png");
-                    container.innerHTML = `<img src="${imgData}" style="width:250px; height:250px;">`;
-                };
-            }, 100);
+            if(document.getElementById('qr-logo-input')) document.getElementById('qr-logo-input').value = "";
         }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
 
-function resetToNormalQR(url) {
-    const container = document.getElementById('qrcode-container');
-    container.innerHTML = "";
-    new QRCode(container, {
-        text: url,
-        width: 250,
-        height: 250,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-    });
-    if(document.getElementById('qr-logo-input')) document.getElementById('qr-logo-input').value = "";
-}
+        async function editRestaurantPrompt(id) {
+            Swal.showLoading();
+            try {
+                const resFetch = await fetch(`/api/v1/restaurants/`, { 
+                    headers: { 'Authorization': `Bearer ${token}` } 
+                });
+                const dataAll = await resFetch.json();
+                const r = dataAll.data.restaurants.find(item => item._id === id);
+                Swal.close();
 
-function drawQRWithLogo(url) {
-    const input = document.getElementById('qr-logo-input');
-    const container = document.getElementById('qrcode-container');
-    
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            container.innerHTML = ""; 
-            const tempDiv = document.createElement('div');
-            new QRCode(tempDiv, {
-                text: url,
-                width: 800,
-                height: 800,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
+                if (!r) return Swal.fire('خطأ', 'لم يتم العثور على بيانات المطعم', 'error');
+
+                const { value: formValues } = await Swal.fire({
+                    title: 'تعديل بيانات المطعم',
+                    html:
+                        `<div style="text-align:right; margin-bottom:5px; font-size:14px;">اسم النشاط:</div>` +
+                        `<input id="swal-input1" class="swal2-input" value="${r.restaurantName}" placeholder="الاسم الجديد">` +
+                        
+                        `<div style="text-align:right; margin-top:15px; margin-bottom:5px; font-size:14px;">الرابط (Slug):</div>` +
+                        `<input id="swal-input2" class="swal2-input" value="${r.slug}" placeholder="الرابط الجديد">` +
+                        
+                        `<div style="text-align:right; margin-top:15px; margin-bottom:5px; font-size:14px;">المالك الحالي:</div>` +
+                        `<div style="display: flex; gap: 10px;">` +
+                            `<input type="text" id="swal-owner-name" readonly value="${r.owner ? r.owner.name : 'غير محدد'}" style="background: rgba(255,255,255,0.05); flex: 1; height: 45px; border: 1px solid var(--glass-border); border-radius: 5px; padding: 0 10px;">` +
+                            `<input type="hidden" id="swal-owner-id" value="${r.owner ? r.owner._id : ''}">` +
+                            `<button type="button" class="action-btn btn-login-as" onclick="openOwnerModalForEdit()" style="width: auto; height: 45px; padding: 0 15px;">تغيير</button>` +
+                        `</div>`,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: 'حفظ التعديلات',
+                    cancelButtonText: 'إلغاء',
+                    preConfirm: () => {
+                        return {
+                            restaurantName: document.getElementById('swal-input1').value,
+                            slug: document.getElementById('swal-input2').value,
+                            owner: document.getElementById('swal-owner-id').value
+                        }
+                    }
+                });
+
+                if (formValues) {
+                    Swal.showLoading();
+                    const res = await fetch(`/api/v1/restaurants/${id}`, {
+                        method: 'PATCH',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` 
+                        },
+                        body: JSON.stringify(formValues)
+                    });
+                    const data = await res.json();
+                    Swal.close();
+
+                    if (data.status === 'success') {
+                        Swal.fire('تم التحديث', 'تم حفظ التعديلات بنجاح', 'success');
+                        loadRestaurantsList(); 
+                    } else {
+                        Swal.fire('خطأ', data.message, 'error');
+                    }
+                }
+            } catch (e) {
+                Swal.close();
+                Swal.fire('خطأ', 'مشكلة في الاتصال بالسيرفر', 'error');
+            }
+        }
+
+        function viewSavedQR(img, name) {
+            Swal.fire({
+                title: name,
+                imageUrl: img,
+                imageAlt: 'QR Code',
+                confirmButtonText: 'إغلاق'
+            });
+        }
+
+        function filterTable(tbodyId, inputId) {
+            const term = document.getElementById(inputId).value.toLowerCase();
+            const rows = document.querySelectorAll(`#${tbodyId} tr`);
+            rows.forEach(row => {
+                const rowText = row.innerText.toLowerCase();
+                row.style.display = rowText.includes(term) ? '' : 'none';
+            });
+        }
+
+        function openOwnerModalForEdit() {
+            document.getElementById('owner-modal').classList.remove('hidden');
+            
+            const originalRender = renderModalOwners;
+            renderModalOwners = (owners) => {
+                const list = document.getElementById('modal-owners-list');
+                list.innerHTML = '';
+                owners.forEach(u => {
+                    if(u.role === 'admin') return;
+                    const div = document.createElement('div');
+                    div.className = 'owner-item';
+                    div.style.padding = '12px';
+                    div.style.borderBottom = '1px solid var(--glass-border)';
+                    div.style.cursor = 'pointer';
+                    div.style.color = '#fff';
+                    div.innerHTML = `
+                        <div style="font-weight:bold">${u.name}</div>
+                        <div style="font-size:12px; color:var(--text-muted)">${u.email}</div>
+                    `;
+                    div.onclick = () => {
+                        document.getElementById('swal-owner-id').value = u._id;
+                        document.getElementById('swal-owner-name').value = u.name;
+                        closeOwnerModal();
+                        renderModalOwners = originalRender;
+                    };
+                    list.appendChild(div);
+                });
+            };
+            renderModalOwners(allOwners);
+        }
+
+        function downloadSavedQR(imgUrl, name) {
+            if(!imgUrl) return Swal.fire('تنبيه', 'لا يوجد QR محفوظ لهذا المطعم، اطلب من المالك إنشاؤه.', 'info');
+            const link = document.createElement('a');
+            link.href = imgUrl;
+            link.download = `QR-${name}.png`;
+            link.click();
+        }
+
+        function openOwnerModalForAI() {
+            window.selectingForAI = true; 
+            openOwnerModal();
+        }
+
+        async function startAiProcessing() {
+            const ownerId = document.getElementById('ai-res-id').value;
+            const files = document.getElementById('ai-menu-images').files;
+            const btn = document.getElementById('start-ai-btn');
+
+            if(!ownerId || files.length === 0) return Swal.fire('تنبيه', 'اختر المطعم والصور أولاً', 'warning');
+
+            const formData = new FormData();
+            formData.append('ownerId', ownerId); 
+            for (let i = 0; i < files.length; i++) {
+                formData.append('menuImages', files[i]);
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري تحليل المنيو.. قد يستغرق دقيقة';
+            
+            try {
+                const res = await fetch('/api/v1/ai/process-menu', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if(data.status === 'success') {
+                    Swal.fire('نجاح مذهل!', 'تم استخراج البيانات ورفع المنيو بنجاح', 'success');
+                    document.getElementById('ai-menu-images').value = '';
+                } else {
+                    Swal.fire('خطأ', data.message, 'error');
+                }
+            } catch(e) {
+                Swal.fire('خطأ', 'حدث خطأ في الاتصال بالسيرفر', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'ابدأ التحليل والرفع الصاروخي 🚀';
+            }
+        }
+
+        function filterSalesTable() {
+            const input = document.getElementById('sales-search-input');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('#sales-tbody tr');
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                if (text.includes(filter)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+
+        async function createSalesAgent() {
+            try {
+                const name = document.getElementById('salesName').value;
+                const email = document.getElementById('salesEmail').value;
+                const phone = document.getElementById('salesPhone').value;
+                const password = document.getElementById('salesPass').value;
+                await axios.post('/api/v1/users/create-sales-agent', { name, email, password, phone }, { headers: { Authorization: `Bearer ${token}` } });
+                Swal.fire('نجاح', 'تم إنشاء حساب السيلز بنجاح', 'success');
+                document.getElementById('createSalesModal').style.display = 'none';
+                loadSalesStats();
+            } catch (err) {
+                Swal.fire('خطأ', err.response?.data?.message || err.message, 'error');
+            }
+        }
+        
+        async function loadSalesStats() {
+            try {
+                const res = await axios.get('/api/v1/admin/sales-stats', { headers: { Authorization: `Bearer ${token}` } });
+                const stats = res.data.data.stats;
+                const grid = document.getElementById('salesGrid');
+                grid.innerHTML = '';
+                stats.forEach((agent, index) => {
+                    const agentData = encodeURIComponent(JSON.stringify(agent));
+                    const rankColor = index === 0 ? '#fbbf24' : (index === 1 ? '#9ca3af' : (index === 2 ? '#b45309' : 'rgba(255,255,255,0.1)'));
+                    const borderColor = index < 3 ? rankColor : 'rgba(255,255,255,0.1)';
+                    const card = `
+                        <div onclick="showSalesDetails('${agentData}')" style="background:linear-gradient(160deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%); border:1px solid ${borderColor}; border-top: 4px solid ${borderColor}; border-radius:16px; padding:20px; cursor:pointer; transition:transform 0.2s; position:relative; box-shadow:0 10px 20px rgba(0,0,0,0.1);">
+                            <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                                <div style="width:50px; height:50px; background:rgba(255,255,255,0.1); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold;">${agent.salesName.charAt(0)}</div>
+                                <div style="text-align:right;">
+                                    <h3 style="margin:0; font-size:16px; color:#fff;">${agent.salesName}</h3>
+                                    <small style="color:var(--text-muted);">${agent.salesEmail}</small>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; text-align:center;">
+                                <div><div style="font-size:11px; color:var(--text-muted);">النشطين</div><div style="font-weight:bold; color:#34d399; font-size:16px;">${agent.activeClients}</div></div>
+                                <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:10px;"><div style="font-size:11px; color:var(--text-muted);">تجريبي</div><div style="font-weight:bold; color:#fbbf24; font-size:16px;">${agent.trialClients}</div></div>
+                                <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:10px;"><div style="font-size:11px; color:var(--text-muted);">الإجمالي</div><div style="font-weight:bold; color:#fff; font-size:16px;">${agent.totalClients}</div></div>
+                            </div>
+                        </div>`;
+                    grid.innerHTML += card;
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        function showSalesDetails(encodedData) {
+            const agent = JSON.parse(decodeURIComponent(encodedData));
+            document.getElementById('detailTitle').innerText = `عملاء: ${agent.salesName}`;
+            const listContainer = document.getElementById('clientsListContent');
+            if (agent.clientsList.length === 0) {
+                listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">لا يوجد عملاء لهذا الوكيل حتى الآن.</p>';
+            } else {
+                let html = '<table style="width:100%; border-collapse:collapse;"><thead><tr style="text-align:right;"><th style="padding:12px; font-size:13px; color:var(--text-muted);">العميل</th><th style="padding:12px; font-size:13px; color:var(--text-muted);">الهاتف</th><th style="padding:12px; font-size:13px; color:var(--text-muted);">الحالة</th></tr></thead><tbody>';
+                agent.clientsList.forEach(client => {
+                    const statusBadge = client.isTrial ? '<span style="background:rgba(245, 158, 11, 0.2); color:#fbbf24; padding:2px 8px; border-radius:10px; font-size:11px;">تجريبي</span>' : '<span style="background:rgba(16, 185, 129, 0.2); color:#34d399; padding:2px 8px; border-radius:10px; font-size:11px;">نشط</span>';
+                    html += `<tr style="border-bottom:1px solid var(--glass-border);"><td style="padding:12px; color:#fff;">${client.name}<br><small style="color:var(--text-muted)">${client.email}</small></td><td style="padding:12px; color:#fff;">${client.phone}</td><td style="padding:12px;">${statusBadge}</td></tr>`;
+                });
+                html += '</tbody></table>';
+                listContainer.innerHTML = html;
+            }
+            document.getElementById('salesDetailsModal').style.display = 'flex';
+        }
+
+        async function loadSalesRequests() {
+            try {
+                const res = await fetch('/api/v1/sales/requests', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const response = await res.json();
+                const tbody = document.getElementById('sales-tbody');
+                tbody.innerHTML = '';
+
+                if(response.data && response.data.length > 0) {
+                    response.data.forEach(req => {
+                        let statusBadge = req.status === 'pending' ? '<span style="background:rgba(245, 158, 11, 0.2); color:#fbbf24; padding:2px 8px; border-radius:10px; font-size:12px">انتظار</span>' :
+                                          req.status === 'approved' ? '<span style="background:rgba(16, 185, 129, 0.2); color:#34d399; padding:2px 8px; border-radius:10px; font-size:12px">مقبول</span>' :
+                                          '<span style="background:rgba(239, 68, 68, 0.2); color:#f87171; padding:2px 8px; border-radius:10px; font-size:12px">مرفوض</span>';
+                        
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>
+                                    <img src="${req.image || 'https://via.placeholder.com/40'}" onclick="viewSalesImage('${req.image}', '${req.name}')" 
+                                         style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid var(--glass-border); cursor: pointer;">
+                                </td>
+                                <td>
+                                    <div style="font-weight:bold; color:#fff;">${req.name}</div>
+                                    <div style="font-size:12px; color:var(--text-muted)">${req.email || 'لا يوجد بريد'}</div>
+                                </td>
+                                <td>
+                                    <div style="font-weight:bold; color:#fff;">${req.phone}</div>
+                                    <a href="https://wa.me/20${req.phone.replace(/^0+/, '')}" target="_blank" style="color:#25d366; font-size:12px; text-decoration:none">
+                                        <i class="fab fa-whatsapp"></i> واتساب
+                                    </a>
+                                </td>
+                                <td style="font-family:monospace; color:var(--primary); font-weight:bold; font-size:14px;">
+                                    ${req.walletNumber || '-'}
+                                </td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    <div style="display:flex; gap:5px;">
+                                        ${req.status === 'pending' ? `
+                                        <button class="action-btn" style="background:rgba(16, 185, 129, 0.2); color:#34d399;" onclick="approveAndCreateAgent('${req._id}', '${req.name}', '${req.email || ''}', '${req.phone}')" title="قبول وإنشاء حساب">
+                                            <i class="fas fa-user-check"></i>
+                                        </button>
+                                        <button class="action-btn" style="background:rgba(245, 158, 11, 0.2); color:#fbbf24;" onclick="updateSalesStatus('${req._id}', 'rejected')" title="رفض الطلب">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                        ` : ''}
+                                        
+                                        <button class="action-btn" style="background:rgba(239, 68, 68, 0.2); color:#f87171;" onclick="deleteSalesAgent('${req._id}', '${req.name}')" title="حذف الوكيل نهائياً">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted)">لا توجد طلبات حالياً</td></tr>';
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        async function approveAndCreateAgent(reqId, name, email, phone) {
+            const { value: formValues } = await Swal.fire({
+                title: `قبول الوكيل: ${name}`,
+                html:
+                    `<p style="font-size:13px; color:#aaa;">سيتم إنشاء حساب جديد لهذا الوكيل وتفعيل حسابه فوراً.</p>` +
+                    `<input id="swal-new-email" class="swal2-input" placeholder="البريد الإلكتروني" value="${email}">` +
+                    `<input id="swal-new-pass" type="password" class="swal2-input" placeholder="تعيين كلمة مرور للدخول">`,
+                focusConfirm: false,
+                showCancelButton: true,
+                confirmButtonText: 'إنشاء وقبول',
+                cancelButtonText: 'إلغاء',
+                preConfirm: () => {
+                    return {
+                        email: document.getElementById('swal-new-email').value,
+                        password: document.getElementById('swal-new-pass').value
+                    }
+                }
             });
 
-            setTimeout(() => {
-                const qrCanvas = tempDiv.querySelector('canvas');
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = 800;
-                finalCanvas.height = 800;
-                const ctx = finalCanvas.getContext('2d');
+            if (!formValues) return;
+            if (!formValues.email || !formValues.password) return Swal.fire('تنبيه', 'البريد وكلمة المرور مطلوبين', 'warning');
 
-                ctx.drawImage(qrCanvas, 0, 0);
+            try {
+                Swal.showLoading();
+                
+                await axios.post('/api/v1/users/create-sales-agent', {
+                    name: name,
+                    email: formValues.email,
+                    phone: phone,
+                    password: formValues.password
+                }, { headers: { Authorization: `Bearer ${token}` } });
 
-                const logo = new Image();
-                logo.src = e.target.result;
-                logo.onload = function() {
-                    const logoSize = 180;
-                    const x = (finalCanvas.width - logoSize) / 2;
-                    const y = (finalCanvas.height - logoSize) / 2;
+                await updateSalesStatus(reqId, 'approved', false);
 
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(x - 15, y - 15, logoSize + 30, logoSize + 30);
+                Swal.fire('تمت العملية بنجاح', 'تم إنشاء حساب الوكيل وقبول طلبه في النظام', 'success');
+                
+                loadSalesRequests();
+                loadSalesStats();
 
-                    ctx.drawImage(logo, x, y, logoSize, logoSize);
-                    
-                    const imgData = finalCanvas.toDataURL("image/png");
-                    container.innerHTML = `<img src="${imgData}" style="width:250px; height:250px;">`;
-                };
-            }, 100);
+            } catch (err) {
+                Swal.close();
+                let errorMsg = err.response?.data?.message || err.message;
+                if(errorMsg.includes('email')) errorMsg = "البريد الإلكتروني مسجل بالفعل لمستخدم آخر";
+                Swal.fire('فشلت العملية', errorMsg, 'error');
+            }
         }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
 
-async function editRestaurantPrompt(id) {
-    Swal.showLoading();
-    try {
-        const resFetch = await fetch(`/api/v1/restaurants/`, { 
-            headers: { 'Authorization': `Bearer ${token}` } 
-        });
-        const dataAll = await resFetch.json();
-        const r = dataAll.data.restaurants.find(item => item._id === id);
-        Swal.close();
-
-        if (!r) return Swal.fire('خطأ', 'لم يتم العثور على بيانات المطعم', 'error');
-
-        const { value: formValues } = await Swal.fire({
-            title: 'تعديل بيانات المطعم',
-            html:
-                `<div style="text-align:right; margin-bottom:5px; font-size:14px;">اسم النشاط:</div>` +
-                `<input id="swal-input1" class="swal2-input" value="${r.restaurantName}" placeholder="الاسم الجديد">` +
+        async function updateSalesStatus(id, status, showMessage = true) {
+            try {
+                if(showMessage) Swal.showLoading();
+                const res = await fetch(`/api/v1/sales/requests/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status })
+                });
+                const data = await res.json();
                 
-                `<div style="text-align:right; margin-top:15px; margin-bottom:5px; font-size:14px;">الرابط (Slug):</div>` +
-                `<input id="swal-input2" class="swal2-input" value="${r.slug}" placeholder="الرابط الجديد">` +
-                
-                `<div style="text-align:right; margin-top:15px; margin-bottom:5px; font-size:14px;">المالك الحالي:</div>` +
-                `<div style="display: flex; gap: 10px;">` +
-                    `<input type="text" id="swal-owner-name" readonly value="${r.owner ? r.owner.name : 'غير محدد'}" style="background: #f9fafb; flex: 1; height: 45px; border: 1px solid #d9d9d9; border-radius: 5px; padding: 0 10px;">` +
-                    `<input type="hidden" id="swal-owner-id" value="${r.owner ? r.owner._id : ''}">` +
-                    `<button type="button" class="action-btn btn-login-as" onclick="openOwnerModalForEdit()" style="width: auto; height: 45px; padding: 0 15px;">تغيير</button>` +
-                `</div>`,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonText: 'حفظ التعديلات',
-            cancelButtonText: 'إلغاء',
-            preConfirm: () => {
-                return {
-                    restaurantName: document.getElementById('swal-input1').value,
-                    slug: document.getElementById('swal-input2').value,
-                    owner: document.getElementById('swal-owner-id').value
+                if(showMessage) {
+                    Swal.close();
+                    if(res.ok) {
+                        Swal.fire('تم', 'تم تحديث الحالة بنجاح', 'success');
+                        loadSalesRequests();
+                    } else {
+                        Swal.fire('خطأ', data.message, 'error');
+                    }
+                }
+                return res.ok;
+            } catch(e) { 
+                if(showMessage) Swal.fire('خطأ', 'فشل الاتصال', 'error'); 
+                throw e;
+            }
+        }
+
+        async function deleteSalesAgent(id, name) {
+            const confirm = await Swal.fire({
+                title: 'حذف الوكيل؟',
+                text: `أنت على وشك حذف "${name}" نهائياً من سجلات المبيعات. لا يمكن التراجع عن هذا الإجراء.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'نعم، احذفه',
+                cancelButtonText: 'إلغاء'
+            });
+
+            if (confirm.isConfirmed) {
+                try {
+                    Swal.showLoading();
+                    const res = await fetch(`/api/v1/sales/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    Swal.close();
+                    
+                    if (res.ok) {
+                        Swal.fire('تم الحذف', 'تم حذف الوكيل بنجاح', 'success');
+                        loadSalesRequests(); 
+                        loadSalesStats();    
+                    } else {
+                        const data = await res.json();
+                        Swal.fire('خطأ', data.message || 'فشل الحذف', 'error');
+                    }
+                } catch (e) {
+                    Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
                 }
             }
-        });
+        }
 
-        if (formValues) {
-            Swal.showLoading();
-            const res = await fetch(`/api/v1/restaurants/${id}`, {
-                method: 'PATCH',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` 
-                },
-                body: JSON.stringify(formValues)
+        function viewSalesImage(url, name) {
+            Swal.fire({
+                title: name,
+                imageUrl: url,
+                imageWidth: 400,
+                imageAlt: name,
+                confirmButtonText: 'إغلاق',
+                showClass: { popup: 'animate__animated animate__fadeInDown' },
+                hideClass: { popup: 'animate__animated animate__fadeOutUp' }
             });
-            const data = await res.json();
-            Swal.close();
-
-            if (data.status === 'success') {
-                Swal.fire('تم التحديث', 'تم حفظ التعديلات بنجاح', 'success');
-                loadRestaurantsList(); 
-            } else {
-                Swal.fire('خطأ', data.message, 'error');
-            }
         }
-    } catch (e) {
-        Swal.close();
-        Swal.fire('خطأ', 'مشكلة في الاتصال بالسيرفر', 'error');
-    }
-}
-function viewSavedQR(img, name) {
-    Swal.fire({
-        title: name,
-        imageUrl: img,
-        imageAlt: 'QR Code',
-        confirmButtonText: 'إغلاق'
-    });
-}
-function filterTable(tbodyId, inputId) {
-    const term = document.getElementById(inputId).value.toLowerCase();
-    const rows = document.querySelectorAll(`#${tbodyId} tr`);
-    rows.forEach(row => {
-        const rowText = row.innerText.toLowerCase();
-        row.style.display = rowText.includes(term) ? '' : 'none';
-    });
-}
-function openOwnerModalForEdit() {
-    document.getElementById('owner-modal').classList.remove('hidden');
-    
-    const originalRender = renderModalOwners;
-    renderModalOwners = (owners) => {
-        const list = document.getElementById('modal-owners-list');
-        list.innerHTML = '';
-        owners.forEach(u => {
-            if(u.role === 'admin') return;
-            const div = document.createElement('div');
-            div.className = 'owner-item';
-            div.style.padding = '12px';
-            div.style.borderBottom = '1px solid var(--border)';
-            div.style.cursor = 'pointer';
-            div.innerHTML = `
-                <div style="font-weight:bold">${u.name}</div>
-                <div style="font-size:12px; color:var(--text-sub)">${u.email}</div>
-            `;
-            div.onclick = () => {
-                document.getElementById('swal-owner-id').value = u._id;
-                document.getElementById('swal-owner-name').value = u.name;
-                closeOwnerModal();
-                renderModalOwners = originalRender;
-            };
-            list.appendChild(div);
-        });
-    };
-    renderModalOwners(allOwners);
-}
-function downloadSavedQR(imgUrl, name) {
-    if(!imgUrl) return Swal.fire('تنبيه', 'لا يوجد QR محفوظ لهذا المطعم، اطلب من المالك إنشاؤه.', 'info');
-    const link = document.createElement('a');
-    link.href = imgUrl;
-    link.download = `QR-${name}.png`;
-    link.click();
-}
-function openOwnerModalForAI() {
-    window.selectingForAI = true; 
-    openOwnerModal();
-}
-
-function renderModalOwners(owners) {
-    const list = document.getElementById('modal-owners-list');
-    list.innerHTML = '';
-    owners.forEach(u => {
-        if(u.role === 'admin') return;
-        const div = document.createElement('div');
-        div.className = 'owner-item';
-        div.style.padding = '12px';
-        div.style.borderBottom = '1px solid var(--border)';
-        div.style.cursor = 'pointer';
-        div.innerHTML = `
-            <div style="font-weight:bold">${u.name}</div>
-            <div style="font-size:12px; color:var(--text-sub)">${u.email} | ${u.phone || 'بدون هاتف'}</div>
-        `;
-        
-        div.onclick = () => {
-            if(window.selectingForAI) {
-                document.getElementById('ai-res-id').value = u._id; 
-                document.getElementById('ai-res-name').value = u.name;
-                window.selectingForAI = false;
-            } else {
-                document.getElementById('r-owner').value = u._id;
-                document.getElementById('selected-owner-name').value = u.name;
-            }
-            closeOwnerModal();
-        };
-        list.appendChild(div);
-    });
-}
-
-async function startAiProcessing() {
-    const ownerId = document.getElementById('ai-res-id').value;
-    const files = document.getElementById('ai-menu-images').files;
-    const btn = document.getElementById('start-ai-btn');
-
-    if(!ownerId || files.length === 0) return Swal.fire('تنبيه', 'اختر المطعم والصور أولاً', 'warning');
-
-    const formData = new FormData();
-    formData.append('ownerId', ownerId); 
-    for (let i = 0; i < files.length; i++) {
-        formData.append('menuImages', files[i]);
-    }
-
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري تحليل المنيو.. قد يستغرق دقيقة';
-    
-    try {
-        const res = await fetch('/api/v1/ai/process-menu', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
-        });
-        const data = await res.json();
-        
-        if(data.status === 'success') {
-            Swal.fire('نجاح مذهل!', 'تم استخراج البيانات ورفع المنيو بنجاح', 'success');
-            document.getElementById('ai-menu-images').value = '';
-        } else {
-            Swal.fire('خطأ', data.message, 'error');
-        }
-    } catch(e) {
-        Swal.fire('خطأ', 'حدث خطأ في الاتصال بالسيرفر', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = 'ابدأ التحليل والرفع الصاروخي 🚀';
-    }
-}
-
-async function loadSalesRequests() {
-    try {
-        const res = await fetch('/api/v1/sales', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const response = await res.json();
-        const tbody = document.getElementById('sales-tbody');
-        tbody.innerHTML = '';
-
-        if(response.data && response.data.length > 0) {
-            response.data.forEach(req => {
-                let statusBadge = req.status === 'pending' ? '<span style="background:#f59e0b; color:white; padding:2px 8px; border-radius:10px; font-size:12px">انتظار</span>' :
-                                  req.status === 'approved' ? '<span style="background:#10b981; color:white; padding:2px 8px; border-radius:10px; font-size:12px">مقبول</span>' :
-                                  '<span style="background:#ef4444; color:white; padding:2px 8px; border-radius:10px; font-size:12px">مرفوض</span>';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td><img src="${req.image}" onclick="viewSalesImage('${req.image}', '${req.name}')" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #ddd; cursor: pointer; transition: 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'"></td>
-                        <td style="font-weight:bold">${req.name}</td>
-                        <td>
-                            <div>${req.phone}</div>
-                            <a href="https://wa.me/20${req.phone.replace(/^0+/, '')}" target="_blank" style="color:#25d366; font-size:13px; text-decoration:none">
-                                <i class="fab fa-whatsapp"></i> تواصل واتساب
-                            </a>
-                        </td>
-                        <td style="font-family:monospace; color:var(--primary); font-weight:bold">${req.walletNumber}</td>
-                        <td>${statusBadge}</td>
-                        <td>
-                            ${req.status === 'pending' ? `
-                            <button class="action-btn" style="background:#10b981" onclick="updateSalesStatus('${req._id}', 'approved')" title="قبول"><i class="fas fa-check"></i></button>
-                            <button class="action-btn" style="background:#ef4444" onclick="updateSalesStatus('${req._id}', 'rejected')" title="رفض"><i class="fas fa-times"></i></button>
-                            ` : ''}
-                            <button class="action-btn" style="background:#6b7280" onclick="deleteSalesRequest('${req._id}')"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-        } else {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#6b7280">لا توجد طلبات حالياً</td></tr>';
-        }
-    } catch(e) { console.error(e); }
-}
-
-async function updateSalesStatus(id, status) {
-    try {
-        Swal.showLoading();
-        const res = await fetch(`/api/v1/sales/${id}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ status })
-        });
-        Swal.close();
-        if(res.ok) {
-            Swal.fire('تم', 'تم تحديث الحالة بنجاح', 'success');
-            loadSalesRequests();
-        }
-    } catch(e) { Swal.fire('خطأ', 'فشل الاتصال', 'error'); }
-}
-
-async function deleteSalesRequest(id) {
-    if(!confirm('هل أنت متأكد من الحذف؟')) return;
-    try {
-        await fetch(`/api/v1/sales/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        loadSalesRequests();
-    } catch(e) { alert('فشل الحذف'); }
-}
-function viewSalesImage(url, name) {
-    Swal.fire({
-        title: name,
-        imageUrl: url,
-        imageWidth: 400,
-        imageAlt: name,
-        confirmButtonText: 'إغلاق',
-        showClass: {
-            popup: 'animate__animated animate__fadeInDown'
-        },
-        hideClass: {
-            popup: 'animate__animated animate__fadeOutUp'
-        }
-    });
-}
     </script>
-<div id="owner-modal" class="login-wrapper hidden" style="z-index: 3000; background: rgba(0,0,0,0.5);">
-    <div class="login-box" style="max-width: 500px; width: 95%; padding: 25px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: var(--primary);">اختر مالك المطعم</h3>
-            <button onclick="closeOwnerModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-sub);">&times;</button>
-        </div>
-        
-        <div class="search-container" style="max-width: 100%; margin-bottom: 15px;">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" class="search-input" id="owner-search" onkeyup="filterOwners()" placeholder="ابحث بالاسم، الرقم، أو الإيميل..."/>
-        </div>
-
-        <div id="modal-owners-list" style="max-height: 300px; overflow-y: auto; text-align: right; border: 1px solid var(--border); border-radius: 8px;">
-            </div>
-    </div>
-</div>
 </body>
 </html>

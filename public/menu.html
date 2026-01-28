@@ -1564,6 +1564,14 @@
             storeSettings.whatsappNumber =
               restaurant.contactInfo?.whatsapp || "";
             storeSettings.enableCoupons = restaurant.enableCoupons || false;
+            
+            // إظهار تحذير النسخة التجريبية
+            if (restaurant.owner && restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
+                 checkTrialWarning({ message: "هذا المنيو يعمل بنسخة تجريبية مؤقتة." });
+            }
+            if (data.warning && typeof checkTrialWarning === 'function') {
+                 checkTrialWarning(data.warning);
+            }
             accounting.tax = restaurant.taxRate || 0;
             accounting.service = restaurant.serviceRate || 0;
 
@@ -2418,5 +2426,42 @@
         }
       }
     </script>
+    <script>
+  function checkTrialWarning(warningData) {
+    if (!warningData) return;
+
+    const warningDiv = document.createElement("div");
+    warningDiv.style.cssText = `
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #d32f2f;
+      color: white;
+      text-align: center;
+      padding: 15px;
+      z-index: 99999;
+      font-family: 'Tajawal', sans-serif;
+      font-weight: bold;
+      box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+      direction: rtl;
+    `;
+    
+    warningDiv.innerHTML = `
+      ⚠️ ${warningData.message}
+      <br>
+      <a href="tel:01145435095" style="color: #fff; text-decoration: underline; margin: 0 5px;">01145435095</a> | 
+      <a href="tel:01040761680" style="color: #fff; text-decoration: underline; margin: 0 5px;">01040761680</a>
+    `;
+
+    document.body.appendChild(warningDiv);
+    // رفع المحتوى قليلاً لكي لا يغطيه الشريط
+    document.body.style.paddingBottom = "80px";
+  }
+
+  // دمج هذه الوظيفة مع الفيتش الموجود في صفحاتك
+  // مثال: عند جلب بيانات المطعم، إذا وجدت data.warning استدعِ هذه الدالة
+  // if (data.warning) checkTrialWarning(data.warning);
+</script>
   </body>
 </html>
