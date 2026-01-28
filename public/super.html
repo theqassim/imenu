@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -137,6 +137,7 @@
         .main {
             flex: 1;
             padding: 30px 40px;
+            padding-bottom: 100px; /* مساحة أمان سفلية */
             overflow-y: auto;
             position: relative;
         }
@@ -318,7 +319,7 @@
 
         /* --- Responsive --- */
         @media (max-width: 768px) {
-            body { flex-direction: column; height: auto; overflow: auto; padding-bottom: 80px; }
+            body { flex-direction: column; height: auto; overflow: auto; padding-bottom: 140px; }
             .sidebar { 
                 position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; 
                 flex-direction: row; padding: 10px; justify-content: space-around;
@@ -1270,34 +1271,52 @@
 
         async function loginAsAny(userId, targetPath) {
             try {
-                Swal.fire({ title: 'جاري التحويل...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                // إظهار مؤشر التحميل
+                Swal.fire({ 
+                    title: 'جاري التحويل...', 
+                    html: 'يتم الآن تحضير جلسة الدخول الجديدة',
+                    allowOutsideClick: false, 
+                    didOpen: () => Swal.showLoading() 
+                });
+
                 const res = await fetch(`/api/v1/users/impersonate/${userId}`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
+                // التأكد من استجابة الشبكة قبل محاولة قراءة الـ JSON
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || 'فشل السيرفر في معالجة الطلب');
+                }
+
                 const data = await res.json();
                 Swal.close();
                 
                 if(data.status === 'success') {
-                    // تخزين التوكن المناسب بناءً على نوع الحساب
+                    // تخزين التوكن بناءً على المسار المستهدف
                     if(targetPath.includes('sales')) {
                         localStorage.setItem('salesToken', data.token);
+                        // فتح لوحة تحكم السيلز في نافذة جديدة
+                        window.open(targetPath, '_blank');
                     } else {
-                        // للملاك نستخدم t= في الرابط كما هو مبرمج سابقاً في صفحة admin.html
+                        // فتح لوحة تحكم المالك في نافذة جديدة باستخدام الباراميتر t
                         window.open(`${targetPath}?t=${data.token}`, '_blank');
-                        return;
                     }
-                    window.open(targetPath, '_blank');
-                } else {
-                    Swal.fire('تنبيه', data.message || 'لا يمكن الدخول لهذا الحساب', 'warning');
                 }
             } catch(e) { 
-                console.error(e);
-                Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+                console.error('Login error:', e);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطأ في الشبكة',
+                    text: 'تأكد من أن السيرفر يعمل بشكل صحيح أو أنك مسجل دخول بصلاحية أدمن.',
+                    confirmButtonText: 'حسناً'
+                });
             }
         }
-
         async function createRestaurant() {
             const restaurantName = document.getElementById('r-name').value;
             const slug = document.getElementById('r-slug').value;
