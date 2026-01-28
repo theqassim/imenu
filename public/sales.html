@@ -560,6 +560,27 @@
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.05);
         }
 
+        /* --- Contact Admin Cards --- */
+        .admin-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            padding: 15px 20px;
+            border-radius: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; transition: var(--transition);
+        }
+        .admin-card:hover { background: rgba(255,255,255,0.06); transform: translateY(-2px); }
+        .contact-actions { display: flex; gap: 10px; }
+        .c-btn {
+            width: 40px; height: 40px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none; transition: 0.3s; font-size: 18px;
+        }
+        .c-wa { background: rgba(37, 211, 102, 0.15); color: #25d366; }
+        .c-wa:hover { background: #25d366; color: #fff; box-shadow: 0 0 15px rgba(37, 211, 102, 0.4); }
+        .c-call { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .c-call:hover { background: #3b82f6; color: #fff; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
+
         /* --- Mobile Responsive --- */
         @media (max-width: 900px) {
             .app-container { flex-direction: column; padding: 10px; padding-bottom: 90px; }
@@ -647,6 +668,10 @@
                 <div class="menu-item" onclick="showSection('settings')">
                     <i class="fas fa-sliders-h"></i>
                     <span>الإعدادات</span>
+                </div>
+                <div class="menu-item" onclick="showSection('support')">
+                    <i class="fas fa-headset"></i>
+                    <span>الدعم الفني</span>
                 </div>
                 
                 <div class="menu-item logout" onclick="logout()">
@@ -795,6 +820,39 @@
                 </div>
             </div>
 
+            <div id="support" class="content-card">
+                <div class="section-header-row">
+                    <h3><i class="fas fa-headset"></i> الدعم والإدارة</h3>
+                </div>
+                <div class="form-container" style="max-width: 500px; margin: 0;">
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">
+                        فريق الإدارة جاهز دائماً لمساعدتك في أي استفسار أو مشكلة تواجهك.
+                    </p>
+                    
+                    <div class="admin-card">
+                        <div>
+                            <h4 style="margin:0 0 5px 0; color:#fff;">أ/ قاسم أحمد</h4>
+                            <span style="color:var(--text-muted); font-size:13px; letter-spacing:1px;">01145435095</span>
+                        </div>
+                        <div class="contact-actions">
+                            <a href="tel:01145435095" class="c-btn c-call"><i class="fas fa-phone-alt"></i></a>
+                            <a href="https://wa.me/201145435095" target="_blank" class="c-btn c-wa"><i class="fab fa-whatsapp"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="admin-card" style="margin-bottom: 0;">
+                        <div>
+                            <h4 style="margin:0 0 5px 0; color:#fff;">أ/ عمار محسن</h4>
+                            <span style="color:var(--text-muted); font-size:13px; letter-spacing:1px;">01040761680</span>
+                        </div>
+                        <div class="contact-actions">
+                            <a href="tel:01040761680" class="c-btn c-call"><i class="fas fa-phone-alt"></i></a>
+                            <a href="https://wa.me/201040761680" target="_blank" class="c-btn c-wa"><i class="fab fa-whatsapp"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -871,9 +929,10 @@
             // Handle Menu Active State
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
             const items = document.querySelectorAll('.menu-item');
-            if(id === 'dashboard') items[0].classList.add('active'); // Changed index because of sidebar change
+            if(id === 'dashboard') items[0].classList.add('active');
             if(id === 'create-client') items[1].classList.add('active');
             if(id === 'settings') items[2].classList.add('active');
+            if(id === 'support') items[3].classList.add('active');
         }
 
         document.getElementById('createClientForm').addEventListener('submit', async (e) => {
