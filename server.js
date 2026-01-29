@@ -922,7 +922,7 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
   }
 });
 
-app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner", "admin"), async (req, res) => {
+app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner", "admin", "cashier", "kitchen", "sales"), async (req, res) => {
   try {
     // الترتيب حسب sortOrder تصاعدي، ثم الأحدث
     const products = await Product.find({ restaurant: req.params.restaurantId }).populate("ingredients.stockItem").sort("sortOrder -createdAt");
