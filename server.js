@@ -1108,6 +1108,27 @@ const checkOrderPermission = async (user, restaurantId) => {
   return user.restaurant && user.restaurant.toString() === restaurantId.toString();
 };
 
+// --- مسار إلغاء الطلب (جديد) ---
+app.patch("/api/v1/orders/:id/cancel", async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, status: "pending" });
+    if (!order) return res.status(400).json({ message: "عذراً، الطلب دخل مرحلة التحضير ولا يمكن إلغاؤه الآن" });
+
+    order.status = "canceled";
+    await order.save();
+
+    // تنبيه المطعم (الأدمن والمطبخ)
+    if (req.io) {
+      req.io.to(order.restaurant.toString()).emit("order-updated", order);
+      req.io.to(order.restaurant.toString()).emit("order_cancelled_alert", order); // حدث خاص للتنبيه
+    }
+    
+    res.status(200).json({ status: "success", message: "تم إلغاء الطلب بنجاح" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 app.post("/api/v1/orders", async (req, res) => {
   try {
     const { restaurantId, tableNumber, items, subTotal, taxAmount, serviceAmount, couponCode, discountAmount, totalPrice } = req.body;

@@ -2574,7 +2574,30 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         Toast.fire({ icon: "info", title: "تم تحديث القائمة 🔄" });
       });
 
-      function trackOrder(orderId) {
+      // دالة إلغاء الطلب
+async function cancelOrder(id) {
+    if((await Swal.fire({ title: 'هل تريد إلغاء الطلب؟', text:"سيتم حذفه من القائمة", icon: 'warning', showCancelButton: true, confirmButtonText: 'نعم، إلغاء', cancelButtonText: 'تراجع', confirmButtonColor: '#ef4444' })).isConfirmed) {
+        try {
+            const res = await fetch(`/api/v1/orders/${id}/cancel`, { method: 'PATCH' });
+            const data = await res.json();
+            if(res.ok) {
+                Swal.fire({ toast:true, icon:'success', title:'تم إلغاء الطلب', position:'top-end', showConfirmButton:false, timer:1500 });
+                // تحديث الحالة محلياً
+                const history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
+                const order = history.find(o => o._id === id);
+                if(order) order.status = 'canceled';
+                localStorage.setItem("myOrdersHistory", JSON.stringify(history));
+                showMyReceipt(); // إعادة رسم القائمة
+            } else {
+                Swal.fire('تنبيه', data.message, 'warning');
+            }
+        } catch(e) {
+            Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+        }
+    }
+}
+
+function trackOrder(orderId) {
         socket.emit("join-order", orderId);
 
         socket.on("status-changed", (status) => {
@@ -2649,6 +2672,10 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
     history.forEach((order) => {
         let statusText = "قيد الانتظار ⏳";
+        // إضافة زر الإلغاء فقط إذا كان الطلب معلقاً والوضع ليس "للعرض فقط"
+        if (order.status === "pending" && typeof storeSettings !== 'undefined' && storeSettings.mode !== 'view_only') {
+             statusText += ` <button onclick="event.stopPropagation(); cancelOrder('${order._id}')" style="margin-right:5px; background:#fee2e2; color:#ef4444; border:1px solid #ef4444; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">إلغاء 🗑️</button>`;
+        }
         let statusColor = "#f59e0b"; 
         let headerColor = "#fffbeb"; 
 

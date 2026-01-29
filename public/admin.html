@@ -5532,7 +5532,30 @@ window.addBulkRow = function() { addBulkRows(1); };
         }
       };
 
-      window.createOrderCardHTML = function (order) {
+      // --- استقبال تنبيه الإلغاء (تشغيل الصوت والرسالة) ---
+    if(typeof socket !== 'undefined' && !socket.hasListeners("order_cancelled_alert")) {
+        socket.on("order_cancelled_alert", (order) => {
+            const audio = document.getElementById("order-sound");
+            if(audio) { audio.currentTime = 0; audio.play().catch(e=>console.log(e)); }
+            
+            Swal.fire({
+                position: 'top-end',
+                icon: 'warning',
+                title: `⚠️ تم إلغاء طلب!`,
+                text: `الطلب رقم #${order.orderNum} تم إلغاؤه من قبل العميل`,
+                showConfirmButton: false,
+                timer: 8000,
+                toast: true,
+                background: '#fef2f2',
+                color: '#b91c1c'
+            });
+            if(typeof loadOrders === 'function') loadOrders();
+        });
+        // وضع علامة لمنع تكرار المستمع
+        socket.hasListeners = (ev) => true; 
+    }
+
+window.createOrderCardHTML = function (order) {
         const role =
           currentUserRole && currentUserRole !== ""
             ? currentUserRole
