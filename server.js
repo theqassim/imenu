@@ -76,8 +76,8 @@ const restaurantSchema = new mongoose.Schema({
     // الألوان العامة
     primaryColor: { type: String, default: "#B78728" },
     secTitleColor: { type: String, default: "#2d2d2d" }, // جديد: لون عناوين الأقسام
-    prodTitleColor: { type: String, default: "#2d2d2d" }, // جديد: لون عناوين المنتجات
-    priceColor: { type: String, default: "#B78728" }, // جديد: لون السعر
+    prodTitleColor: { type: String, default: "#2d2d2d" }, // لون اسم المنتج
+    prodPriceColor: { type: String, default: "#B78728" }, // لون السعر
     cardColor: { type: String, default: "#ffffff" }, // جديد: لون الكارت
 
     // محاذاة نصوص الهيدر
@@ -991,6 +991,9 @@ app.patch("/api/v1/products/:id", protect, upload.single('image'), async (req, r
     }
     if (sizes) updateData.sizes = safeParse(sizes) || [];
     if (req.file) updateData.image = req.file.path;
+    
+    // ✅ إصلاح: السماح بتحديث حالة التوفر عبر هذا المسار
+    if (req.body.isAvailable !== undefined) updateData.isAvailable = req.body.isAvailable;
 
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
     if (updatedProduct && req.io) {

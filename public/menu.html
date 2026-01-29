@@ -20,6 +20,9 @@
     <style>
       :root {
         --primary: #b78728;
+        --sec-title-color: #2d2d2d;
+        --prod-title-color: #2d2d2d; /* ✅ لون اسم المنتج الافتراضي */
+        --prod-price-color: #b78728; /* ✅ لون السعر الافتراضي */
         --bg-color: #f9f9f9;
         --card-bg: #ffffff;
         --text-main: #2d2d2d;
@@ -288,7 +291,7 @@
       .prod-price {
         font-size: 16px;
         font-weight: 800;
-        color: var(--primary);
+        color: var(--prod-price-color); /* تم الربط بمتغير التحكم */
       }
 
       .add-btn {
@@ -618,6 +621,9 @@
       }
       :root {
         --primary: #b78728;
+        --sec-title-color: #2d2d2d;
+        --prod-title-color: #2d2d2d; /* ✅ لون اسم المنتج الافتراضي */
+        --prod-price-color: #b78728; /* ✅ لون السعر الافتراضي */
         --bg-color: #f9f9f9;
         --card-bg: #ffffff;
         --text-main: #2d2d2d;
@@ -794,7 +800,11 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        color: var(--text-main);
+        color: var(--sec-title-color); /* ✅ استخدام المتغير الجديد */
+      }
+      /* ✅ كلاس إضافي لضمان التحكم */
+      .category-header-text {
+        color: var(--sec-title-color) !important;
       }
       .section-label::after {
         content: "";
@@ -923,8 +933,8 @@
       .prod-title {
         font-size: 16px;
         font-weight: 800;
-        margin: 0 0 5px;
-        color: var(--text-main);
+        margin: 0;
+        color: var(--prod-title-color); /* تم الربط بمتغير التحكم */
       }
       .prod-desc {
         font-size: 12px;
@@ -944,7 +954,7 @@
       .prod-price {
         font-size: 16px;
         font-weight: 800;
-        color: var(--primary);
+        color: var(--prod-price-color); /* تم الربط بمتغير التحكم */
       }
 
       .add-btn {
@@ -1524,6 +1534,17 @@
           0% { transform: translateX(-100%) rotate(45deg); }
           100% { transform: translateX(100%) rotate(45deg); }
       }
+      .item-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: var(--prod-title-color); /* ✅ ربطه بالمتغير */
+      }
+      .item-price {
+        font-weight: 800;
+        color: var(--prod-price-color); /* ✅ ربطه بالمتغير */
+        font-size: 15px;
+      }
     </style>
   </head>
   <body>
@@ -1777,6 +1798,9 @@
 
         // 1. الألوان والخطوط الأساسية
         root.style.setProperty("--primary", config.primaryColor || "#B78728");
+        root.style.setProperty("--sec-title-color", config.secTitleColor || "#2d2d2d"); // ✅ تطبيق لون الأقسام
+        root.style.setProperty("--prod-title-color", config.prodTitleColor || "#2d2d2d"); // ✅ تطبيق لون اسم المنتج
+        root.style.setProperty("--prod-price-color", config.prodPriceColor || "#b78728"); // ✅ تطبيق لون السعر
         root.style.setProperty(
           "--font",
           `'${config.fontFamily || "Tajawal"}', sans-serif`,
@@ -2015,7 +2039,7 @@
             ? `<img src="${categoryImages[cat]}" style="width:25px; height:25px; border-radius:5px; object-fit:cover; margin-left:10px;">`
             : '<i class="fas fa-certificate" style="font-size:14px; margin-left:8px; color:var(--primary)"></i>';
 
-          sectionHTML += `<div class="section-label" id="sec-${cat}" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
+          sectionHTML += `<div class="section-label category-header-text" id="sec-${cat}" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
 
           items.forEach((p) => {
             const imgHTML =
@@ -2048,7 +2072,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             ${p.sizes.map(s => `
                 <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px;">
                     <span style="color:var(--text-sub)">${s.name}:</span>
-                    <span style="color:var(--primary); font-weight:bold;">
+                    <span style="color:var(--prod-price-color); font-weight:bold;">
                         ${s.oldPrice > s.price ? `<span style="text-decoration:line-through; font-size:10px; opacity:0.6; margin-left:4px;">${s.oldPrice}</span>` : ""}
                         ${s.price} ج.م
                     </span>
@@ -2181,11 +2205,11 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             priceDisplay = `
                 <div style="display:flex; flex-direction:column; align-items:flex-end; line-height:1.1;">
                     <span style="text-decoration: line-through; color: #ef5350; font-size: 13px; opacity:0.8">${s.oldPrice}</span>
-                    <span style="color:var(--primary); font-weight:900; font-size:18px">${s.price} <small style="font-size:12px; font-weight:normal">ج.م</small></span>
+                    <span style="color:var(--prod-price-color); font-weight:900; font-size:18px">${s.price} <small style="font-size:12px; font-weight:normal">ج.م</small></span>
                 </div>
             `;
         } else {
-            priceDisplay = `<span style="color:var(--primary); font-weight:800; font-size:16px">${s.price} ج.م</span>`;
+            priceDisplay = `<span style="color:var(--prod-price-color); font-weight:800; font-size:16px">${s.price} ج.م</span>`;
         }
 
         // إذا كان الوضع "عرض فقط"، نجعل الزر غير قابل للضغط لإضافة عناصر

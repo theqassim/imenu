@@ -3020,6 +3020,31 @@
                       </label>
                    </div>
                    <div>
+                      <label class="form-label">لون عناوين الأقسام</label>
+                      <label class="color-wrapper" for="ui-secTitleColor">
+                          <div id="color-preview-secTitle" class="color-preview-box" style="background-color: #2d2d2d;"></div>
+                          <input type="color" id="ui-secTitleColor" oninput="document.getElementById('color-preview-secTitle').style.backgroundColor=this.value; setUiParam('secTitleColor', this.value)" style="opacity:0; width:0; height:0; position:absolute;">
+                          <span style="font-size:13px; font-weight:bold;">اختر اللون</span>
+                      </label>
+                   </div>
+                   <div>
+                      <label class="form-label">لون اسم المنتج</label>
+                      <label class="color-wrapper" for="ui-prodTitleColor">
+                          <div id="color-preview-prodTitle" class="color-preview-box" style="background-color: #2d2d2d;"></div>
+                          <input type="color" id="ui-prodTitleColor" oninput="document.getElementById('color-preview-prodTitle').style.backgroundColor=this.value; setUiParam('prodTitleColor', this.value)" style="opacity:0; width:0; height:0; position:absolute;">
+                          <span style="font-size:13px; font-weight:bold;">اختر اللون</span>
+                      </label>
+                   </div>
+
+                   <div>
+                      <label class="form-label">لون السعر</label>
+                      <label class="color-wrapper" for="ui-prodPriceColor">
+                          <div id="color-preview-prodPrice" class="color-preview-box" style="background-color: #b78728;"></div>
+                          <input type="color" id="ui-prodPriceColor" oninput="document.getElementById('color-preview-prodPrice').style.backgroundColor=this.value; setUiParam('prodPriceColor', this.value)" style="opacity:0; width:0; height:0; position:absolute;">
+                          <span style="font-size:13px; font-weight:bold;">اختر اللون</span>
+                      </label>
+                   </div>
+                   <div>
                       <label class="form-label">نوع الخط</label>
                       <select id="ui-fontFamily" onchange="setUiParam('fontFamily', this.value)" style="height:48px;">
                         <option value="Tajawal">Tajawal (افتراضي)</option>
@@ -3442,8 +3467,8 @@ function switchView(viewName) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         // 2. Hide all views and remove active states
-        // تمت إضافة "recipes" للقائمة
-const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos"];
+        // تمت إضافة "recipes" و "design" للقائمة لإصلاح مشكلة عدم إغلاق التصميم
+const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
@@ -5175,6 +5200,26 @@ window.addBulkRow = function() { addBulkRows(1); };
             currentDesign.heroHeight || 200;
 
         document.getElementById("ui-primaryColor").value = currentDesign.primaryColor;
+        // ✅ تحميل لون عناوين الأقسام
+        const secColor = currentDesign.secTitleColor || "#2d2d2d";
+        const secColorInput = document.getElementById("ui-secTitleColor");
+        const secColorPreview = document.getElementById("color-preview-secTitle");
+        
+        if (secColorInput) secColorInput.value = secColor;
+        if (secColorPreview) secColorPreview.style.backgroundColor = secColor;
+        // ✅ تحميل لون اسم المنتج
+        const pTitleColor = currentDesign.prodTitleColor || "#2d2d2d";
+        const pTitleInput = document.getElementById("ui-prodTitleColor");
+        const pTitlePreview = document.getElementById("color-preview-prodTitle");
+        if (pTitleInput) pTitleInput.value = pTitleColor;
+        if (pTitlePreview) pTitlePreview.style.backgroundColor = pTitleColor;
+
+        // ✅ تحميل لون السعر
+        const pPriceColor = currentDesign.prodPriceColor || "#b78728";
+        const pPriceInput = document.getElementById("ui-prodPriceColor");
+        const pPricePreview = document.getElementById("color-preview-prodPrice");
+        if (pPriceInput) pPriceInput.value = pPriceColor;
+        if (pPricePreview) pPricePreview.style.backgroundColor = pPriceColor;
         document.getElementById("ui-bgType").value = currentDesign.bgType;
         document.getElementById("ui-cardStyle").value = currentDesign.cardStyle;
 
@@ -8016,10 +8061,14 @@ function removeIngredient(index) {
                     const icon = card.querySelector('.fa-eye, .fa-eye-slash');
                     if(icon) {
                         icon.className = newStatus ? 'fas fa-eye' : 'fas fa-eye-slash';
-                        icon.style.color = newStatus ? 'var(--secondary)' : 'var(--secondary)';
+                        // تم إصلاح اللون ليكون أخضر عند التفعيل
+                        icon.style.color = newStatus ? 'var(--success)' : 'var(--secondary)';
+                        
+                        // تم نقل هذا السطر للداخل لمنع الخطأ
+                        if(newStatus && icon.classList.contains('text-danger')) {
+                            icon.classList.replace('text-danger', 'text-success');
+                        }
                     }
-                    // تحديث حالة الأيقونة حسب الكلاس
-                    if(newStatus) icon.classList.replace('text-danger', 'text-success');
                 }
 
                 Swal.fire({
