@@ -63,17 +63,52 @@ const restaurantSchema = new mongoose.Schema({
   qrImage: { type: String, default: "" },
   qrName: { type: String, default: "" },
   customUI: {
+    // الخلفية والخطوط
     bgType: { type: String, default: "color" },
     bgValue: { type: String, default: "#F9F9F9" },
-    primaryColor: { type: String, default: "#B78728" },
-    heroImage: { type: String, default: "" },
-    layoutType: { type: String, default: "modern" },
-    cardStyle: { type: String, default: "solid" },
-    cardRadius: { type: Number, default: 16 },
+    bgPosition: { type: String, default: "center" },
+    bgSize: { type: String, default: "cover" }, // حجم الخلفية (cover/contain)
+    bgRepeat: { type: String, default: "no-repeat" }, // التكرار
+    bgAttachment: { type: String, default: "fixed" }, // التثبيت عند السكرول
+    bgOverlay: { type: Number, default: 90 }, // نسبة تعتيم الخلفية
     fontFamily: { type: String, default: "Tajawal" },
+    
+    // الألوان العامة
+    primaryColor: { type: String, default: "#B78728" },
+    secTitleColor: { type: String, default: "#2d2d2d" }, // جديد: لون عناوين الأقسام
+    prodTitleColor: { type: String, default: "#2d2d2d" }, // جديد: لون عناوين المنتجات
+    priceColor: { type: String, default: "#B78728" }, // جديد: لون السعر
+    cardColor: { type: String, default: "#ffffff" }, // جديد: لون الكارت
+
+    // محاذاة نصوص الهيدر
+    headerTextAlignment: { type: String, default: "center" },
+    resNamePosition: { type: String, default: "inside" }, // ✅ تم إضافة هذا السطر لحفظ مكان الاسم
+
+    // الهيدر (صورة الغلاف)
+    heroImage: { type: String, default: "" },
     showHero: { type: Boolean, default: true },
     heroOverlay: { type: Number, default: 30 },
     heroHeight: { type: Number, default: 200 },
+    heroPosition: { type: String, default: "center" }, // جديد: كروب الصورة
+
+    // بيانات المطعم (الاسم والوصف)
+    showResName: { type: Boolean, default: true }, // جديد
+    customResName: { type: String, default: "" }, // جديد (لو عايز يغير الاسم الظاهر)
+    resNameColor: { type: String, default: "#B78728" },
+    
+    showResDesc: { type: Boolean, default: true }, // جديد
+    customResDesc: { type: String, default: "" }, // جديد
+    resDescColor: { type: String, default: "#eeeeee" }, // جديد
+    
+    // البحث
+    showSearch: { type: Boolean, default: true }, // جديد
+    searchPlaceholder: { type: String, default: "" }, // جديد
+
+    // تخطيط الكروت والصور
+    layoutType: { type: String, default: "modern" },
+    cardStyle: { type: String, default: "solid" },
+    cardRadius: { type: Number, default: 16 },
+    prodImgObjectFit: { type: String, default: "cover" }, // جديد: شكل الصورة داخل الإطار
   },
   contactInfo: { whatsapp: String, phone: String, address: String },
   coverImage: String,
@@ -84,6 +119,7 @@ const Restaurant = mongoose.model("Restaurant", restaurantSchema);
 
 // --- Category Model ---
 const categorySchema = new mongoose.Schema({
+  sortOrder: { type: Number, default: 0 }, // جديد: للترتيب
   name: { type: String, required: [true, "يجب إدخال اسم القسم"] },
   image: { type: String, default: "" },
   restaurant: { type: mongoose.Schema.ObjectId, ref: "Restaurant", required: [true, "القسم يجب أن يتبع مطعم"] },
@@ -106,6 +142,7 @@ const StockItem = mongoose.model("StockItem", stockItemSchema);
 // --- Product Model ---
 const productSchema = new mongoose.Schema({
   restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
+  sortOrder: { type: Number, default: 0 }, // جديد: للترتيب
   name: { en: { type: String, required: true }, ar: { type: String } },
   description: { en: String, ar: String },
   price: { type: Number, default: 0 },
@@ -282,7 +319,11 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
-app.use(express.json());
+// ==========================================
+// Middleware Configuration (تم التعديل لزيادة حجم الرفع)
+// ==========================================
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(cors());
 app.use(express.static("public"));
@@ -335,12 +376,31 @@ const protect = async (req, res, next) => {
     const currentUser = await User.findById(decoded.id);
     if (!currentUser) return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
 
+    // ✅ تصحيح نهائي ذكي: فحص التجربة مع معالجة التاريخ الناقص تلقائياً
     if (currentUser.role === "owner") {
+      if (currentUser.isTrial) {
+         // 1. تصحيح تلقائي: لو التاريخ مش موجود، نمنحه 24 ساعة من دلوقتي
+         if (!currentUser.trialExpires) {
+             console.log(`⚠️ تنبيه: المستخدم ${currentUser.email} حساب تجريبي بدون تاريخ، جاري التصحيح...`);
+             currentUser.trialExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // إضافة 24 ساعة
+             await currentUser.save({ validateBeforeSave: false });
+             console.log(`✅ تم تحديد مهلة جديدة تنتهي في: ${currentUser.trialExpires}`);
+         }
+
+         // 2. الفحص العادي للتاريخ
+         if (new Date() > new Date(currentUser.trialExpires)) {
+             console.log("❌ النتيجة: انتهت الفترة -> تم منع الدخول");
+             return res.status(403).json({ message: "انتهت الفترة التجريبية للحساب." });
+         }
+      }
+
+      // فحص الاشتراك العادي
       if (currentUser.subscriptionExpires && new Date() > currentUser.subscriptionExpires) {
         currentUser.active = false;
         await currentUser.save({ validateBeforeSave: false });
         return res.status(403).json({ message: "انتهت مدة اشتراكك." });
       }
+
       if (currentUser.active === false) return res.status(401).json({ message: "الحساب معطل." });
     }
     req.user = currentUser;
@@ -414,9 +474,12 @@ app.post("/api/v1/users/login", async (req, res) => {
       return res.status(401).json({ status: "fail", message: "بيانات الدخول خاطئة" });
     }
     
-    // التحقق من حالة الحساب التجريبي
-    if (user.isTrial && user.trialExpires && new Date() > user.trialExpires) {
-      return res.status(403).json({ message: "انتهت الفترة التجريبية للحساب." });
+    // ✅ تحديث: منع الدخول إذا انتهى الوقت أو تبقى أقل من دقيقة
+    if (user.isTrial && user.trialExpires) {
+      const nowBuffer = new Date(Date.now() + 60000); // إضافة دقيقة هامش أمان
+      if (nowBuffer > user.trialExpires) {
+        return res.status(403).json({ message: "انتهت الفترة التجريبية للحساب." });
+      }
     }
 
     // التحقق من حالة الحساب والشيفتات (منطق الكاشير/المطبخ)
@@ -713,10 +776,19 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
     // منطق التحذير
     let warning = null;
     if (restaurant.owner && restaurant.owner.isTrial) {
-      const hoursLeft = Math.ceil((new Date(restaurant.owner.trialExpires) - new Date()) / (1000 * 60 * 60));
+      let hoursLeft = 0;
+      // التأكد من وجود تاريخ انتهاء صالح
+      if (restaurant.owner.trialExpires) {
+        const diff = new Date(restaurant.owner.trialExpires) - new Date();
+        hoursLeft = Math.ceil(diff / (1000 * 60 * 60));
+      }
+      
+      // إذا انتهى الوقت أو كان غير صالح، نعرض 0
+      if (isNaN(hoursLeft) || hoursLeft < 0) hoursLeft = 0;
+
       warning = {
         type: "trial_warning",
-        message: `هذا حساب تجريبي سيتم حذفه خلال ${hoursLeft} ساعة. يرجى التواصل مع 01145435095 أو 01040761680 لتفعيل الحساب نهائياً.`,
+        message: `هذا حساب تجريبي سيتم حذفه خلال ${hoursLeft} ساعة. يرجى التواصل مع الإدارة لتفعيل الحساب نهائياً.`,
         isCritical: true
       };
     }
@@ -757,8 +829,13 @@ app.get("/api/v1/restaurants/:slug", async (req, res) => {
          };
       }
     }
-    const products = await Product.find({ restaurant: restaurant._id });
-    res.status(200).json({ status: "success", data: { restaurant, menu: products, warning } });
+    // تم إضافة .sort("sortOrder") لضمان ظهور الترتيب للزبائن
+    const products = await Product.find({ restaurant: restaurant._id }).sort({ sortOrder: 1, createdAt: -1 });
+    
+    // ✅ إصلاح: إرسال الأقسام مرتبة حسب sortOrder
+    const categories = await Category.find({ restaurant: restaurant._id }).sort("sortOrder");
+
+    res.status(200).json({ status: "success", data: { restaurant, menu: products, categories, warning } });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -847,9 +924,32 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
 
 app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const products = await Product.find({ restaurant: req.params.restaurantId }).populate("ingredients.stockItem").sort("-createdAt");
+    // الترتيب حسب sortOrder تصاعدي، ثم الأحدث
+    const products = await Product.find({ restaurant: req.params.restaurantId }).populate("ingredients.stockItem").sort("sortOrder -createdAt");
     res.status(200).json({ status: "success", data: { products } });
-  } catch (err) { res.status(400).json({ message: err.message }); }
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// مسار جديد: إعادة ترتيب المنتجات
+app.patch("/api/v1/products/reorder", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { order } = req.body; // Expects [{id: "...", sortOrder: 1}, ...]
+    if (!order || !Array.isArray(order)) return res.status(400).json({ message: "Invalid data" });
+
+    const operations = order.map((item) => ({
+      updateOne: {
+        filter: { _id: item.id },
+        update: { sortOrder: item.sortOrder },
+      },
+    }));
+
+    await Product.bulkWrite(operations);
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 });
 
 app.delete("/api/v1/products/:id", protect, async (req, res) => {
@@ -893,7 +993,9 @@ app.patch("/api/v1/products/:id", protect, upload.single('image'), async (req, r
     if (req.file) updateData.image = req.file.path;
 
     const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
-    if (req.io) req.io.to(updatedProduct.restaurant.toString()).emit("menu_updated");
+    if (updatedProduct && req.io) {
+      req.io.to(updatedProduct.restaurant.toString()).emit("menu_updated");
+    }
     res.status(200).json({ status: "success", data: { product: updatedProduct } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -913,15 +1015,57 @@ app.patch("/api/v1/products/toggle/:id", protect, async (req, res) => {
 app.post("/api/v1/categories", protect, restrictTo("owner", "admin"), upload.single('image'), async (req, res) => {
   try {
     const { name, restaurantId } = req.body;
-    const newCategory = await Category.create({ name, image: req.file ? req.file.path : "", restaurant: restaurantId });
+    const count = await Category.countDocuments({ restaurant: restaurantId });
+    const newCategory = await Category.create({ name, sortOrder: count + 1, image: req.file ? req.file.path : "", restaurant: restaurantId });
     if (req.io) req.io.to(restaurantId).emit("menu_updated");
     res.status(201).json({ status: "success", data: { category: newCategory } });
-  } catch (err) { res.status(400).json({ message: err.message }); }
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// مسار جديد: إضافة أقسام بالجملة
+app.post("/api/v1/categories/bulk", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { names, restaurantId } = req.body;
+    if (!names || !Array.isArray(names)) return res.status(400).json({ message: "Invalid data" });
+    
+    const startCount = await Category.countDocuments({ restaurant: restaurantId });
+    const docs = names.map((name, index) => ({ 
+      name, 
+      restaurant: restaurantId,
+      sortOrder: startCount + index + 1
+    }));
+    
+    await Category.insertMany(docs);
+    if (req.io) req.io.to(restaurantId).emit("menu_updated");
+    res.status(201).json({ status: "success", count: docs.length });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// مسار جديد: إعادة ترتيب الأقسام
+app.patch("/api/v1/categories/reorder", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { order } = req.body; 
+    const operations = order.map((item) => ({
+      updateOne: {
+        filter: { _id: item.id },
+        update: { sortOrder: item.sortOrder },
+      },
+    }));
+    await Category.bulkWrite(operations);
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 });
 
 app.get("/api/v1/categories/:restaurantId", async (req, res) => {
   try {
-    const categories = await Category.find({ restaurant: req.params.restaurantId });
+    // الترتيب حسب sortOrder
+    const categories = await Category.find({ restaurant: req.params.restaurantId }).sort("sortOrder createdAt");
     const categoriesWithCounts = await Promise.all(categories.map(async (cat) => {
       const count = await Product.countDocuments({ category: cat.name, restaurant: req.params.restaurantId });
       return { ...cat.toObject(), productCount: count };

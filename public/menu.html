@@ -664,7 +664,7 @@
         width: 100%;
         height: 100%;
         background: var(--bg-color);
-        opacity: 0.9;
+        opacity: var(--bg-overlay-opacity, 0.9); /* استخدام المتغير الجديد */
         z-index: -1;
       }
 
@@ -1193,27 +1193,37 @@
         box-shadow: 0 0 10px var(--primary);
       }
       .cat-chip {
-        background: var(--card-bg);
-        color: var(--text-sub);
-        padding: 6px 15px 6px 6px;
-        border-radius: 30px;
-        font-size: 14px;
-        border: 1px solid var(--border);
-        white-space: nowrap;
-        cursor: pointer;
-        transition: 0.3s;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+  background: var(--card-bg);
+  color: var(--text-sub);
+  padding: 8px 16px; /* زيادة الحشو ليكون الزر مريحاً */
+  border-radius: 30px;
+  font-size: 14px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: 0.3s;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px; /* ضمان ارتفاع موحد */
+}
       .cat-chip img {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        object-fit: cover;
-        background: var(--input-bg);
-      }
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: none; 
+}
+/* إظهار الصورة فقط إذا كان الرابط صالحاً وليس فارغاً */
+.cat-chip img:not([src=""]):not([src="#"]) {
+  display: block;
+}
+/* تعديل الـ Padding إذا كانت الصورة موجودة */
+.cat-chip:has(img:not([src=""]):not([src="#"])) {
+    padding-right: 16px;
+    padding-left: 6px; 
+}
       .cat-chip.active {
         background: var(--primary);
         color: #fff;
@@ -1221,6 +1231,298 @@
         transform: scale(1.05);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         padding-left: 20px;
+      }
+
+      /* === Luxury Animated Themes CSS === */
+      
+      /* 1. Golden Dust (ذهب) */
+      body.theme-gold-dust { background: #0f0f0f; }
+      body.theme-gold-dust .hero::after {
+          background: linear-gradient(to bottom, rgba(0,0,0,0.6), #0f0f0f);
+      }
+      body.theme-gold-dust .res-name {
+          background: linear-gradient(45deg, #FFD700, #FDB931, #FFD700);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: shine 3s infinite linear;
+          text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+      }
+      @keyframes shine {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 100% 50%; }
+      }
+
+      /* 2. Royal Pulse (ملكي) */
+      body.theme-royal-pulse { background: #1a0b2e; }
+      body.theme-royal-pulse .prod-card {
+          border: 1px solid rgba(118, 75, 162, 0.3);
+          box-shadow: 0 0 15px rgba(118, 75, 162, 0.1);
+          animation: pulse-border 4s infinite;
+      }
+      @keyframes pulse-border {
+          0%, 100% { box-shadow: 0 0 5px rgba(118, 75, 162, 0.1); border-color: rgba(118, 75, 162, 0.3); }
+          50% { box-shadow: 0 0 20px rgba(118, 75, 162, 0.4); border-color: rgba(118, 75, 162, 0.8); }
+      }
+
+      /* 3. Midnight Float (عائم) */
+      body.theme-midnight-float { background: #0f172a; }
+      body.theme-midnight-float .prod-card {
+          animation: float-card 6s ease-in-out infinite;
+      }
+      @keyframes float-card {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+      }
+
+      /* 4. Elegant Fade (أنيق) */
+      body.theme-elegant-fade .prod-card {
+          animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          opacity: 0;
+          transform: translateY(20px);
+      }
+      @keyframes fade-in-up {
+          to { opacity: 1; transform: translateY(0); }
+      }
+      /* تطبيق التأخير للكروت */
+      body.theme-elegant-fade .prod-card:nth-child(1) { animation-delay: 0.1s; }
+      body.theme-elegant-fade .prod-card:nth-child(2) { animation-delay: 0.2s; }
+      body.theme-elegant-fade .prod-card:nth-child(3) { animation-delay: 0.3s; }
+
+      /* 5. Cyber Glow (نيون متحرك) */
+      body.theme-cyber-glow { background: #000; }
+      body.theme-cyber-glow .cat-chip.active {
+          box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+          animation: glow-pulse 2s infinite alternate;
+      }
+      @keyframes glow-pulse {
+          from { box-shadow: 0 0 5px var(--primary); }
+          to { box-shadow: 0 0 20px var(--primary), 0 0 30px var(--primary); }
+      }
+
+      /* ========================================= */
+      /* 🚀 10 NEW ULTRA LUXURY ANIMATED THEMES 🚀 */
+      /* ========================================= */
+
+      /* 1. Cosmic Nebula (سديم كوني) */
+      body.theme-cosmic {
+          background: radial-gradient(circle at 50% 50%, #2e1065, #000000);
+          background-size: 200% 200%;
+          animation: nebulaMove 15s ease infinite;
+      }
+      body.theme-cosmic .prod-card {
+          background: rgba(30, 10, 60, 0.6);
+          border: 1px solid rgba(192, 132, 252, 0.3);
+          box-shadow: 0 0 15px rgba(192, 132, 252, 0.1);
+          backdrop-filter: blur(10px);
+          transition: 0.4s;
+      }
+      body.theme-cosmic .prod-card:hover {
+          transform: translateY(-5px) scale(1.02);
+          box-shadow: 0 0 25px rgba(192, 132, 252, 0.4);
+          border-color: #c084fc;
+      }
+      @keyframes nebulaMove {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+      }
+
+      /* 2. Liquid Gold (ذهب سائل) */
+      body.theme-liquid-gold {
+          background: #000;
+      }
+      body.theme-liquid-gold .prod-card {
+          background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+          border: 1px solid transparent;
+          position: relative;
+          z-index: 1;
+          overflow: hidden;
+      }
+      body.theme-liquid-gold .prod-card::before {
+          content: '';
+          position: absolute;
+          top: -2px; left: -2px; right: -2px; bottom: -2px;
+          background: linear-gradient(45deg, #FFD700, #B8860B, #FFFACD, #B8860B);
+          z-index: -1;
+          background-size: 400% 400%;
+          animation: goldFlow 3s linear infinite;
+          border-radius: var(--radius);
+      }
+      body.theme-liquid-gold .prod-card::after {
+          content: '';
+          position: absolute;
+          top: 2px; left: 2px; right: 2px; bottom: 2px;
+          background: #111;
+          z-index: -1;
+          border-radius: var(--radius);
+      }
+      @keyframes goldFlow {
+          0% { background-position: 0% 50%; }
+          100% { background-position: 100% 50%; }
+      }
+
+      /* 3. Matrix Code (المصفوفة) */
+      body.theme-matrix {
+          background-color: #0D0208;
+          font-family: 'Courier New', monospace;
+      }
+      body.theme-matrix .prod-card {
+          border: 1px solid #00FF41;
+          background: rgba(0, 20, 0, 0.8);
+          box-shadow: 0 0 5px #00FF41;
+          position: relative;
+      }
+      body.theme-matrix .prod-card:hover {
+          box-shadow: 0 0 15px #00FF41, inset 0 0 10px #00FF41;
+      }
+      body.theme-matrix .res-name, body.theme-matrix .prod-title {
+          text-shadow: 0 0 5px #00FF41;
+          letter-spacing: 1px;
+      }
+
+      /* 4. Ocean Glass (زجاج المحيط) */
+      body.theme-ocean-glass {
+          background: linear-gradient(to bottom, #f0f9ff, #e0f2fe);
+      }
+      body.theme-ocean-glass .prod-card {
+          background: rgba(255, 255, 255, 0.25);
+          box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid rgba(255, 255, 255, 0.5);
+          animation: floatBubble 6s ease-in-out infinite;
+      }
+      body.theme-ocean-glass .prod-card:nth-child(even) {
+          animation-delay: 1s;
+      }
+      @keyframes floatBubble {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+      }
+
+      /* 5. Volcanic Ember (جمر بركاني) */
+      body.theme-volcano {
+          background-color: #1a0500;
+      }
+      body.theme-volcano .prod-card {
+          background: #2a0a00;
+          border-bottom: 3px solid #f97316;
+          transition: 0.3s;
+      }
+      body.theme-volcano .prod-card:hover {
+          background: #431407;
+          box-shadow: 0 10px 20px rgba(249, 115, 22, 0.2);
+          transform: translateY(-5px);
+      }
+      body.theme-volcano .add-btn {
+          background: linear-gradient(45deg, #f97316, #ef4444);
+          color: white;
+          border: none;
+          animation: pulse-fire 2s infinite;
+      }
+
+      /* 6. Diamond Prism (منشور ماسي) */
+      body.theme-prism {
+          background: #ffffff;
+      }
+      body.theme-prism .prod-card {
+          background: white;
+          border: 2px solid transparent;
+          border-image: linear-gradient(45deg, #a855f7, #ec4899, #3b82f6) 1;
+          box-shadow: 5px 5px 0px rgba(168, 85, 247, 0.2);
+          transition: 0.3s;
+      }
+      body.theme-prism .prod-card:hover {
+          box-shadow: 10px 10px 0px rgba(168, 85, 247, 0.4);
+          transform: translate(-2px, -2px);
+      }
+
+      /* 7. Retro Vaporwave (ريترو) */
+      body.theme-vapor {
+          background: linear-gradient(to bottom, #2b003b, #1a0024);
+      }
+      body.theme-vapor .prod-card {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid #ff00ff;
+          box-shadow: 3px 3px 0 #00ffff;
+          transform: skewX(-2deg);
+      }
+      body.theme-vapor .prod-title {
+          color: #ff00ff;
+          text-shadow: 2px 2px 0 #00ffff;
+      }
+      body.theme-vapor .prod-price {
+          color: #00ffff;
+      }
+
+      /* 8. Frosted Mint (نعناع مثلج) */
+      body.theme-frosted {
+          background-image: radial-gradient(#10b981 0.5px, #ecfdf5 0.5px);
+          background-size: 10px 10px;
+      }
+      body.theme-frosted .prod-card {
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(12px) saturate(180%);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          border-radius: 16px;
+      }
+      body.theme-frosted .prod-img {
+          border-radius: 50%;
+          border: 3px solid white;
+          box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+      }
+
+      /* 9. Phantom Dark (شبح الليل) */
+      body.theme-phantom {
+          background: #000;
+      }
+      body.theme-phantom .prod-card {
+          background: #111;
+          border-radius: 50px 10px 50px 10px;
+          border: 1px solid #333;
+          transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+      }
+      body.theme-phantom .prod-card:hover {
+          border-color: #f43f5e;
+          box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+          border-radius: 10px 50px 10px 50px;
+      }
+      body.theme-phantom .add-btn {
+          border-radius: 50%;
+          background: #f43f5e;
+          box-shadow: 0 0 10px #f43f5e;
+      }
+
+      /* 10. Holographic Silver (هولوغرافيك) */
+      body.theme-holo {
+          background: #f0f2f5;
+      }
+      body.theme-holo .prod-card {
+          background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.3));
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,1);
+          box-shadow: 
+            0 5px 15px rgba(0,0,0,0.05),
+            inset 0 0 20px rgba(255,255,255,0.5);
+          position: relative;
+          overflow: hidden;
+      }
+      body.theme-holo .prod-card::before {
+          content: '';
+          position: absolute;
+          top: -50%; left: -50%; width: 200%; height: 200%;
+          background: linear-gradient(
+              to bottom right,
+              transparent, transparent,
+              rgba(255, 255, 255, 0.8),
+              transparent, transparent
+          );
+          transform: rotate(45deg);
+          animation: holoShine 4s infinite;
+      }
+      @keyframes holoShine {
+          0% { transform: translateX(-100%) rotate(45deg); }
+          100% { transform: translateX(100%) rotate(45deg); }
       }
     </style>
   </head>
@@ -1473,6 +1775,7 @@
       function applyTheme(config) {
         const root = document.documentElement;
 
+        // 1. الألوان والخطوط الأساسية
         root.style.setProperty("--primary", config.primaryColor || "#B78728");
         root.style.setProperty(
           "--font",
@@ -1480,16 +1783,17 @@
         );
         root.style.setProperty("--radius", `${config.cardRadius || 16}px`);
 
-        root.style.setProperty(
-          "--hero-height",
-          `${config.heroHeight || 180}px`,
-        );
-        root.style.setProperty(
-          "--hero-overlay-opacity",
-          (config.heroOverlay || 30) / 100,
-        );
+        // 2. الهيدر والخلفية
+        root.style.setProperty("--hero-height", `${config.heroHeight || 180}px`);
+        root.style.setProperty("--hero-overlay-opacity", (config.heroOverlay || 30) / 100);
 
-        document.body.className = "";
+        document.body.className = ""; // Reset classes
+        
+        // تطبيق ثيم الأنيميشن إذا وجد
+        if (config.animationTheme) {
+            document.body.classList.add(config.animationTheme);
+        }
+
         if (config.bgType === "color") {
           root.style.setProperty("--bg-color", config.bgValue);
           document.body.style.backgroundImage = "none";
@@ -1499,19 +1803,94 @@
         } else if (config.bgType === "image") {
           document.body.classList.add("bg-image");
           document.body.style.backgroundImage = `url('${config.bgValue}')`;
+          
+          // تطبيق خصائص الخلفية المتقدمة
+          document.body.style.backgroundSize = config.bgSize || "cover";
+          document.body.style.backgroundRepeat = config.bgRepeat || "no-repeat";
+          document.body.style.backgroundAttachment = config.bgAttachment || "fixed";
+          document.body.style.backgroundPosition = config.bgPosition || "center";
+        // تطبيق نسبة التعتيم (تحويل من 0-100 إلى 0.0-1.0)
+        root.style.setProperty("--bg-overlay-opacity", (config.bgOverlay !== undefined ? config.bgOverlay : 90) / 100);
         }
 
         if (config.heroImage) {
           const cleanPath = config.heroImage.replace(/\\/g, "/");
-          document.querySelector(".hero").style.backgroundImage =
-            `url('${cleanPath}')`;
+          document.querySelector(".hero").style.backgroundImage = `url('${cleanPath}')`;
         }
 
-        const container = document.getElementById("menu-container");
+        // 3. تعريف عناصر النصوص
+        const resNameEl = document.getElementById("res-name");
+        const resDescEl = document.getElementById("res-desc");
+        const heroSection = document.querySelector(".hero");
+        const heroContent = document.querySelector(".hero-content");
 
+        // 4. التحكم في ظهور النصوص
+        if (resNameEl) {
+            resNameEl.style.display = config.showResName === false ? "none" : "block";
+            if(config.customResName && config.customResName.trim() !== "") {
+                resNameEl.innerText = config.customResName;
+            }
+        }
+
+        if (resDescEl) {
+            resDescEl.style.display = config.showResDesc === false ? "none" : "block";
+            if(config.customResDesc && config.customResDesc.trim() !== "") {
+                resDescEl.innerText = config.customResDesc;
+            }
+        }
+
+        // 5. شريط البحث
+        const searchWrapper = document.querySelector(".search-wrapper");
+        const searchInput = document.getElementById("search-input");
+        if (searchWrapper) {
+             searchWrapper.parentElement.style.display = config.showSearch === false ? "none" : "flex"; 
+             if(config.showSearch === false) searchWrapper.style.width = "0";
+             
+             if(config.searchPlaceholder && searchInput) {
+                 searchInput.placeholder = config.searchPlaceholder;
+             }
+        }
+
+        // 6. المحاذاة (Alignment)
+        if(heroContent) {
+            heroContent.style.textAlign = config.headerTextAlignment || "center";
+            heroContent.style.alignItems = config.headerTextAlignment === "right" ? "flex-end" : (config.headerTextAlignment === "left" ? "flex-start" : "center");
+        }
+
+        // 7. التحكم في مكان الاسم (داخل/تحت الهيدر) - [جديد]
+        if (heroSection && heroContent) {
+            if (config.resNamePosition === "below") {
+                // الحالة الأولى: عرض الاسم تحت الصورة
+                if (heroSection.contains(heroContent)) {
+                    heroSection.after(heroContent);
+                }
+                heroContent.style.position = "relative";
+                heroContent.style.padding = "15px 15px 5px 15px";
+                heroContent.style.textShadow = "none";
+                // التعديل هنا: جعل المحاذاة تأخذ القيمة المختارة بدلاً من إجبارها على الوسط
+                heroContent.style.textAlign = config.headerTextAlignment || "center";
+                
+                if (resNameEl) resNameEl.style.color = config.resNameColor || "var(--primary)";
+                if (resDescEl) resDescEl.style.color = config.resDescColor || "var(--text-sub)";
+
+            } else {
+                // الحالة الثانية: عرض الاسم داخل الصورة (الافتراضي)
+                if (!heroSection.contains(heroContent)) {
+                    heroSection.appendChild(heroContent);
+                }
+                heroContent.style.position = "relative";
+                heroContent.style.padding = "0";
+                heroContent.style.textShadow = "0 2px 10px rgba(0, 0, 0, 0.5)";
+                
+                if (resNameEl) resNameEl.style.color = config.resNameColor || "var(--primary)";
+                if (resDescEl) resDescEl.style.color = config.resDescColor || "#ffffff";
+            }
+        }
+
+        // 8. تطبيق التخطيط (Layout)
+        const container = document.getElementById("menu-container");
         const layoutClass = `layout-${config.layoutType || "modern"}`;
         const styleClass = `style-${config.cardStyle || "solid"}`;
-
         container.className = `container ${layoutClass} ${styleClass}`;
       }
 
