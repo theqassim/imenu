@@ -3468,7 +3468,7 @@ function switchView(viewName) {
 
         // 2. Hide all views and remove active states
         // تمت إضافة "recipes" و "design" للقائمة لإصلاح مشكلة عدم إغلاق التصميم
-const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design"];
+const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "coupons"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
@@ -6160,13 +6160,16 @@ const imgHTML = img
               
               const data = await res.json();
               
-              if (data.status === 'success') {
+                            if (data.status === 'success') {
                   Swal.fire({ icon: 'success', title: 'تم إنشاء الطلب بنجاح', timer: 1500, showConfirmButton: false });
                   
                   // تفريغ السلة
                   posCart = [];
                   document.getElementById('pos-table-num').value = '';
                   renderPosCart();
+                  
+                  // التحويل لصفحة الطلبات الحية فوراً
+                  switchView('orders'); 
                   
               } else {
                   Swal.fire('خطأ', data.message || 'فشل إنشاء الطلب', 'error');
@@ -7942,10 +7945,11 @@ function removeIngredient(index) {
                 
                 const data = await res.json();
                 
-                if (data.status === 'success') {
+                                if (data.status === 'success') {
                     Swal.fire({ icon: 'success', title: 'تم إنشاء الطلب', timer: 1500, showConfirmButton: false });
                     closeManualOrderModal();
-                    loadOrders(); // تحديث قائمة الطلبات
+                    switchView('orders'); // التحويل لصفحة الطلبات الحية
+                    loadOrders(); 
                 } else {
                     Swal.fire('خطأ', data.message, 'error');
                 }
