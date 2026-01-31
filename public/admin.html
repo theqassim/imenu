@@ -1854,9 +1854,12 @@
                     </div>
                     
                     <div style="padding: 10px; background: white; border-bottom: 1px solid var(--border-color);">
-                        <input type="text" id="pos-table-num" placeholder="رقم الطاولة (اتركه فارغاً للتيك أواي)" 
-                               style="background: var(--bg); border: 1px solid var(--border-color); height: 40px;">
-                    </div>
+    <input type="text" id="pos-table-num" placeholder="رقم الطاولة (اتركه فارغاً للتيك أواي)" 
+           style="background: var(--bg); border: 1px solid var(--border-color); height: 40px; margin-bottom: 10px;">
+    
+    <input type="number" id="pos-manual-order-num" placeholder="# رقم الأوردر (لإضافته على فاتورة سابقة)" 
+           style="background: var(--bg); border: 1px solid var(--border-color); height: 40px;">
+</div>
 
                     <div id="pos-cart-items" class="pos-cart-items">
                         <div style="text-align: center; color: var(--secondary); margin-top: 50px;">
@@ -6742,74 +6745,79 @@ const imgHTML = img
           renderPosCart();
       }
 
-      async function submitPosOrder() {
-          if (posCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة!', 'warning');
+   async function submitPosOrder() {
+    if (posCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة!', 'warning');
 
-      
-     const tableNumVal = document.getElementById('pos-table-num').value;
-          const rId = document.getElementById('restaurant-id').value;
-          const tableNumber = tableNumVal ? tableNumVal : "تيك أواي";
+    const tableNumVal = document.getElementById('pos-table-num').value;
+    // ✅ 1. قراءة رقم الأوردر اليدوي
+    const manualOrderNumVal = document.getElementById('pos-manual-order-num').value; 
+    
+    const rId = document.getElementById('restaurant-id').value;
+    const tableNumber = tableNumVal ? tableNumVal : "تيك أواي";
 
-          // تجهيز القيم
-          const subTotal = parseFloat(document.getElementById('pos-subtotal').innerText);
-          const finalTotal = parseFloat(document.getElementById('pos-total').innerText);
-          const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
-          const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
-          const taxAmount = (subTotal * taxRate) / 100;
-          const serviceAmount = (subTotal * serviceRate) / 100;
+    // تجهيز القيم
+    const subTotal = parseFloat(document.getElementById('pos-subtotal').innerText);
+    const finalTotal = parseFloat(document.getElementById('pos-total').innerText);
+    const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
+    const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
+    const taxAmount = (subTotal * taxRate) / 100;
+    const serviceAmount = (subTotal * serviceRate) / 100;
 
-          const items = posCart.map(i => ({
-              name: i.name,
-              qty: i.qty,
-              price: i.price
-          }));
+    const items = posCart.map(i => ({
+        name: i.name,
+        qty: i.qty,
+        price: i.price
+    }));
 
-          const body = {
-              restaurantId: rId,
-              tableNumber: tableNumber === "تيك أواي" ? 0 : tableNumber, // الباك اند يتوقع رقم 0 للتيك أواي غالباً
-              items: items,
-              subTotal: subTotal,
-              taxAmount: taxAmount,
-              serviceAmount: serviceAmount,
-              discountAmount: 0,
-              totalPrice: finalTotal,
-              status: 'pending' // إرسال للمطبخ مباشرة
-          };
+    const body = {
+        restaurantId: rId,
+        manualOrderNum: manualOrderNumVal, // ✅ 2. إرسال الرقم للسيرفر
+        tableNumber: tableNumber === "تيك أواي" ? 0 : tableNumber,
+        items: items,
+        subTotal: subTotal,
+        taxAmount: taxAmount,
+        serviceAmount: serviceAmount,
+        discountAmount: 0,
+        totalPrice: finalTotal,
+        status: 'pending'
+    };
 
-          Swal.fire({
-              title: 'جاري إرسال الطلب...',
-              didOpen: () => Swal.showLoading()
-          });
+    Swal.fire({
+        title: 'جاري إرسال الطلب...',
+        didOpen: () => Swal.showLoading()
+    });
 
-          try {
-              const res = await fetch('/api/v1/orders', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(body)
-              });
-              
-              const data = await res.json();
-              
-                            if (data.status === 'success') {
-                  Swal.fire({ icon: 'success', title: 'تم إنشاء الطلب بنجاح', timer: 1500, showConfirmButton: false });
-                  
-                  // تفريغ السلة
-                  posCart = [];
-                  document.getElementById('pos-table-num').value = '';
-                  renderPosCart();
-                  
-                  // التحويل لصفحة الطلبات الحية فوراً
-                  switchView('orders'); 
-                  
-              } else {
-                  Swal.fire('خطأ', data.message || 'فشل إنشاء الطلب', 'error');
-              }
-          } catch (e) {
-              console.error(e);
-              Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
-          }
-      }
-      
+    try {
+        const res = await fetch('/api/v1/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        
+        const data = await res.json();
+        
+        if (data.status === 'success') {
+            // رسالة النجاح (ممكن تختلف لو كان دمج أو جديد)
+            const msg = data.message || 'تم إنشاء الطلب بنجاح';
+            Swal.fire({ icon: 'success', title: msg, timer: 2000, showConfirmButton: false });
+            
+            // تفريغ السلة والخانات
+            posCart = [];
+            document.getElementById('pos-table-num').value = '';
+            document.getElementById('pos-manual-order-num').value = ''; // ✅ 3. تصفير الخانة
+            renderPosCart();
+            
+            // التحويل لصفحة الطلبات الحية فوراً
+            switchView('orders'); 
+            
+        } else {
+            Swal.fire('خطأ', data.message || 'فشل إنشاء الطلب', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
+    }
+}
       const startApp = async function () {
         if (!token) {
           document.getElementById("login-section").style.display = "flex";

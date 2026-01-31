@@ -1572,23 +1572,152 @@ app.patch("/api/v1/orders/:id/cancel", async (req, res) => {
   }
 });
 
+// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة)
+// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم الطاولات والتيك أواي بذكاء
+// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم ID أو الطاولة أو التليفون
+// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم رقم الأوردر اليدوي
 app.post("/api/v1/orders", async (req, res) => {
   try {
-    const { restaurantId, tableNumber, items, subTotal, taxAmount, serviceAmount, couponCode, discountAmount, totalPrice } = req.body;
-    if (couponCode) {
-      await Coupon.findOneAndUpdate({ code: couponCode, restaurant: restaurantId }, { $inc: { usedCount: 1 } });
+    const { 
+      orderId,       // لو معاك الـ ID المخفي (من السيستم)
+      manualOrderNum, // ✅ الإضافة الجديدة: رقم الأوردر اللي الكاشير هيكتبه بإيده (مثلا 50)
+      restaurant, restaurantId,
+      table, tableNumber,
+      items, 
+      type, 
+      customerName, 
+      phone, 
+      notes,
+      couponCode, discountAmount, subTotal, taxAmount, serviceAmount, totalPrice 
+    } = req.body;
+
+    const targetRestaurant = restaurant || restaurantId;
+    const targetTable = table || tableNumber || "تيك أواي";
+
+    if (!targetRestaurant || !items || items.length === 0) {
+      return res.status(400).json({ message: "بيانات الطلب ناقصة" });
     }
-    const lastOrder = await Order.findOne({ restaurant: restaurantId }).sort({ orderNum: -1 });
-    const nextOrderNum = lastOrder && lastOrder.orderNum ? lastOrder.orderNum + 1 : 1;
 
-    const newOrder = await Order.create({
-      restaurant: restaurantId, tableNumber, orderNum: nextOrderNum, items,
-      subTotal, taxAmount, serviceAmount, couponCode, discountAmount, totalPrice, status: 'pending'
-    });
+    let existingOrder = null;
 
-    if (req.io) req.io.to(restaurantId).emit("new-order", newOrder);
-    res.status(201).json({ status: "success", data: { order: newOrder } });
-  } catch (err) { res.status(400).json({ message: err.message }); }
+    // المنطق المطور: البحث عن أي فاتورة مفتوحة للدمج معها
+    // الحالة المفتوحة تعني: ليست مكتملة وليست ملغية (تشمل pending, preparing, ready, served...)
+    const activeStatusQuery = { $nin: ['completed', 'canceled'] };
+
+    // 1️⃣ البحث برقم الأوردر (أولوية قصوى للكاشير)
+    if (manualOrderNum) {
+      existingOrder = await Order.findOne({
+        restaurant: targetRestaurant,
+        orderNum: Number(manualOrderNum),
+        status: activeStatusQuery
+      });
+    }
+
+    // 2️⃣ البحث بالـ ID (لو النظام أرسله)
+    if (!existingOrder && orderId) {
+      existingOrder = await Order.findOne({
+        _id: orderId,
+        status: activeStatusQuery
+      });
+    }
+
+    // 3️⃣ البحث الذكي (لو مفيش رقم، نعتمد على سياق الطاولة أو العميل)
+    if (!existingOrder) {
+      let query = {
+        restaurant: targetRestaurant,
+        status: activeStatusQuery
+      };
+
+      if (targetTable && targetTable !== "تيك أواي") {
+        // ✅ حالة الصالة: البحث عن آخر فاتورة مفتوحة لهذه الطاولة
+        query.tableNumber = targetTable;
+        existingOrder = await Order.findOne(query).sort({ createdAt: -1 }); 
+      } 
+      else if (targetTable === "تيك أواي") {
+        // ✅ حالة التيك أواي: البحث عن آخر فاتورة مفتوحة لنفس رقم التليفون
+        query.tableNumber = "تيك أواي";
+        if (phone) {
+           query.phone = phone;
+           existingOrder = await Order.findOne(query).sort({ createdAt: -1 });
+        } else if (customerName) {
+           // احتياطياً لو مفيش رقم تليفون نستخدم الاسم
+           query.customerName = customerName;
+           existingOrder = await Order.findOne(query).sort({ createdAt: -1 });
+        }
+      }
+    }
+
+    // ------------------------------------------
+
+    if (existingOrder) {
+      // ✅ سيناريو الدمج (إضافة أصناف لفاتورة موجودة)
+      
+      existingOrder.items.push(...items);
+      
+      const additionalTotal = items.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
+      
+      existingOrder.totalPrice += additionalTotal;
+      if (existingOrder.subTotal) existingOrder.subTotal += additionalTotal;
+      
+      if (notes) existingOrder.notes = existingOrder.notes ? `${existingOrder.notes} | ${notes}` : notes;
+
+      await existingOrder.save();
+
+      if (req.io) {
+        req.io.to(targetRestaurant.toString()).emit("order-updated", existingOrder); 
+        req.io.to(targetRestaurant.toString()).emit("order-items-added", { orderId: existingOrder._id, newItems: items }); 
+      }
+
+      return res.status(200).json({ 
+        status: "success", 
+        message: `تم الإضافة للفاتورة رقم #${existingOrder.orderNum}`, 
+        data: { order: existingOrder } 
+      });
+
+    } else {
+      // ✅ سيناريو فاتورة جديدة (New Order)
+      
+      // لو الكاشير كتب رقم أوردر غلط أو مش موجود، هنعمل واحد جديد برقم تسلسلي جديد
+      
+      if (couponCode) {
+        await Coupon.findOneAndUpdate({ code: couponCode, restaurant: targetRestaurant }, { $inc: { usedCount: 1 } });
+      }
+
+      const lastOrder = await Order.findOne({ restaurant: targetRestaurant }).sort({ orderNum: -1 });
+      const nextOrderNum = lastOrder && lastOrder.orderNum ? lastOrder.orderNum + 1 : 1;
+      const calcTotal = items.reduce((acc, item) => acc + (item.price * (item.qty || 1)), 0);
+
+      const newOrder = await Order.create({
+        restaurant: targetRestaurant,
+        tableNumber: targetTable,
+        orderNum: nextOrderNum, // الرقم الجديد أوتوماتيك دائماً لمنع التضارب
+        items,
+        subTotal: subTotal || calcTotal,
+        taxAmount: taxAmount || 0,
+        serviceAmount: serviceAmount || 0,
+        couponCode,
+        discountAmount: discountAmount || 0,
+        totalPrice: totalPrice || calcTotal,
+        status: 'pending',
+        type: type || (targetTable === "تيك أواي" ? 'takeaway' : 'dine_in'),
+        customerName,
+        phone,
+        notes
+      });
+
+      if (req.io) req.io.to(targetRestaurant.toString()).emit("new-order", newOrder);
+      
+      return res.status(201).json({ 
+        status: "success", 
+        message: "تم فتح فاتورة جديدة", 
+        data: { order: newOrder } 
+      });
+    }
+
+  } catch (err) {
+    console.error("Order Error:", err);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 app.get("/api/v1/orders/active/:restaurantId", protect, async (req, res) => {
