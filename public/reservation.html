@@ -79,7 +79,7 @@
                 const data = await res.json();
 
                 if(res.status === 403) {
-                    document.body.innerHTML = `<div style="text-align:center;"><h1>🚫 الحجز مغلق</h1><p>صاحب المطعم لم يقم بتفعيل الحجز.</p></div>`;
+                    document.body.innerHTML = `<div style="text-align:center;"><h1>🚫 الحجز مغلق</h1><p>صاحب المكان لم يقم بتفعيل الحجز.</p></div>`;
                     return;
                 }
 
