@@ -407,6 +407,12 @@
                         <span>تفعيل نظام إدارة المخازن والجرد (Stock System)</span>
                     </label>
                 </div>
+                <div class="form-group" style="margin-top: 10px; background: rgba(16, 185, 129, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; color: #fff;">
+                        <input type="checkbox" id="u-accounting" style="width: 20px; height: 20px;">
+                        <span>تفعيل نظام المحاسب والرواتب (Accounting HR)</span>
+                    </label>
+                </div>
 
                 <div class="form-group" style="margin-top: 10px;">
                     <label class="label">باقة المنتجات المسموحة</label>
@@ -880,17 +886,7 @@
                 const res = await fetch('/api/v1/users/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ 
-                        name, 
-                        email, 
-                        phone, 
-                        subscriptionExpires,
-                        password, 
-                        passwordConfirm, 
-                        hasStock: document.getElementById('u-stock').checked,
-                        productLimit: productLimit,
-                        role: 'owner' 
-                    })
+                    body: JSON.stringify({ name, email, phone, subscriptionExpires, password, passwordConfirm, hasStock: document.getElementById('u-stock').checked, hasAccounting: document.getElementById('u-accounting').checked, productLimit: productLimit, role: 'owner' })
                 });
                 const data = await res.json();
                 Swal.close();
@@ -967,9 +963,9 @@
                                             <i class="fas ${statusIcon}"></i>
                                         </button>
 
-                                        <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock}, ${u.isTrial})">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
+                                       <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock}, ${u.hasAccounting || false}, ${u.isTrial})">
+    <i class="fas fa-edit"></i>
+</button>
 
                                         <button class="action-btn" style="background:rgba(16, 185, 129, 0.2); color:#34d399; border: 1px solid rgba(16, 185, 129, 0.3);" onclick="generateQRPopup('${u.name}')" title="إنشاء QR Code">
                                             <i class="fas fa-qrcode"></i>
@@ -1101,7 +1097,7 @@
             }
         }
 
-        async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit, currentHasStock, isTrial) {
+        async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit, currentHasStock, currentHasAccounting, isTrial) {
             const { value: formValues } = await Swal.fire({
                 title: 'تعديل بيانات المالك',
                 html:
@@ -1141,6 +1137,13 @@
                             `<input type="checkbox" id="swal-stock" style="width: 20px; height: 20px;" ${currentHasStock ? 'checked' : ''}>` +
                             `<span>تفعيل نظام المخازن (Stock)</span>` +
                         `</label>` +
+                    `</div>` +
+                    
+                    `<div style="margin-top: 10px; text-align: right; background: rgba(16, 185, 129, 0.1); padding: 10px; border-radius: 8px;">` +
+                        `<label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #fff;">` +
+                            `<input type="checkbox" id="swal-accounting" style="width: 20px; height: 20px;" ${currentHasAccounting ? 'checked' : ''}>` +
+                            `<span>تفعيل نظام المحاسب (Accounting)</span>` +
+                        `</label>` +
                     `</div>`,
                 
                 focusConfirm: false,
@@ -1156,6 +1159,7 @@
                         productLimit: document.getElementById('swal-limit').value,
                         subscriptionExpires: document.getElementById('swal-expiry').value,
                         hasStock: document.getElementById('swal-stock').checked,
+                        hasAccounting: document.getElementById('swal-accounting').checked, // ✅ تم الإضافة
                         isTrial: document.getElementById('swal-trial-status').value === 'true'
                     };
                 }

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حجز مقعد | Smart Reserve</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+   <script src="/socket.io/socket.io.js"></script>
+    
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background: #f3f4f6; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; width: 90%; max-width: 400px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; position: relative; overflow: hidden; }
+        h1 { color: #4338ca; margin-bottom: 5px; }
+        .status-box { background: #e0e7ff; color: #4338ca; padding: 15px; border-radius: 12px; margin: 20px 0; font-size: 18px; font-weight: bold; border: 2px solid #4338ca; }
+        .status-box.full { background: #fee2e2; color: #dc2626; border-color: #dc2626; }
+        .btn { background: #4338ca; color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .input-seats { width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 12px; font-size: 18px; text-align: center; box-sizing: border-box; margin-bottom: 10px; font-family: inherit; }
+        .input-seats:focus { border-color: #4338ca; outline: none; }
+        .loader { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); justify-content:center; align-items:center; z-index: 10; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div class="card" id="main-card">
+        <div class="loader" id="loader"><i class="fas fa-circle-notch fa-spin fa-3x" style="color:#4338ca"></i></div>
+        
+        <div id="active-view">
+            <h1 id="rest-name">...</h1>
+            <p style="color: #6b7280; margin-top: 0;">نظام الحجز الفوري</p>
+
+            <div id="status-container" class="status-box">
+                <div>المقاعد المتاحة</div>
+                <div id="seats-count" style="font-size: 32px; margin-top: 5px;">...</div>
+            </div>
+
+            <div id="booking-form">
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">الاسم:</label>
+                    <input type="text" id="res-name" class="input-seats" placeholder="الاسم الكريم" style="text-align: right;">
+                </div>
+                
+                <div style="text-align: right; margin-bottom: 10px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">رقم الهاتف:</label>
+                    <input type="tel" id="res-phone" class="input-seats" placeholder="01xxxxxxxxx" style="text-align: right;">
+                </div>
+
+                <div style="text-align: right; margin-bottom: 15px;">
+                    <label style="font-weight:bold; display:block; margin-bottom:5px;">عدد المقاعد:</label>
+                    <input type="number" id="seat-input" class="input-seats" min="1" value="1">
+                </div>
+
+                <button class="btn pulse" onclick="bookSeats()">إرسال طلب الحجز <i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <div id="full-view" style="display: none;">
+            <i class="fas fa-ban fa-4x" style="color: #dc2626; margin-bottom: 20px;"></i>
+            <h2 style="color: #dc2626; margin: 0;">عذراً، العدد مكتمل!</h2>
+            <p style="color: #6b7280;">نعتذر منك، لقد تم حجز جميع المقاعد المتاحة.</p>
+            <div style="margin-top: 20px; font-size: 14px; color: #9ca3af;">سيتم تحديث الصفحة تلقائياً في حال توفر مقاعد.</div>
+        </div>
+    </div>
+
+    <script>
+        // الحصول على slug من الرابط
+        const pathParts = window.location.pathname.split('/');
+        const slug = pathParts[pathParts.length - 1];
+        let currentAvailable = 0;
+        let socket;
+
+        async function init() {
+            try {
+                const res = await fetch(`/api/v1/reservations/status/${slug}`);
+                const data = await res.json();
+
+                if(res.status === 403) {
+                    document.body.innerHTML = `<div style="text-align:center;"><h1>🚫 الحجز مغلق</h1><p>صاحب المطعم لم يقم بتفعيل الحجز.</p></div>`;
+                    return;
+                }
+
+                if (data.status === 'success') {
+                    document.getElementById('rest-name').innerText = data.data.restaurantName;
+                    updateUI(data.data.available);
+                    
+                    // الاتصال بالسوكت للتحديث اللحظي
+                    // نحتاج معرفة ID المطعم للاشتراك في الغرفة، لكن السوكت يعتمد على slug هنا صعب، 
+                    // لذا الأفضل أن الـ API يرجع ID المطعم أيضاً أو نعتمد على أن السيرفر يرسل للغرفة
+                    // هنا سنقوم بعمل poll بسيط أو الاعتماد على أن الخادم يرسل تحديث عام
+                    
+                    // الحل الأمثل: الاتصال بالسوكت
+                    socket = io();
+                    // نحن بحاجة للانضمام لغرفة المطعم. في الكود الأصلي الانضمام يتم بـ ID.
+                    // سنقوم بعمل fetch للحصول على ID المطعم أولاً
+                    const restInfo = await fetch(`/api/v1/restaurants/${slug}`);
+                    const restData = await restInfo.json();
+                    if(restData.status === 'success') {
+                        const rId = restData.data.restaurant._id;
+                        socket.emit("join-restaurant", rId);
+                        
+                        // استقبال التحديث اللحظي
+socket.on("seats_updated", (data) => {
+    console.log("بيانات السوكت الواصلة:", data); // للتأكد من شكل البيانات في الـ Console
+
+    let newAvailable;
+
+    // 1. احتمال أن السيرفر يرسل الرقم جاهزاً باسم available
+    if (data.available !== undefined) {
+        newAvailable = data.available;
+    } 
+    // 2. احتمال أن السيرفر يرسل الإجمالي والمحجوز ونحتاج لطرحهم
+    else if (data.total !== undefined && data.booked !== undefined) {
+        newAvailable = data.total - data.booked;
+    }
+    // 3. احتمال أن السيرفر يرسل الكائن داخل خاصية اسمها data (بعض هيكليات الـ API)
+    else if (data.data && data.data.available !== undefined) {
+        newAvailable = data.data.available;
+    }
+
+    // إذا تم حساب الرقم بنجاح، وتأكدنا أن التحديث يخص نفس المطعم
+    if (newAvailable !== undefined) {
+        // إذا كان التحديث يحتوي على slug نتأكد منه، أو نحدث مباشرة
+        if (!data.slug || window.location.pathname.includes(data.slug)) {
+            updateUI(newAvailable);
+        }
+    }
+});
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                Swal.fire('خطأ', 'فشل تحميل البيانات', 'error');
+            }
+        }
+
+        function updateUI(available) {
+            currentAvailable = available;
+            const countEl = document.getElementById('seats-count');
+            const statusBox = document.getElementById('status-container');
+            const form = document.getElementById('booking-form');
+            const fullView = document.getElementById('full-view');
+            const activeView = document.getElementById('active-view');
+
+            if (available <= 0) {
+                activeView.style.display = 'none';
+                fullView.style.display = 'block';
+            } else {
+                activeView.style.display = 'block';
+                fullView.style.display = 'none';
+                countEl.innerText = available;
+                statusBox.classList.remove('full');
+            }
+        }
+
+        async function bookSeats() {
+            const seats = document.getElementById('seat-input').value;
+            const name = document.getElementById('res-name').value;
+            const phone = document.getElementById('res-phone').value;
+
+            if(!name || !phone) return Swal.fire('تنبيه', 'الرجاء إدخال الاسم ورقم الهاتف', 'warning');
+            if(!seats || seats <= 0) return Swal.fire('تنبيه', 'أدخل عدد مقاعد صحيح', 'warning');
+            if(seats > currentAvailable) return Swal.fire('تنبيه', `المتاح فقط ${currentAvailable} مقاعد`, 'warning');
+
+            document.getElementById('loader').style.display = 'flex';
+
+            try {
+                const res = await fetch(`/api/v1/reservations/book/${slug}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ seats, name, phone })
+                });
+                const data = await res.json();
+                document.getElementById('loader').style.display = 'none';
+
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'تم إرسال الطلب! 🎉',
+                        text: 'سيصلك تأكيد الحجز قريباً من الإدارة.',
+                        showConfirmButton: true,
+                        confirmButtonText: 'حسناً'
+                    });
+                    if(data.data && data.data.available) {
+        updateUI(data.data.available);
+    } else {
+        // تحديث يدوي مؤقت (نطرح العدد المحجوز من العدد الحالي)
+        updateUI(currentAvailable - seats);
+    }
+                    document.getElementById('res-name').value = '';
+                    document.getElementById('res-phone').value = '';
+                } else {
+                    Swal.fire('عذراً', data.message, 'error');
+                    init();
+                }
+            } catch (e) {
+                document.getElementById('loader').style.display = 'none';
+                Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

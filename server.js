@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema({
   subscriptionExpires: { type: Date },
   active: { type: Boolean, default: true },
   hasStock: { type: Boolean, default: false },
+  hasAccounting: { type: Boolean, default: false }, // ✅ تفعيل المحاسب
   
   // Sales & Trial Fields
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // السيلز الذي أنشأ الحساب
@@ -59,9 +60,19 @@ const restaurantSchema = new mongoose.Schema({
   serviceRate: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   enableCoupons: { type: Boolean, default: false },
+  accountingSettings: {
+    overtimeRate: { type: Number, default: 0 }, // قيمة ساعة الإضافي
+    absencePenalty: { type: Number, default: 1 }, // اليوم بكام يوم جزاء
+    latePenalty: { type: Number, default: 0 } // ساعة التأخير بخصم كام
+  },
   hasStock: { type: Boolean, default: false },
   qrImage: { type: String, default: "" },
   qrName: { type: String, default: "" },
+  reservationSettings: {
+    isEnabled: { type: Boolean, default: false },
+    totalSeats: { type: Number, default: 0 },
+    bookedSeats: { type: Number, default: 0 }
+  },
   customUI: {
     // الخلفية والخطوط
     bgType: { type: String, default: "color" },
@@ -192,17 +203,75 @@ const couponSchema = new mongoose.Schema({
 couponSchema.index({ code: 1, restaurant: 1 }, { unique: true });
 const Coupon = mongoose.model("Coupon", couponSchema);
 
-// --- StockLog Model ---
-const stockLogSchema = new mongoose.Schema({
+// --- Reservation Model ---
+const reservationSchema = new mongoose.Schema({
   restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  stockItem: { type: mongoose.Schema.Types.ObjectId, ref: "StockItem", required: true },
-  itemName: String,
-  changeAmount: { type: Number, required: true },
-  type: { type: String, enum: ["consumption", "restock", "adjustment", "waste"], required: true },
-  orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
-  date: { type: Date, default: Date.now },
+  name: { type: String, required: true },
+  phone: { type: String, required: true },
+  seats: { type: Number, required: true },
+  status: { type: String, enum: ["pending", "approved", "rejected", "completed"], default: "pending" },
+  createdAt: { type: Date, default: Date.now }
 });
-const StockLog = mongoose.model("StockLog", stockLogSchema);
+const Reservation = mongoose.model("Reservation", reservationSchema);
+
+// --- Accounting Models (نظام المحاسبة المطور) ---
+const employeeSchema = new mongoose.Schema({
+  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
+  name: { type: String, required: true },
+  jobTitle: String,
+  phone: String,
+  salaryType: { type: String, enum: ['monthly', 'daily'], default: 'monthly' },
+  baseSalary: { type: Number, default: 0 },
+  workHours: { type: Number, default: 9 },
+  loanBalance: { type: Number, default: 0 }, // رصيد السلف
+  shiftStart: { type: String, default: "09:00" },
+  shiftEnd: { type: String, default: "18:00" },
+  createdAt: { type: Date, default: Date.now }
+});
+const Employee = mongoose.model("Employee", employeeSchema);
+
+const attendanceSchema = new mongoose.Schema({
+  employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
+  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
+  date: { type: String, required: true },
+  checkIn: Date,
+  checkOut: Date,
+  status: { type: String, enum: ['present', 'absent', 'late'], default: 'present' },
+  overtimeHours: { type: Number, default: 0 },
+  deductionHours: { type: Number, default: 0 }
+});
+attendanceSchema.index({ employee: 1, date: 1 }, { unique: true });
+const Attendance = mongoose.model("Attendance", attendanceSchema);
+
+const expenseSchema = new mongoose.Schema({
+  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
+  title: { type: String, required: true },
+  amount: { type: Number, required: true },
+  // تمت إضافة 'advance' وتوسيع الفئات
+  category: { type: String, enum: ['supplies', 'bills', 'maintenance', 'rent', 'salary_advance', 'bonus', 'deduction', 'salaries', 'other'], default: 'other' },
+  // حقل جديد لربط المصروف بموظف (في حالة السلفة)
+  employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" }, 
+  date: { type: Date, default: Date.now },
+  description: String
+});
+const Expense = mongoose.model("Expense", expenseSchema);
+
+const payrollSchema = new mongoose.Schema({
+  employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
+  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
+  month: { type: String, required: true },
+  baseAmount: Number,
+  overtimeAmount: { type: Number, default: 0 },
+  deductions: { type: Number, default: 0 }, // جزاءات
+  loansDeducted: { type: Number, default: 0 }, // سلف مخصومة
+  bonuses: { type: Number, default: 0 },
+  totalSalary: Number,
+  status: { type: String, enum: ['Pending', 'Approved'], default: 'Pending' }, // ✅ إضافة الحالة
+  isPaid: { type: Boolean, default: false },
+  paidAt: Date,
+  createdAt: { type: Date, default: Date.now }
+});
+const Payroll = mongoose.model("Payroll", payrollSchema);
 
 // --- SalesRequest Model ---
 const salesRequestSchema = new mongoose.Schema({
@@ -643,6 +712,7 @@ app.patch("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) =>
 
     if (req.body.productLimit !== undefined) req.body.productLimit = Number(req.body.productLimit);
     if (req.body.hasStock !== undefined) req.body.hasStock = Boolean(req.body.hasStock);
+    if (req.body.hasAccounting !== undefined) req.body.hasAccounting = Boolean(req.body.hasAccounting); // ✅ تم التصحيح
 
     if (req.body.subscriptionExpires) {
       const newExpiry = new Date(req.body.subscriptionExpires);
@@ -768,10 +838,11 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
     } else {
       return res.status(404).json({ message: "لا تملك صلاحية الوصول لمطعم" });
     }
-    const restaurant = await Restaurant.findOne(query).populate("owner", "hasStock subscriptionExpires active isTrial trialExpires");
+    const restaurant = await Restaurant.findOne(query).populate("owner", "hasStock hasAccounting subscriptionExpires active isTrial trialExpires");
     if (!restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم" });
     
     const stockPermission = restaurant.owner ? restaurant.owner.hasStock : req.user.hasStock;
+    const accountingPermission = restaurant.owner ? restaurant.owner.hasAccounting : req.user.hasAccounting;
     
     // منطق التحذير
     let warning = null;
@@ -801,8 +872,9 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
         shiftStart: req.user.shiftStart,
         shiftEnd: req.user.shiftEnd,
         hasStock: stockPermission,
-        warning: warning // إرسال كائن التحذير
-      },
+      hasAccounting: accountingPermission, // ✅ إرسال صلاحية المحاسب
+      warning: warning
+    },
     });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -885,6 +957,151 @@ app.patch("/api/v1/restaurants/update-qr/:slug", protect, async (req, res) => {
     const restaurant = await Restaurant.findOneAndUpdate({ slug: req.params.slug }, { qrImage, qrName }, { new: true });
     res.status(200).json({ status: "success", data: { restaurant } });
   } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// ---------------- RESERVATION ROUTES & LOGIC ----------------
+
+// CRON: تصفير العدادات يومياً الساعة 4 فجراً (لحل مشكلة التراكم)
+cron.schedule("0 4 * * *", async () => {
+  try {
+    // 1. تصفير العدادات لجميع المطاعم المفعلة
+    await Restaurant.updateMany(
+      { "reservationSettings.isEnabled": true },
+      { $set: { "reservationSettings.bookedSeats": 0 } }
+    );
+    console.log("✅ Reservation counters reset successfully.");
+  } catch (err) {
+    console.error("❌ Reservation Reset Error:", err);
+  }
+});
+
+// 1. إعدادات الحجز (تفعيل - تصفير - تعديل العدد) [تمت إضافته لإصلاح زر التصفير]
+app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
+    try {
+        const { restaurantId, isEnabled, totalSeats, resetCounter } = req.body;
+        const restaurant = await Restaurant.findById(restaurantId);
+        if(!restaurant) return res.status(404).json({message: "المطعم غير موجود"});
+
+        if(resetCounter) {
+            // تصفير كامل للعداد
+            restaurant.reservationSettings.bookedSeats = 0;
+            // حذف الحجوزات السابقة لتنظيف القائمة (اختياري)
+            await Reservation.deleteMany({ restaurant: restaurantId });
+        } else {
+            // تحديث القيم العادية
+            if(isEnabled !== undefined) restaurant.reservationSettings.isEnabled = isEnabled;
+            if(totalSeats !== undefined) restaurant.reservationSettings.totalSeats = Number(totalSeats);
+        }
+
+        await restaurant.save();
+        
+        // تحديث فوري للواجهات (أدمن ومستخدم)
+        if(req.io) {
+            req.io.emit("seats_updated", { 
+                slug: restaurant.slug,
+                total: restaurant.reservationSettings.totalSeats, 
+                booked: restaurant.reservationSettings.bookedSeats 
+            });
+        }
+
+        res.status(200).json({ status: "success", data: { reservationSettings: restaurant.reservationSettings } });
+    } catch(err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// 2. إنشاء حجز جديد (للعميل)
+app.post("/api/v1/reservations/book/:slug", async (req, res) => {
+  try {
+    const { name, phone, seats } = req.body;
+    const restaurant = await Restaurant.findOne({ slug: req.params.slug });
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
+    if (!settings.isEnabled) return res.status(400).json({ message: "نظام الحجز غير مفعل حالياً" });
+
+    const available = settings.totalSeats - settings.bookedSeats;
+    // التحقق من العدد المتاح
+    if (Number(seats) > available) return res.status(400).json({ message: `عذراً، المتاح فقط ${available} مقاعد` });
+
+    // إنشاء الحجز
+    await Reservation.create({
+      restaurant: restaurant._id,
+      name, phone, seats: Number(seats), status: "pending"
+    });
+
+    // خصم المقاعد فوراً
+    restaurant.reservationSettings.bookedSeats += Number(seats);
+    await restaurant.save();
+
+    // إشعار للأونر
+    if (req.io) {
+        req.io.to(restaurant._id.toString()).emit("new_reservation_request", { name, seats });
+        
+        // تحديث عدادات المقاعد لحظياً
+        req.io.emit("seats_updated", { 
+            slug: restaurant.slug,
+            total: settings.totalSeats, 
+            booked: restaurant.reservationSettings.bookedSeats 
+        });
+    }
+
+    res.status(201).json({ 
+        status: "success", 
+        message: "تم إرسال طلبك بنجاح وسيتواصل معك المطعم قريباً",
+        data: { available: settings.totalSeats - restaurant.reservationSettings.bookedSeats }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// 3. جلب قائمة الحجوزات (للأدمن)
+app.get("/api/v1/reservations/list", protect, restrictTo("owner", "admin"), async (req, res) => {
+    try {
+        const restaurant = await Restaurant.findOne({ owner: req.user._id });
+        if(!restaurant) return res.status(404).json({message: "لا يوجد مطعم"});
+
+        const reservations = await Reservation.find({ restaurant: restaurant._id }).sort("-createdAt");
+        res.status(200).json({ status: "success", data: { reservations } });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// 4. اتخاذ إجراء (قبول/رفض)
+app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
+    try {
+        const { status } = req.body; // approved, rejected
+        const reservation = await Reservation.findById(req.params.id);
+        if(!reservation) return res.status(404).json({message: "الطلب غير موجود"});
+
+        const restaurant = await Restaurant.findById(reservation.restaurant);
+        
+        // إذا تم الرفض، نعيد المقاعد للمتاح (إذا لم يكن مرفوضاً مسبقاً)
+        if (status === 'rejected' && reservation.status !== 'rejected') {
+            restaurant.reservationSettings.bookedSeats -= reservation.seats;
+            // حماية من القيم السالبة
+            if(restaurant.reservationSettings.bookedSeats < 0) restaurant.reservationSettings.bookedSeats = 0;
+            await restaurant.save();
+
+            // تحديث العدادات
+            if (req.io) {
+                req.io.emit("seats_updated", { 
+                    slug: restaurant.slug,
+                    total: restaurant.reservationSettings.totalSeats, 
+                    booked: restaurant.reservationSettings.bookedSeats 
+                });
+            }
+        }
+        
+        reservation.status = status;
+        await reservation.save();
+
+        res.status(200).json({ status: "success", message: "تم تحديث حالة الحجز" });
+    } catch(err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 // ---------------- PRODUCT ROUTES ----------------
@@ -1097,6 +1314,232 @@ app.patch("/api/v1/categories/:id", protect, restrictTo("owner", "admin"), uploa
     res.status(200).json({ status: "success", data: { category: updatedCategory } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
+
+// ---------------- ACCOUNTING ROUTES (نظام الرواتب الآلي) ----------------
+
+// 1. حفظ قواعد الرواتب (سعر الساعة والغياب)
+app.patch("/api/v1/restaurants/accounting-settings/:id", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const { overtimeRate, absencePenalty, latePenalty } = req.body;
+    const restaurant = await Restaurant.findByIdAndUpdate(
+      req.params.id,
+      { "accountingSettings": { overtimeRate, absencePenalty, latePenalty } },
+      { new: true }
+    );
+    res.status(200).json({ status: "success", data: { restaurant } });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 2. المولد الآلي للرواتب (الماكينة الحاسبة)
+app.post("/api/v1/accounting/generate-payroll", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const { month, restaurantId } = req.body; // format: "2024-01"
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const settings = restaurant.accountingSettings || { overtimeRate: 0, absencePenalty: 1, latePenalty: 0 };
+    const employees = await Employee.find({ restaurant: restaurantId });
+    
+    let payrolls = [];
+
+    for (const emp of employees) {
+      // جلب سجل الحضور لهذا الشهر
+      const attendanceList = await Attendance.find({
+        employee: emp._id,
+        date: { $regex: new RegExp(`^${month}`) }
+      });
+
+      let totalOvertimeHours = 0;
+      let totalLateHours = 0;
+      let absentDays = 0;
+      let presentDays = 0;
+
+      // تحليل الحضور
+      attendanceList.forEach(att => {
+        if (att.status === 'present' || att.status === 'late') {
+            presentDays++;
+            totalOvertimeHours += (att.overtimeHours || 0);
+            totalLateHours += (att.deductionHours || 0);
+        } else if (att.status === 'absent') {
+            absentDays++;
+        }
+      });
+
+      // [مطور] جلب المعاملات المالية (سلف، مكافآت، خصومات) المسجلة كمصروفات لهذا الشهر
+const financialRecords = await Expense.find({ 
+    restaurant: restaurantId, 
+    employee: emp._id, 
+    category: { $in: ['salary_advance', 'bonus', 'deduction'] }, // جلب السلف والخصومات والمكافآت
+    date: { $gte: new Date(`${month}-01`), $lt: new Date(new Date(`${month}-01`).setMonth(new Date(`${month}-01`).getMonth() + 1)) } 
+});
+
+// تصنيف المبالغ
+const totalAdvances = financialRecords.filter(e => e.category === 'salary_advance').reduce((sum, e) => sum + e.amount, 0);
+const totalBonuses = financialRecords.filter(e => e.category === 'bonus').reduce((sum, e) => sum + e.amount, 0);
+const totalManualDeductions = financialRecords.filter(e => e.category === 'deduction').reduce((sum, e) => sum + e.amount, 0);
+      
+      // حساب قيمة اليوم للموظف
+      let dayValue = 0;
+      let baseSalary = emp.baseSalary || 0;
+
+      if (emp.salaryType === 'monthly') {
+        dayValue = baseSalary / 30; // لو شهري نقسم على 30
+      } else {
+        dayValue = baseSalary; // لو يومية، فالراتب الأساسي هو قيمة اليوم
+        baseSalary = dayValue * presentDays; // الراتب المستحق هو عدد أيام الحضور
+      }
+
+      // المعادلات الحسابية
+      const overtimePay = totalOvertimeHours * settings.overtimeRate;
+      const lateDeduction = totalLateHours * settings.latePenalty;
+      const absenceDeduction = absentDays * settings.absencePenalty * dayValue;
+      
+      // صافي الراتب النهائي
+      // تم استبدال (emp.loansDeducted) بـ totalAdvancesThisMonth المحسوبة أوتوماتيكياً
+      const totalSalary = baseSalary + overtimePay + (emp.bonuses || 0) + totalBonuses - lateDeduction - absenceDeduction - totalManualDeductions - totalAdvances;
+
+      payrolls.push({
+        employee: emp, // نحفظ الموظف كاملاً للعرض
+        restaurant: restaurantId,
+        month,
+        baseAmount: Math.round(baseSalary),
+        overtimeAmount: Math.round(overtimePay),
+        deductions: Math.round(lateDeduction + absenceDeduction + totalManualDeductions),
+loansDeducted: Math.round(totalAdvances),
+bonuses: Math.round(totalBonuses),
+        totalSalary: Math.round(totalSalary) < 0 ? 0 : Math.round(totalSalary)
+      });
+    }
+
+    // حفظ الرواتب في قاعدة البيانات (استبدال القديم إن وجد)
+    await Payroll.deleteMany({ restaurant: restaurant._id, month });
+    
+    // تحويل employee object إلى ID فقط للحفظ
+    const dbPayload = payrolls.map(p => ({...p, employee: p.employee._id}));
+    await Payroll.insertMany(dbPayload);
+
+    // ✅ تعديل: استرجاع البيانات المحفوظة بـ IDs لتمكين التعديل
+    const savedPayrolls = await Payroll.find({ restaurant: restaurant._id, month }).populate('employee');
+
+    res.status(200).json({ status: "success", data: savedPayrolls });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 3. تحديث قسيمة راتب (تعديل يدوي حي)
+app.patch("/api/v1/accounting/payroll/:id", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const { bonuses, deductions, loansDeducted } = req.body;
+    const payroll = await Payroll.findById(req.params.id);
+    if (!payroll) return res.status(404).json({ message: "غير موجود" });
+    
+    if (payroll.status === 'Approved') {
+        return res.status(400).json({ message: "لا يمكن تعديل راتب تم اعتماده وصرفه بالفعل" });
+    }
+
+    if (bonuses !== undefined) payroll.bonuses = bonuses;
+    if (deductions !== undefined) payroll.deductions = deductions;
+    if (loansDeducted !== undefined) payroll.loansDeducted = loansDeducted;
+
+    // إعادة حساب الصافي
+    // المعادلة: (أساسي + إضافي + مكافآت) - (جزاءات + سلف)
+    const net = (payroll.baseAmount + payroll.overtimeAmount + payroll.bonuses) - (payroll.deductions + payroll.loansDeducted);
+    payroll.totalSalary = net < 0 ? 0 : net;
+
+    await payroll.save();
+    res.status(200).json({ status: "success", data: payroll });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 4. جلب الرواتب (للعرض والطباعة)
+app.get("/api/v1/accounting/payroll", protect, restrictTo("owner"), async (req, res) => {
+    try {
+        const { month, restaurantId, employeeId } = req.query;
+        const query = { restaurant: restaurantId };
+        if (month) query.month = month;
+        if (employeeId) query.employee = employeeId;
+
+        const payrolls = await Payroll.find(query).populate('employee');
+        res.status(200).json({ status: "success", data: payrolls });
+    } catch (err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// 5. اعتماد الرواتب (تسجيل المصروفات وخصم السلف)
+app.post("/api/v1/accounting/approve-payroll", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const { month, restaurantId } = req.body;
+    
+    // جلب الرواتب المعلقة لهذا الشهر
+    const payrolls = await Payroll.find({ restaurant: restaurantId, month, status: 'Pending' });
+    
+    if (payrolls.length === 0) {
+        return res.status(400).json({ message: "لا توجد رواتب معلقة للاعتماد في هذا الشهر" });
+    }
+
+    let totalBaseSalaries = 0;
+    let totalNetSalaries = 0;
+
+    for (const p of payrolls) {
+        // 1. تحديث الحالة
+        p.status = 'Approved';
+        p.isPaid = true;
+        p.paidAt = new Date();
+        await p.save();
+
+        // تجميع المبالغ للمصروفات
+        totalBaseSalaries += p.baseAmount;
+        totalNetSalaries += p.totalSalary;
+
+        // 2. ✅ إصلاح السلف: خصم السلفة من رصيد الموظف الفعلي
+        if (p.loansDeducted > 0) {
+            await Employee.findByIdAndUpdate(p.employee, { 
+                $inc: { loanBalance: -p.loansDeducted } 
+            });
+        }
+    }
+
+    // 3. ✅ تسجيل المصروفات: تسجيل (صافي الرواتب) فقط كمصروف
+    // السبب: السلف تم تسجيلها كمصروفات عند صرفها، لذا يجب تسجيل المتبقي فقط (الصافي) حتى لا يتم حساب السلفة مرتين
+    if (totalNetSalaries > 0) {
+        await Expense.create({
+            restaurant: restaurantId,
+            title: `رواتب شهر ${month} (الصافي)`,
+            amount: totalNetSalaries,
+            category: 'salaries',
+            date: new Date(),
+            description: `تم اعتماد رواتب شهر ${month} آلياً بعد خصم السلف والجزاءات`
+        });
+    }
+
+    res.status(200).json({ status: "success", message: "تم اعتماد الرواتب وتسجيل المصروفات وخصم السلف بنجاح" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// مسار جلب الرواتب (للتقارير)
+app.get("/api/v1/accounting/payroll", protect, async (req, res) => {
+  try {
+    const { restaurantId, month, employee } = req.query;
+    const query = { restaurant: restaurantId };
+    if (month) query.month = month;
+    if (employee) query.employee = employee;
+    
+    const payrolls = await Payroll.find(query).populate("employee", "name jobTitle").sort('-month');
+    res.status(200).json({ status: "success", data: payrolls });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// ---------------- ORDER ROUTES ----------------
 
 // ---------------- ORDER ROUTES ----------------
 const checkOrderPermission = async (user, restaurantId) => {
@@ -1392,6 +1835,195 @@ app.get("/api/v1/stock/:restaurantId", protect, restrictToStockFeature, async (r
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
+// ---------------- RESERVATION SYSTEM ROUTES ----------------
+
+// 1. جلب حالة الحجز (للعميل)
+app.get("/api/v1/reservations/status/:slug", async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ slug: req.params.slug }).select("restaurantName reservationSettings isActive");
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    if (!restaurant.reservationSettings.isEnabled) {
+      return res.status(403).json({ message: "نظام الحجز غير مفعل حالياً" });
+    }
+
+    const available = restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats;
+    const isFull = available <= 0;
+
+    res.status(200).json({ 
+      status: "success", 
+      data: { 
+        restaurantName: restaurant.restaurantName,
+        total: restaurant.reservationSettings.totalSeats,
+        booked: restaurant.reservationSettings.bookedSeats,
+        available: available > 0 ? available : 0,
+        isFull
+      } 
+    });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 2. استقبال طلب حجز جديد (للعميل) - إنشاء طلب Pending
+app.post("/api/v1/reservations/book/:slug", async (req, res) => {
+  try {
+    const { seats, name, phone } = req.body;
+    const requestedSeats = Number(seats);
+    
+    if (!requestedSeats || requestedSeats <= 0) return res.status(400).json({ message: "عدد المقاعد غير صحيح" });
+    if (!name || !phone) return res.status(400).json({ message: "الاسم ورقم الهاتف مطلوبين" });
+
+    const restaurant = await Restaurant.findOne({ slug: req.params.slug });
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    if (!restaurant.reservationSettings.isEnabled) {
+      return res.status(403).json({ message: "الحجز مغلق حالياً" });
+    }
+
+    // التحقق من التوفر (دون الخصم)
+    const currentAvailable = restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats;
+    if (requestedSeats > currentAvailable) {
+      return res.status(400).json({ 
+        status: "fail", 
+        message: currentAvailable === 0 ? "عذراً، العدد مكتمل!" : `متبقي فقط ${currentAvailable} مقاعد.` 
+      });
+    }
+
+    // إنشاء طلب حجز
+    const newReservation = await Reservation.create({
+      restaurant: restaurant._id,
+      name,
+      phone,
+      seats: requestedSeats,
+      status: "pending"
+    });
+
+    // إرسال تنبيه للأونر
+    if (req.io) {
+        req.io.to(restaurant._id.toString()).emit("new_reservation_request", newReservation);
+    }
+
+    res.status(200).json({ status: "success", message: "تم إرسال طلبك، بانتظار موافقة المطعم." });
+
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 3. جلب طلبات الحجز (للأونر)
+app.get("/api/v1/reservations/requests", protect, restrictTo("owner"), async (req, res) => {
+    try {
+        const restaurant = await Restaurant.findOne({ owner: req.user._id });
+        const reservations = await Reservation.find({ restaurant: restaurant._id }).sort("-createdAt");
+        res.status(200).json({ status: "success", data: reservations });
+    } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// 4. اتخاذ قرار (قبول/رفض)
+app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const { status } = req.body; // approved or rejected
+    const reservation = await Reservation.findById(req.params.id);
+    if(!reservation) return res.status(404).json({ message: "الطلب غير موجود" });
+
+    // السماح بتغيير الحالة إذا لم تكن نفس الحالة الحالية
+    if(reservation.status === status) return res.status(400).json({ message: "الطلب بالفعل على هذه الحالة" });
+
+    if (status === 'approved' && reservation.status !== 'approved') {
+      const restaurant = await Restaurant.findById(reservation.restaurant);
+      const currentAvailable = restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats;
+
+      // إذا كان معلقاً، نخصم المقاعد. أما إذا كان مرفوضاً سابقاً، نتأكد من التوفر ونخصم
+      if (reservation.status === 'rejected' || reservation.status === 'pending') {
+         if (reservation.seats > currentAvailable) {
+            return res.status(400).json({ message: "لا توجد مقاعد كافية للموافقة الآن" });
+         }
+         restaurant.reservationSettings.bookedSeats += reservation.seats;
+         await restaurant.save();
+      }
+      
+      if (req.io) {
+        req.io.to(restaurant._id.toString()).emit("seats_updated", {
+          total: restaurant.reservationSettings.totalSeats,
+          booked: restaurant.reservationSettings.bookedSeats,
+          available: restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats
+        });
+      }
+    } else if (status === 'rejected' && reservation.status === 'approved') {
+        // لو كان مقبول وهنرفضه، نرجع المقاعد
+        const restaurant = await Restaurant.findById(reservation.restaurant);
+        restaurant.reservationSettings.bookedSeats -= reservation.seats;
+        if(restaurant.reservationSettings.bookedSeats < 0) restaurant.reservationSettings.bookedSeats = 0;
+        await restaurant.save();
+
+        if (req.io) {
+            req.io.to(restaurant._id.toString()).emit("seats_updated", {
+              total: restaurant.reservationSettings.totalSeats,
+              booked: restaurant.reservationSettings.bookedSeats,
+              available: restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats
+            });
+        }
+    }
+
+    reservation.status = status;
+    await reservation.save();
+
+    // إرسال تحديث لواجهة الأدمن لتحديث الجدول فوراً
+    if(req.io) req.io.to(reservation.restaurant.toString()).emit("reservation_updated", reservation);
+
+    res.status(200).json({ status: "success", message: `تم ${status === 'approved' ? 'قبول' : 'رفض'} الطلب` });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// مسار جديد: حذف طلب حجز (للطلبات المنتهية أو المرفوضة)
+app.delete("/api/v1/reservations/:id", protect, restrictTo("owner"), async (req, res) => {
+    try {
+        const reservation = await Reservation.findById(req.params.id);
+        if(!reservation) return res.status(404).json({ message: "الطلب غير موجود" });
+
+        // إذا كان الطلب "مقبول" ونريد حذفه، يجب إعادة المقاعد أولاً (إلا إذا كان الحذف يعني أن الزبون حضر وانتهى)
+        // هنا سنفترض أن الحذف يعني التنظيف من السجل، فلو كان مقبولاً لا نرجع المقاعد لأننا نفترض انتهاء الحدث
+        // أو يمكننا إرجاع المقاعد إذا كان الحذف يعني إلغاء. 
+        // لتبسيط الأمر: الحذف يزيل السجل فقط. لو عايز تلغي الحجز وترجع المقاعد استخدم "رفض" أولاً.
+        
+        await Reservation.findByIdAndDelete(req.params.id);
+        
+        if(req.io) req.io.to(reservation.restaurant.toString()).emit("reservation_deleted", req.params.id);
+
+        res.status(200).json({ status: "success", message: "تم حذف السجل" });
+    } catch(err) {
+        res.status(400).json({ message: err.message });
+    }
+});
+
+// 5. إعدادات الحجز وتصفير العداد (للأونر)
+app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const { isEnabled, totalSeats, resetCounter } = req.body;
+    const rId = req.body.restaurantId;
+
+    let updateQuery = {};
+    if (isEnabled !== undefined) updateQuery["reservationSettings.isEnabled"] = isEnabled;
+    if (totalSeats !== undefined) updateQuery["reservationSettings.totalSeats"] = Number(totalSeats);
+    if (resetCounter === true) updateQuery["reservationSettings.bookedSeats"] = 0;
+
+    const restaurant = await Restaurant.findByIdAndUpdate(rId, { $set: updateQuery }, { new: true });
+    
+    // تحديث الواجهات
+    if (req.io) {
+        req.io.to(restaurant._id.toString()).emit("seats_updated", {
+          total: restaurant.reservationSettings.totalSeats,
+          booked: restaurant.reservationSettings.bookedSeats,
+          available: restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats
+        });
+    }
+
+    res.status(200).json({ status: "success", data: { reservationSettings: restaurant.reservationSettings } });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
 // ---------------- SALES ROUTES ----------------
 app.post("/api/v1/sales/join", upload.single('image'), async (req, res) => {
   try {
@@ -1717,6 +2349,7 @@ app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.a
 
 // Static HTML Pages
 app.get("/menu/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "menu.html")));
+app.get("/reserve/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "reservation.html")));
 app.get("/owner", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.get("/super-admin", (req, res) => res.sendFile(path.join(__dirname, "public", "super.html")));
 app.get("/sales-dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "sales.html")));
@@ -1770,8 +2403,354 @@ app.get("/api/v1/sales/my-clients", protect, restrictTo("sales"), async (req, re
 
 app.get("/api/v1/vapid-key", (req, res) => res.json({ publicKey: publicVapidKey }));
 
+// ---------------- ACCOUNTING & FINANCE ROUTES (المطور) ----------------
+
+// 1. Financial Stats (لوحة القيادة المالية - شامل التفاصيل)
+app.get("/api/v1/accounting/stats", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    // 1. تحديد التاريخ (إصلاح مشكلة الشهر)
+    let startOfMonth, endOfMonth;
+    let targetMonthStr;
+
+    if (req.query.month) {
+        const [y, m] = req.query.month.split('-');
+        startOfMonth = new Date(y, m - 1, 1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        endOfMonth = new Date(y, m, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        targetMonthStr = req.query.month; // e.g., "2024-02"
+    } else {
+        const now = new Date();
+        startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        endOfMonth.setHours(23, 59, 59, 999);
+        // Format YYYY-MM
+        const m = now.getMonth() + 1;
+        targetMonthStr = `${now.getFullYear()}-${m < 10 ? '0' + m : m}`;
+    }
+
+    // 2. جلب التفاصيل وحساب الإجماليات
+
+    // أ. المبيعات (تفاصيل + إجمالي)
+    const salesDetails = await Order.find({ 
+        restaurant: restaurant._id, 
+        status: 'completed', 
+        createdAt: { $gte: startOfMonth, $lte: endOfMonth } 
+    }).select('orderNum totalPrice createdAt tableNumber items').sort({ createdAt: -1 });
+    
+    const totalSales = salesDetails.reduce((sum, order) => sum + order.totalPrice, 0);
+
+    // ب. المصروفات (تفاصيل + إجمالي)
+    const expensesDetails = await Expense.find({ 
+        restaurant: restaurant._id, 
+        date: { $gte: startOfMonth, $lte: endOfMonth } 
+    }).sort({ date: -1 });
+
+    // ✅ إصلاح: استبعاد الرواتب من جمع المصروفات (لأنها ستُجمع منفصلة في totalSalaries) لمنع التكرار
+    const totalExpenses = expensesDetails
+        .filter(exp => exp.category !== 'salaries') 
+        .reduce((sum, exp) => sum + exp.amount, 0);
+
+    // ج. الرواتب (تفاصيل + إجمالي)
+    const payrollDetails = await Payroll.find({ 
+        restaurant: restaurant._id, 
+        month: targetMonthStr 
+    }).populate('employee', 'name jobTitle');
+
+    const totalSalaries = payrollDetails.reduce((sum, p) => sum + p.totalSalary, 0);
+
+    // د. صافي الربح
+    const netProfit = totalSales - (totalExpenses + totalSalaries);
+
+    // إرسال البيانات (الإجماليات + التفاصيل)
+    res.status(200).json({ 
+        status: "success", 
+        data: { 
+            totalSales, 
+            totalExpenses, 
+            totalSalaries, 
+            netProfit,
+            details: {
+                sales: salesDetails,
+                expenses: expensesDetails,
+                salaries: payrollDetails
+            }
+        } 
+    });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// 2. Expenses Management
+app.post("/api/v1/accounting/expenses", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم مرتبط بهذا الحساب" }); // ✅ إصلاح
+    
+    // 1. إنشاء المصروف
+    const expense = await Expense.create({ ...req.body, restaurant: restaurant._id });
+
+    // [جديد] 2. إذا كان المصروف "سلفة"، نقوم بتحديث رصيد الموظف فوراً
+    if (req.body.category === 'salary_advance' && req.body.employee) {
+        await Employee.findByIdAndUpdate(req.body.employee, { 
+            $inc: { loanBalance: req.body.amount } 
+        });
+    }
+
+    res.status(201).json({ status: "success", data: expense });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+app.get("/api/v1/accounting/expenses", protect, async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) return res.status(200).json({ status: "success", data: [] }); // ✅ إصلاح: إرجاع مصفوفة فارغة بدلاً من الخطأ
+
+    const expenses = await Expense.find({ restaurant: restaurant._id }).sort("-date");
+    res.status(200).json({ status: "success", data: expenses });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+app.delete("/api/v1/accounting/expenses/:id", protect, restrictTo("owner"), async (req, res) => {
+  try { 
+      // 1. نحضر المصروف أولاً قبل الحذف لنعرف تفاصيله
+      const expense = await Expense.findById(req.params.id);
+      if (!expense) return res.status(404).json({ message: "المصروف غير موجود" });
+
+      // 2. إذا كان المصروف "سلفة"، نعكس العملية ونخصمها من رصيد الموظف (استرداد)
+      if (expense.category === 'salary_advance' && expense.employee) {
+          await Employee.findByIdAndUpdate(expense.employee, { 
+              $inc: { loanBalance: -expense.amount } 
+          });
+      }
+
+      // 3. حذف المصروف نهائياً
+      await Expense.findByIdAndDelete(req.params.id); 
+      
+      res.status(200).json({ status: "success" }); 
+  } 
+  catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// 3. Employees & Advances
+app.post("/api/v1/accounting/employees", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const emp = await Employee.create({ ...req.body, restaurant: restaurant._id });
+    res.status(201).json({ status: "success", data: emp });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+// تعديل بيانات موظف (محاسبة)
+app.patch("/api/v1/accounting/employees/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const updates = req.body;
+    // منع تعديل المطعم المالك
+    delete updates.restaurant; 
+    
+    const emp = await Employee.findByIdAndUpdate(req.params.id, updates, { new: true });
+    if (!emp) return res.status(404).json({ message: "الموظف غير موجود" });
+    
+    res.status(200).json({ status: "success", data: emp });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.get("/api/v1/accounting/employees", protect, async (req, res) => {
+  try {
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    if (!restaurant) return res.status(200).json({ status: "success", data: [] }); // ✅ إصلاح
+
+    const employees = await Employee.find({ restaurant: restaurant._id }).sort("-createdAt");
+    res.status(200).json({ status: "success", data: employees });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// إضافة سلفة لموظف
+app.post("/api/v1/accounting/employees/:id/advance", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const emp = await Employee.findById(req.params.id);
+    emp.loanBalance += Number(amount);
+    await emp.save();
+    
+    // تسجيل السلفة كمصروف أيضاً لتظبيط الحسابات
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    await Expense.create({
+      restaurant: restaurant._id,
+      title: `سلفة للموظف: ${emp.name}`,
+      amount: Number(amount),
+      category: 'other',
+      description: 'سلفة تخصم من الراتب'
+    });
+
+    res.status(200).json({ status: "success", data: emp });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+app.delete("/api/v1/accounting/employees/:id", protect, restrictTo("owner"), async (req, res) => {
+  try { await Employee.findByIdAndDelete(req.params.id); res.status(200).json({ status: "success" }); } 
+  catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// 4. Attendance (كما هو)
+app.post("/api/v1/accounting/attendance", protect, restrictTo("owner", "admin", "cashier"), async (req, res) => {
+  try {
+    const { employeeId, type, date } = req.body;
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    let att = await Attendance.findOne({ employee: employeeId, date: date });
+    
+    if (type === "checkIn") {
+      if (att) return res.status(400).json({ message: "تم تسجيل الحضور مسبقاً" });
+      att = await Attendance.create({ employee: employeeId, restaurant: restaurant._id, date, checkIn: new Date(), status: 'present' });
+    } else if (type === "checkOut") {
+      if (!att) return res.status(400).json({ message: "يجب تسجيل الحضور أولاً" });
+      att.checkOut = new Date();
+      const emp = await Employee.findById(employeeId);
+      const hoursWorked = (att.checkOut - att.checkIn) / 36e5;
+      if (hoursWorked > emp.workHours) att.overtimeHours = (hoursWorked - emp.workHours).toFixed(2);
+      await att.save();
+    }
+    res.status(200).json({ status: "success", data: att });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+app.get("/api/v1/accounting/attendance", protect, async (req, res) => {
+  try {
+    const { date } = req.query;
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const logs = await Attendance.find({ restaurant: restaurant._id, date }).populate("employee");
+    res.status(200).json({ status: "success", data: logs });
+  } catch (err) { res.status(400).json({ message: err.message }); }
+});
+
+// 5. Payroll (توليد الرواتب مع خصم السلف)
+// 4. Attendance & Payroll Logic (Developed)
+app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { month, bonuses, deductions, deductLoan, isPreview } = req.body; // isPreview flag added
+    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    
+    // تحديد بداية ونهاية الشهر
+    const [y, m] = month.split('-');
+    const startDate = new Date(y, m - 1, 1);
+    const endDate = new Date(y, m, 0, 23, 59, 59);
+    
+    // جلب جميع الموظفين
+    const employees = await Employee.find({ restaurant: restaurant._id });
+    
+    // جلب سجلات الحضور لهذا الشهر لكل الموظفين دفعة واحدة
+    // (ملاحظة: نفترض أن التاريخ في الحضور مخزن بصيغة YYYY-MM-DD string كما في الكود الأصلي)
+    const monthRegex = new RegExp(`^${month}`); // يطابق أي تاريخ يبدأ بـ 2024-01 مثلاً
+    const allAttendance = await Attendance.find({ 
+        restaurant: restaurant._id,
+        date: { $regex: monthRegex }
+    });
+
+    const payrolls = [];
+
+    for (const emp of employees) {
+      // 1. حسابات الحضور التلقائية
+      const empLogs = allAttendance.filter(log => log.employee.toString() === emp._id.toString());
+      
+      const totalOvertimeHours = empLogs.reduce((sum, log) => sum + (log.overtimeHours || 0), 0);
+      const totalDeductionHours = empLogs.reduce((sum, log) => sum + (log.deductionHours || 0), 0);
+      
+      // حساب قيمة الساعة (الراتب / 30 يوم / عدد ساعات العمل)
+      // إذا كان راتب يومي، نقسم على ساعات العمل فقط
+      let hourlyRate = 0;
+      if (emp.salaryType === 'monthly') {
+          hourlyRate = emp.baseSalary / 30 / (emp.workHours || 9);
+      } else {
+          hourlyRate = emp.baseSalary / (emp.workHours || 9);
+      }
+
+      const autoOvertimePay = Math.round(totalOvertimeHours * hourlyRate); // يمكن ضربها في 1.5 لو أردت
+      const autoDeductionVal = Math.round(totalDeductionHours * hourlyRate);
+
+      // 2. الحسابات اليدوية (الإضافات والخصومات اليدوية من المستخدم)
+      const manualBonus = bonuses && bonuses[emp._id] ? Number(bonuses[emp._id]) : 0;
+      const manualDeduct = deductions && deductions[emp._id] ? Number(deductions[emp._id]) : 0;
+      
+      // 3. خصم السلف
+      let loanDeduction = 0;
+      if (deductLoan && deductLoan[emp._id]) {
+        const amountToDeduct = Number(deductLoan[emp._id]);
+        // لا نخصم أكثر من رصيد السلفة المتبقي
+        loanDeduction = amountToDeduct > emp.loanBalance ? emp.loanBalance : amountToDeduct;
+        
+        // تحديث السلفة فقط إذا لم يكن وضع "المعاينة"
+        if (!isPreview) {
+            emp.loanBalance -= loanDeduction;
+            await emp.save();
+        }
+      }
+
+      // 4. الراتب النهائي
+      const totalSalary = Math.round(emp.baseSalary + autoOvertimePay + manualBonus - autoDeductionVal - manualDeduct - loanDeduction);
+
+      const payrollEntry = {
+        employee: emp, // نرسل الأوبجكت كامل للمعاينة
+        restaurant: restaurant._id,
+        month,
+        baseAmount: emp.baseSalary,
+        overtimeAmount: autoOvertimePay, // القيمة المحسوبة تلقائياً
+        bonuses: manualBonus,
+        deductions: manualDeduct + autoDeductionVal, // نجمع الخصم التلقائي واليدوي
+        loansDeducted: loanDeduction,
+        totalSalary: totalSalary > 0 ? totalSalary : 0,
+        stats: { // بيانات إضافية للعرض
+            otHours: totalOvertimeHours,
+            deductHours: totalDeductionHours
+        }
+      };
+
+      payrolls.push(payrollEntry);
+    }
+
+    // إذا لم يكن معاينة، نقوم بالحفظ في قاعدة البيانات
+   if (!isPreview) {
+            // 1. استرجاع الرواتب القديمة لهذا الشهر (إن وجدت) لإعادة السلف لأصحابها
+            const oldPayrolls = await Payroll.find({ restaurant: restaurant._id, month });
+            
+            for (const p of oldPayrolls) {
+                if (p.loansDeducted > 0) {
+                    // إعادة المبلغ المخصوم سابقاً لرصيد الموظف
+                    await User.findByIdAndUpdate(p.employee, { $inc: { loanBalance: p.loansDeducted } });
+                }
+            }
+
+            // 2. حذف السجلات القديمة
+            await Payroll.deleteMany({ restaurant: restaurant._id, month });
+            
+            // 3. حفظ السجلات الجديدة
+            const dbPayload = payrolls.map(p => ({...p, employee: p.employee._id}));
+            await Payroll.insertMany(dbPayload);
+
+            // 4. خصم السلف الجديدة من رصيد الموظفين الفعلي
+            for (const p of dbPayload) {
+                if (p.loansDeducted > 0) {
+                    // خصم المبلغ الجديد من الرصيد
+                    await User.findByIdAndUpdate(p.employee, { $inc: { loanBalance: -p.loansDeducted } });
+                }
+            }
+        }
+
+    res.status(200).json({ status: "success", data: payrolls });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
 // Back handling
 app.get(/.*/, (req, res) => {
+  // ✅ إصلاح: إذا كان الرابط API وغير موجود، أرجع خطأ JSON بدلاً من HTML
+  if (req.originalUrl.startsWith('/api')) {
+      return res.status(404).json({ status: "fail", message: "API Route Not Found - تأكد من تحديث السيرفر" });
+  }
+
   const backUrl = req.header("Referer") || "/";
   if (backUrl.includes(req.originalUrl)) return res.redirect("/");
   res.redirect(backUrl);
