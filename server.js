@@ -149,6 +149,17 @@ const stockItemSchema = new mongoose.Schema({
   lastUpdated: { type: Date, default: Date.now },
 });
 const StockItem = mongoose.model("StockItem", stockItemSchema);
+// --- StockLog Model ---
+const stockLogSchema = new mongoose.Schema({
+  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
+  stockItem: { type: mongoose.Schema.Types.ObjectId, ref: "StockItem", required: true },
+  itemName: String,
+  changeAmount: { type: Number, required: true },
+  type: { type: String, required: true }, // restock, consumption, adjustment
+  orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+  date: { type: Date, default: Date.now }
+});
+const StockLog = mongoose.model("StockLog", stockLogSchema);
 
 // --- Product Model ---
 const productSchema = new mongoose.Schema({

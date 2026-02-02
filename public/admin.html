@@ -3793,7 +3793,13 @@
             // توجيه المستخدم لآخر صفحة كان فيها
             const lastView = localStorage.getItem("lastActiveView");
             if (data.userRole === "kitchen") switchView("orders");
-            else if (data.userRole === "waiter") switchView("manual-pos");
+            else if (data.userRole === "waiter") {
+                switchView("manual-pos");
+                // إخفاء تبويب الطلبات الحية للويتر
+                if(document.getElementById("nav-orders")) {
+                    document.getElementById("nav-orders").classList.add("hidden");
+                }
+            }
             else if (data.userRole === "cashier") {
               if (lastView === "history") switchView("history");
               else switchView("orders");
@@ -6791,76 +6797,67 @@ const imgHTML = img
           posCart.splice(index, 1);
           renderPosCart();
       }
-
-   async function submitPosOrder() {
-    if (posCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة', 'warning');
-
-    const tableNumVal = document.getElementById('pos-table-num').value;
-    const tableNumber = tableNumVal ? tableNumVal : "تيك أواي";
-    
-    const manualOrderNumVal = document.getElementById('pos-manual-order-num').value;
-
-    const rId = document.getElementById("restaurant-id").value;
-    const subTotal = parseFloat(document.getElementById('pos-subtotal').innerText);
-    const taxAmount = parseFloat(document.getElementById('pos-tax').innerText) || 0; // تبسيط الحساب (مجموع الضريبة والخدمة المعروض)
-    const serviceAmount = 0; // القيمة مدمجة في العرض، أو يمكنك فصلها إذا أردت
-    const finalTotal = parseFloat(document.getElementById('pos-total').innerText.replace(' ج.م', ''));
-
-    const items = posCart.map(i => ({
-        productId: i.productId.split('-')[0], // إزالة اللاحقة إذا كانت موجودة
-        name: i.name,
-        price: i.price,
-        qty: i.qty
-    }));
-
-    const body = {
-        restaurantId: rId,
-        manualOrderNum: manualOrderNumVal,
-        tableNumber: tableNumber === "تيك أواي" ? 0 : tableNumber,
-        items: items,
-        subTotal: subTotal,
-        taxAmount: taxAmount,
-        serviceAmount: serviceAmount,
-        discountAmount: 0,
-        totalPrice: finalTotal,
-        status: 'pending'
-    };
-
-    Swal.fire({ title: 'جاري إرسال الطلب...', didOpen: () => Swal.showLoading() });
-
-    try {
-        const res = await fetch('/api/v1/orders', {
-            method: 'POST',
-            // ✅ التصحيح: إضافة الهيدر الخاص بالتوكن
-            headers: { 
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}` 
-            },
-            body: JSON.stringify(body)
-        });
-
-        const data = await res.json();
-
-        if (data.status === 'success') {
-            const msg = data.message || 'تم إنشاء الطلب بنجاح';
-            Swal.fire({ icon: 'success', title: msg, timer: 2000, showConfirmButton: false });
-            
-            // تفريغ السلة
-            posCart = [];
-            document.getElementById('pos-table-num').value = '';
-            document.getElementById('pos-manual-order-num').value = '';
-            renderPosCart();
-            
-            // التحويل لصفحة الطلبات
-            switchView('orders');
-        } else {
-            Swal.fire('خطأ', data.message || 'فشل إنشاء الطلب', 'error');
+async function submitPosOrder() {
+        if (typeof posCart === 'undefined' || posCart.length === 0) {
+            return Swal.fire("تنبيه", "السلة فارغة", "warning");
         }
-    } catch (e) {
-        console.error(e);
-        Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
-    }
-}
+
+        const tableNum = document.getElementById("pos-table-num").value;
+        const manualOrderNum = document.getElementById("pos-manual-order-num").value;
+        const rId = document.getElementById("restaurant-id").value;
+
+        // تجهيز بيانات الطلب
+        const payload = {
+            restaurantId: rId,
+            items: posCart,
+            tableNumber: tableNum ? parseInt(tableNum) : 0,
+            orderNum: manualOrderNum ? parseInt(manualOrderNum) : undefined,
+            status: "pending"
+        };
+
+        Swal.showLoading();
+        try {
+            const res = await fetch("/api/v1/orders", {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json", 
+                    Authorization: `Bearer ${token}` 
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (data.status === "success") {
+                // تصفير السلة والمدخلات
+                posCart = [];
+                if(typeof renderPosCart === 'function') renderPosCart();
+                document.getElementById("pos-table-num").value = "";
+                document.getElementById("pos-manual-order-num").value = "";
+
+                Swal.fire({ 
+                    icon: "success", 
+                    title: "تم إرسال الطلب بنجاح", 
+                    timer: 1500, 
+                    showConfirmButton: false 
+                });
+                
+                // --- التوجيه حسب الصلاحية ---
+                if (currentUserRole === 'waiter') {
+                    switchView('my-orders'); // الويتر يروح لطلباتي المرسلة
+                } else if (currentUserRole === 'cashier') {
+                    switchView('orders');    // الكاشير يروح للطلبات الحية
+                }
+                // ---------------------------
+
+            } else {
+                Swal.fire("خطأ", data.message || "فشل إرسال الطلب", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            Swal.fire("خطأ", "فشل الاتصال بالسيرفر", "error");
+        }
+      }
+
       const startApp = async function () {
         if (!token) {
           document.getElementById("login-section").style.display = "flex";
@@ -8234,13 +8231,15 @@ async function deleteStockItem(id) {
 }
 
 async function loadStockLogs() {
-    const rId = document.getElementById("restaurant-id").value;
+    // ✅ إصلاح: تنظيف الـ ID من أي زوائد مثل :1
+    let rId = document.getElementById("restaurant-id").value;
+    if (rId) rId = rId.split(':')[0].trim(); 
+
     const start = document.getElementById('stock-report-start').value;
     const end = document.getElementById('stock-report-end').value;
     const tbody = document.getElementById('stock-logs-list');
-    
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري جلب السجل...</td></tr>';
-
+    
     let query = `?restaurantId=${rId}`;
     if(start && end) query += `&startDate=${start}&endDate=${end}`;
 
