@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phone: { type: String, required: true },
   whatsapp: { type: String, default: "" },
-  role: { type: String, enum: ["user", "owner", "admin", "cashier", "kitchen", "sales"], default: "user" }, // Added 'sales'
+  role: { type: String, enum: ["user", "owner", "admin", "cashier", "kitchen", "sales", "waiter"], default: "user" }, // Added 'waiter'
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant" },
   shiftStart: { type: String, default: "00:00" },
@@ -180,6 +180,7 @@ const orderSchema = new mongoose.Schema(
     serviceAmount: { type: Number, default: 0 },
     totalPrice: { type: Number, required: true },
     status: { type: String, enum: ["pending", "preparing", "completed", "canceled"], default: "pending" },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // ✅ حقل جديد لمعرفة صاحب الطلب
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
@@ -479,6 +480,25 @@ const protect = async (req, res, next) => {
   }
 };
 
+// Middleware: Optional Protect (للتحقق من المستخدم إن وجد، والسماح للزائر إن لم يوجد)
+const protectOptional = async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (!token) return next(); // لا يوجد توكن، اكمل كزائر
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const currentUser = await User.findById(decoded.id);
+    if (currentUser) req.user = currentUser;
+    next();
+  } catch (err) {
+    next(); // التوكن غير صالح، اكمل كزائر
+  }
+};
+
 // Middleware: RestrictTo (Role Check)
 const restrictTo = (...roles) => {
   return (req, res, next) => {
@@ -559,7 +579,7 @@ app.post("/api/v1/users/login", async (req, res) => {
        return res.status(401).json({ message: "الحساب معطل" });
     }
 
-    if (user.role === "cashier" || user.role === "kitchen") {
+    if (user.role === "cashier" || user.role === "kitchen" || user.role === "waiter") {
       const cairoDateStr = new Date().toLocaleString("en-US", { timeZone: "Africa/Cairo" });
       const now = new Date(cairoDateStr);
       const today = now.getDay();
@@ -606,7 +626,7 @@ app.post("/api/v1/users/staff", protect, restrictTo("owner"), async (req, res) =
       name, email, password, role, restaurantId, phone, shiftStart, shiftEnd, restDays
     } = req.body;
 
-    if (!["cashier", "kitchen"].includes(role)) {
+    if (!["cashier", "kitchen", "waiter"].includes(role)) {
       return res.status(400).json({ message: "الدور غير صحيح (يجب أن يكون cashier أو kitchen)" });
     }
 
@@ -633,7 +653,7 @@ app.post("/api/v1/users/staff", protect, restrictTo("owner"), async (req, res) =
 app.get("/api/v1/users/my-staff", protect, async (req, res) => {
   try {
     // الموظفين المرتبطين بهذا الأونر مباشرة أو عن طريق معرف المطعم
-    const staff = await User.find({ owner: req.user._id, role: { $in: ["cashier", "kitchen"] } }).select("-password");
+    const staff = await User.find({ owner: req.user._id, role: { $in: ["cashier", "kitchen", "waiter"] } }).select("-password");
     res.status(200).json({ status: "success", data: { staff } });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -833,7 +853,7 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
   try {
     let query = {};
     if (req.user.role === "owner") query = { owner: req.user._id };
-    else if ((req.user.role === "cashier" || req.user.role === "kitchen") && req.user.restaurant) {
+    else if ((req.user.role === "cashier" || req.user.role === "kitchen" || req.user.role === "waiter") && req.user.restaurant) {
       query = { _id: req.user.restaurant };
     } else {
       return res.status(404).json({ message: "لا تملك صلاحية الوصول لمطعم" });
@@ -1139,7 +1159,7 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
   }
 });
 
-app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner", "admin", "cashier", "kitchen", "sales"), async (req, res) => {
+app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner", "admin", "cashier", "kitchen", "sales", "waiter"), async (req, res) => {
   try {
     // الترتيب حسب sortOrder تصاعدي، ثم الأحدث
     const products = await Product.find({ restaurant: req.params.restaurantId }).populate("ingredients.stockItem").sort("sortOrder -createdAt");
@@ -1552,10 +1572,17 @@ const checkOrderPermission = async (user, restaurantId) => {
 };
 
 // --- مسار إلغاء الطلب (جديد) ---
-app.patch("/api/v1/orders/:id/cancel", async (req, res) => {
+app.patch("/api/v1/orders/:id/cancel", protect, async (req, res) => {
   try {
+    // السماح بالإلغاء فقط إذا كان الطلب ما زال Pending
     const order = await Order.findOne({ _id: req.params.id, status: "pending" });
-    if (!order) return res.status(400).json({ message: "عذراً، الطلب دخل مرحلة التحضير ولا يمكن إلغاؤه الآن" });
+    
+    // التحقق من الصلاحية (الأونر أو الويتر الذي أنشأ الطلب)
+    if (!order) return res.status(400).json({ message: "الطلب غير موجود أو دخل مرحلة التحضير" });
+    
+    if (req.user.role === 'waiter' && order.createdBy.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: "لا يمكنك إلغاء طلب لم تقم بإنشائه" });
+    }
 
     order.status = "canceled";
     await order.save();
@@ -1563,7 +1590,7 @@ app.patch("/api/v1/orders/:id/cancel", async (req, res) => {
     // تنبيه المطعم (الأدمن والمطبخ)
     if (req.io) {
       req.io.to(order.restaurant.toString()).emit("order-updated", order);
-      req.io.to(order.restaurant.toString()).emit("order_cancelled_alert", order); // حدث خاص للتنبيه
+      req.io.to(order.restaurant.toString()).emit("order_cancelled_alert", order);
     }
     
     res.status(200).json({ status: "success", message: "تم إلغاء الطلب بنجاح" });
@@ -1572,11 +1599,39 @@ app.patch("/api/v1/orders/:id/cancel", async (req, res) => {
   }
 });
 
+// ✅ مسار جديد: تعديل محتويات الطلب (للويتر والأونر)
+app.put("/api/v1/orders/:id", protect, async (req, res) => {
+  try {
+    const { items, subTotal, totalPrice, taxAmount, serviceAmount } = req.body;
+    
+    const order = await Order.findOne({ _id: req.params.id, status: "pending" });
+    if (!order) return res.status(400).json({ message: "لا يمكن تعديل الطلب (قد يكون قيد التحضير أو مكتمل)" });
+
+    // تحديث البيانات
+    order.items = items;
+    order.subTotal = subTotal;
+    order.totalPrice = totalPrice;
+    order.taxAmount = taxAmount || 0;
+    order.serviceAmount = serviceAmount || 0;
+    
+    await order.save();
+
+    if (req.io) {
+      req.io.to(order.restaurant.toString()).emit("order-updated", order);
+    }
+
+    res.status(200).json({ status: "success", message: "تم تعديل الطلب بنجاح", data: { order } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة)
 // إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم الطاولات والتيك أواي بذكاء
 // إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم ID أو الطاولة أو التليفون
 // إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم رقم الأوردر اليدوي
-app.post("/api/v1/orders", async (req, res) => {
+// ✅ تم تعديل الحماية لتكون اختيارية لدعم طلبات المنيو (الزوار) والويتر معاً
+app.post("/api/v1/orders", protectOptional, async (req, res) => {
   try {
     const { 
       orderId,       // لو معاك الـ ID المخفي (من السيستم)
@@ -1690,7 +1745,8 @@ app.post("/api/v1/orders", async (req, res) => {
       const newOrder = await Order.create({
         restaurant: targetRestaurant,
         tableNumber: targetTable,
-        orderNum: nextOrderNum, // الرقم الجديد أوتوماتيك دائماً لمنع التضارب
+        orderNum: nextOrderNum,
+        createdBy: req.user ? req.user._id : undefined, // ✅ تسجيل هوية الويتر إن وجد
         items,
         subTotal: subTotal || calcTotal,
         taxAmount: taxAmount || 0,
@@ -1720,6 +1776,24 @@ app.post("/api/v1/orders", async (req, res) => {
   }
 });
 
+// ✅ مسار جديد لجلب طلبات الويتر الخاصة به فقط
+app.get("/api/v1/orders/my-orders", protect, async (req, res) => {
+  try {
+    // جلب طلبات آخر 24 ساعة الخاصة بالمستخدم الحالي
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    
+    const orders = await Order.find({
+      createdBy: req.user._id,
+      createdAt: { $gte: startOfToday }
+    }).sort({ createdAt: -1 });
+
+    res.status(200).json({ status: "success", data: { orders } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
 app.get("/api/v1/orders/active/:restaurantId", protect, async (req, res) => {
   try {
     const hasAccess = await checkOrderPermission(req.user, req.params.restaurantId);
@@ -1736,7 +1810,8 @@ app.get("/api/v1/orders/active/:restaurantId", protect, async (req, res) => {
   }
 });
 
-app.patch("/api/v1/orders/status/:id", protect, restrictTo("owner", "cashier", "kitchen", "admin"), async (req, res) => {
+// ✅ تم إضافة waiter للصلاحيات ليتمكن من إلغاء الطلب أو تعديل حالته
+app.patch("/api/v1/orders/status/:id", protect, restrictTo("owner", "cashier", "kitchen", "admin", "waiter"), async (req, res) => {
   try {
     const { status } = req.body;
     const order = await Order.findById(req.params.id);
@@ -1797,8 +1872,8 @@ app.get("/api/v1/orders/history/:restaurantId", protect, async (req, res) => {
       status: { $in: ["completed", "canceled"] },
     };
 
-    // منطق الكاشير: يرى طلبات اليوم فقط
-    if (req.user.role === "cashier") {
+    // منطق الكاشير والويتر: يرى طلبات اليوم فقط
+    if (req.user.role === "cashier" || req.user.role === "waiter") {
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       query.createdAt = { $gte: startOfToday };

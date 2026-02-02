@@ -1278,14 +1278,25 @@
       .design-container {
         display: flex;
         gap: 25px;
-        height: calc(100vh - 100px);
+        height: calc(100vh - 120px); /* تحسين الارتفاع */
         overflow: hidden;
+        min-height: 500px;
       }
       
       .design-controls {
         flex: 1.2;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden; /* نلغي السكرول من هنا */
+        position: relative;
+      }
+      /* كلاس جديد لمنطقة المحتوى عشان تعمل سكرول لوحدها */
+      .design-scroll-area {
+        flex: 1;
         overflow-y: auto;
-        padding-right: 5px;
+        padding: 5px;
+        padding-bottom: 20px;
         display: flex;
         flex-direction: column;
         gap: 20px;
@@ -1297,10 +1308,12 @@
         display: flex;
         justify-content: center;
         align-items: flex-start;
-        padding-top: 20px;
+        padding-top: 40px;
+        padding-bottom: 40px;
         background: var(--bg); 
         border-radius: 20px;
         position: relative;
+        overflow-y: auto; /* السماح بالسكرول لرؤية الهاتف كاملاً */
       }
 
       .design-section {
@@ -1638,6 +1651,16 @@
     box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     transform: scale(1.02);
 }
+
+/* === إصلاح لون الخلفية عند الملء التلقائي للمتصفح === */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover, 
+      input:-webkit-autofill:focus, 
+      input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 30px var(--bg) inset !important;
+          -webkit-text-fill-color: var(--text-main) !important;
+          transition: background-color 5000s ease-in-out 0s;
+      }
     </style>
   </head>
   <body>
@@ -1703,6 +1726,10 @@
         
         <div class="nav-item" onclick="switchView('manual-pos')" id="nav-manual-pos">
           <i class="fas fa-cash-register"></i> أوردر مباشر
+        </div>
+
+        <div class="nav-item hidden" onclick="switchView('my-orders')" id="nav-my-orders">
+          <i class="fas fa-clipboard-list"></i> طلباتي المرسلة
         </div>
 
         <div class="nav-item hidden" onclick="switchView('recipes')" id="nav-recipes">
@@ -1821,6 +1848,14 @@
             id="order-sound"
             src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
           ></audio>
+        </div>
+
+        <div id="view-my-orders" class="hidden">
+            <div class="header">
+                <h3 class="page-title">قائمة طلباتي (اليوم)</h3>
+                <button class="btn btn-outline" onclick="loadMyWaiterOrders()"><i class="fas fa-sync"></i> تحديث</button>
+            </div>
+            <div id="my-orders-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;"></div>
         </div>
 
         <div id="view-manual-pos" class="hidden">
@@ -2643,6 +2678,7 @@
               <select id="staff-role">
                 <option value="cashier">كاشير</option>
                 <option value="kitchen">شيف</option>
+                <option value="waiter">ويتر (نادل)</option>
               </select>
             </div>
 
@@ -2720,6 +2756,10 @@
             <div class="form-grid" style="margin-top: 10px">
               <input type="number" id="coup-value" placeholder="قيمة الخصم" />
               <input type="number" id="coup-min" placeholder="الحد الأدنى للطلب" />
+            </div>
+            <div class="form-grid" style="margin-top: 10px">
+              <input type="number" id="coup-max-disc" placeholder="أقصى حد للخصم (اختياري)" />
+              <input type="number" id="coup-limit" placeholder="عدد مرات الاستخدام (الكل)" value="1000" />
             </div>
             <button class="btn btn-primary" style="margin-top: 15px" onclick="createCoupon()">إنشاء الكوبون</button>
           </div>
@@ -3287,8 +3327,7 @@
           <div class="design-container">
             
             <div class="design-controls">
-              
-              <div class="design-section">
+              <div class="design-scroll-area"> <div class="design-section">
                 <div class="design-section-title">
                   <i class="fas fa-magic"></i> القوالب السحرية (Themes)
                 </div>
@@ -3542,7 +3581,7 @@
                 </div>
               </div>
 
-              <div style="position: sticky; bottom: 0; background: var(--bg); padding: 15px 0; border-top: 1px solid var(--border-color); display:flex; gap:10px; z-index:10;">
+              </div> <div style="background: var(--surface); padding: 15px; border-top: 1px solid var(--border-color); display:flex; gap:10px; z-index:100; box-shadow: 0 -5px 15px rgba(0,0,0,0.05);">
                 <button class="btn btn-outline" onclick="resetDesign()" style="flex: 1; border-color: var(--danger); color: var(--danger);">
                   <i class="fas fa-undo"></i> استعادة
                 </button>
@@ -3648,6 +3687,9 @@
 
             applyPermissions(data.userRole);
             currentUserRole = data.userRole;
+
+            // تم نقل إعدادات الويتر إلى دالة applyPermissions لتوحيد النظام
+
             if (data.shiftStart) sessionStorage.setItem("shiftStart", data.shiftStart);
             if (data.shiftEnd) sessionStorage.setItem("shiftEnd", data.shiftEnd);
 
@@ -3697,7 +3739,7 @@
             }
 
             // عرض اسم المستخدم
-            const roleNames = { owner: "المالك", cashier: "الكاشير", kitchen: "المطبخ" };
+            const roleNames = { owner: "المالك", cashier: "الكاشير", kitchen: "المطبخ", waiter: "الويتر" };
             const roleAr = roleNames[currentUserRole] || currentUserRole;
             const userName = sessionStorage.getItem("currentUserName") || "مستخدم";
 
@@ -3710,12 +3752,12 @@
 
             document.getElementById("dashboard-section").classList.remove("hidden");
             
-            if (data.userRole === "cashier" || data.userRole === "kitchen") {
+            if (data.userRole === "cashier" || data.userRole === "kitchen" || data.userRole === "waiter") {
               checkShiftStatus(data.userRole);
             }
             
             // تحميل المنتجات للكاشير والأونر
-            if (data.userRole === "owner" || data.userRole === "cashier") {
+            if (data.userRole === "owner" || data.userRole === "cashier" || data.userRole === "waiter") {
               loadCategories();
               loadProducts();
             }
@@ -3751,6 +3793,7 @@
             // توجيه المستخدم لآخر صفحة كان فيها
             const lastView = localStorage.getItem("lastActiveView");
             if (data.userRole === "kitchen") switchView("orders");
+            else if (data.userRole === "waiter") switchView("manual-pos");
             else if (data.userRole === "cashier") {
               if (lastView === "history") switchView("history");
               else switchView("orders");
@@ -3906,7 +3949,8 @@ function switchView(viewName) {
 
         // 2. Hide all views and remove active states
         // تمت إضافة "recipes" و "design" للقائمة لإصلاح مشكلة عدم إغلاق التصميم
-const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "coupons", "accounting", "reservations"];
+// ✅ تمت إضافة my-orders
+const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "coupons", "accounting", "reservations", "my-orders"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
@@ -3993,6 +4037,9 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
         if (viewName === "manual-pos") {
             initPosSystem();
+        }
+        if (viewName === "my-orders") {
+            loadMyWaiterOrders();
         }
       }
       function isNumberKey(evt) {
@@ -6746,32 +6793,29 @@ const imgHTML = img
       }
 
    async function submitPosOrder() {
-    if (posCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة!', 'warning');
+    if (posCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة', 'warning');
 
     const tableNumVal = document.getElementById('pos-table-num').value;
-    // ✅ 1. قراءة رقم الأوردر اليدوي
-    const manualOrderNumVal = document.getElementById('pos-manual-order-num').value; 
-    
-    const rId = document.getElementById('restaurant-id').value;
     const tableNumber = tableNumVal ? tableNumVal : "تيك أواي";
+    
+    const manualOrderNumVal = document.getElementById('pos-manual-order-num').value;
 
-    // تجهيز القيم
+    const rId = document.getElementById("restaurant-id").value;
     const subTotal = parseFloat(document.getElementById('pos-subtotal').innerText);
-    const finalTotal = parseFloat(document.getElementById('pos-total').innerText);
-    const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
-    const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
-    const taxAmount = (subTotal * taxRate) / 100;
-    const serviceAmount = (subTotal * serviceRate) / 100;
+    const taxAmount = parseFloat(document.getElementById('pos-tax').innerText) || 0; // تبسيط الحساب (مجموع الضريبة والخدمة المعروض)
+    const serviceAmount = 0; // القيمة مدمجة في العرض، أو يمكنك فصلها إذا أردت
+    const finalTotal = parseFloat(document.getElementById('pos-total').innerText.replace(' ج.م', ''));
 
     const items = posCart.map(i => ({
+        productId: i.productId.split('-')[0], // إزالة اللاحقة إذا كانت موجودة
         name: i.name,
-        qty: i.qty,
-        price: i.price
+        price: i.price,
+        qty: i.qty
     }));
 
     const body = {
         restaurantId: rId,
-        manualOrderNum: manualOrderNumVal, // ✅ 2. إرسال الرقم للسيرفر
+        manualOrderNum: manualOrderNumVal,
         tableNumber: tableNumber === "تيك أواي" ? 0 : tableNumber,
         items: items,
         subTotal: subTotal,
@@ -6782,34 +6826,33 @@ const imgHTML = img
         status: 'pending'
     };
 
-    Swal.fire({
-        title: 'جاري إرسال الطلب...',
-        didOpen: () => Swal.showLoading()
-    });
+    Swal.fire({ title: 'جاري إرسال الطلب...', didOpen: () => Swal.showLoading() });
 
     try {
         const res = await fetch('/api/v1/orders', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            // ✅ التصحيح: إضافة الهيدر الخاص بالتوكن
+            headers: { 
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}` 
+            },
             body: JSON.stringify(body)
         });
-        
+
         const data = await res.json();
-        
+
         if (data.status === 'success') {
-            // رسالة النجاح (ممكن تختلف لو كان دمج أو جديد)
             const msg = data.message || 'تم إنشاء الطلب بنجاح';
             Swal.fire({ icon: 'success', title: msg, timer: 2000, showConfirmButton: false });
             
-            // تفريغ السلة والخانات
+            // تفريغ السلة
             posCart = [];
             document.getElementById('pos-table-num').value = '';
-            document.getElementById('pos-manual-order-num').value = ''; // ✅ 3. تصفير الخانة
+            document.getElementById('pos-manual-order-num').value = '';
             renderPosCart();
             
-            // التحويل لصفحة الطلبات الحية فوراً
-            switchView('orders'); 
-            
+            // التحويل لصفحة الطلبات
+            switchView('orders');
         } else {
             Swal.fire('خطأ', data.message || 'فشل إنشاء الطلب', 'error');
         }
@@ -6831,8 +6874,10 @@ const imgHTML = img
           window.initSocket(rId);
         }
 
+        // تحميل الطلبات فقط إذا لم يكن ويتر، أو إذا كانت الصفحة مفتوحة بالفعل لغير الويتر
         if (
-          !document.getElementById("view-orders").classList.contains("hidden")
+          !document.getElementById("view-orders").classList.contains("hidden") &&
+          currentUserRole !== 'waiter'
         ) {
           window.loadOrders();
         }
@@ -7017,6 +7062,7 @@ const imgHTML = img
           ],
           cashier: ["nav-orders", "nav-history"],
           kitchen: ["nav-orders"],
+          waiter: ["nav-manual-pos", "nav-my-orders"], // الويتر يرى الأوردر المباشر والطلبات الحية فقط
         };
 
         const allowed = permissions[role] || [];
@@ -7052,10 +7098,17 @@ const imgHTML = img
           const list = document.getElementById("staff-list");
           list.innerHTML = "";
           data.data.staff.forEach((u) => {
-            let roleBadge =
-              u.role === "cashier"
-                ? '<span class="badge" style="background:#dbeafe; color:#1e40af">كاشير</span>'
-                : '<span class="badge" style="background:#ffedd5; color:#9a3412">مطبخ</span>';
+            // ✅ تصحيح عرض الأدوار ليشمل الويتر
+            let roleBadge = '';
+            if (u.role === 'cashier') {
+                roleBadge = '<span class="badge" style="background:#dbeafe; color:#1e40af">كاشير</span>';
+            } else if (u.role === 'kitchen') {
+                roleBadge = '<span class="badge" style="background:#ffedd5; color:#9a3412">مطبخ</span>';
+            } else if (u.role === 'waiter') {
+                roleBadge = '<span class="badge" style="background:#e9d5ff; color:#6b21a8">ويتر</span>';
+            } else {
+                roleBadge = '<span class="badge" style="background:#f3f4f6; color:#374151">' + u.role + '</span>';
+            }
 
             const shiftInfo =
               u.shiftStart && u.shiftEnd
@@ -7536,39 +7589,54 @@ const imgHTML = img
       }
 
       async function createCoupon() {
-        const rId = document.getElementById("restaurant-id").value;
-        const body = {
-          code: document.getElementById("coup-code").value,
-          discountType: document.getElementById("coup-type").value,
-          value: document.getElementById("coup-value").value,
-          minOrderVal: document.getElementById("coup-min").value || 0,
-          maxDiscount: document.getElementById("coup-max-disc").value || 0,
-          usageLimit: document.getElementById("coup-limit").value || 1000,
-        };
-        if (!body.code || !body.value)
-          return Swal.fire("تنبيه", "أدخل الكود والقيمة", "warning");
+    const rId = document.getElementById("restaurant-id").value;
+    
+    // دالة مساعدة لجلب القيمة بأمان دون التسبب في خطأ إذا كان العنصر غير موجود
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+    };
 
+    const body = {
+        code: getVal("coup-code"),
+        discountType: getVal("coup-type"),
+        value: getVal("coup-value"),
+        minOrderVal: getVal("coup-min") || 0,
+        maxDiscount: getVal("coup-max-disc") || 0,
+        usageLimit: getVal("coup-limit") || 1000,
+    };
+
+    if (!body.code || !body.value) return Swal.fire("تنبيه", "أدخل الكود والقيمة", "warning");
+
+    try {
         const res = await fetch(`/api/v1/coupons/${rId}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(body),
         });
         const data = await res.json();
+        
         if (data.status === "success") {
-          Swal.fire({
-            toast: true,
-            icon: "success",
-            title: "تم إنشاء الكوبون",
-          });
-          document.getElementById("coup-code").value = "";
-          loadCoupons();
+            Swal.fire({
+                toast: true,
+                icon: "success",
+                title: "تم إنشاء الكوبون",
+            });
+            // تفريغ الحقول
+            if(document.getElementById("coup-code")) document.getElementById("coup-code").value = "";
+            if(document.getElementById("coup-value")) document.getElementById("coup-value").value = "";
+            loadCoupons();
         } else {
-          Swal.fire("خطأ", data.message, "error");
+            Swal.fire("خطأ", data.message, "error");
         }
-      }
+    } catch(e) {
+        console.error(e);
+        Swal.fire("خطأ", "فشل الاتصال", "error");
+    }
+}
 
       async function deleteCoupon(id) {
         if (
@@ -8633,8 +8701,15 @@ function removeIngredient(index) {
         let manualCart = [];
 
         function openManualOrderModal() {
-            // التأكد من تحميل المنتجات أولاً
-            if (!window.allProductsGlobal || window.allProductsGlobal.length === 0) {
+           // تصفير وضع التعديل (رجوع للوضع الافتراضي)
+           editingOrderId = null;
+           const modalTitle = document.querySelector('#manual-order-modal h3');
+           if(modalTitle) modalTitle.innerHTML = '<i class="fas fa-cash-register"></i> إنشاء طلب يدوي';
+           const saveBtn = document.querySelector('#manual-order-modal .btn-success');
+           if(saveBtn) saveBtn.innerHTML = '<i class="fas fa-check"></i> تأكيد وإنشاء الطلب';
+
+           // التأكد من تحميل المنتجات أولاً
+           if (!window.allProductsGlobal || window.allProductsGlobal.length === 0) {
                 loadProducts().then(() => {
                     document.getElementById('manual-order-modal').style.display = 'block';
                 });
@@ -8759,65 +8834,90 @@ function removeIngredient(index) {
             renderManualCart();
         }
 
-        async function submitManualOrder() {
-            if (manualCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة', 'warning');
+       async function submitManualOrder() {
+    if (manualCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة', 'warning');
+    
+    const tableNumVal = document.getElementById('manual-table').value;
+    // لو الويتر سابها فاضية وهو بيعدل، نحافظ على القيمة القديمة أو نعتبرها تيك أواي
+    const tableNum = tableNumVal || 'تيك أواي';
+    const rId = document.getElementById('restaurant-id').value;
 
-            const tableNum = document.getElementById('manual-table').value || 'تيك أواي';
-            const rId = document.getElementById('restaurant-id').value;
+    const subTotal = parseFloat(document.getElementById('manual-subtotal').innerText);
+    const taxAmount = 0; // تبسيط (ممكن تأخد القيم من الإعدادات لو عايز)
+    const serviceAmount = 0;
+    const finalTotal = parseFloat(document.getElementById('manual-final').innerText);
 
-            // تجهيز البيانات بنفس هيكل الـ API
-            const subTotal = parseFloat(document.getElementById('manual-subtotal').innerText);
-            const taxServ = parseFloat(document.getElementById('manual-tax-serv').innerText);
-            const finalTotal = parseFloat(document.getElementById('manual-final').innerText);
+    // تجهيز الأصناف
+    const items = manualCart.map(i => ({ 
+        productId: i.id, // مهم عشان الـ Stock
+        name: i.name, 
+        qty: i.qty, 
+        price: i.price 
+    }));
 
-            // تقسيم الضريبة والخدمة تقريبياً
-            const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
-            const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
-            
-            const taxAmount = (subTotal * taxRate) / 100;
-            const serviceAmount = (subTotal * serviceRate) / 100;
+    Swal.fire({ title: 'جاري الحفظ...', didOpen: () => Swal.showLoading() });
 
-            const items = manualCart.map(i => ({
-                name: i.name,
-                qty: i.qty,
-                price: i.price
-            }));
+    try {
+        let url = '/api/v1/orders';
+        let method = 'POST';
+        let body = {
+            restaurantId: rId,
+            tableNumber: tableNum,
+            items: items,
+            subTotal: subTotal,
+            taxAmount: taxAmount,
+            serviceAmount: serviceAmount,
+            totalPrice: finalTotal
+        };
 
-            const body = {
-                restaurantId: rId,
-                tableNumber: tableNum,
+        // لو بنعدل طلب موجود
+        if (editingOrderId) {
+            url = `/api/v1/orders/${editingOrderId}`;
+            method = 'PUT';
+            // في التعديل بنبعت البيانات الجديدة بس
+            body = {
                 items: items,
                 subTotal: subTotal,
                 taxAmount: taxAmount,
                 serviceAmount: serviceAmount,
-                couponCode: null,
-                discountAmount: 0,
                 totalPrice: finalTotal
             };
-
-            Swal.showLoading();
-            try {
-                const res = await fetch('/api/v1/orders', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                
-                const data = await res.json();
-                
-                                if (data.status === 'success') {
-                    Swal.fire({ icon: 'success', title: 'تم إنشاء الطلب', timer: 1500, showConfirmButton: false });
-                    closeManualOrderModal();
-                    switchView('orders'); // التحويل لصفحة الطلبات الحية
-                    loadOrders(); 
-                } else {
-                    Swal.fire('خطأ', data.message, 'error');
-                }
-            } catch (e) {
-                console.error(e);
-                Swal.fire('خطأ', 'فشل الاتصال', 'error');
-            }
         }
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (data.status === 'success') {
+             Swal.fire({ icon: 'success', title: editingOrderId ? 'تم تعديل الطلب' : 'تم إنشاء الطلب', timer: 1500, showConfirmButton: false });
+             closeManualOrderModal();
+             
+             // لو ويتر، حدث جدول طلباته
+             if (currentUserRole === 'waiter') {
+                 loadMyWaiterOrders();
+             } else {
+                 // لو كاشير أو أونر، حدث صفحة الطلبات الحية
+                 if(typeof loadOrders === 'function') loadOrders();
+             }
+             
+             // تصفير المتغير
+             editingOrderId = null;
+        } else {
+             Swal.fire('خطأ', data.message, 'error');
+        }
+
+    } catch (e) {
+        console.error(e);
+        Swal.fire('خطأ', 'فشل الاتصال', 'error');
+    }
+}
         function applyUserPermissions(user) {
         const stockSidebar = document.getElementById('nav-stock'); // تأكد أن لديك ID للزر في السايد بار
         const stockMobile = document.getElementById('mob-nav-stock');
@@ -10036,6 +10136,153 @@ async function deleteReservation(id) {
         }
     }
 }
+
+// ✅ دالة جلب طلبات الويتر الخاصة (بتصميم جدول)
+      async function loadMyWaiterOrders() {
+          const container = document.getElementById("my-orders-grid");
+          // تغيير نمط العرض من شبكة (grid) إلى بلوك عادي عشان الجدول ياخد راحته
+          container.style.display = "block"; 
+          container.innerHTML = '<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>';
+
+          try {
+              const res = await fetch("/api/v1/orders/my-orders", {
+                  headers: { Authorization: `Bearer ${token}` }
+              });
+              const data = await res.json();
+              
+              container.innerHTML = "";
+              
+              if (!data.data.orders || data.data.orders.length === 0) {
+                  container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--secondary)"><i class="fas fa-clipboard-list fa-3x" style="opacity:0.3"></i><p>لم تقم بإرسال طلبات اليوم</p></div>';
+                  return;
+              }
+
+              // بناء الجدول
+              let tableHtml = `
+                <div class="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>رقم</th>
+                        <th>الطاولة</th>
+                        <th>الأصناف</th>
+                        <th>الإجمالي</th>
+                        <th>الحالة</th>
+                        <th>إجراءات</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+              `;
+
+              data.data.orders.forEach(order => {
+                  const itemsSummary = order.items.map(i => `${i.name} (x${i.qty})`).join('، ');
+                  const statusColors = {
+                    'pending': { text: 'انتظار', color: '#f59e0b', bg: '#fef3c7' },
+                    'preparing': { text: 'جاري التحضير', color: '#3b82f6', bg: '#dbeafe' },
+                    'completed': { text: 'مكتمل', color: '#10b981', bg: '#dcfce7' },
+                    'canceled': { text: 'ملغي', color: '#ef4444', bg: '#fee2e2' }
+                  };
+                  const st = statusColors[order.status] || statusColors['pending'];
+                  const badge = `<span class="badge" style="background:${st.bg}; color:${st.color}">${st.text}</span>`;
+                  
+                  // أزرار التعديل والإلغاء تظهر فقط لو الطلب في حالة "انتظار" (Pending)
+                  let actionBtns = '-';
+                  if(order.status === 'pending') {
+                      const orderData = encodeURIComponent(JSON.stringify(order));
+                      actionBtns = `
+                        <div style="display:flex; gap:5px;">
+                            <button onclick="editMyOrder('${orderData}')" class="btn btn-outline" style="padding:5px 10px; font-size:12px; color:var(--primary); border-color:var(--primary)" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="cancelMyOrder('${order._id}')" class="btn btn-outline" style="padding:5px 10px; font-size:12px; color:var(--danger); border-color:var(--danger)" title="إلغاء">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                      `;
+                  } else {
+                      actionBtns = '<small style="color:#999">لا يمكن التعديل</small>';
+                  }
+
+                  tableHtml += `
+                    <tr>
+                      <td style="font-weight:bold">#${order.orderNum || String(order._id).slice(-4)}</td>
+                      <td>${order.tableNumber === 0 ? 'تيك أواي' : order.tableNumber}</td>
+                      <td style="font-size:13px; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${itemsSummary}</td>
+                      <td style="font-weight:bold; color:var(--primary)">${order.totalPrice} ج.م</td>
+                      <td>${badge}</td>
+                      <td>${actionBtns}</td>
+                    </tr>
+                  `;
+              });
+
+              tableHtml += `</tbody></table></div>`;
+              container.innerHTML = tableHtml;
+
+          } catch (e) {
+              console.error(e);
+              container.innerHTML = '<p style="color:red; text-align:center">حدث خطأ في تحميل الطلبات</p>';
+          }
+      }
+
+      // دوال مساعدة للويتر
+      async function cancelMyOrder(id) {
+          const result = await Swal.fire({
+              title: 'إلغاء الطلب؟',
+              text: "سيتم حذف الطلب من عند الكاشير والمطبخ.",
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonColor: '#ef4444',
+              confirmButtonText: 'نعم، إلغاء',
+              cancelButtonText: 'تراجع'
+          });
+
+          if(result.isConfirmed) {
+              try {
+                  const res = await fetch(`/api/v1/orders/${id}/cancel`, {
+                      method: 'PATCH',
+                      headers: { Authorization: `Bearer ${token}` }
+                  });
+                  const data = await res.json();
+                  if(data.status === 'success') {
+                      Swal.fire({toast:true, icon:'success', title:'تم الإلغاء'});
+                      loadMyWaiterOrders();
+                  } else {
+                      Swal.fire('خطأ', data.message, 'error');
+                  }
+              } catch(e) {
+                  console.error(e);
+                  Swal.fire('خطأ', 'فشل الاتصال', 'error');
+              }
+          }
+      }
+
+      // متغير لتخزين ID الطلب الجاري تعديله
+      let editingOrderId = null; 
+
+      function editMyOrder(orderDataEncoded) {
+          const order = JSON.parse(decodeURIComponent(orderDataEncoded));
+          
+          // 1. فتح نافذة الأوردر اليدوي
+          openManualOrderModal();
+          
+          // 2. تعيين وضع التعديل
+          editingOrderId = order._id;
+          document.querySelector('#manual-order-modal h3').innerHTML = `<i class="fas fa-edit"></i> تعديل الطلب #${order.orderNum}`;
+          document.querySelector('#manual-order-modal .btn-success').innerHTML = `<i class="fas fa-save"></i> حفظ التعديلات`;
+
+          // 3. ملء البيانات
+          document.getElementById('manual-table').value = order.tableNumber === 0 ? 'تيك أواي' : order.tableNumber;
+          
+          // 4. ملء السلة
+          manualCart = order.items.map(item => ({
+              id: item.productId, // نحتاج ID المنتج الأصلي لو موجود
+              name: item.name,
+              price: item.price,
+              qty: item.qty
+          }));
+          
+          renderManualCart();
+      }
 </script>
   </body>
 </html>

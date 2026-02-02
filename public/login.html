@@ -410,7 +410,8 @@
               }).then(() => {
                 window.location.href = "/sales-dashboard";
               });
-            } else if (["owner", "cashier", "kitchen"].includes(user.role)) {
+            // ✅ تم إضافة waiter للقائمة المسموح لها بالدخول
+            } else if (["owner", "cashier", "kitchen", "waiter"].includes(user.role)) {
               sessionStorage.setItem("ownerToken", data.token);
               sessionStorage.setItem("currentUserName", user.name);
 

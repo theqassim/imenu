@@ -2334,9 +2334,15 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
       function openCart() {
         renderCartItems();
+        
+        // ✅ إصلاح: التأكد من إخفاء القسم إذا كان النظام معطلاً
+        const couponSec = document.getElementById("coupon-section");
         if (storeSettings.enableCoupons) {
-          document.getElementById("coupon-section").classList.remove("hidden");
+          couponSec.classList.remove("hidden");
+        } else {
+          couponSec.classList.add("hidden");
         }
+
         document.getElementById("modal-overlay").style.display = "block";
         setTimeout(
           () => document.getElementById("cart-modal").classList.add("open"),
