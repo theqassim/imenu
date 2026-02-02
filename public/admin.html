@@ -7034,46 +7034,63 @@ async function submitPosOrder() {
       };
 
       function applyPermissions(role) {
+        // 1. قائمة بكل العناصر (ديسكتوب + موبايل) لإخفائها أولاً
         const allNavs = [
-          "nav-categories",
-          "nav-products",
-          "nav-bulk",
-          "nav-history",
-          "nav-design",
-          "nav-settings",
-          "nav-staff",
+          // Desktop Sidebar IDs
+          "nav-categories", "nav-products", "nav-bulk", "nav-history",
+          "nav-design", "nav-settings", "nav-staff", "nav-orders",
+          "nav-manual-pos", "nav-my-orders", "nav-coupons", "nav-reservations",
+          
+          // Mobile Bottom Nav IDs
+          "mob-nav-orders", "mob-nav-manual-pos", "mob-nav-my-orders",
+          "mob-nav-products", "mob-nav-categories", "mob-nav-settings", "mob-nav-stock"
         ];
 
+        // 2. تحديد الصلاحيات لكل دور
         const permissions = {
           owner: [
-            "nav-categories",
-            "nav-products",
-            "nav-bulk",
-            "nav-history",
-            "nav-design",
-            "nav-settings",
-            "nav-orders",
-            "nav-staff",
-            "nav-coupons",
-            "nav-reservations"
+            // Desktop
+            "nav-categories", "nav-products", "nav-bulk", "nav-history",
+            "nav-design", "nav-settings", "nav-orders", "nav-staff",
+            "nav-coupons", "nav-reservations", "nav-manual-pos",
+            // Mobile
+            "mob-nav-orders", "mob-nav-products", "mob-nav-categories", "mob-nav-settings"
           ],
-          cashier: ["nav-orders", "nav-history"],
-          kitchen: ["nav-orders"],
-          waiter: ["nav-manual-pos", "nav-my-orders"], // الويتر يرى الأوردر المباشر والطلبات الحية فقط
+          cashier: [
+            // Desktop
+            "nav-orders", "nav-history", "nav-manual-pos",
+            // Mobile
+            "mob-nav-orders"
+          ],
+          kitchen: [
+            // Desktop
+            "nav-orders",
+            // Mobile
+            "mob-nav-orders"
+          ],
+          waiter: [
+            // Desktop
+            "nav-manual-pos", "nav-my-orders",
+            // Mobile
+            "mob-nav-manual-pos", "mob-nav-my-orders"
+          ]
         };
 
         const allowed = permissions[role] || [];
 
+        // 3. إخفاء الكل أولاً
         allNavs.forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.classList.add("hidden");
         });
 
+        // 4. إظهار المسموح به فقط
         allowed.forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.classList.remove("hidden");
         });
 
+        // منطق إضافي خاص
         if (role === "owner") loadStaff();
 
         const recentBtn = document.getElementById("btn-recent-orders");
@@ -9837,32 +9854,46 @@ function calculatePreviewTotals() {
     </script>
 
     <div class="mobile-bottom-nav">
-        <div class="nav-icon active" onclick="switchView('orders')" id="mob-nav-orders">
+        <div class="nav-icon hidden" onclick="switchView('orders')" id="mob-nav-orders">
             <i class="fas fa-bell"></i>
             <span>الطلبات</span>
             <span id="mob-badge" class="hidden" style="position:absolute; top:5px; right:30%; width:8px; height:8px; background:red; border-radius:50%;"></span>
         </div>
-        <div class="nav-icon" onclick="switchView('products')" id="mob-nav-products">
+
+        <div class="nav-icon hidden" onclick="switchView('manual-pos')" id="mob-nav-manual-pos">
+            <i class="fas fa-cash-register"></i>
+            <span>أوردر مباشر</span>
+        </div>
+
+        <div class="nav-icon hidden" onclick="switchView('my-orders')" id="mob-nav-my-orders">
+            <i class="fas fa-clipboard-list"></i>
+            <span>طلباتي</span>
+        </div>
+
+        <div class="nav-icon hidden" onclick="switchView('products')" id="mob-nav-products">
             <i class="fas fa-hamburger"></i>
             <span>المنتجات</span>
         </div>
-        <div class="nav-icon" onclick="switchView('categories')" id="mob-nav-categories">
+        <div class="nav-icon hidden" onclick="switchView('categories')" id="mob-nav-categories">
             <i class="fas fa-layer-group"></i>
             <span>الأقسام</span>
         </div>
+
         <div class="nav-icon hidden" onclick="switchView('stock')" id="mob-nav-stock">
             <i class="fas fa-boxes"></i>
             <span>المخزن</span>
         </div>
-        <div class="nav-icon" onclick="switchView('settings')" id="mob-nav-settings">
+
+        <div class="nav-icon hidden" onclick="switchView('settings')" id="mob-nav-settings">
             <i class="fas fa-cog"></i>
             <span>الإعدادات</span>
         </div>
+
         <div class="nav-icon" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
             <span>المزيد</span>
         </div>
-</div>
+    </div>
 <script>
   function checkTrialWarning(warningData) {
     if (!warningData) return;
