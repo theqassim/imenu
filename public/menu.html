@@ -1809,6 +1809,7 @@
       let productsData = [];
       let restaurantId = "";
       let categoryImages = {};
+      let categoryOrderList = [];
       let storeSettings = {
         mode: "whatsapp",
         whatsappNumber: "",
@@ -2043,6 +2044,8 @@
                 catData.data.categories.forEach((c) => {
                   categoryImages[c.name] = c.image;
                 });
+                // ترتيب الأقسام زي ما رتبه صاحب المطعم بالظبط (سحب وإفلات)
+                categoryOrderList = catData.data.categories.map((c) => c.name);
               }
             } catch (e) {
               console.log("Silent Error: Failed to load category images");
@@ -2101,8 +2104,15 @@
           grouped[item.category].push(item);
         });
 
+        // ترتيب الأقسام حسب ترتيب صاحب المطعم (categoryOrderList)، وأي قسم مش موجود في القايمة يتحط في الآخر
+        const orderedCatNames = [
+          ...categoryOrderList.filter((name) => grouped[name]),
+          ...Object.keys(grouped).filter((name) => !categoryOrderList.includes(name)),
+        ];
+
         let first = true;
-        for (const [cat, items] of Object.entries(grouped)) {
+        for (const cat of orderedCatNames) {
+          const items = grouped[cat];
           const activeClass = first ? "active" : "";
 
           let imgHtml = "";
