@@ -1773,6 +1773,9 @@
         <div class="nav-item hidden" onclick="switchView('reservations')" id="nav-reservations">
           <i class="fas fa-calendar-check"></i> طلبات الحجز
         </div>
+        <div class="nav-item hidden" onclick="switchView('ratings')" id="nav-ratings">
+          <i class="fas fa-star"></i> التقييمات
+        </div>
         <div class="nav-item" onclick="toggleDarkMode()">
           <i class="fas fa-moon"></i> وضع ليلي/نهاري
         </div>
@@ -2794,6 +2797,37 @@
             </table>
           </div>
         </div>
+        <div id="view-ratings" class="hidden">
+          <div class="header">
+            <h3 class="page-title">تقييمات العملاء</h3>
+            <button class="btn btn-outline" onclick="loadRatings()"><i class="fas fa-sync"></i> تحديث</button>
+          </div>
+
+          <div class="card" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+            <div style="text-align:center; min-width:110px;">
+              <div id="rating-avg-number" style="font-size:38px; font-weight:800; color:var(--primary);">0.0</div>
+              <div id="rating-avg-stars" style="font-size:16px; color:#f5b301; direction:ltr;"></div>
+            </div>
+            <div style="flex:1; min-width:150px;">
+              <div style="font-weight:bold;">متوسط تقييم العملاء</div>
+              <div id="rating-count-label" style="color:var(--secondary); font-size:13px; margin-top:4px;">لا يوجد تقييمات بعد</div>
+            </div>
+          </div>
+
+          <div class="table-wrapper" style="margin-top:20px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>العميل</th>
+                  <th>التقييم</th>
+                  <th>التعليق</th>
+                  <th>الوقت</th>
+                </tr>
+              </thead>
+              <tbody id="ratings-list"></tbody>
+            </table>
+          </div>
+        </div>
         <div id="view-stock" class="hidden">
             <div class="card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -3252,7 +3286,7 @@
                   <div>
                     <b><i class="fas fa-bell"></i> إشعارات التقييم</b>
                     <div style="color: var(--secondary); font-size: 13px; margin-top: 3px">
-                      هتوصلك إشعار على الجهاز ده أول ما عميل يضغط على رابط "تقييمنا" في المنيو.
+                      هتوصلك إشعار على الجهاز ده فوراً أول ما عميل يبعت تقييم جديد (بالنجوم والتعليق).
                     </div>
                   </div>
                   <button type="button" class="btn btn-primary" id="btn-enable-rating-push" onclick="enableRatingPushNotifications()">
@@ -3703,6 +3737,7 @@
             const data = result.data;
             document.getElementById("restaurant-id").value = data.restaurant._id;
             document.getElementById("preview-link").href = `/menu/${data.restaurant.slug}`;
+            window.currentRestaurantSlug = data.restaurant.slug;
 
             // إعدادات المتجر
             document.getElementById("set-orderMode").value = "view_only";
@@ -3770,6 +3805,25 @@
                  if(document.getElementById('res-booked-display')) {
                      updateReservationStats(payload.total, payload.booked);
                  }
+            });
+
+            // 3. عند وصول تقييم جديد من عميل
+            socket.on("new_rating", (payload) => {
+                const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+                audio.play().catch(e => console.log('Audio play failed'));
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `⭐ تقييم جديد من ${payload.customerName} (${payload.stars}/5)`,
+                    showConfirmButton: false,
+                    timer: 5000
+                });
+
+                if(!document.getElementById('view-ratings').classList.contains('hidden')) {
+                    loadRatings();
+                }
             });
             // =======================================
 
@@ -3990,8 +4044,57 @@ async function updateResStatus(id, status) {
     }
 }
 
+// --- Ratings Logic ---
+function renderStarsHtml(stars) {
+  const n = Math.round(Number(stars) || 0);
+  return '<i class="fas fa-star"></i>'.repeat(n) + '<i class="far fa-star"></i>'.repeat(Math.max(0, 5 - n));
+}
+
+async function loadRatings() {
+  const list = document.getElementById("ratings-list");
+  if (!list) return;
+  list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">جاري التحميل... <i class="fas fa-spinner fa-spin"></i></td></tr>';
+
+  try {
+    const res = await fetch('/api/v1/ratings/list', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data.status === 'success') {
+      const { ratings, average, count } = data.data;
+
+      document.getElementById("rating-avg-number").innerText = average.toFixed(1);
+      document.getElementById("rating-avg-stars").innerHTML = renderStarsHtml(average);
+      document.getElementById("rating-count-label").innerText = count > 0 ? `بناءً على ${count} تقييم` : "لا يوجد تقييمات بعد";
+
+      list.innerHTML = "";
+      if (!ratings || ratings.length === 0) {
+        list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#64748b;">لسه معندكش تقييمات، شارك رابط التقييم مع عملائك</td></tr>';
+        return;
+      }
+
+      ratings.forEach(r => {
+        const date = new Date(r.createdAt).toLocaleString('ar-EG');
+        list.innerHTML += `
+          <tr>
+            <td>${r.customerName}</td>
+            <td style="color:#f5b301; direction:ltr; white-space:nowrap;">${renderStarsHtml(r.stars)}</td>
+            <td style="font-size:13px; color:var(--secondary); max-width:260px;">${r.comment ? r.comment : '-'}</td>
+            <td style="font-size:12px; direction:ltr">${date}</td>
+          </tr>
+        `;
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    list.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">فشل الاتصال بالسيرفر</td></tr>';
+  }
+}
+
 function switchView(viewName) {
     if(viewName === 'reservations') setTimeout(loadReservations, 100);
+    if(viewName === 'ratings') setTimeout(loadRatings, 100);
         Swal.close(); // إغلاق أي توست أو تنبيه مفتوح فوراً
         // حفظ الصفحة الحالية عشان لما تعمل ريفريش ترجع لها
         localStorage.setItem("lastActiveView", viewName);
@@ -4002,7 +4105,7 @@ function switchView(viewName) {
         // 2. Hide all views and remove active states
         // تمت إضافة "recipes" و "design" للقائمة لإصلاح مشكلة عدم إغلاق التصميم
 // ✅ تمت إضافة my-orders
-const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "coupons", "accounting", "reservations", "my-orders"];
+const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "coupons", "accounting", "reservations", "ratings", "my-orders"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
@@ -4263,7 +4366,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         { key: "whatsapp", label: "واتساب", icon: "fab fa-whatsapp", placeholder: "https://wa.me/2010xxxxxxxx" },
         { key: "facebook", label: "فيسبوك", icon: "fab fa-facebook-f", placeholder: "https://facebook.com/your_page" },
         { key: "tiktok", label: "تيك توك", icon: "fab fa-tiktok", placeholder: "https://tiktok.com/@your_page" },
-        { key: "rating", label: "تقييمنا (Google Maps مثلاً)", icon: "fas fa-star", placeholder: "https://g.page/r/your-review-link" },
       ];
 
       function renderSocialLinksEditor(socialLinks) {
@@ -4288,6 +4390,33 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
               </label>
             </div>`;
         }).join("");
+
+        // صف التقييم منفصل: مفيش رابط خارجي يتكتب، ده رابط داخلي في السيستم بيتحط تلقائي
+        const ratingCfg = socialLinks?.rating || {};
+        const ratingVisible = ratingCfg.visible !== false; // ظاهر افتراضياً
+        const ratingUrl = `${window.location.origin}/rate/${window.currentRestaurantSlug || ""}`;
+        const ratingRow = document.createElement("div");
+        ratingRow.style.cssText = "display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--border-color); border-radius:10px; padding:12px; margin-bottom:10px;";
+        ratingRow.innerHTML = `
+          <i class="fas fa-star" style="width:22px; text-align:center; font-size:18px; color:var(--primary);"></i>
+          <input type="text" id="rate-link-input" class="modern-input" readonly value="${ratingUrl}" style="flex:1; background:#eee; font-size:12.5px;" />
+          <button type="button" class="btn btn-outline" style="width:auto; padding:8px 12px;" onclick="copyRatingLink()"><i class="fas fa-copy"></i></button>
+          <label class="toggle-switch" title="إظهار/إخفاء أيقونة التقييم في المنيو">
+            <input type="checkbox" id="sl-visible-rating" ${ratingVisible ? "checked" : ""} />
+            <span class="slider"></span>
+          </label>
+        `;
+        container.appendChild(ratingRow);
+      }
+
+      function copyRatingLink() {
+        const el = document.getElementById("rate-link-input");
+        if (!el) return;
+        el.select();
+        el.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(el.value).then(() => {
+          Swal.fire({ toast: true, position: "top", icon: "success", title: "تم نسخ رابط التقييم", showConfirmButton: false, timer: 1500 });
+        }).catch(() => document.execCommand("copy"));
       }
 
       function collectSocialLinksFromEditor() {
@@ -4300,6 +4429,8 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             visible: visEl ? visEl.checked : false,
           };
         });
+        const ratingVisEl = document.getElementById("sl-visible-rating");
+        result.rating = { visible: ratingVisEl ? ratingVisEl.checked : true };
         return result;
       }
 
@@ -7294,7 +7425,7 @@ async function submitPosOrder() {
           // Desktop Sidebar IDs
           "nav-categories", "nav-products", "nav-bulk", "nav-history",
           "nav-design", "nav-settings", "nav-staff", "nav-orders",
-          "nav-manual-pos", "nav-my-orders", "nav-coupons", "nav-reservations",
+          "nav-manual-pos", "nav-my-orders", "nav-coupons", "nav-reservations", "nav-ratings",
           
           // Mobile Bottom Nav IDs
           "mob-nav-orders", "mob-nav-manual-pos", "mob-nav-my-orders",
@@ -7307,7 +7438,7 @@ async function submitPosOrder() {
             // Desktop
             "nav-categories", "nav-products", "nav-bulk", "nav-history",
             "nav-design", "nav-settings", "nav-orders", "nav-staff",
-            "nav-coupons", "nav-reservations", "nav-manual-pos",
+            "nav-coupons", "nav-reservations", "nav-ratings", "nav-manual-pos",
             // Mobile
             "mob-nav-orders", "mob-nav-products", "mob-nav-categories", "mob-nav-settings"
           ],
