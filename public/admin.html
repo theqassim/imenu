@@ -4215,7 +4215,7 @@ async function loadRatings() {
 function switchView(viewName) {
     if(viewName === 'reservations') setTimeout(loadReservations, 100);
     if(viewName === 'ratings') setTimeout(loadRatings, 100);
-    if(viewName === 'store-page') setTimeout(updateStorePagePreview, 300);
+    if(viewName === 'store-page') setTimeout(storePageUpdatePreview, 300);
         Swal.close(); // إغلاق أي توست أو تنبيه مفتوح فوراً
         // حفظ الصفحة الحالية عشان لما تعمل ريفريش ترجع لها
         localStorage.setItem("lastActiveView", viewName);
@@ -4823,7 +4823,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
       }
 
       async function updateCategoryOrder() {
-          const cards = document.querySelectorAll('#categories-grid .category-card');
+          const cards = document.querySelectorAll('#categories-grid .cat-card-pro');
           const order = Array.from(cards).map((card, index) => ({
               id: card.getAttribute('data-id'),
               sortOrder: index + 1
