@@ -1748,6 +1748,9 @@
         <div class="nav-item" onclick="switchView('design')" id="nav-design">
           <i class="fas fa-paint-brush"></i> التصميم
         </div>
+        <div class="nav-item" onclick="switchView('store-page')" id="nav-store-page">
+          <i class="fas fa-link"></i> صفحة المتجر
+        </div>
         <div
           class="nav-item"
           onclick="switchView('settings')"
@@ -3678,6 +3681,122 @@
 
           </div>
         </div>
+
+        <div id="view-store-page" class="hidden">
+          <div class="design-container">
+
+            <div class="design-controls">
+              <div class="design-scroll-area">
+
+                <div class="design-section">
+                  <div class="design-section-title">
+                    <i class="fas fa-link"></i> صفحة روابط المتجر
+                  </div>
+                  <p style="font-size:12px; color:var(--secondary); margin-bottom:10px;">
+                    صفحة واحدة فيها كل روابطك (المنيو، تقييمنا، فيسبوك، إنستجرام...) تقدر تحطها في البايو أو تطبعها QR للعملاء.
+                  </p>
+                  <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); border:1px solid var(--border-color); border-radius:10px; padding:12px 14px;">
+                    <span style="font-weight:bold; font-size:14px;"><i class="fas fa-power-off"></i> تفعيل الصفحة</span>
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="sp-enabled" checked onchange="storePageUpdatePreview()">
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+
+                  <div style="display:flex; align-items:center; gap:10px; margin-top:14px; background:var(--bg); border:1px solid var(--border-color); border-radius:10px; padding:10px 14px;">
+                    <i class="fas fa-globe" style="color:var(--primary);"></i>
+                    <input type="text" id="sp-link-input" class="modern-input" readonly style="flex:1; background:#eee; font-size:12.5px;" />
+                    <button type="button" class="btn btn-outline" style="width:auto; padding:8px 12px;" onclick="copyStorePageLink()"><i class="fas fa-copy"></i></button>
+                    <a id="sp-open-link" href="#" target="_blank" class="btn btn-outline" style="width:auto; padding:8px 12px;"><i class="fas fa-external-link-alt"></i></a>
+                  </div>
+                </div>
+
+                <div class="design-section">
+                  <div class="design-section-title">
+                    <i class="fas fa-image"></i> الشعار والهوية
+                  </div>
+                  <div class="form-grid">
+                    <div>
+                      <label class="form-label">شعار المتجر (لوجو)</label>
+                      <input type="file" id="sp-logo-file" accept="image/*" onchange="previewStorePageLogo(this)">
+                      <img id="sp-logo-preview" style="display:none; width:60px; height:60px; border-radius:50%; object-fit:cover; margin-top:8px; border:2px solid var(--border-color);">
+                    </div>
+                    <div>
+                      <label class="form-label">اللون الرئيسي</label>
+                      <label class="color-wrapper" for="sp-primaryColor">
+                        <div id="sp-color-preview" class="color-preview-box" style="background-color:#B78728;"></div>
+                        <input type="color" id="sp-primaryColor" value="#B78728" oninput="document.getElementById('sp-color-preview').style.backgroundColor=this.value; storePageUpdatePreview()" style="opacity:0; width:0; height:0; position:absolute;">
+                        <span style="font-size:13px; font-weight:bold;">اختر اللون</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="form-grid" style="margin-top:12px;">
+                    <div>
+                      <label class="form-label">اسم المتجر (كبير)</label>
+                      <input type="text" id="sp-title" class="modern-input" placeholder="مثال: قهوة شاكر" oninput="storePageUpdatePreview()">
+                    </div>
+                    <div>
+                      <label class="form-label">الاسم بالإنجليزية / وصف صغير</label>
+                      <input type="text" id="sp-subtitle" class="modern-input" placeholder="SHAKER CAFE" oninput="storePageUpdatePreview()">
+                    </div>
+                  </div>
+
+                  <div style="margin-top:12px;">
+                    <label class="form-label">مناسبة الصفحة (لمسة زخرفية)</label>
+                    <select id="sp-occasionTheme" onchange="storePageUpdatePreview()">
+                      <option value="none">بدون (تصميم عادي)</option>
+                      <option value="ramadan">رمضان 🏮</option>
+                      <option value="eid">عيد 🌙</option>
+                    </select>
+                  </div>
+
+                  <div class="form-grid" style="margin-top:12px;">
+                    <div>
+                      <label class="form-label">رسالة ترحيبية (اختياري)</label>
+                      <input type="text" id="sp-greeting" class="modern-input" placeholder="مثال: رمضان كريم" oninput="storePageUpdatePreview()">
+                    </div>
+                    <div>
+                      <label class="form-label">وصف إضافي (اختياري)</label>
+                      <input type="text" id="sp-message" class="modern-input" placeholder="مثال: أجمل الأوقات تبدأ بفنجان قهوة" oninput="storePageUpdatePreview()">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="design-section">
+                  <div class="design-section-title">
+                    <i class="fas fa-list"></i> الأزرار / الروابط
+                  </div>
+                  <p style="font-size:12px; color:var(--secondary); margin-bottom:10px;">أضف الأزرار اللي عايز تظهر في صفحتك (المنيو، تقييمنا، فيسبوك، إنستجرام، واتساب أو أي رابط تاني).</p>
+
+                  <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+                    <button type="button" class="btn btn-outline" style="width:auto; font-size:12.5px; padding:8px 12px;" onclick="addStoreQuickLink('menu')"><i class="fas fa-book-open"></i> المنيو</button>
+                    <button type="button" class="btn btn-outline" style="width:auto; font-size:12.5px; padding:8px 12px;" onclick="addStoreQuickLink('rate')"><i class="fas fa-star"></i> قيّمنا</button>
+                    <button type="button" class="btn btn-outline" style="width:auto; font-size:12.5px; padding:8px 12px;" onclick="addStoreQuickLink('facebook')"><i class="fab fa-facebook-f"></i> فيسبوك</button>
+                    <button type="button" class="btn btn-outline" style="width:auto; font-size:12.5px; padding:8px 12px;" onclick="addStoreQuickLink('instagram')"><i class="fab fa-instagram"></i> إنستجرام</button>
+                    <button type="button" class="btn btn-outline" style="width:auto; font-size:12.5px; padding:8px 12px;" onclick="addStoreQuickLink('whatsapp')"><i class="fab fa-whatsapp"></i> واتساب</button>
+                    <button type="button" class="btn btn-outline" style="width:auto; font-size:12.5px; padding:8px 12px;" onclick="addStoreQuickLink('tiktok')"><i class="fab fa-tiktok"></i> تيك توك</button>
+                    <button type="button" class="btn btn-primary" style="width:auto; font-size:12.5px; padding:8px 12px;" onclick="addStoreQuickLink('custom')"><i class="fas fa-plus"></i> رابط مخصص</button>
+                  </div>
+
+                  <div id="store-links-list"></div>
+                </div>
+
+              </div>
+
+              <button class="btn btn-primary" style="margin-top:15px;" onclick="saveStorePageSettings()">
+                <i class="fas fa-save"></i> حفظ صفحة المتجر
+              </button>
+            </div>
+
+            <div class="design-preview-pane">
+              <div class="phone-frame">
+                <iframe id="store-live-preview" src="" scrolling="yes"></iframe>
+              </div>
+            </div>
+
+          </div>
+        </div>
     <input type="hidden" id="restaurant-id" />
 <input type="hidden" id="setting-print-num" value="true" />
 
@@ -3864,6 +3983,7 @@
 
             if (data.userRole === "owner") {
               initDesignStudio(data.restaurant);
+              initStorePageStudio(data.restaurant);
               
               // 🟢 إصلاح منطق عرض المخازن (يعتمد الآن على القيمة القادمة من السيرفر)
               const isStockEnabled = data.hasStock;
@@ -4095,6 +4215,7 @@ async function loadRatings() {
 function switchView(viewName) {
     if(viewName === 'reservations') setTimeout(loadReservations, 100);
     if(viewName === 'ratings') setTimeout(loadRatings, 100);
+    if(viewName === 'store-page') setTimeout(updateStorePagePreview, 300);
         Swal.close(); // إغلاق أي توست أو تنبيه مفتوح فوراً
         // حفظ الصفحة الحالية عشان لما تعمل ريفريش ترجع لها
         localStorage.setItem("lastActiveView", viewName);
@@ -4105,7 +4226,7 @@ function switchView(viewName) {
         // 2. Hide all views and remove active states
         // تمت إضافة "recipes" و "design" للقائمة لإصلاح مشكلة عدم إغلاق التصميم
 // ✅ تمت إضافة my-orders
-const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "coupons", "accounting", "reservations", "ratings", "my-orders"];
+const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "store-page", "coupons", "accounting", "reservations", "ratings", "my-orders"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
@@ -6417,6 +6538,220 @@ window.addBulkRow = function() { addBulkRows(1); };
         }
       }
 
+      // ==========================================
+      // صفحة المتجر (Store Link Page)
+      // ==========================================
+      let storeLinksData = [];
+      let storeLogoNewFile = null;
+      let storeLogoCurrentUrl = "";
+
+      const storeQuickLinkPresets = {
+        menu:      { title: "المنيو",    subtitle: "Menu",      icon: "fas fa-book-open",  color: "#B78728", urlType: "menu" },
+        rate:      { title: "قيّمنا",     subtitle: "Rate Us",   icon: "fas fa-star",       color: "#f5b301", urlType: "rate" },
+        facebook:  { title: "فيسبوك",    subtitle: "Facebook",  icon: "fab fa-facebook-f", color: "#1877F2", urlType: "custom" },
+        instagram: { title: "إنستجرام",  subtitle: "Instagram", icon: "fab fa-instagram",  color: "#E1306C", urlType: "custom" },
+        whatsapp:  { title: "واتساب",    subtitle: "WhatsApp",  icon: "fab fa-whatsapp",   color: "#25D366", urlType: "custom" },
+        tiktok:    { title: "تيك توك",   subtitle: "TikTok",    icon: "fab fa-tiktok",     color: "#010101", urlType: "custom" },
+        custom:    { title: "رابط جديد", subtitle: "",          icon: "fas fa-link",       color: "#8a8a8a", urlType: "custom" },
+      };
+
+      function initStorePageStudio(restaurantData) {
+        const sp = restaurantData.storePage || {};
+
+        document.getElementById("sp-enabled").checked = sp.enabled !== false;
+        document.getElementById("sp-title").value = sp.title || restaurantData.restaurantName || "";
+        document.getElementById("sp-subtitle").value = sp.subtitle || "";
+        document.getElementById("sp-greeting").value = sp.greeting || "";
+        document.getElementById("sp-message").value = sp.message || "";
+        document.getElementById("sp-occasionTheme").value = sp.occasionTheme || "none";
+        document.getElementById("sp-primaryColor").value = sp.primaryColor || "#B78728";
+        document.getElementById("sp-color-preview").style.backgroundColor = sp.primaryColor || "#B78728";
+
+        storeLogoCurrentUrl = sp.logo || "";
+        storeLogoNewFile = null;
+        const logoPreview = document.getElementById("sp-logo-preview");
+        if (storeLogoCurrentUrl) {
+          logoPreview.src = storeLogoCurrentUrl.replace(/\\/g, "/");
+          logoPreview.style.display = "block";
+        } else {
+          logoPreview.style.display = "none";
+        }
+
+        storeLinksData = Array.isArray(sp.links) ? JSON.parse(JSON.stringify(sp.links)) : [];
+        renderStoreLinksList();
+
+        const link = `${window.location.origin}/store/${restaurantData.slug}`;
+        document.getElementById("sp-link-input").value = link;
+        document.getElementById("sp-open-link").href = link;
+
+        const previewFrame = document.getElementById("store-live-preview");
+        previewFrame.src = `/store/${restaurantData.slug}`;
+        previewFrame.onload = () => storePageUpdatePreview();
+      }
+
+      function renderStoreLinksList() {
+        const container = document.getElementById("store-links-list");
+        if (!storeLinksData.length) {
+          container.innerHTML = `<p style="font-size:12.5px; color:var(--secondary); text-align:center; padding:10px 0;">لسه مفيش أزرار مضافة، اختار من الأزرار السريعة فوق</p>`;
+          return;
+        }
+        container.innerHTML = storeLinksData.map((link, idx) => `
+          <div style="background:var(--bg); border:1px solid var(--border-color); border-radius:12px; padding:12px; margin-bottom:10px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+              <div style="width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; background:${link.color || '#8a8a8a'}; font-size:14px;">
+                <i class="${link.icon || 'fas fa-link'}"></i>
+              </div>
+              <input type="text" class="modern-input" style="flex:1; font-size:13px;" placeholder="عنوان الزر" value="${(link.title || '').replace(/"/g, '&quot;')}" oninput="updateStoreLink(${idx}, 'title', this.value)">
+              <label class="toggle-switch" title="إظهار/إخفاء">
+                <input type="checkbox" ${link.enabled !== false ? "checked" : ""} onchange="updateStoreLink(${idx}, 'enabled', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <input type="text" class="modern-input" style="width:100%; font-size:12.5px; margin-bottom:8px;" placeholder="رابط (URL)" value="${(link.url || '').replace(/"/g, '&quot;')}" oninput="updateStoreLink(${idx}, 'url', this.value)">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="text" class="modern-input" style="flex:1; font-size:12px;" placeholder="وصف صغير (اختياري)" value="${(link.subtitle || '').replace(/"/g, '&quot;')}" oninput="updateStoreLink(${idx}, 'subtitle', this.value)">
+              <input type="color" value="${link.color || '#8a8a8a'}" style="width:32px; height:32px; padding:0; border:none;" oninput="updateStoreLink(${idx}, 'color', this.value)">
+              <button type="button" class="btn btn-outline" style="width:auto; padding:6px 10px;" onclick="moveStoreLink(${idx}, -1)"><i class="fas fa-arrow-up"></i></button>
+              <button type="button" class="btn btn-outline" style="width:auto; padding:6px 10px;" onclick="moveStoreLink(${idx}, 1)"><i class="fas fa-arrow-down"></i></button>
+              <button type="button" class="btn btn-outline" style="width:auto; padding:6px 10px; color:var(--danger);" onclick="removeStoreLink(${idx})"><i class="fas fa-trash"></i></button>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function addStoreQuickLink(type) {
+        const preset = storeQuickLinkPresets[type] || storeQuickLinkPresets.custom;
+        const slug = window.currentRestaurantSlug || "";
+        let url = "";
+        if (preset.urlType === "menu") url = `${window.location.origin}/menu/${slug}`;
+        else if (preset.urlType === "rate") url = `${window.location.origin}/rate/${slug}`;
+
+        storeLinksData.push({
+          title: preset.title,
+          subtitle: preset.subtitle,
+          icon: preset.icon,
+          color: preset.color,
+          url,
+          enabled: true,
+        });
+        renderStoreLinksList();
+        storePageUpdatePreview();
+      }
+
+      function updateStoreLink(idx, key, value) {
+        if (!storeLinksData[idx]) return;
+        storeLinksData[idx][key] = value;
+        if (key === "color" || key === "enabled") { /* لا داعي لإعادة الرسم الكامل */ }
+        storePageUpdatePreview();
+      }
+
+      function moveStoreLink(idx, dir) {
+        const newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= storeLinksData.length) return;
+        const tmp = storeLinksData[idx];
+        storeLinksData[idx] = storeLinksData[newIdx];
+        storeLinksData[newIdx] = tmp;
+        renderStoreLinksList();
+        storePageUpdatePreview();
+      }
+
+      function removeStoreLink(idx) {
+        storeLinksData.splice(idx, 1);
+        renderStoreLinksList();
+        storePageUpdatePreview();
+      }
+
+      function previewStorePageLogo(input) {
+        const file = input.files[0];
+        if (!file) return;
+        storeLogoNewFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const preview = document.getElementById("sp-logo-preview");
+          preview.src = e.target.result;
+          preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+        storePageUpdatePreview();
+      }
+
+      function collectStorePageConfig() {
+        return {
+          enabled: document.getElementById("sp-enabled").checked,
+          title: document.getElementById("sp-title").value.trim(),
+          subtitle: document.getElementById("sp-subtitle").value.trim(),
+          greeting: document.getElementById("sp-greeting").value.trim(),
+          message: document.getElementById("sp-message").value.trim(),
+          occasionTheme: document.getElementById("sp-occasionTheme").value,
+          primaryColor: document.getElementById("sp-primaryColor").value,
+          logo: document.getElementById("sp-logo-preview").src && document.getElementById("sp-logo-preview").style.display !== "none"
+            ? document.getElementById("sp-logo-preview").src
+            : "",
+          links: storeLinksData,
+          restaurantName: document.getElementById("sp-title").value.trim(),
+        };
+      }
+
+      function storePageUpdatePreview() {
+        const iframe = document.getElementById("store-live-preview");
+        if (!iframe || !iframe.contentWindow) return;
+        iframe.contentWindow.postMessage(
+          { type: "UPDATE_STORE_PAGE", config: collectStorePageConfig() },
+          "*"
+        );
+      }
+
+      function copyStorePageLink() {
+        const el = document.getElementById("sp-link-input");
+        el.select();
+        el.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(el.value).then(() => {
+          Swal.fire({ toast: true, position: "top", icon: "success", title: "تم نسخ رابط صفحة المتجر", showConfirmButton: false, timer: 1500 });
+        }).catch(() => document.execCommand("copy"));
+      }
+
+      async function saveStorePageSettings() {
+        const rId = document.getElementById("restaurant-id").value;
+        const config = {
+          enabled: document.getElementById("sp-enabled").checked,
+          title: document.getElementById("sp-title").value.trim(),
+          subtitle: document.getElementById("sp-subtitle").value.trim(),
+          greeting: document.getElementById("sp-greeting").value.trim(),
+          message: document.getElementById("sp-message").value.trim(),
+          occasionTheme: document.getElementById("sp-occasionTheme").value,
+          primaryColor: document.getElementById("sp-primaryColor").value,
+          links: storeLinksData,
+        };
+        if (!storeLogoNewFile) config.logo = storeLogoCurrentUrl;
+
+        const formData = new FormData();
+        formData.append("storePage", JSON.stringify(config));
+        if (storeLogoNewFile) formData.append("storeLogo", storeLogoNewFile);
+
+        Swal.showLoading();
+        try {
+          const res = await fetch(`/api/v1/restaurants/${rId}`, {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+          if (res.ok) {
+            const result = await res.json();
+            if (result?.data?.restaurant?.storePage?.logo) {
+              storeLogoCurrentUrl = result.data.restaurant.storePage.logo;
+              storeLogoNewFile = null;
+            }
+            Swal.fire({ icon: "success", title: "تم حفظ صفحة المتجر", timer: 1500, showConfirmButton: false });
+            storePageUpdatePreview();
+          } else {
+            throw new Error("فشل الحفظ");
+          }
+        } catch (e) {
+          console.error(e);
+          Swal.fire("خطأ", "حدث خطأ أثناء الحفظ", "error");
+        }
+      }
+
       const defaultDesign = {
         layoutType: "modern",
         primaryColor: "#B78728",
@@ -7424,7 +7759,7 @@ async function submitPosOrder() {
         const allNavs = [
           // Desktop Sidebar IDs
           "nav-categories", "nav-products", "nav-bulk", "nav-history",
-          "nav-design", "nav-settings", "nav-staff", "nav-orders",
+          "nav-design", "nav-store-page", "nav-settings", "nav-staff", "nav-orders",
           "nav-manual-pos", "nav-my-orders", "nav-coupons", "nav-reservations", "nav-ratings",
           
           // Mobile Bottom Nav IDs
@@ -7437,7 +7772,7 @@ async function submitPosOrder() {
           owner: [
             // Desktop
             "nav-categories", "nav-products", "nav-bulk", "nav-history",
-            "nav-design", "nav-settings", "nav-orders", "nav-staff",
+            "nav-design", "nav-store-page", "nav-settings", "nav-orders", "nav-staff",
             "nav-coupons", "nav-reservations", "nav-ratings", "nav-manual-pos",
             // Mobile
             "mob-nav-orders", "mob-nav-products", "mob-nav-categories", "mob-nav-settings"
