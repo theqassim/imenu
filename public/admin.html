@@ -3120,25 +3120,28 @@
 
             <div class="form-group">
               <label class="form-label">نظام التشغيل (Order Mode)</label>
-              <select
-                id="set-orderMode"
-                style="height: 50px; font-size: 15px; font-weight: bold"
-              >
-                <option value="whatsapp">📱 واتساب (إرسال الطلب لرقمك)</option>
-                <option value="system">
-                  🚀 النظام الذكي (Live Orders System)
-                </option>
-                <option value="view_only">👀 للعرض فقط (بدون طلب)</option>
+              <select id="set-orderMode" style="display: none">
+                <option value="view_only" selected>view_only</option>
               </select>
-              <small
-                style="color: var(--secondary); display: block; margin-top: 5px"
+              <div
+                style="
+                  background: var(--bg);
+                  border: 1px solid var(--border-color);
+                  border-radius: 10px;
+                  padding: 15px;
+                  display: flex;
+                  align-items: center;
+                  gap: 12px;
+                "
               >
-                <i class="fas fa-info-circle"></i>
-                <b>واتساب:</b> الزبون يختار الطلب ويتحول للشات معاك. <br />
-                <b>النظام الذكي:</b> الطلبات تنزل في صفحة "الطلبات الحية" وتسمع
-                صوت تنبيه. <br />
-                <b>للعرض فقط:</b> إخفاء أزرار الإضافة والسلة (كتالوج).
-              </small>
+                <i class="fas fa-eye" style="font-size: 22px; color: var(--primary)"></i>
+                <div>
+                  <b>المنيو دلوقتي في وضع "للعرض فقط" بشكل دائم</b>
+                  <div style="color: var(--secondary); font-size: 13px; margin-top: 3px">
+                    مفيش أزرار إضافة أو طلب من صفحة المنيو، الزبون بيشوف الأسعار والمنتجات بس (كتالوج).
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="form-grid" style="margin-top: 20px">
@@ -3233,6 +3236,29 @@
                   style="cursor: pointer; font-weight: bold"
                   >طباعة رقم الطلب في الفاتورة (Order #)</label
                 >
+              </div>
+
+              <div class="card" style="margin-top: 30px; border: 1px solid var(--primary);">
+                <h3 style="color: var(--primary); margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                  <i class="fas fa-share-alt"></i> روابط التواصل والتقييم
+                </h3>
+                <small style="color: var(--secondary); display: block; margin-bottom: 15px">
+                  الروابط دي بتظهر لعملائك فوق صفحة المنيو. تقدر تضيف الرابط وتظهره أو تخفيه وقتما تحب.
+                </small>
+
+                <div id="social-links-editor"></div>
+
+                <div style="background: var(--bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <div>
+                    <b><i class="fas fa-bell"></i> إشعارات التقييم</b>
+                    <div style="color: var(--secondary); font-size: 13px; margin-top: 3px">
+                      هتوصلك إشعار على الجهاز ده أول ما عميل يضغط على رابط "تقييمنا" في المنيو.
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-primary" id="btn-enable-rating-push" onclick="enableRatingPushNotifications()">
+                    <i class="fas fa-bell"></i> تفعيل الإشعارات على هذا الجهاز
+                  </button>
+                </div>
               </div>
 
               <div class="card" style="margin-top: 30px; border: 1px solid var(--success);">
@@ -3679,7 +3705,9 @@
             document.getElementById("preview-link").href = `/menu/${data.restaurant.slug}`;
 
             // إعدادات المتجر
-            document.getElementById("set-orderMode").value = data.restaurant.orderMode || "whatsapp";
+            document.getElementById("set-orderMode").value = "view_only";
+            // روابط التواصل والتقييم
+            renderSocialLinksEditor(data.restaurant.socialLinks || {});
             // تهيئة نظام الحجز
             initReservationUI(data);
             document.getElementById("set-taxRate").value = data.restaurant.taxRate || 0;
@@ -4227,6 +4255,112 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           }
       }
 
+      // ==========================================
+      // روابط التواصل والتقييم (Social Links)
+      // ==========================================
+      const SOCIAL_LINKS_CONFIG = [
+        { key: "instagram", label: "إنستجرام", icon: "fab fa-instagram", placeholder: "https://instagram.com/your_page" },
+        { key: "whatsapp", label: "واتساب", icon: "fab fa-whatsapp", placeholder: "https://wa.me/2010xxxxxxxx" },
+        { key: "facebook", label: "فيسبوك", icon: "fab fa-facebook-f", placeholder: "https://facebook.com/your_page" },
+        { key: "tiktok", label: "تيك توك", icon: "fab fa-tiktok", placeholder: "https://tiktok.com/@your_page" },
+        { key: "rating", label: "تقييمنا (Google Maps مثلاً)", icon: "fas fa-star", placeholder: "https://g.page/r/your-review-link" },
+      ];
+
+      function renderSocialLinksEditor(socialLinks) {
+        const container = document.getElementById("social-links-editor");
+        if (!container) return;
+        container.innerHTML = SOCIAL_LINKS_CONFIG.map((item) => {
+          const cfg = socialLinks?.[item.key] || {};
+          return `
+            <div style="display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--border-color); border-radius:10px; padding:12px; margin-bottom:10px;">
+              <i class="${item.icon}" style="width:22px; text-align:center; font-size:18px; color:var(--primary);"></i>
+              <input
+                type="text"
+                id="sl-url-${item.key}"
+                class="modern-input"
+                placeholder="${item.label}: ${item.placeholder}"
+                value="${(cfg.url || "").replace(/"/g, "&quot;")}"
+                style="flex:1;"
+              />
+              <label class="toggle-switch" title="إظهار/إخفاء">
+                <input type="checkbox" id="sl-visible-${item.key}" ${cfg.visible ? "checked" : ""} />
+                <span class="slider"></span>
+              </label>
+            </div>`;
+        }).join("");
+      }
+
+      function collectSocialLinksFromEditor() {
+        const result = {};
+        SOCIAL_LINKS_CONFIG.forEach((item) => {
+          const urlEl = document.getElementById(`sl-url-${item.key}`);
+          const visEl = document.getElementById(`sl-visible-${item.key}`);
+          result[item.key] = {
+            url: urlEl ? urlEl.value.trim() : "",
+            visible: visEl ? visEl.checked : false,
+          };
+        });
+        return result;
+      }
+
+      // ==========================================
+      // تفعيل إشعارات التقييم (Web Push)
+      // ==========================================
+      function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+        return outputArray;
+      }
+
+      async function enableRatingPushNotifications() {
+        const btn = document.getElementById("btn-enable-rating-push");
+        try {
+          if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+            return Swal.fire({ icon: "error", title: "المتصفح ده مش بيدعم الإشعارات" });
+          }
+
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            return Swal.fire({ icon: "warning", title: "لازم توافق على إذن الإشعارات علشان تشتغل" });
+          }
+
+          if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التفعيل...'; }
+
+          const reg = await navigator.serviceWorker.register("/sw.js");
+          await navigator.serviceWorker.ready;
+
+          const keyRes = await fetch("/api/v1/vapid-key");
+          const { publicKey } = await keyRes.json();
+          if (!publicKey) throw new Error("مفتاح الإشعارات غير متوفر على السيرفر");
+
+          let subscription = await reg.pushManager.getSubscription();
+          if (!subscription) {
+            subscription = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicKey),
+            });
+          }
+
+          const res = await fetch("/api/v1/owner/push-subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify(subscription),
+          });
+
+          if (!res.ok) throw new Error("فشل حفظ الاشتراك على السيرفر");
+
+          Swal.fire({ icon: "success", title: "تم تفعيل إشعارات التقييم على هذا الجهاز 🎉" });
+          if (btn) { btn.innerHTML = '<i class="fas fa-check"></i> مفعّلة على هذا الجهاز'; }
+        } catch (err) {
+          console.error(err);
+          Swal.fire({ icon: "error", title: "حصل خطأ", text: err.message });
+          if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bell"></i> تفعيل الإشعارات على هذا الجهاز'; }
+        }
+      }
+
       async function saveSettings() {
         const rId = document.getElementById("restaurant-id").value;
         const orderMode = document.getElementById("set-orderMode").value;
@@ -4255,6 +4389,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           contactInfo: {
             whatsapp: whatsapp,
           },
+          socialLinks: collectSocialLinksFromEditor(),
         };
 
         Swal.showLoading();
