@@ -765,11 +765,14 @@ app.get("/api/v1/restaurants", protect, async (req, res) => {
    }
 });
 
-app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }]), async (req, res) => {
+app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
     let updateData = { ...req.body };
     if (updateData.customUI && typeof updateData.customUI === "string") {
       try { updateData.customUI = JSON.parse(updateData.customUI); } catch (e) { updateData.customUI = {}; }
+    }
+    if (updateData.storePage && typeof updateData.storePage === "string") {
+      try { updateData.storePage = JSON.parse(updateData.storePage); } catch (e) { updateData.storePage = {}; }
     }
     if (req.files) {
       if (!updateData.customUI) updateData.customUI = {};
@@ -779,6 +782,10 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       }
       if (req.files["heroImage"]) {
         updateData.customUI.heroImage = req.files["heroImage"][0].path;
+      }
+      if (req.files["storeLogo"]) {
+        if (!updateData.storePage) updateData.storePage = {};
+        updateData.storePage.logo = req.files["storeLogo"][0].path;
       }
     }
     
@@ -2443,6 +2450,7 @@ app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.a
 app.get("/menu/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "menu.html")));
 app.get("/reserve/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "reservation.html")));
 app.get("/rate/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "rate.html")));
+app.get("/store/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "store.html")));
 app.get("/owner", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.get("/super-admin", (req, res) => res.sendFile(path.join(__dirname, "public", "super.html")));
 app.get("/sales-dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "sales.html")));
@@ -2600,6 +2608,45 @@ app.get("/api/v1/ratings/info/:slug", async (req, res) => {
     });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// ==========================================
+// STORE LINK PAGE (صفحة روابط المتجر)
+// ==========================================
+// جلب بيانات صفحة المتجر العامة (لوجو، روابط، ألوان) لعرضها للعملاء
+app.get("/api/v1/store-page/:slug", async (req, res) => {
+  try {
+    const { data: restaurant, error } = await supabase
+      .from("restaurants")
+      .select("restaurantName, slug, storePage, isActive")
+      .eq("slug", req.params.slug)
+      .single();
+
+    if (error || !restaurant) return res.status(404).json({ status: "error", message: "الصفحة غير متاحة" });
+
+    const storePage = restaurant.storePage || {};
+    if (restaurant.isActive === false || storePage.enabled === false) {
+      return res.status(404).json({ status: "error", message: "هذه الصفحة غير متاحة حالياً" });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        restaurantName: restaurant.restaurantName,
+        slug: restaurant.slug,
+        title: storePage.title || restaurant.restaurantName,
+        subtitle: storePage.subtitle || "",
+        greeting: storePage.greeting || "",
+        message: storePage.message || "",
+        logo: storePage.logo || "",
+        primaryColor: storePage.primaryColor || "#B78728",
+        occasionTheme: storePage.occasionTheme || "none",
+        links: (storePage.links || []).filter((l) => l.enabled !== false),
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ status: "error", message: err.message });
   }
 });
 
