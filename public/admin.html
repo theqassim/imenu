@@ -6559,6 +6559,8 @@ window.addBulkRow = function() { addBulkRows(1); };
       let storeLinksData = [];
       let storeLogoNewFile = null;
       let storeLogoCurrentUrl = "";
+      let storePageSlug = "";
+      let storePageRestaurantName = "";
 
       const storeQuickLinkPresets = {
         menu:      { title: "المنيو",    subtitle: "Menu",      icon: "fas fa-book-open",  color: "#B78728", urlType: "menu" },
@@ -6598,6 +6600,8 @@ window.addBulkRow = function() { addBulkRows(1); };
         const link = `${window.location.origin}/store/${restaurantData.slug}`;
         document.getElementById("sp-link-input").value = link;
         document.getElementById("sp-open-link").href = link;
+        storePageSlug = restaurantData.slug || "";
+        storePageRestaurantName = restaurantData.restaurantName || "";
         renderStorePageQR(link);
 
         const previewFrame = document.getElementById("store-live-preview");
@@ -6617,7 +6621,7 @@ window.addBulkRow = function() { addBulkRows(1); };
         const qrCanvas = document.getElementById("sp-qr-canvas");
         if (!qrCanvas || typeof QRious === "undefined") return;
 
-        const storeName = (document.getElementById("sp-title").value.trim() || restaurantData.restaurantName || "").trim();
+        const storeName = (document.getElementById("sp-title").value.trim() || storePageRestaurantName || "").trim();
         const qrSize = 500;
         const padding = 40;
         const labelHeight = storeName ? 70 : 0;
@@ -6651,7 +6655,7 @@ window.addBulkRow = function() { addBulkRows(1); };
         const dataUrl = finalCanvas.toDataURL("image/png");
         const a = document.createElement("a");
         a.href = dataUrl;
-        a.download = `store-qr-${(restaurantData.slug || "menu")}.png`;
+        a.download = `store-qr-${(storePageSlug || "menu")}.png`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
