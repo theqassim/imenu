@@ -3320,6 +3320,24 @@
               </button>
             </div>
 
+            <div class="card" style="margin-top: 30px; border: 1px solid var(--primary);">
+              <h3 style="color: var(--primary); margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;">
+                <i class="fas fa-exchange-alt"></i> تصدير / استيراد القائمة
+              </h3>
+              <p style="color: var(--secondary); font-size: 13px; margin-bottom: 16px;">
+                صدِّر أقسامك ومنتجاتك بأسعارها لملف JSON، واستوردها في أي نسخة تانية من النظام. المقادير لا تُصدَّر لأنها مرتبطة بأرقام خامات المخزن.
+              </p>
+              <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <button class="btn btn-outline" onclick="exportMenuData()" style="flex:1; min-width:140px;">
+                  <i class="fas fa-file-export"></i> تصدير القائمة (JSON)
+                </button>
+                <button class="btn btn-outline" onclick="document.getElementById('import-menu-file').click()" style="flex:1; min-width:140px; border-color:var(--primary); color:var(--primary);">
+                  <i class="fas fa-file-import"></i> استيراد قائمة
+                </button>
+                <input type="file" id="import-menu-file" accept=".json" style="display:none;" onchange="importMenuData(this)" />
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -4830,6 +4848,103 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           }
         } catch (e) {
           console.error(e);
+        }
+      }
+
+      async function exportMenuData() {
+        const rId = document.getElementById("restaurant-id").value;
+
+        try {
+          Swal.fire({ title: 'جاري التصدير...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+          const res  = await fetch(`/api/v1/restaurants/${rId}/export-menu`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const resp = await res.json();
+          if (resp.status !== 'success') throw new Error(resp.message || 'فشل التصدير');
+
+          const exportData = resp.data;
+          const blob       = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+          const url        = URL.createObjectURL(blob);
+          const a          = document.createElement('a');
+          const safeName   = (exportData.restaurantName || 'menu').replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_');
+          a.href           = url;
+          a.download       = `${safeName}_menu_${new Date().toISOString().slice(0, 10)}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          Swal.fire({
+            icon: 'success', title: 'تم التصدير',
+            html: `<b>${exportData.categories.length}</b> قسم و <b>${exportData.products.length}</b> منتج`,
+            timer: 2500, showConfirmButton: false
+          });
+        } catch (err) {
+          Swal.fire({ icon: 'error', title: 'خطأ في التصدير', text: err.message });
+        }
+      }
+
+      async function importMenuData(input) {
+        const file = input.files[0];
+        if (!file) return;
+        input.value = '';
+
+        const rId = document.getElementById("restaurant-id").value;
+
+        let importData;
+        try {
+          const text = await file.text();
+          importData = JSON.parse(text);
+          if (!importData.categories || !importData.products) throw new Error('الملف غير صالح');
+        } catch (err) {
+          Swal.fire({ icon: 'error', title: 'ملف غير صالح', text: 'تأكد أن الملف تم تصديره من نفس النظام' });
+          return;
+        }
+
+        const { value: mode, isConfirmed } = await Swal.fire({
+          title: '<i class="fas fa-file-import"></i> استيراد القائمة',
+          html: `
+            <p style="text-align:right; color:#374151; margin-bottom:14px;">
+              الملف يحتوي على <b>${importData.categories.length}</b> قسم و <b>${importData.products.length}</b> منتج.<br>
+              <small style="color:var(--secondary);">المصدر: ${importData.restaurantName || 'غير معروف'} — ${new Date(importData.exportedAt || Date.now()).toLocaleDateString('ar-EG')}</small>
+            </p>
+            <div style="text-align:right;">
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:10px;padding:10px;border:2px solid #e2e8f0;border-radius:8px;">
+                <input type="radio" name="import-mode" value="merge" checked style="width:18px;height:18px;">
+                <div><div style="font-weight:800;">دمج (Merge)</div><div style="font-size:12px;color:var(--secondary);">يضيف الجديد ويتجاهل المنتجات المكررة بالاسم</div></div>
+              </label>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;border:2px solid #fca5a5;border-radius:8px;background:#fef2f2;">
+                <input type="radio" name="import-mode" value="replace" style="width:18px;height:18px;">
+                <div><div style="font-weight:800;color:#dc2626;">استبدال (Replace)</div><div style="font-size:12px;color:#7f1d1d;"><i class="fas fa-triangle-exclamation"></i> يمسح الأقسام والمنتجات الحالية ويستبدلها</div></div>
+              </label>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: '<i class="fas fa-upload"></i> استيراد',
+          cancelButtonText: 'إلغاء',
+          preConfirm: () => document.querySelector('input[name="import-mode"]:checked')?.value || 'merge'
+        });
+
+        if (!isConfirmed) return;
+
+        try {
+          Swal.fire({ title: 'جاري الاستيراد...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+          const res  = await fetch(`/api/v1/restaurants/${rId}/import-menu`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ data: importData, mode })
+          });
+          const data = await res.json();
+
+          if (data.status === 'success') {
+            await Swal.fire({ icon: 'success', title: 'تم الاستيراد', text: data.message, timer: 3000, showConfirmButton: false });
+            if (typeof loadCategories === 'function') loadCategories();
+            if (typeof loadProducts   === 'function') loadProducts();
+          } else {
+            Swal.fire({ icon: 'error', title: 'فشل الاستيراد', text: data.message });
+          }
+        } catch (err) {
+          Swal.fire({ icon: 'error', title: 'خطأ', text: err.message });
         }
       }
 
