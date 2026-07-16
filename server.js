@@ -1248,6 +1248,112 @@ app.patch("/api/v1/categories/:id", protect, restrictTo("owner", "admin"), uploa
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
+// ---------------- MENU EXPORT / IMPORT ----------------
+app.get("/api/v1/restaurants/:id/export-menu", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const rId = req.params.id;
+
+    if (req.user.role !== "admin") {
+      const { data: ownCheck } = await supabase.from('restaurants').select('_id').eq('_id', rId).eq('owner', req.user._id).single();
+      if (!ownCheck) return res.status(403).json({ message: "غير مصرح بهذه العملية" });
+    }
+
+    const { data: restaurant } = await supabase.from('restaurants').select('restaurantName').eq('_id', rId).single();
+    const { data: categories, error: catError } = await supabase.from('categories').select('name').eq('restaurant_id', rId);
+    if (catError) throw catError;
+    const { data: products, error: prodError } = await supabase.from('products').select('*').eq('restaurant', rId);
+    if (prodError) throw prodError;
+
+    const exportData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      restaurantName: restaurant ? restaurant.restaurantName : "",
+      categories: (categories || []).map(c => ({ name: c.name })),
+      products: (products || []).map(p => ({
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        oldPrice: p.oldPrice || 0,
+        category: p.category,
+        sizes: p.sizes || [],
+        isAvailable: p.isAvailable !== false,
+      })),
+    };
+
+    res.status(200).json({ status: "success", data: exportData });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.post("/api/v1/restaurants/:id/import-menu", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const rId = req.params.id;
+    const { data, mode } = req.body;
+
+    if (!data || !data.categories || !data.products)
+      return res.status(400).json({ message: "ملف الاستيراد غير صالح أو ناقص" });
+
+    if (req.user.role !== "admin") {
+      const { data: ownCheck } = await supabase.from('restaurants').select('_id').eq('_id', rId).eq('owner', req.user._id).single();
+      if (!ownCheck) return res.status(403).json({ message: "غير مصرح بهذه العملية" });
+    }
+
+    if (mode === "replace") {
+      await supabase.from('products').delete().eq('restaurant', rId);
+      await supabase.from('categories').delete().eq('restaurant_id', rId);
+    }
+
+    const { count: existingCount } = await supabase.from('categories').select('*', { count: 'exact', head: true }).eq('restaurant_id', rId);
+    let nextSortOrder = (existingCount || 0) + 1;
+
+    let addedCats = 0, addedProds = 0, skippedProds = 0;
+
+    for (const cat of data.categories) {
+      const { data: existing } = await supabase.from('categories').select('_id').eq('restaurant_id', rId).eq('name', cat.name).maybeSingle();
+      if (!existing) {
+        await supabase.from('categories').insert([{ name: cat.name, restaurant_id: rId, sort_order: nextSortOrder++ }]);
+        addedCats++;
+      }
+    }
+
+    for (const prod of data.products) {
+      const nameObj = typeof prod.name === "object" ? prod.name : { ar: prod.name, en: "" };
+      const descObj = typeof prod.description === "object" ? prod.description : { ar: prod.description || "", en: "" };
+
+      if (mode !== "replace") {
+        const { data: existing } = await supabase.from('products').select('_id').eq('restaurant', rId).eq('category', prod.category || "").ilike('name->>ar', nameObj.ar || "").maybeSingle();
+        if (existing) { skippedProds++; continue; }
+      }
+
+      const { error: insertErr } = await supabase.from('products').insert([{
+        name: nameObj,
+        description: descObj,
+        price: prod.price || 0,
+        oldPrice: prod.oldPrice || 0,
+        sizes: prod.sizes || [],
+        category: prod.category || "",
+        ingredients: [],
+        restaurant: rId,
+        image: "",
+        isAvailable: prod.isAvailable !== false,
+      }]);
+      if (insertErr) { skippedProds++; continue; }
+      addedProds++;
+    }
+
+    if (req.io) req.io.to(rId.toString()).emit("menu_updated");
+
+    res.status(200).json({
+      status: "success",
+      message: `تم الاستيراد: ${addedCats} قسم و ${addedProds} منتج. (${skippedProds} منتج تجاهل لتكراره)`,
+      data: { addedCats, addedProds, skippedProds },
+    });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // ---------------- ACCOUNTING ROUTES (نظام الرواتب الآلي) ----------------
 
 // 1. حفظ قواعد الرواتب (سعر الساعة والغياب)
