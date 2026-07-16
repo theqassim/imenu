@@ -2495,6 +2495,101 @@ app.get("/api/v1/sales/my-clients", protect, restrictTo("sales"), async (req, re
 
 app.get("/api/v1/vapid-key", (req, res) => res.json({ publicKey: publicVapidKey }));
 
+// ==========================================
+// روابط التواصل الاجتماعي + إشعارات التقييم (Push)
+// ==========================================
+
+// المالك يفعّل إشعارات التقييم من لوحة التحكم (تسجيل الاشتراك)
+app.post("/api/v1/owner/push-subscribe", protect, async (req, res) => {
+  try {
+    let restaurantId = req.user.restaurant;
+    if (req.user.role === "owner") {
+      const { data: restaurant } = await supabase
+        .from("restaurants")
+        .select("_id")
+        .eq("owner", req.user._id)
+        .single();
+      if (!restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم" });
+      restaurantId = restaurant._id;
+    }
+    if (!restaurantId) return res.status(400).json({ message: "لا يوجد مطعم مرتبط بالحساب" });
+
+    const { endpoint, keys } = req.body || {};
+    if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+      return res.status(400).json({ message: "بيانات الاشتراك غير مكتملة" });
+    }
+
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        restaurant_id: restaurantId,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+      },
+      { onConflict: "restaurant_id,endpoint" },
+    );
+
+    if (error) throw error;
+    res.status(201).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// المالك يقدر يلغي تفعيل الإشعارات
+app.post("/api/v1/owner/push-unsubscribe", protect, async (req, res) => {
+  try {
+    const { endpoint } = req.body || {};
+    if (!endpoint) return res.status(400).json({ message: "endpoint مطلوب" });
+    await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// إشعار المالك لحظة ما عميل يضغط على رابط "تقييمنا" في المنيو
+app.post("/api/v1/menu/:slug/notify-rating", async (req, res) => {
+  try {
+    const { data: restaurant } = await supabase
+      .from("restaurants")
+      .select("_id, restaurantName")
+      .eq("slug", req.params.slug)
+      .single();
+
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const { data: subs } = await supabase
+      .from("push_subscriptions")
+      .select("*")
+      .eq("restaurant_id", restaurant._id);
+
+    if (subs && subs.length > 0) {
+      const payload = JSON.stringify({
+        title: "⭐ عميل بيفتح صفحة تقييمك الآن!",
+        body: `عميل داخل يقيّم ${restaurant.restaurantName} - افتحها وتابعه`,
+        url: "/owner",
+      });
+      subs.forEach((sub) => {
+        webPush
+          .sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
+          .catch((e) => {
+            // لو الاشتراك بقى منتهي/غير صالح احذفه من القاعدة
+            if (e.statusCode === 410 || e.statusCode === 404) {
+              supabase.from("push_subscriptions").delete().eq("id", sub.id).then(() => {});
+            } else {
+              console.error("Push error:", e.message);
+            }
+          });
+      });
+    }
+
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // ---------------- ACCOUNTING & FINANCE ROUTES (المطور) ----------------
 
 // 1. Financial Stats (لوحة القيادة المالية - شامل التفاصيل)
