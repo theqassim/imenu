@@ -2133,7 +2133,7 @@
           let sectionHTML = `<div class="menu-section" data-category="${cat}">`;
 
           const secImg = categoryImages[cat]
-            ? `<img src="${categoryImages[cat]}" style="width:25px; height:25px; border-radius:5px; object-fit:cover; margin-left:10px;">`
+            ? `<img src="${categoryImages[cat]}" style="width:44px; height:44px; border-radius:10px; object-fit:cover; margin-left:10px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">`
             : '<i class="fas fa-certificate" style="font-size:14px; margin-left:8px; color:var(--primary)"></i>';
 
           sectionHTML += `<div class="section-label category-header-text" id="sec-${cat}" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
