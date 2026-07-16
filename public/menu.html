@@ -852,19 +852,36 @@
       .category-header-text {
         color: var(--sec-title-color) !important;
       }
-      .section-label.on-image {
-        color: #ffffff !important;
-        text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-      }
-      .section-label.on-image::after {
-        background: rgba(255,255,255,0.45);
-      }
       .section-label::after {
         content: "";
         flex: 1;
         height: 2px;
         background: var(--border);
         border-radius: 2px;
+      }
+
+      /* ✅ بانر صورة القسم - ارتفاع ثابت عشان الصورة تفضل واضحة مهما كان عدد المنتجات */
+      .cat-banner {
+        position: relative;
+        height: 140px;
+        border-radius: 16px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+      }
+      .cat-banner-title {
+        color: #ffffff;
+        font-size: 20px;
+        font-weight: 800;
+        padding: 14px 16px;
+        text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      }
+      .layout-grid .cat-banner,
+      .layout-magazine .cat-banner,
+      .layout-grid .section-label,
+      .layout-magazine .section-label {
+        grid-column: 1 / -1;
       }
 
       .prod-card {
@@ -2138,19 +2155,17 @@
           first = false;
 
           const hasCatImg = !!categoryImages[cat];
-          const sectionBgAttr = hasCatImg
-            ? ` style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.55)), url('${categoryImages[cat]}') center/cover no-repeat; border-radius:20px; padding:20px 14px 26px;"`
-            : "";
-          let sectionHTML = `<div class="menu-section" data-category="${cat}"${sectionBgAttr}>`;
+          let sectionHTML = `<div class="menu-section" data-category="${cat}" id="sec-${cat}">`;
 
-          const secImg = hasCatImg
-            ? ""
-            : '<i class="fas fa-certificate" style="font-size:14px; margin-left:8px; color:var(--primary)"></i>';
-          const labelClass = hasCatImg
-            ? "section-label category-header-text on-image"
-            : "section-label category-header-text";
-
-          sectionHTML += `<div class="${labelClass}" id="sec-${cat}" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
+          if (hasCatImg) {
+            sectionHTML += `
+              <div class="cat-banner" style="background: linear-gradient(to top, rgba(0,0,0,0.7), rgba(0,0,0,0.15) 65%), url('${categoryImages[cat]}') center/cover no-repeat;">
+                <span class="cat-banner-title">${cat}</span>
+              </div>`;
+          } else {
+            const secImg = '<i class="fas fa-certificate" style="font-size:14px; margin-left:8px; color:var(--primary)"></i>';
+            sectionHTML += `<div class="section-label category-header-text" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
+          }
 
           items.forEach((p) => {
             const imgHTML =
