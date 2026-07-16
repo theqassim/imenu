@@ -1,6 +1,10 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
+const mongoose = require("mongoose"); // ✅ رجعنا ده عشان باقي الملف ميضربش مؤقتاً
+const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // يفضل استخدام Service Role في الباك إند لتخطي RLS إذا لزم الأمر
+const supabase = createClient(supabaseUrl, supabaseKey);
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const path = require("path");
@@ -454,7 +458,14 @@ const protect = async (req, res, next) => {
       req.user = { _id: SUPER_ADMIN_ID, name: "Super Admin", role: "admin" };
       return next();
     }
-    const currentUser = await User.findById(decoded.id);
+    // ✅ التحقق من المستخدم عبر Supabase
+    const { data: currentUser, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('_id', decoded.id)
+      .single();
+      
+    if (error || !currentUser) return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
     if (!currentUser) return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
 
     // ✅ تصحيح نهائي ذكي: فحص التجربة مع معالجة التاريخ الناقص تلقائياً
@@ -502,7 +513,14 @@ const protectOptional = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const currentUser = await User.findById(decoded.id);
+    // ✅ التحقق من المستخدم عبر Supabase
+    const { data: currentUser, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('_id', decoded.id)
+      .single();
+      
+    if (error || !currentUser) return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
     if (currentUser) req.user = currentUser;
     next();
   } catch (err) {
@@ -569,8 +587,14 @@ app.post("/api/v1/users/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: "أدخل البريد وكلمة المرور" });
 
-    const user = await User.findOne({ email }).select("+password");
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    // ✅ جلب المستخدم من Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ status: "fail", message: "بيانات الدخول خاطئة" });
     }
     
@@ -946,9 +970,17 @@ app.get("/api/v1/restaurants/:slug", async (req, res) => {
 
 app.get("/api/v1/restaurants", protect, async (req, res) => {
    try {
-     const restaurants = await Restaurant.find().populate("owner", "name email");
+     // بافتراض أنك أنشأت علاقة (Foreign Key) بين جدول restaurants وجدول users
+     const { data: restaurants, error } = await supabase
+       .from('restaurants')
+       .select('*, owner:users(name, email)'); 
+
+     if (error) throw error;
+     
      res.status(200).json({ status: "success", data: { restaurants } });
-   } catch(err) { res.status(400).json({ message: err.message }); }
+   } catch(err) { 
+     res.status(400).json({ message: err.message }); 
+   }
 });
 
 app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }]), async (req, res) => {
@@ -1151,17 +1183,21 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
       try { return typeof val === 'string' ? JSON.parse(val) : val; } catch (e) { return val; }
     };
 
-    const newProduct = await Product.create({
+    // ✅ إضافة المنتج في Supabase
+    const { data: newProduct, error } = await supabase.from('products').insert([{
       name: safeParse(name),
       description: safeParse(description),
       price: Number(price),
-      oldPrice: oldPrice ? Number(oldPrice) : 0,
+      "oldPrice": oldPrice ? Number(oldPrice) : 0,
       sizes: safeParse(sizes) || [],
       category,
       ingredients: ingredients ? safeParse(ingredients) : [],
       restaurant: restaurantId,
-      image: req.file ? req.file.path : ""
-    });
+      image: req.file ? req.file.path : "",
+      "isAvailable": true
+    }]).select().single();
+
+    if (error) throw error;
 
     if (req.io) req.io.to(restaurantId).emit("menu_updated");
     res.status(201).json({ status: "success", data: { product: newProduct } });
@@ -1266,8 +1302,31 @@ app.patch("/api/v1/products/toggle/:id", protect, async (req, res) => {
 app.post("/api/v1/categories", protect, restrictTo("owner", "admin"), upload.single('image'), async (req, res) => {
   try {
     const { name, restaurantId } = req.body;
-    const count = await Category.countDocuments({ restaurant: restaurantId });
-    const newCategory = await Category.create({ name, sortOrder: count + 1, image: req.file ? req.file.path : "", restaurant: restaurantId });
+    
+    // 1. حساب العدد الحالي
+    const { count, error: countError } = await supabase
+      .from('categories')
+      .select('*', { count: 'exact', head: true })
+      .eq('restaurant_id', restaurantId);
+      
+    if (countError) throw countError;
+
+    // 2. إنشاء القسم الجديد
+    const { data: newCategory, error: insertError } = await supabase
+      .from('categories')
+      .insert([
+        { 
+          name, 
+          sort_order: (count || 0) + 1, 
+          image: req.file ? req.file.path : "", 
+          restaurant_id: restaurantId 
+        }
+      ])
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
     if (req.io) req.io.to(restaurantId).emit("menu_updated");
     res.status(201).json({ status: "success", data: { category: newCategory } });
   } catch (err) {
@@ -2980,10 +3039,9 @@ app.use((err, req, res, next) => {
 // ==========================================
 // 6. DB Connection & Server Start
 // ==========================================
-mongoose
-  .connect(process.env.DATABASE_URL)
-  .then(() => console.log("✅ Connected to MongoDB Successfully!"))
-  .catch((err) => console.log("❌ Database Connection Error:", err));
+// تم الاستغناء عن اتصال Mongoose.
+// Supabase Client يعمل عبر REST/PostgREST ولا يحتاج لاتصال مستمر (Persistent Connection) بنفس الطريقة.
+console.log("✅ Supabase Client Initialized!");
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
