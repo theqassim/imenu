@@ -1,6 +1,5 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose"); // ✅ رجعنا ده عشان باقي الملف ميضربش مؤقتاً
 const { createClient } = require('@supabase/supabase-js');
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // يفضل استخدام Service Role في الباك إند لتخطي RLS إذا لزم الأمر
@@ -565,20 +564,32 @@ app.post("/api/v1/users/signup", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      passwordConfirm,
-      phone,
-      role,
-      subscriptionExpires: expiryDate,
-      hasStock: hasStock === true || hasStock === "true",
-      productLimit: productLimit || 75,
-    });
+    
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert([{
+        name,
+        email,
+        password: hashedPassword,
+        phone,
+        role,
+        subscriptionExpires: expiryDate,
+        hasStock: hasStock === true || hasStock === "true",
+        productLimit: productLimit || 75,
+        active: true
+      }])
+      .select()
+      .single();
+
+    if (error) {
+       // معالجة خطأ تكرار الإيميل في Postgres (الكود 23505)
+       if (error.code === '23505') throw new Error("البريد مسجل بالفعل");
+       throw error;
+    }
+
     createSendToken(newUser, 201, res);
   } catch (err) {
-    res.status(400).json({ status: "fail", message: err.code === 11000 ? "البريد مسجل بالفعل" : err.message });
+    res.status(400).json({ status: "fail", message: err.message });
   }
 });
 
@@ -657,8 +668,16 @@ app.patch("/api/v1/users/update-password", protect, async (req, res) => {
   try {
     const { password } = req.body;
     if (!password || password.length < 6) return res.status(400).json({ message: "كلمة المرور قصيرة" });
+    
     const hashedPassword = await bcrypt.hash(password, 12);
-    await User.findByIdAndUpdate(req.user.id, { password: hashedPassword });
+    
+    const { error } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('_id', req.user._id); // تأكد أن المفتاح الأساسي في Supabase اسمه _id أو id حسب تصميمك
+
+    if (error) throw error;
+
     res.status(200).json({ status: "success", message: "تم تغيير كلمة المرور" });
   } catch (err) {
     res.status(400).json({ message: err.message });
