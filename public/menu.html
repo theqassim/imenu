@@ -1833,21 +1833,22 @@
 
         items.forEach((item) => {
           const cfg = socialLinks?.[item.key];
-          if (!cfg || !cfg.visible || !cfg.url) return;
+          const isRating = item.key === "rating";
+
+          // التقييم بقى صفحة داخل السيستم نفسه، مش رابط خارجي بيحطه صاحب المطعم
+          // بيظهر افتراضياً إلا لو صاحب المطعم خفاه بنفسه
+          if (isRating) {
+            if (cfg && cfg.visible === false) return;
+          } else {
+            if (!cfg || !cfg.visible || !cfg.url) return;
+          }
 
           const a = document.createElement("a");
           a.className = item.cls;
-          a.href = cfg.url;
+          a.href = isRating ? `/rate/${slug}` : cfg.url;
           a.target = "_blank";
           a.rel = "noopener noreferrer";
           a.innerHTML = `<i class="${item.icon}"></i>`;
-
-          // التقييم بس هو اللي بيبعت إشعار للمالك عند الضغط عليه
-          if (item.key === "rating") {
-            a.addEventListener("click", () => {
-              fetch(`/api/v1/menu/${slug}/notify-rating`, { method: "POST" }).catch(() => {});
-            });
-          }
 
           bar.appendChild(a);
         });
