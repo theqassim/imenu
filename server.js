@@ -17,305 +17,10 @@ const http = require("http");
 const cron = require("node-cron");
 
 // ==========================================
-// 1. Models Definitions (تعريف الجداول محلياً)
+// 1. Supabase & Database Layer
 // ==========================================
-
-// --- User Model ---
-const userSchema = new mongoose.Schema({
-  productLimit: { type: Number, default: 75 },
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true },
-  phone: { type: String, required: true },
-  whatsapp: { type: String, default: "" },
-  role: { type: String, enum: ["user", "owner", "admin", "cashier", "kitchen", "sales", "waiter"], default: "user" }, // Added 'waiter'
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant" },
-  shiftStart: { type: String, default: "00:00" },
-  shiftEnd: { type: String, default: "23:59" },
-  restDays: { type: [Number], default: [] },
-  subscriptionExpires: { type: Date },
-  active: { type: Boolean, default: true },
-  hasStock: { type: Boolean, default: false },
-  hasAccounting: { type: Boolean, default: false }, // ✅ تفعيل المحاسب
-  
-  // Sales & Trial Fields
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // السيلز الذي أنشأ الحساب
-  isTrial: { type: Boolean, default: false }, // هل الحساب تجريبي؟
-  trialExpires: { type: Date }, // تاريخ انتهاء التجربة
-  
-  createdAt: { type: Date, default: Date.now },
-});
-userSchema.methods.correctPassword = async function (candidatePassword, userPassword) {
-  return await bcrypt.compare(candidatePassword, userPassword);
-};
-const User = mongoose.model("User", userSchema);
-
-// --- Restaurant Model ---
-const restaurantSchema = new mongoose.Schema({
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  restaurantName: { type: String, required: true },
-  businessType: { type: String, enum: ["restaurant", "cafe", "both"], default: "restaurant" },
-  slug: { type: String, required: true, unique: true },
-  useTableNumbers: { type: Boolean, default: false },
-  orderMode: { type: String, enum: ["whatsapp", "system", "view_only"], default: "whatsapp" },
-  taxRate: { type: Number, default: 0 },
-  serviceRate: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true },
-  enableCoupons: { type: Boolean, default: false },
-  accountingSettings: {
-    overtimeRate: { type: Number, default: 0 }, // قيمة ساعة الإضافي
-    absencePenalty: { type: Number, default: 1 }, // اليوم بكام يوم جزاء
-    latePenalty: { type: Number, default: 0 } // ساعة التأخير بخصم كام
-  },
-  hasStock: { type: Boolean, default: false },
-  qrImage: { type: String, default: "" },
-  qrName: { type: String, default: "" },
-  reservationSettings: {
-    isEnabled: { type: Boolean, default: false },
-    totalSeats: { type: Number, default: 0 },
-    bookedSeats: { type: Number, default: 0 }
-  },
-  customUI: {
-    // الخلفية والخطوط
-    bgType: { type: String, default: "color" },
-    bgValue: { type: String, default: "#F9F9F9" },
-    bgPosition: { type: String, default: "center" },
-    bgSize: { type: String, default: "cover" }, // حجم الخلفية (cover/contain)
-    bgRepeat: { type: String, default: "no-repeat" }, // التكرار
-    bgAttachment: { type: String, default: "fixed" }, // التثبيت عند السكرول
-    bgOverlay: { type: Number, default: 90 }, // نسبة تعتيم الخلفية
-    fontFamily: { type: String, default: "Tajawal" },
-    
-    // الألوان العامة
-    primaryColor: { type: String, default: "#B78728" },
-    secTitleColor: { type: String, default: "#2d2d2d" }, // جديد: لون عناوين الأقسام
-    prodTitleColor: { type: String, default: "#2d2d2d" }, // لون اسم المنتج
-    prodPriceColor: { type: String, default: "#B78728" }, // لون السعر
-    cardColor: { type: String, default: "#ffffff" }, // جديد: لون الكارت
-
-    // محاذاة نصوص الهيدر
-    headerTextAlignment: { type: String, default: "center" },
-    resNamePosition: { type: String, default: "inside" }, // ✅ تم إضافة هذا السطر لحفظ مكان الاسم
-
-    // الهيدر (صورة الغلاف)
-    heroImage: { type: String, default: "" },
-    showHero: { type: Boolean, default: true },
-    heroOverlay: { type: Number, default: 30 },
-    heroHeight: { type: Number, default: 200 },
-    heroPosition: { type: String, default: "center" }, // جديد: كروب الصورة
-
-    // بيانات المطعم (الاسم والوصف)
-    showResName: { type: Boolean, default: true }, // جديد
-    customResName: { type: String, default: "" }, // جديد (لو عايز يغير الاسم الظاهر)
-    resNameColor: { type: String, default: "#B78728" },
-    
-    showResDesc: { type: Boolean, default: true }, // جديد
-    customResDesc: { type: String, default: "" }, // جديد
-    resDescColor: { type: String, default: "#eeeeee" }, // جديد
-    
-    // البحث
-    showSearch: { type: Boolean, default: true }, // جديد
-    searchPlaceholder: { type: String, default: "" }, // جديد
-
-    // تخطيط الكروت والصور
-    layoutType: { type: String, default: "modern" },
-    cardStyle: { type: String, default: "solid" },
-    cardRadius: { type: Number, default: 16 },
-    prodImgObjectFit: { type: String, default: "cover" }, // جديد: شكل الصورة داخل الإطار
-  },
-  contactInfo: { whatsapp: String, phone: String, address: String },
-  coverImage: String,
-  logo: String,
-  createdAt: { type: Date, default: Date.now },
-});
-const Restaurant = mongoose.model("Restaurant", restaurantSchema);
-
-// --- Category Model ---
-const categorySchema = new mongoose.Schema({
-  sortOrder: { type: Number, default: 0 }, // جديد: للترتيب
-  name: { type: String, required: [true, "يجب إدخال اسم القسم"] },
-  image: { type: String, default: "" },
-  restaurant: { type: mongoose.Schema.ObjectId, ref: "Restaurant", required: [true, "القسم يجب أن يتبع مطعم"] },
-  createdAt: { type: Date, default: Date.now },
-});
-const Category = mongoose.model("Category", categorySchema);
-
-// --- StockItem Model ---
-const stockItemSchema = new mongoose.Schema({
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  name: { type: String, required: true },
-  quantity: { type: Number, default: 0 },
-  unit: { type: String, required: true },
-  costPerUnit: { type: Number, default: 0 },
-  alertLevel: { type: Number, default: 5 },
-  lastUpdated: { type: Date, default: Date.now },
-});
-const StockItem = mongoose.model("StockItem", stockItemSchema);
-// --- StockLog Model ---
-const stockLogSchema = new mongoose.Schema({
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  stockItem: { type: mongoose.Schema.Types.ObjectId, ref: "StockItem", required: true },
-  itemName: String,
-  changeAmount: { type: Number, required: true },
-  type: { type: String, required: true }, // restock, consumption, adjustment
-  orderId: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
-  date: { type: Date, default: Date.now }
-});
-const StockLog = mongoose.model("StockLog", stockLogSchema);
-
-// --- Product Model ---
-const productSchema = new mongoose.Schema({
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  sortOrder: { type: Number, default: 0 }, // جديد: للترتيب
-  name: { en: { type: String, required: true }, ar: { type: String } },
-  description: { en: String, ar: String },
-  price: { type: Number, default: 0 },
-  oldPrice: { type: Number, default: 0 },
-  sizes: [{ name: { type: String, required: true }, price: { type: Number, required: true }, oldPrice: { type: Number, default: 0 } }],
-  ingredients: [{ stockItem: { type: mongoose.Schema.Types.ObjectId, ref: "StockItem" }, quantity: Number }],
-  category: { type: String, required: true },
-  image: { type: String, default: "" },
-  isAvailable: { type: Boolean, default: true },
-});
-const Product = mongoose.model("Product", productSchema);
-
-// --- Order Model ---
-const orderSchema = new mongoose.Schema(
-  {
-    restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-    tableNumber: { type: String, default: "تيك أواي" },
-    orderNum: { type: Number },
-    couponCode: String,
-    discountAmount: { type: Number, default: 0 },
-    items: [{ productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, name: String, price: Number, qty: Number }],
-    subTotal: { type: Number, required: true },
-    taxAmount: { type: Number, default: 0 },
-    serviceAmount: { type: Number, default: 0 },
-    totalPrice: { type: Number, required: true },
-    status: { type: String, enum: ["pending", "preparing", "completed", "canceled"], default: "pending" },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // ✅ حقل جديد لمعرفة صاحب الطلب
-    createdAt: { type: Date, default: Date.now },
-  },
-  { timestamps: true }
-);
-const Order = mongoose.model("Order", orderSchema);
-
-// --- Coupon Model ---
-const couponSchema = new mongoose.Schema({
-  code: { type: String, required: true, uppercase: true, trim: true },
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  discountType: { type: String, enum: ["percent", "fixed"], default: "percent" },
-  value: { type: Number, required: true },
-  maxDiscount: { type: Number },
-  minOrderVal: { type: Number, default: 0 },
-  usageLimit: { type: Number, default: 1000 },
-  usedCount: { type: Number, default: 0 },
-  expiresAt: { type: Date },
-  isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-});
-couponSchema.index({ code: 1, restaurant: 1 }, { unique: true });
-const Coupon = mongoose.model("Coupon", couponSchema);
-
-// --- Reservation Model ---
-const reservationSchema = new mongoose.Schema({
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  seats: { type: Number, required: true },
-  status: { type: String, enum: ["pending", "approved", "rejected", "completed"], default: "pending" },
-  createdAt: { type: Date, default: Date.now }
-});
-const Reservation = mongoose.model("Reservation", reservationSchema);
-
-// --- Accounting Models (نظام المحاسبة المطور) ---
-const employeeSchema = new mongoose.Schema({
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  name: { type: String, required: true },
-  jobTitle: String,
-  phone: String,
-  salaryType: { type: String, enum: ['monthly', 'daily'], default: 'monthly' },
-  baseSalary: { type: Number, default: 0 },
-  workHours: { type: Number, default: 9 },
-  loanBalance: { type: Number, default: 0 }, // رصيد السلف
-  shiftStart: { type: String, default: "09:00" },
-  shiftEnd: { type: String, default: "18:00" },
-  createdAt: { type: Date, default: Date.now }
-});
-const Employee = mongoose.model("Employee", employeeSchema);
-
-const attendanceSchema = new mongoose.Schema({
-  employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  date: { type: String, required: true },
-  checkIn: Date,
-  checkOut: Date,
-  status: { type: String, enum: ['present', 'absent', 'late'], default: 'present' },
-  overtimeHours: { type: Number, default: 0 },
-  deductionHours: { type: Number, default: 0 }
-});
-attendanceSchema.index({ employee: 1, date: 1 }, { unique: true });
-const Attendance = mongoose.model("Attendance", attendanceSchema);
-
-const expenseSchema = new mongoose.Schema({
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  title: { type: String, required: true },
-  amount: { type: Number, required: true },
-  // تمت إضافة 'advance' وتوسيع الفئات
-  category: { type: String, enum: ['supplies', 'bills', 'maintenance', 'rent', 'salary_advance', 'bonus', 'deduction', 'salaries', 'other'], default: 'other' },
-  // حقل جديد لربط المصروف بموظف (في حالة السلفة)
-  employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" }, 
-  date: { type: Date, default: Date.now },
-  description: String
-});
-const Expense = mongoose.model("Expense", expenseSchema);
-
-const payrollSchema = new mongoose.Schema({
-  employee: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
-  restaurant: { type: mongoose.Schema.Types.ObjectId, ref: "Restaurant", required: true },
-  month: { type: String, required: true },
-  baseAmount: Number,
-  overtimeAmount: { type: Number, default: 0 },
-  deductions: { type: Number, default: 0 }, // جزاءات
-  loansDeducted: { type: Number, default: 0 }, // سلف مخصومة
-  bonuses: { type: Number, default: 0 },
-  totalSalary: Number,
-  status: { type: String, enum: ['Pending', 'Approved'], default: 'Pending' }, // ✅ إضافة الحالة
-  isPaid: { type: Boolean, default: false },
-  paidAt: Date,
-  createdAt: { type: Date, default: Date.now }
-});
-const Payroll = mongoose.model("Payroll", payrollSchema);
-
-// --- SalesRequest Model ---
-const salesRequestSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  phone: { type: String, required: true },
-  walletNumber: { type: String, required: true },
-  image: { type: String, required: true },
-  status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
-  createdAt: { type: Date, default: Date.now },
-});
-const SalesRequest = mongoose.model("SalesRequest", salesRequestSchema);
-
-// Model for Menu Request (Defined Inline in original server.js)
-const requestSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  storeName: { type: String, required: true },
-  phone: { type: String, required: true },
-  address: { type: String, required: true },
-  status: { type: String, enum: ["new", "contacted"], default: "new" },
-  createdAt: { type: Date, default: Date.now },
-});
-const MenuRequest = mongoose.models.MenuRequest || mongoose.model("MenuRequest", requestSchema);
-
-const subSchema = new mongoose.Schema({
-  endpoint: String,
-  keys: mongoose.Schema.Types.Mixed,
-  createAt: { type: Date, default: Date.now },
-});
-const PushSubscription = mongoose.models.PushSubscription || mongoose.model("PushSubscription", subSchema);
+// ملاحظة: تم إزالة جميع تعريفات نماذج Mongoose (Schemas).
+// تُدار الآن جميع الجداول، أنواع البيانات، والعلاقات (Foreign Keys) مباشرة داخل قاعدة بيانات PostgreSQL في Supabase.
 
 // ==========================================
 // CRON JOB: Auto-Delete Expired Trials
@@ -324,32 +29,36 @@ const PushSubscription = mongoose.models.PushSubscription || mongoose.model("Pus
 cron.schedule("0 * * * *", async () => {
   console.log("⏳ Checking for expired trial accounts...");
   try {
-    const expiredUsers = await User.find({
-      isTrial: true,
-      trialExpires: { $lt: new Date() },
-    });
+    const { data: expiredUsers, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('isTrial', true)
+      .lt('trialExpires', new Date().toISOString());
 
-    for (const user of expiredUsers) {
+    if (fetchError) throw fetchError;
+
+    for (const user of expiredUsers || []) {
       console.log(`🗑️ Deleting expired trial user: ${user.email}`);
       
-      // حذف بيانات المطعم المرتبط
+      // في Supabase يُفضل إعداد ON DELETE CASCADE في الجداول المرتبطة
+      // لكن سنقوم بمحاكاة الحذف هنا لضمان عمل الكود كما كان
       if (user.role === 'owner') {
-        const restaurant = await Restaurant.findOne({ owner: user._id });
+        const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', user._id).single();
         if (restaurant) {
-          await Product.deleteMany({ restaurant: restaurant._id });
-          await Category.deleteMany({ restaurant: restaurant._id });
-          await Order.deleteMany({ restaurant: restaurant._id });
-          await Coupon.deleteMany({ restaurant: restaurant._id });
-          await StockItem.deleteMany({ restaurant: restaurant._id });
-          await StockLog.deleteMany({ restaurant: restaurant._id });
-          await User.deleteMany({ restaurant: restaurant._id }); // حذف الموظفين
-          await Restaurant.findByIdAndDelete(restaurant._id);
+          await supabase.from('products').delete().eq('restaurant', restaurant._id);
+          await supabase.from('categories').delete().eq('restaurant', restaurant._id);
+          await supabase.from('orders').delete().eq('restaurant', restaurant._id);
+          await supabase.from('coupons').delete().eq('restaurant', restaurant._id);
+          await supabase.from('stock_items').delete().eq('restaurant', restaurant._id);
+          await supabase.from('stock_logs').delete().eq('restaurant', restaurant._id);
+          await supabase.from('users').delete().eq('restaurant', restaurant._id); // حذف الموظفين
+          await supabase.from('restaurants').delete().eq('_id', restaurant._id);
         }
       }
       // حذف المستخدم نفسه
-      await User.findByIdAndDelete(user._id);
+      await supabase.from('users').delete().eq('_id', user._id);
     }
-    if(expiredUsers.length > 0) console.log(`✅ Cleaned up ${expiredUsers.length} expired accounts.`);
+    if(expiredUsers && expiredUsers.length > 0) console.log(`✅ Cleaned up ${expiredUsers.length} expired accounts.`);
   } catch (err) {
     console.error("❌ Error in Cron Job:", err);
   }
@@ -473,8 +182,8 @@ const protect = async (req, res, next) => {
          // 1. تصحيح تلقائي: لو التاريخ مش موجود، نمنحه 24 ساعة من دلوقتي
          if (!currentUser.trialExpires) {
              console.log(`⚠️ تنبيه: المستخدم ${currentUser.email} حساب تجريبي بدون تاريخ، جاري التصحيح...`);
-             currentUser.trialExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // إضافة 24 ساعة
-             await currentUser.save({ validateBeforeSave: false });
+             currentUser.trialExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // إضافة 24 ساعة
+             await supabase.from('users').update({ trialExpires: currentUser.trialExpires }).eq('_id', currentUser._id);
              console.log(`✅ تم تحديد مهلة جديدة تنتهي في: ${currentUser.trialExpires}`);
          }
 
@@ -486,9 +195,9 @@ const protect = async (req, res, next) => {
       }
 
       // فحص الاشتراك العادي
-      if (currentUser.subscriptionExpires && new Date() > currentUser.subscriptionExpires) {
+      if (currentUser.subscriptionExpires && new Date() > new Date(currentUser.subscriptionExpires)) {
         currentUser.active = false;
-        await currentUser.save({ validateBeforeSave: false });
+        await supabase.from('users').update({ active: false }).eq('_id', currentUser._id);
         return res.status(403).json({ message: "انتهت مدة اشتراكك." });
       }
 
@@ -697,7 +406,7 @@ app.post("/api/v1/users/staff", protect, restrictTo("owner"), async (req, res) =
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    const newStaff = await User.create({
+    const { data: newStaff, error } = await supabase.from('users').insert([{
       name,
       email,
       password: hashedPassword,
@@ -708,8 +417,11 @@ app.post("/api/v1/users/staff", protect, restrictTo("owner"), async (req, res) =
       shiftStart: shiftStart || "00:00",
       shiftEnd: shiftEnd || "23:59",
       restDays: restDays || [],
-    });
-    newStaff.password = undefined;
+    }]).select().single();
+
+    if (error) throw error;
+    if (newStaff) delete newStaff.password;
+
     res.status(201).json({ status: "success", data: { user: newStaff } });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -718,9 +430,20 @@ app.post("/api/v1/users/staff", protect, restrictTo("owner"), async (req, res) =
 
 app.get("/api/v1/users/my-staff", protect, async (req, res) => {
   try {
-    // الموظفين المرتبطين بهذا الأونر مباشرة أو عن طريق معرف المطعم
-    const staff = await User.find({ owner: req.user._id, role: { $in: ["cashier", "kitchen", "waiter"] } }).select("-password");
-    res.status(200).json({ status: "success", data: { staff } });
+    const { data: staff, error } = await supabase
+      .from('users')
+      .select('*') 
+      .eq('owner', req.user._id)
+      .in('role', ["cashier", "kitchen", "waiter"]);
+
+    if (error) throw error;
+    
+    const safeStaff = staff.map(user => {
+      const { password, ...rest } = user;
+      return rest;
+    });
+
+    res.status(200).json({ status: "success", data: { staff: safeStaff } });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -728,10 +451,10 @@ app.get("/api/v1/users/my-staff", protect, async (req, res) => {
 
 app.patch("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
-    const myRestaurant = await Restaurant.findOne({ owner: req.user._id });
+    const { data: myRestaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
     if (!myRestaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
 
-    const staffMember = await User.findOne({ _id: req.params.id, restaurant: myRestaurant._id });
+    const { data: staffMember } = await supabase.from('users').select('_id').eq('_id', req.params.id).eq('restaurant', myRestaurant._id).single();
     if (!staffMember) return res.status(404).json({ message: "الموظف غير موجود أو لا يتبع لمطعمك" });
 
     const updates = { ...req.body };
@@ -744,10 +467,14 @@ app.patch("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, r
       delete updates.password;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('_id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { user: updatedUser } });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
@@ -756,10 +483,15 @@ app.patch("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, r
 
 app.delete("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
-    const myRestaurant = await Restaurant.findOne({ owner: req.user._id });
-    const staffMember = await User.findOne({ _id: req.params.id, restaurant: myRestaurant._id });
+    const { data: myRestaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    if (!myRestaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+
+    const { data: staffMember } = await supabase.from('users').select('_id').eq('_id', req.params.id).eq('restaurant', myRestaurant._id).single();
     if (!staffMember) return res.status(404).json({ message: "الموظف غير موجود" });
-    await User.findByIdAndDelete(req.params.id);
+
+    const { error } = await supabase.from('users').delete().eq('_id', req.params.id);
+    if (error) throw error;
+
     res.status(200).json({ status: "success", message: "تم الحذف" });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -771,15 +503,16 @@ app.delete("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, 
 // 1. Get All Users (Missing Route) - جلب جميع المستخدمين مع فحص الاشتراكات
 app.get("/api/v1/users", protect, restrictTo("admin"), async (req, res) => {
   try {
-    let users = await User.find();
+    const { data: users, error } = await supabase.from('users').select('*');
+    if (error) throw error;
 
     const updatedUsers = await Promise.all(
       users.map(async (user) => {
         // إذا كان المالك نشطاً ولكن انتهى وقت اشتراكه، قم بتعطيله
         if (user.role === "owner" && user.active && user.subscriptionExpires) {
-          if (new Date() > user.subscriptionExpires) {
+          if (new Date() > new Date(user.subscriptionExpires)) {
             user.active = false;
-            await user.save({ validateBeforeSave: false });
+            await supabase.from('users').update({ active: false }).eq('_id', user._id);
           }
         }
         return user;
@@ -794,23 +527,28 @@ app.get("/api/v1/users", protect, restrictTo("admin"), async (req, res) => {
 
 app.patch("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) => {
   try {
-    if (req.body.password) delete req.body.password;
+    const updates = { ...req.body };
+    if (updates.password) delete updates.password;
 
-    if (req.body.productLimit !== undefined) req.body.productLimit = Number(req.body.productLimit);
-    if (req.body.hasStock !== undefined) req.body.hasStock = Boolean(req.body.hasStock);
-    if (req.body.hasAccounting !== undefined) req.body.hasAccounting = Boolean(req.body.hasAccounting); // ✅ تم التصحيح
+    if (updates.productLimit !== undefined) updates.productLimit = Number(updates.productLimit);
+    if (updates.hasStock !== undefined) updates.hasStock = Boolean(updates.hasStock);
+    if (updates.hasAccounting !== undefined) updates.hasAccounting = Boolean(updates.hasAccounting);
 
-    if (req.body.subscriptionExpires) {
-      const newExpiry = new Date(req.body.subscriptionExpires);
+    if (updates.subscriptionExpires) {
+      const newExpiry = new Date(updates.subscriptionExpires);
       newExpiry.setHours(23, 59, 59, 999);
-      req.body.subscriptionExpires = newExpiry;
-      if (newExpiry > new Date()) req.body.active = true;
+      updates.subscriptionExpires = newExpiry.toISOString();
+      if (newExpiry > new Date()) updates.active = true;
     }
 
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('_id', req.params.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { user: updatedUser } });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
@@ -819,8 +557,8 @@ app.patch("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) =>
 
 app.post("/api/v1/users/impersonate/:userId", protect, restrictTo("admin"), async (req, res) => {
   try {
-     const userToImpersonate = await User.findById(req.params.userId);
-     if (!userToImpersonate) return res.status(404).json({ message: "المستخدم غير موجود" });
+     const { data: userToImpersonate, error } = await supabase.from('users').select('*').eq('_id', req.params.userId).single();
+     if (error || !userToImpersonate) return res.status(404).json({ message: "المستخدم غير موجود" });
      createSendToken(userToImpersonate, 200, res);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -829,15 +567,18 @@ app.post("/api/v1/users/impersonate/:userId", protect, restrictTo("admin"), asyn
 
 app.patch("/api/v1/users/:id/toggle-status", protect, restrictTo("admin"), async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ status: "fail", message: "المستخدم غير موجود" });
+    const { data: user, error: fetchError } = await supabase.from('users').select('active').eq('_id', req.params.id).single();
+    if (fetchError || !user) return res.status(404).json({ status: "fail", message: "المستخدم غير موجود" });
 
     const newStatus = user.active === false ? true : false;
-    const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,
-      { active: newStatus },
-      { new: true, runValidators: false }
-    );
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update({ active: newStatus })
+      .eq('_id', req.params.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
 
     res.status(200).json({
       status: "success",
@@ -849,28 +590,27 @@ app.patch("/api/v1/users/:id/toggle-status", protect, restrictTo("admin"), async
   }
 });
 
-// Route: Delete User (Admin Only) - Missing in original server.js
+// Route: Delete User (Admin Only)
 app.delete("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ status: "fail", message: "المستخدم غير موجود" });
+    const { data: user, error: fetchError } = await supabase.from('users').select('*').eq('_id', req.params.id).single();
+    if (fetchError || !user) return res.status(404).json({ status: "fail", message: "المستخدم غير موجود" });
 
-    // إذا كان المالك، نحذف كل ما يتعلق به
     if (user.role === 'owner') {
-      const restaurant = await Restaurant.findOne({ owner: user._id });
+      const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', user._id).single();
       if (restaurant) {
-        await Product.deleteMany({ restaurant: restaurant._id });
-        await Category.deleteMany({ restaurant: restaurant._id });
-        await Order.deleteMany({ restaurant: restaurant._id });
-        await Coupon.deleteMany({ restaurant: restaurant._id });
-        await StockItem.deleteMany({ restaurant: restaurant._id });
-        await StockLog.deleteMany({ restaurant: restaurant._id });
-        await User.deleteMany({ restaurant: restaurant._id }); // حذف الموظفين
-        await Restaurant.findByIdAndDelete(restaurant._id);
+        await supabase.from('products').delete().eq('restaurant', restaurant._id);
+        await supabase.from('categories').delete().eq('restaurant', restaurant._id);
+        await supabase.from('orders').delete().eq('restaurant', restaurant._id);
+        await supabase.from('coupons').delete().eq('restaurant', restaurant._id);
+        await supabase.from('stock_items').delete().eq('restaurant', restaurant._id);
+        await supabase.from('stock_logs').delete().eq('restaurant', restaurant._id);
+        await supabase.from('users').delete().eq('restaurant', restaurant._id); 
+        await supabase.from('restaurants').delete().eq('_id', restaurant._id);
       }
     }
 
-    await User.findByIdAndDelete(req.params.id);
+    await supabase.from('users').delete().eq('_id', req.params.id);
     res.status(200).json({ status: "success", message: "تم حذف المستخدم وجميع بياناته المرتبطة بنجاح" });
   } catch (err) {
     res.status(400).json({ status: "error", message: err.message });
@@ -885,13 +625,15 @@ app.patch("/api/v1/users/:id/change-password-admin", protect, restrictTo("admin"
       return res.status(400).json({ status: "fail", message: "يجب أن تكون كلمة المرور 6 أحرف على الأقل" });
     }
     const hashedPassword = await bcrypt.hash(password, 12);
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { password: hashedPassword },
-      { new: true }
-    );
+    
+    const { data: user, error } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('_id', req.params.id)
+      .select()
+      .single();
 
-    if (!user) {
+    if (error || !user) {
       return res.status(404).json({ status: "fail", message: "المستخدم غير موجود" });
     }
 
@@ -905,10 +647,12 @@ app.patch("/api/v1/users/:id/change-password-admin", protect, restrictTo("admin"
 app.post("/api/v1/restaurants", protect, restrictTo("admin"), upload.single('image'), async (req, res) => {
   try {
     const { restaurantName, businessType, slug, contactInfo, owner, hasStock } = req.body;
-    const newRestaurant = await Restaurant.create({
+    const { data: newRestaurant, error } = await supabase.from('restaurants').insert([{
       restaurantName, businessType, slug, contactInfo, owner, hasStock,
       image: req.file ? req.file.path : undefined,
-    });
+    }]).select().single();
+    
+    if (error) throw error;
     res.status(201).json({ status: "success", data: { restaurant: newRestaurant } });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -917,30 +661,36 @@ app.post("/api/v1/restaurants", protect, restrictTo("admin"), upload.single('ima
 
 app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
   try {
-    let query = {};
-    if (req.user.role === "owner") query = { owner: req.user._id };
-    else if ((req.user.role === "cashier" || req.user.role === "kitchen" || req.user.role === "waiter") && req.user.restaurant) {
-      query = { _id: req.user.restaurant };
-    } else {
-      return res.status(404).json({ message: "لا تملك صلاحية الوصول لمطعم" });
+    let queryKey = 'owner';
+    let queryVal = req.user._id;
+
+    if (req.user.role !== "owner") {
+      if (!req.user.restaurant) return res.status(404).json({ message: "لا تملك صلاحية الوصول لمطعم" });
+      queryKey = '_id';
+      queryVal = req.user.restaurant;
     }
-    const restaurant = await Restaurant.findOne(query).populate("owner", "hasStock hasAccounting subscriptionExpires active isTrial trialExpires");
-    if (!restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم" });
+
+    const { data: restaurant, error } = await supabase
+      .from('restaurants')
+      .select('*, owner:users(hasStock, hasAccounting, subscriptionExpires, active, isTrial, trialExpires)')
+      .eq(queryKey, queryVal)
+      .single();
+
+    if (error || !restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم" });
     
-    const stockPermission = restaurant.owner ? restaurant.owner.hasStock : req.user.hasStock;
-    const accountingPermission = restaurant.owner ? restaurant.owner.hasAccounting : req.user.hasAccounting;
+    // معالجة العلاقة (Join) إذا كانت ترجع كمصفوفة أو ككائن مباشر
+    const ownerData = Array.isArray(restaurant.owner) ? restaurant.owner[0] : restaurant.owner;
     
-    // منطق التحذير
+    const stockPermission = ownerData ? ownerData.hasStock : req.user.hasStock;
+    const accountingPermission = ownerData ? ownerData.hasAccounting : req.user.hasAccounting;
+    
     let warning = null;
-    if (restaurant.owner && restaurant.owner.isTrial) {
+    if (ownerData && ownerData.isTrial) {
       let hoursLeft = 0;
-      // التأكد من وجود تاريخ انتهاء صالح
-      if (restaurant.owner.trialExpires) {
-        const diff = new Date(restaurant.owner.trialExpires) - new Date();
+      if (ownerData.trialExpires) {
+        const diff = new Date(ownerData.trialExpires) - new Date();
         hoursLeft = Math.ceil(diff / (1000 * 60 * 60));
       }
-      
-      // إذا انتهى الوقت أو كان غير صالح، نعرض 0
       if (isNaN(hoursLeft) || hoursLeft < 0) hoursLeft = 0;
 
       warning = {
@@ -958,9 +708,9 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
         shiftStart: req.user.shiftStart,
         shiftEnd: req.user.shiftEnd,
         hasStock: stockPermission,
-      hasAccounting: accountingPermission, // ✅ إرسال صلاحية المحاسب
-      warning: warning
-    },
+        hasAccounting: accountingPermission,
+        warning: warning
+      },
     });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -969,31 +719,34 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
 
 app.get("/api/v1/restaurants/:slug", async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ slug: req.params.slug }).populate("owner");
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    const { data: restaurant, error: resError } = await supabase
+        .from('restaurants')
+        .select('*, owner:users(*)')
+        .eq('slug', req.params.slug)
+        .single();
 
+    if (resError || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const ownerData = Array.isArray(restaurant.owner) ? restaurant.owner[0] : restaurant.owner;
     let warning = null;
-    if (restaurant.owner) {
-      const isExpired = restaurant.owner.subscriptionExpires && new Date() > restaurant.owner.subscriptionExpires;
-      if (restaurant.owner.active === false || isExpired) {
+
+    if (ownerData) {
+      const isExpired = ownerData.subscriptionExpires && new Date() > new Date(ownerData.subscriptionExpires);
+      if (ownerData.active === false || isExpired) {
         return res.status(403).json({ message: "المنيو غير متاح حالياً" });
       }
-
-      // إضافة تحذير للمنيو العام إذا كان تجريبي
-      if (restaurant.owner.isTrial) {
+      if (ownerData.isTrial) {
          warning = {
             message: "⚠️ تنبيه: هذا المطعم يستخدم النسخة التجريبية من نظام iMenu - سيتم حذف البيانات خلال 24 ساعة.",
             contact: "01145435095"
          };
       }
     }
-    // تم إضافة .sort("sortOrder") لضمان ظهور الترتيب للزبائن
-    const products = await Product.find({ restaurant: restaurant._id }).sort({ sortOrder: 1, createdAt: -1 });
-    
-    // ✅ إصلاح: إرسال الأقسام مرتبة حسب sortOrder
-    const categories = await Category.find({ restaurant: restaurant._id }).sort("sortOrder");
 
-    res.status(200).json({ status: "success", data: { restaurant, menu: products, categories, warning } });
+    const { data: products } = await supabase.from('products').select('*').eq('restaurant', restaurant._id).order('sortOrder', { ascending: true }).order('createdAt', { ascending: false });
+    const { data: categories } = await supabase.from('categories').select('*').eq('restaurant', restaurant._id).order('sortOrder', { ascending: true });
+
+    res.status(200).json({ status: "success", data: { restaurant, menu: products || [], categories: categories || [], warning } });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -1001,13 +754,11 @@ app.get("/api/v1/restaurants/:slug", async (req, res) => {
 
 app.get("/api/v1/restaurants", protect, async (req, res) => {
    try {
-     // بافتراض أنك أنشأت علاقة (Foreign Key) بين جدول restaurants وجدول users
      const { data: restaurants, error } = await supabase
        .from('restaurants')
        .select('*, owner:users(name, email)'); 
 
      if (error) throw error;
-     
      res.status(200).json({ status: "success", data: { restaurants } });
    } catch(err) { 
      res.status(400).json({ message: err.message }); 
@@ -1030,7 +781,15 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
         updateData.customUI.heroImage = req.files["heroImage"][0].path;
       }
     }
-    const updatedRestaurant = await Restaurant.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    
+    const { data: updatedRestaurant, error } = await supabase
+      .from('restaurants')
+      .update(updateData)
+      .eq('_id', req.params.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
     if (req.io) req.io.to(req.params.id).emit("menu_updated");
     res.status(200).json({ status: "success", data: { restaurant: updatedRestaurant } });
   } catch (err) {
@@ -1040,7 +799,8 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
 
 app.delete("/api/v1/restaurants/:id", protect, restrictTo("admin"), async (req, res) => {
     try {
-        await Restaurant.findByIdAndDelete(req.params.id);
+        const { error } = await supabase.from('restaurants').delete().eq('_id', req.params.id);
+        if (error) throw error;
         res.status(204).json({ status: "success" });
     } catch(err) { res.status(400).json({ message: err.message }); }
 });
@@ -1048,7 +808,14 @@ app.delete("/api/v1/restaurants/:id", protect, restrictTo("admin"), async (req, 
 app.patch("/api/v1/restaurants/update-qr/:slug", protect, async (req, res) => {
   try {
     const { qrImage, qrName } = req.body;
-    const restaurant = await Restaurant.findOneAndUpdate({ slug: req.params.slug }, { qrImage, qrName }, { new: true });
+    const { data: restaurant, error } = await supabase
+      .from('restaurants')
+      .update({ qrImage, qrName })
+      .eq('slug', req.params.slug)
+      .select()
+      .single();
+      
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { restaurant } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -1203,29 +970,28 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
   try {
     const currentUser = req.user;
     if (currentUser.productLimit !== -1) {
-      const currentCount = await Product.countDocuments({ restaurant: req.body.restaurantId });
+      const { count: currentCount, error: countError } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('restaurant', req.body.restaurantId);
+      if (countError) throw countError;
       if (currentCount >= currentUser.productLimit) return res.status(403).json({ message: "استهلكت باقة المنتجات" });
     }
     
     const { name, description, price, oldPrice, sizes, category, ingredients, restaurantId } = req.body;
     
-    // Helper helper safe parsing
     const safeParse = (val) => {
       try { return typeof val === 'string' ? JSON.parse(val) : val; } catch (e) { return val; }
     };
 
-    // ✅ إضافة المنتج في Supabase
     const { data: newProduct, error } = await supabase.from('products').insert([{
       name: safeParse(name),
       description: safeParse(description),
       price: Number(price),
-      "oldPrice": oldPrice ? Number(oldPrice) : 0,
+      oldPrice: oldPrice ? Number(oldPrice) : 0,
       sizes: safeParse(sizes) || [],
       category,
       ingredients: ingredients ? safeParse(ingredients) : [],
       restaurant: restaurantId,
       image: req.file ? req.file.path : "",
-      "isAvailable": true
+      isAvailable: true
     }]).select().single();
 
     if (error) throw error;
@@ -1239,8 +1005,15 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
 
 app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner", "admin", "cashier", "kitchen", "sales", "waiter"), async (req, res) => {
   try {
-    // الترتيب حسب sortOrder تصاعدي، ثم الأحدث
-    const products = await Product.find({ restaurant: req.params.restaurantId }).populate("ingredients.stockItem").sort("sortOrder -createdAt");
+    // جلب المنتجات. بناءً على هيكلة قاعدة البيانات، يتم جلب ingredients كـ JSON.
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('restaurant', req.params.restaurantId)
+      .order('sortOrder', { ascending: true })
+      .order('createdAt', { ascending: false });
+      
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { products } });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -1250,17 +1023,18 @@ app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner"
 // مسار جديد: إعادة ترتيب المنتجات
 app.patch("/api/v1/products/reorder", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const { order } = req.body; // Expects [{id: "...", sortOrder: 1}, ...]
+    const { order } = req.body; 
     if (!order || !Array.isArray(order)) return res.status(400).json({ message: "Invalid data" });
 
+    // استخدام Upsert كبديل لـ BulkWrite مع توفير المفتاح الأساسي
     const operations = order.map((item) => ({
-      updateOne: {
-        filter: { _id: item.id },
-        update: { sortOrder: item.sortOrder },
-      },
+      _id: item.id,
+      sortOrder: item.sortOrder
     }));
 
-    await Product.bulkWrite(operations);
+    const { error } = await supabase.from('products').upsert(operations);
+    if (error) throw error;
+
     res.status(200).json({ status: "success" });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -1269,13 +1043,17 @@ app.patch("/api/v1/products/reorder", protect, restrictTo("owner", "admin"), asy
 
 app.delete("/api/v1/products/:id", protect, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
-    // Verify Ownership
-    const restaurant = await Restaurant.findOne({ _id: product.restaurant, owner: req.user._id });
-    if (!restaurant && req.user.role !== "admin") return res.status(403).json({ message: "غير مصرح" });
+    const { data: product, error: prodError } = await supabase.from('products').select('*').eq('_id', req.params.id).single();
+    if (prodError || !product) return res.status(404).json({ message: "المنتج غير موجود" });
+    
+    if (req.user.role !== "admin") {
+      const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('_id', product.restaurant).eq('owner', req.user._id).single();
+      if (!restaurant) return res.status(403).json({ message: "غير مصرح" });
+    }
 
-    await Product.findByIdAndDelete(req.params.id);
+    const { error } = await supabase.from('products').delete().eq('_id', req.params.id);
+    if (error) throw error;
+    
     if (req.io) req.io.to(product.restaurant.toString()).emit("menu_updated");
     res.status(204).json({ status: "success" });
   } catch (err) { res.status(400).json({ message: err.message }); }
@@ -1283,16 +1061,16 @@ app.delete("/api/v1/products/:id", protect, async (req, res) => {
 
 app.patch("/api/v1/products/:id", protect, upload.single('image'), async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
-    const restaurant = await Restaurant.findOne({ _id: product.restaurant, owner: req.user._id });
-    if (!restaurant && req.user.role !== "admin") return res.status(403).json({ message: "غير مصرح" });
-
-    const { name, description, price, oldPrice, sizes, category, ingredients } = req.body;
+    const { data: product, error: prodError } = await supabase.from('products').select('*').eq('_id', req.params.id).single();
+    if (prodError || !product) return res.status(404).json({ message: "المنتج غير موجود" });
     
-    const safeParse = (val) => {
-      try { return typeof val === 'string' ? JSON.parse(val) : val; } catch (e) { return val; }
-    };
+    if (req.user.role !== "admin") {
+      const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('_id', product.restaurant).eq('owner', req.user._id).single();
+      if (!restaurant) return res.status(403).json({ message: "غير مصرح" });
+    }
+
+    const { name, description, price, oldPrice, sizes, category, ingredients, isAvailable } = req.body;
+    const safeParse = (val) => { try { return typeof val === 'string' ? JSON.parse(val) : val; } catch (e) { return val; } };
 
     let updateData = {};
     if (name) updateData.name = safeParse(name);
@@ -1306,11 +1084,16 @@ app.patch("/api/v1/products/:id", protect, upload.single('image'), async (req, r
     }
     if (sizes) updateData.sizes = safeParse(sizes) || [];
     if (req.file) updateData.image = req.file.path;
-    
-    // ✅ إصلاح: السماح بتحديث حالة التوفر عبر هذا المسار
-    if (req.body.isAvailable !== undefined) updateData.isAvailable = req.body.isAvailable;
+    if (isAvailable !== undefined) updateData.isAvailable = isAvailable;
 
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    const { data: updatedProduct, error } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('_id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
     if (updatedProduct && req.io) {
       req.io.to(updatedProduct.restaurant.toString()).emit("menu_updated");
     }
@@ -1320,12 +1103,21 @@ app.patch("/api/v1/products/:id", protect, upload.single('image'), async (req, r
 
 app.patch("/api/v1/products/toggle/:id", protect, async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
-        if(!product) return res.status(404).json({message: "Not found"});
-        product.isAvailable = !product.isAvailable;
-        await product.save();
-        if (req.io) req.io.to(product.restaurant.toString()).emit("menu_updated");
-        res.status(200).json({ status: "success", data: { product } });
+        const { data: product, error: fetchError } = await supabase.from('products').select('*').eq('_id', req.params.id).single();
+        if (fetchError || !product) return res.status(404).json({message: "Not found"});
+        
+        const newStatus = !product.isAvailable;
+        const { data: updatedProduct, error: updateError } = await supabase
+          .from('products')
+          .update({ isAvailable: newStatus })
+          .eq('_id', req.params.id)
+          .select()
+          .single();
+          
+        if (updateError) throw updateError;
+        
+        if (req.io) req.io.to(updatedProduct.restaurant.toString()).emit("menu_updated");
+        res.status(200).json({ status: "success", data: { product: updatedProduct } });
     } catch(err) { res.status(400).json({ message: err.message }); }
 });
 
@@ -1371,14 +1163,18 @@ app.post("/api/v1/categories/bulk", protect, restrictTo("owner", "admin"), async
     const { names, restaurantId } = req.body;
     if (!names || !Array.isArray(names)) return res.status(400).json({ message: "Invalid data" });
     
-    const startCount = await Category.countDocuments({ restaurant: restaurantId });
+    const { count: startCount, error: countError } = await supabase.from('categories').select('*', { count: 'exact', head: true }).eq('restaurant_id', restaurantId);
+    if (countError) throw countError;
+
     const docs = names.map((name, index) => ({ 
       name, 
-      restaurant: restaurantId,
-      sortOrder: startCount + index + 1
+      restaurant_id: restaurantId,
+      sort_order: (startCount || 0) + index + 1
     }));
     
-    await Category.insertMany(docs);
+    const { error } = await supabase.from('categories').insert(docs);
+    if (error) throw error;
+
     if (req.io) req.io.to(restaurantId).emit("menu_updated");
     res.status(201).json({ status: "success", count: docs.length });
   } catch (err) {
@@ -1390,13 +1186,15 @@ app.post("/api/v1/categories/bulk", protect, restrictTo("owner", "admin"), async
 app.patch("/api/v1/categories/reorder", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { order } = req.body; 
+    // Supabase Upsert يعمل كـ Bulk Update إذا وفرنا المفتاح الأساسي
     const operations = order.map((item) => ({
-      updateOne: {
-        filter: { _id: item.id },
-        update: { sortOrder: item.sortOrder },
-      },
+      _id: item.id,
+      sort_order: item.sortOrder
     }));
-    await Category.bulkWrite(operations);
+    
+    const { error } = await supabase.from('categories').upsert(operations);
+    if (error) throw error;
+
     res.status(200).json({ status: "success" });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -1405,23 +1203,29 @@ app.patch("/api/v1/categories/reorder", protect, restrictTo("owner", "admin"), a
 
 app.get("/api/v1/categories/:restaurantId", async (req, res) => {
   try {
-    // الترتيب حسب sortOrder
-    const categories = await Category.find({ restaurant: req.params.restaurantId }).sort("sortOrder createdAt");
-    const categoriesWithCounts = await Promise.all(categories.map(async (cat) => {
-      const count = await Product.countDocuments({ category: cat.name, restaurant: req.params.restaurantId });
-      return { ...cat.toObject(), productCount: count };
+    const { data: categories, error: catError } = await supabase.from('categories').select('*').eq('restaurant_id', req.params.restaurantId).order('sort_order', { ascending: true }).order('createdAt', { ascending: true });
+    if (catError) throw catError;
+
+    const { count: totalProducts } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('restaurant', req.params.restaurantId);
+
+    const categoriesWithCounts = await Promise.all((categories || []).map(async (cat) => {
+      const { count } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('category', cat.name).eq('restaurant', req.params.restaurantId);
+      return { ...cat, productCount: count || 0 };
     }));
-    const totalProducts = await Product.countDocuments({ restaurant: req.params.restaurantId });
-    res.status(200).json({ status: "success", data: { categories: categoriesWithCounts, stats: { totalCats: categories.length, totalProds: totalProducts } } });
+    
+    res.status(200).json({ status: "success", data: { categories: categoriesWithCounts, stats: { totalCats: categories ? categories.length : 0, totalProds: totalProducts || 0 } } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.delete("/api/v1/categories/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const category = await Category.findByIdAndDelete(req.params.id);
-    if (!category) return res.status(404).json({ message: "القسم غير موجود" });
-    await Product.deleteMany({ category: category.name, restaurant: category.restaurant });
-    if (req.io) req.io.to(category.restaurant.toString()).emit("menu_updated");
+    const { data: category, error: fetchError } = await supabase.from('categories').select('*').eq('_id', req.params.id).single();
+    if (fetchError || !category) return res.status(404).json({ message: "القسم غير موجود" });
+
+    await supabase.from('categories').delete().eq('_id', req.params.id);
+    await supabase.from('products').delete().eq('category', category.name).eq('restaurant', category.restaurant_id);
+    
+    if (req.io) req.io.to(category.restaurant_id.toString()).emit("menu_updated");
     res.status(204).json({ status: "success" });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -1430,8 +1234,16 @@ app.patch("/api/v1/categories/:id", protect, restrictTo("owner", "admin"), uploa
   try {
     const updateData = { name: req.body.name };
     if (req.file) updateData.image = req.file.path;
-    const updatedCategory = await Category.findByIdAndUpdate(req.params.id, updateData, { new: true });
-    if (req.io) req.io.to(updatedCategory.restaurant.toString()).emit("menu_updated");
+    
+    const { data: updatedCategory, error } = await supabase
+      .from('categories')
+      .update(updateData)
+      .eq('_id', req.params.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    if (req.io) req.io.to(updatedCategory.restaurant_id.toString()).emit("menu_updated");
     res.status(200).json({ status: "success", data: { category: updatedCategory } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -1666,8 +1478,8 @@ app.get("/api/v1/accounting/payroll", protect, async (req, res) => {
 const checkOrderPermission = async (user, restaurantId) => {
   if (user.role === "admin") return true;
   if (user.role === "owner") {
-    const isOwner = await Restaurant.exists({ _id: restaurantId, owner: user._id });
-    return !!isOwner;
+    const { data } = await supabase.from('restaurants').select('_id').eq('_id', restaurantId).eq('owner', user._id).single();
+    return !!data;
   }
   return user.restaurant && user.restaurant.toString() === restaurantId.toString();
 };
@@ -1675,23 +1487,19 @@ const checkOrderPermission = async (user, restaurantId) => {
 // --- مسار إلغاء الطلب (جديد) ---
 app.patch("/api/v1/orders/:id/cancel", protect, async (req, res) => {
   try {
-    // السماح بالإلغاء فقط إذا كان الطلب ما زال Pending
-    const order = await Order.findOne({ _id: req.params.id, status: "pending" });
+    const { data: order, error: orderError } = await supabase.from('orders').select('*').eq('_id', req.params.id).eq('status', 'pending').single();
+    if (orderError || !order) return res.status(400).json({ message: "الطلب غير موجود أو دخل مرحلة التحضير" });
     
-    // التحقق من الصلاحية (الأونر أو الويتر الذي أنشأ الطلب)
-    if (!order) return res.status(400).json({ message: "الطلب غير موجود أو دخل مرحلة التحضير" });
-    
-    if (req.user.role === 'waiter' && order.createdBy.toString() !== req.user._id.toString()) {
+    if (req.user.role === 'waiter' && order.createdBy !== req.user._id) {
         return res.status(403).json({ message: "لا يمكنك إلغاء طلب لم تقم بإنشائه" });
     }
 
-    order.status = "canceled";
-    await order.save();
+    const { data: updatedOrder, error: updateError } = await supabase.from('orders').update({ status: 'canceled' }).eq('_id', order._id).select().single();
+    if (updateError) throw updateError;
 
-    // تنبيه المطعم (الأدمن والمطبخ)
     if (req.io) {
-      req.io.to(order.restaurant.toString()).emit("order-updated", order);
-      req.io.to(order.restaurant.toString()).emit("order_cancelled_alert", order);
+      req.io.to(updatedOrder.restaurant.toString()).emit("order-updated", updatedOrder);
+      req.io.to(updatedOrder.restaurant.toString()).emit("order_cancelled_alert", updatedOrder);
     }
     
     res.status(200).json({ status: "success", message: "تم إلغاء الطلب بنجاح" });
@@ -1705,46 +1513,37 @@ app.put("/api/v1/orders/:id", protect, async (req, res) => {
   try {
     const { items, subTotal, totalPrice, taxAmount, serviceAmount } = req.body;
     
-    const order = await Order.findOne({ _id: req.params.id, status: "pending" });
-    if (!order) return res.status(400).json({ message: "لا يمكن تعديل الطلب (قد يكون قيد التحضير أو مكتمل)" });
+    const { data: order, error: orderError } = await supabase.from('orders').select('*').eq('_id', req.params.id).eq('status', 'pending').single();
+    if (orderError || !order) return res.status(400).json({ message: "لا يمكن تعديل الطلب (قد يكون قيد التحضير أو مكتمل)" });
 
-    // تحديث البيانات
-    order.items = items;
-    order.subTotal = subTotal;
-    order.totalPrice = totalPrice;
-    order.taxAmount = taxAmount || 0;
-    order.serviceAmount = serviceAmount || 0;
-    
-    await order.save();
+    const updateData = {
+      items,
+      subTotal,
+      totalPrice,
+      taxAmount: taxAmount || 0,
+      serviceAmount: serviceAmount || 0
+    };
+
+    const { data: updatedOrder, error: updateError } = await supabase.from('orders').update(updateData).eq('_id', order._id).select().single();
+    if (updateError) throw updateError;
 
     if (req.io) {
-      req.io.to(order.restaurant.toString()).emit("order-updated", order);
+      req.io.to(updatedOrder.restaurant.toString()).emit("order-updated", updatedOrder);
     }
 
-    res.status(200).json({ status: "success", message: "تم تعديل الطلب بنجاح", data: { order } });
+    res.status(200).json({ status: "success", message: "تم تعديل الطلب بنجاح", data: { order: updatedOrder } });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
 // إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة)
-// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم الطاولات والتيك أواي بذكاء
-// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم ID أو الطاولة أو التليفون
-// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة) - يدعم رقم الأوردر اليدوي
-// ✅ تم تعديل الحماية لتكون اختيارية لدعم طلبات المنيو (الزوار) والويتر معاً
 app.post("/api/v1/orders", protectOptional, async (req, res) => {
   try {
     const { 
-      orderId,       // لو معاك الـ ID المخفي (من السيستم)
-      manualOrderNum, // ✅ الإضافة الجديدة: رقم الأوردر اللي الكاشير هيكتبه بإيده (مثلا 50)
-      restaurant, restaurantId,
-      table, tableNumber,
-      items, 
-      type, 
-      customerName, 
-      phone, 
-      notes,
-      couponCode, discountAmount, subTotal, taxAmount, serviceAmount, totalPrice 
+      orderId, manualOrderNum, restaurant, restaurantId, table, tableNumber,
+      items, type, customerName, phone, notes, couponCode, discountAmount, 
+      subTotal, taxAmount, serviceAmount, totalPrice 
     } = req.body;
 
     const targetRestaurant = restaurant || restaurantId;
@@ -1756,121 +1555,83 @@ app.post("/api/v1/orders", protectOptional, async (req, res) => {
 
     let existingOrder = null;
 
-    // المنطق المطور: البحث عن أي فاتورة مفتوحة للدمج معها
-    // الحالة المفتوحة تعني: ليست مكتملة وليست ملغية (تشمل pending, preparing, ready, served...)
-    const activeStatusQuery = { $nin: ['completed', 'canceled'] };
-
-    // 1️⃣ البحث برقم الأوردر (أولوية قصوى للكاشير)
     if (manualOrderNum) {
-      existingOrder = await Order.findOne({
-        restaurant: targetRestaurant,
-        orderNum: Number(manualOrderNum),
-        status: activeStatusQuery
-      });
+      const { data } = await supabase.from('orders')
+        .select('*').eq('restaurant', targetRestaurant).eq('orderNum', Number(manualOrderNum))
+        .neq('status', 'completed').neq('status', 'canceled').single();
+      existingOrder = data;
     }
 
-    // 2️⃣ البحث بالـ ID (لو النظام أرسله)
     if (!existingOrder && orderId) {
-      existingOrder = await Order.findOne({
-        _id: orderId,
-        status: activeStatusQuery
-      });
+      const { data } = await supabase.from('orders')
+        .select('*').eq('_id', orderId)
+        .neq('status', 'completed').neq('status', 'canceled').single();
+      existingOrder = data;
     }
 
-    // 3️⃣ البحث الذكي (لو مفيش رقم، نعتمد على سياق الطاولة أو العميل)
     if (!existingOrder) {
-      let query = {
-        restaurant: targetRestaurant,
-        status: activeStatusQuery
-      };
+      let query = supabase.from('orders').select('*')
+        .eq('restaurant', targetRestaurant)
+        .neq('status', 'completed').neq('status', 'canceled')
+        .order('createdAt', { ascending: false }).limit(1);
 
       if (targetTable && targetTable !== "تيك أواي") {
-        // ✅ حالة الصالة: البحث عن آخر فاتورة مفتوحة لهذه الطاولة
-        query.tableNumber = targetTable;
-        existingOrder = await Order.findOne(query).sort({ createdAt: -1 }); 
+        const { data } = await query.eq('tableNumber', targetTable).single();
+        existingOrder = data;
       } 
       else if (targetTable === "تيك أواي") {
-        // ✅ حالة التيك أواي: البحث عن آخر فاتورة مفتوحة لنفس رقم التليفون
-        query.tableNumber = "تيك أواي";
         if (phone) {
-           query.phone = phone;
-           existingOrder = await Order.findOne(query).sort({ createdAt: -1 });
+           const { data } = await query.eq('tableNumber', "تيك أواي").eq('phone', phone).single();
+           existingOrder = data;
         } else if (customerName) {
-           // احتياطياً لو مفيش رقم تليفون نستخدم الاسم
-           query.customerName = customerName;
-           existingOrder = await Order.findOne(query).sort({ createdAt: -1 });
+           const { data } = await query.eq('tableNumber', "تيك أواي").eq('customerName', customerName).single();
+           existingOrder = data;
         }
       }
     }
 
-    // ------------------------------------------
-
     if (existingOrder) {
-      // ✅ سيناريو الدمج (إضافة أصناف لفاتورة موجودة)
-      
-      existingOrder.items.push(...items);
-      
+      const newItems = [...existingOrder.items, ...items];
       const additionalTotal = items.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
-      
-      existingOrder.totalPrice += additionalTotal;
-      if (existingOrder.subTotal) existingOrder.subTotal += additionalTotal;
-      
-      if (notes) existingOrder.notes = existingOrder.notes ? `${existingOrder.notes} | ${notes}` : notes;
+      const newTotal = existingOrder.totalPrice + additionalTotal;
+      const newSubTotal = existingOrder.subTotal ? existingOrder.subTotal + additionalTotal : additionalTotal;
+      const newNotes = notes ? (existingOrder.notes ? `${existingOrder.notes} | ${notes}` : notes) : existingOrder.notes;
 
-      await existingOrder.save();
+      const { data: updatedOrder, error } = await supabase.from('orders').update({
+        items: newItems, totalPrice: newTotal, subTotal: newSubTotal, notes: newNotes
+      }).eq('_id', existingOrder._id).select().single();
+      
+      if (error) throw error;
 
       if (req.io) {
-        req.io.to(targetRestaurant.toString()).emit("order-updated", existingOrder); 
-        req.io.to(targetRestaurant.toString()).emit("order-items-added", { orderId: existingOrder._id, newItems: items }); 
+        req.io.to(targetRestaurant.toString()).emit("order-updated", updatedOrder); 
+        req.io.to(targetRestaurant.toString()).emit("order-items-added", { orderId: updatedOrder._id, newItems: items }); 
       }
-
-      return res.status(200).json({ 
-        status: "success", 
-        message: `تم الإضافة للفاتورة رقم #${existingOrder.orderNum}`, 
-        data: { order: existingOrder } 
-      });
-
+      return res.status(200).json({ status: "success", message: `تم الإضافة للفاتورة رقم #${updatedOrder.orderNum}`, data: { order: updatedOrder } });
     } else {
-      // ✅ سيناريو فاتورة جديدة (New Order)
-      
-      // لو الكاشير كتب رقم أوردر غلط أو مش موجود، هنعمل واحد جديد برقم تسلسلي جديد
-      
       if (couponCode) {
-        await Coupon.findOneAndUpdate({ code: couponCode, restaurant: targetRestaurant }, { $inc: { usedCount: 1 } });
+        const { data: coupon } = await supabase.from('coupons').select('usedCount').eq('code', couponCode).eq('restaurant', targetRestaurant).single();
+        if (coupon) await supabase.from('coupons').update({ usedCount: coupon.usedCount + 1 }).eq('code', couponCode).eq('restaurant', targetRestaurant);
       }
 
-      const lastOrder = await Order.findOne({ restaurant: targetRestaurant }).sort({ orderNum: -1 });
+      const { data: lastOrder } = await supabase.from('orders').select('orderNum').eq('restaurant', targetRestaurant).order('orderNum', { ascending: false }).limit(1).single();
       const nextOrderNum = lastOrder && lastOrder.orderNum ? lastOrder.orderNum + 1 : 1;
       const calcTotal = items.reduce((acc, item) => acc + (item.price * (item.qty || 1)), 0);
 
-      const newOrder = await Order.create({
-        restaurant: targetRestaurant,
-        tableNumber: targetTable,
-        orderNum: nextOrderNum,
-        createdBy: req.user ? req.user._id : undefined, // ✅ تسجيل هوية الويتر إن وجد
-        items,
-        subTotal: subTotal || calcTotal,
-        taxAmount: taxAmount || 0,
-        serviceAmount: serviceAmount || 0,
-        couponCode,
-        discountAmount: discountAmount || 0,
-        totalPrice: totalPrice || calcTotal,
-        status: 'pending',
-        type: type || (targetTable === "تيك أواي" ? 'takeaway' : 'dine_in'),
-        customerName,
-        phone,
-        notes
-      });
+      const { data: newOrder, error } = await supabase.from('orders').insert([{
+        restaurant: targetRestaurant, tableNumber: targetTable, orderNum: nextOrderNum,
+        createdBy: req.user ? req.user._id : undefined, items,
+        subTotal: subTotal || calcTotal, taxAmount: taxAmount || 0, serviceAmount: serviceAmount || 0,
+        couponCode, discountAmount: discountAmount || 0, totalPrice: totalPrice || calcTotal,
+        status: 'pending', type: type || (targetTable === "تيك أواي" ? 'takeaway' : 'dine_in'),
+        customerName, phone, notes
+      }]).select().single();
 
+      if (error) throw error;
       if (req.io) req.io.to(targetRestaurant.toString()).emit("new-order", newOrder);
       
-      return res.status(201).json({ 
-        status: "success", 
-        message: "تم فتح فاتورة جديدة", 
-        data: { order: newOrder } 
-      });
+      return res.status(201).json({ status: "success", message: "تم فتح فاتورة جديدة", data: { order: newOrder } });
     }
-
   } catch (err) {
     console.error("Order Error:", err);
     res.status(500).json({ message: err.message });
@@ -1880,15 +1641,16 @@ app.post("/api/v1/orders", protectOptional, async (req, res) => {
 // ✅ مسار جديد لجلب طلبات الويتر الخاصة به فقط
 app.get("/api/v1/orders/my-orders", protect, async (req, res) => {
   try {
-    // جلب طلبات آخر 24 ساعة الخاصة بالمستخدم الحالي
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     
-    const orders = await Order.find({
-      createdBy: req.user._id,
-      createdAt: { $gte: startOfToday }
-    }).sort({ createdAt: -1 });
+    const { data: orders, error } = await supabase.from('orders')
+      .select('*')
+      .eq('createdBy', req.user._id)
+      .gte('createdAt', startOfToday.toISOString())
+      .order('createdAt', { ascending: false });
 
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { orders } });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
@@ -1900,52 +1662,57 @@ app.get("/api/v1/orders/active/:restaurantId", protect, async (req, res) => {
     const hasAccess = await checkOrderPermission(req.user, req.params.restaurantId);
     if (!hasAccess) return res.status(403).json({ message: "ليس لديك صلاحية لرؤية طلبات هذا المطعم" });
 
-    const orders = await Order.find({
-      restaurant: req.params.restaurantId,
-      status: { $in: ["pending", "preparing"] },
-    }).sort({ createdAt: 1 }); // ترتيب تصاعدي حسب الوقت (الأقدم أولاً للمطبخ)
+    const { data: orders, error } = await supabase.from('orders')
+      .select('*')
+      .eq('restaurant', req.params.restaurantId)
+      .in('status', ['pending', 'preparing'])
+      .order('createdAt', { ascending: true });
 
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { orders } });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
   }
 });
 
-// ✅ تم إضافة waiter للصلاحيات ليتمكن من إلغاء الطلب أو تعديل حالته
 app.patch("/api/v1/orders/status/:id", protect, restrictTo("owner", "cashier", "kitchen", "admin", "waiter"), async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: "الطلب غير موجود" });
+    const { data: order, error: fetchError } = await supabase.from('orders').select('*').eq('_id', req.params.id).single();
+    if (fetchError || !order) return res.status(404).json({ message: "الطلب غير موجود" });
 
     const hasAccess = await checkOrderPermission(req.user, order.restaurant);
     if (!hasAccess) return res.status(403).json({ message: "ليس لديك صلاحية لتحديث هذا الطلب" });
 
-    // Stock deduction Logic (Improved)
-    if (status === 'completed' && order.status !== 'completed') {
+    if (status === 'preparing' && order.status !== 'preparing') {
       for (const item of order.items) {
         let product;
-        // المحاولة الأولى: البحث عن طريق ID إذا كان موجوداً
         if (item.productId) {
-          product = await Product.findById(item.productId).populate('ingredients.stockItem');
+          const { data: pData } = await supabase.from('products').select('*').eq('_id', item.productId).single();
+          product = pData;
         }
-        // المحاولة الثانية: البحث بالاسم كخطة بديلة
         if (!product) {
-          product = await Product.findOne({
-            $or: [{ 'name.ar': item.name }, { 'name.en': item.name }],
-            restaurant: order.restaurant
-          }).populate('ingredients.stockItem');
+          const { data: pData } = await supabase.from('products')
+            .select('*')
+            .eq('restaurant', order.restaurant)
+            .or(`name->>ar.eq."${item.name}",name->>en.eq."${item.name}"`)
+            .limit(1)
+            .single();
+          product = pData;
         }
 
         if (product && product.ingredients) {
           for (const ing of product.ingredients) {
-            if(ing.stockItem && ing.stockItem._id) {
+            if(ing.stockItem) {
               const deductionAmount = ing.quantity * item.qty;
-              await StockItem.findByIdAndUpdate(ing.stockItem._id, { $inc: { quantity: -deductionAmount } });
-              await StockLog.create({
-                restaurant: order.restaurant, stockItem: ing.stockItem._id, itemName: ing.stockItem.name,
-                changeAmount: -deductionAmount, type: 'consumption', orderId: order._id
-              });
+              const { data: stockItem } = await supabase.from('stock_items').select('*').eq('_id', ing.stockItem).single();
+              if (stockItem) {
+                await supabase.from('stock_items').update({ quantity: stockItem.quantity - deductionAmount }).eq('_id', stockItem._id);
+                await supabase.from('stock_logs').insert([{
+                  restaurant: order.restaurant, stockItem: stockItem._id, itemName: stockItem.name,
+                  changeAmount: -deductionAmount, type: 'consumption', orderId: order._id
+                }]);
+              }
             }
           }
         } else {
@@ -1953,13 +1720,15 @@ app.patch("/api/v1/orders/status/:id", protect, restrictTo("owner", "cashier", "
         }
       }
     }
-    order.status = status;
-    await order.save();
+    
+    const { data: updatedOrder, error: updateError } = await supabase.from('orders').update({ status }).eq('_id', order._id).select().single();
+    if (updateError) throw updateError;
+    
     if (req.io) {
-      req.io.to(order.restaurant.toString()).emit("order-updated", order);
-      req.io.to(order._id.toString()).emit("status-changed", status);
+      req.io.to(updatedOrder.restaurant.toString()).emit("order-updated", updatedOrder);
+      req.io.to(updatedOrder._id.toString()).emit("status-changed", status);
     }
-    res.status(200).json({ status: "success", data: { order } });
+    res.status(200).json({ status: "success", data: { order: updatedOrder } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
@@ -1968,59 +1737,36 @@ app.get("/api/v1/orders/history/:restaurantId", protect, async (req, res) => {
     const hasAccess = await checkOrderPermission(req.user, req.params.restaurantId);
     if (!hasAccess) return res.status(403).json({ message: "ليس لديك صلاحية" });
 
-    let query = {
-      restaurant: req.params.restaurantId,
-      status: { $in: ["completed", "canceled"] },
-    };
+    let query = supabase.from('orders')
+      .select('*')
+      .eq('restaurant', req.params.restaurantId)
+      .in('status', ['completed', 'canceled'])
+      .order('createdAt', { ascending: false });
 
-    // منطق الكاشير والويتر: يرى طلبات اليوم فقط
     if (req.user.role === "cashier" || req.user.role === "waiter") {
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
-      query.createdAt = { $gte: startOfToday };
-    } 
-    // منطق الأونر والأدمن: فلترة بالتاريخ والبحث
-    else if (req.user.role === "owner" || req.user.role === "admin") {
+      query = query.gte('createdAt', startOfToday.toISOString());
+    } else if (req.user.role === "owner" || req.user.role === "admin") {
       if (req.query.startDate && req.query.endDate) {
-        query.createdAt = {
-          $gte: new Date(req.query.startDate),
-          $lte: new Date(new Date(req.query.endDate).setHours(23, 59, 59, 999)), // إصلاح نهاية اليوم
-        };
+        const endD = new Date(req.query.endDate);
+        endD.setHours(23, 59, 59, 999);
+        query = query.gte('createdAt', new Date(req.query.startDate).toISOString()).lte('createdAt', endD.toISOString());
       }
-
       if (req.query.search) {
         const searchVal = req.query.search;
         if (!isNaN(searchVal)) {
-          query.$or = [
-            { orderNum: Number(searchVal) },
-            { tableNumber: { $regex: searchVal, $options: "i" } },
-          ];
+          query = query.or(`orderNum.eq.${Number(searchVal)},tableNumber.ilike.%${searchVal}%`);
         } else {
-          query.tableNumber = { $regex: searchVal, $options: "i" };
+          query = query.ilike('tableNumber', `%${searchVal}%`);
         }
       }
     }
 
-    const orders = await Order.find(query).sort({ createdAt: -1 });
+    const { data: orders, error } = await query;
+    if (error) throw error;
 
-    // حساب إجمالي المبيعات باستخدام Aggregation لأداء أفضل
-    const stats = await Order.aggregate([
-      {
-        $match: {
-          ...query,
-          restaurant: new mongoose.Types.ObjectId(req.params.restaurantId),
-          status: "completed",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalSales: { $sum: "$totalPrice" },
-        },
-      },
-    ]);
-
-    const totalSales = stats.length > 0 ? stats[0].totalSales : 0;
+    const totalSales = orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.totalPrice, 0);
 
     res.status(200).json({ status: "success", data: { orders, totalSales } });
   } catch (err) {
@@ -2034,12 +1780,14 @@ app.get("/api/v1/orders/recent-completed/:restaurantId", protect, async (req, re
       if (!hasAccess) return res.status(403).json({ message: "ليس لديك صلاحية" });
 
       const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-      const orders = await Order.find({
-        restaurant: req.params.restaurantId,
-        status: "completed",
-        updatedAt: { $gte: twoHoursAgo },
-      }).sort({ updatedAt: -1 });
+      const { data: orders, error } = await supabase.from('orders')
+        .select('*')
+        .eq('restaurant', req.params.restaurantId)
+        .eq('status', 'completed')
+        .gte('updatedAt', twoHoursAgo.toISOString())
+        .order('updatedAt', { ascending: false });
 
+      if (error) throw error;
       res.status(200).json({ status: "success", data: { orders } });
     } catch (err) {
       res.status(400).json({ status: "fail", message: err.message });
@@ -2049,31 +1797,40 @@ app.get("/api/v1/orders/recent-completed/:restaurantId", protect, async (req, re
 // ---------------- COUPON ROUTES ----------------
 app.post("/api/v1/coupons/:restaurantId", protect, async (req, res) => {
   try {
-    const existing = await Coupon.findOne({ code: req.body.code.toUpperCase(), restaurant: req.params.restaurantId });
+    const { data: existing } = await supabase.from('coupons').select('_id').eq('code', req.body.code.toUpperCase()).eq('restaurant', req.params.restaurantId).single();
     if (existing) return res.status(400).json({ message: "الكود موجود" });
-    const newCoupon = await Coupon.create({ ...req.body, restaurant: req.params.restaurantId });
+    
+    const { data: newCoupon, error } = await supabase.from('coupons').insert([{ ...req.body, restaurant: req.params.restaurantId }]).select().single();
+    if (error) throw error;
+    
     res.status(201).json({ status: "success", data: { coupon: newCoupon } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.get("/api/v1/coupons/:restaurantId", protect, async (req, res) => {
   try {
-    const coupons = await Coupon.find({ restaurant: req.params.restaurantId }).sort("-createdAt");
+    const { data: coupons, error } = await supabase.from('coupons').select('*').eq('restaurant', req.params.restaurantId).order('createdAt', { ascending: false });
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { coupons } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.delete("/api/v1/coupons/:id", protect, async (req, res) => {
-    try { await Coupon.findByIdAndDelete(req.params.id); res.status(200).json({ status: "success" }); }
+    try { 
+      const { error } = await supabase.from('coupons').delete().eq('_id', req.params.id);
+      if (error) throw error;
+      res.status(200).json({ status: "success" }); 
+    }
     catch(err) { res.status(400).json({ message: err.message }); }
 });
 
 app.post("/api/v1/coupons/validate/:restaurantId", async (req, res) => {
   try {
     const { code, orderTotal } = req.body;
-    const coupon = await Coupon.findOne({ code: code.toUpperCase(), restaurant: req.params.restaurantId, isActive: true });
-    if (!coupon) return res.status(404).json({ message: "كود غير صحيح" });
-    if (coupon.expiresAt && new Date() > coupon.expiresAt) return res.status(400).json({ message: "الكوبون منتهي" });
+    const { data: coupon, error } = await supabase.from('coupons').select('*').eq('code', code.toUpperCase()).eq('restaurant', req.params.restaurantId).eq('isActive', true).single();
+    
+    if (error || !coupon) return res.status(404).json({ message: "كود غير صحيح" });
+    if (coupon.expiresAt && new Date() > new Date(coupon.expiresAt)) return res.status(400).json({ message: "الكوبون منتهي" });
     if (coupon.usedCount >= coupon.usageLimit) return res.status(400).json({ message: "انتهى عدد مرات الاستخدام" });
     if (orderTotal < coupon.minOrderVal) return res.status(400).json({ message: `الحد الأدنى ${coupon.minOrderVal}` });
 
@@ -2083,6 +1840,7 @@ app.post("/api/v1/coupons/validate/:restaurantId", async (req, res) => {
     res.status(200).json({ status: "success", data: { discount, code: coupon.code, couponId: coupon._id } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
+
 // ---------------- STOCK ROUTES ----------------
 const restrictToStockFeature = (req, res, next) => {
   if (req.user.role === "owner" && !req.user.hasStock) {
@@ -2098,12 +1856,15 @@ const restrictToStockFeature = (req, res, next) => {
 app.get("/api/v1/stock/logs", protect, restrictToStockFeature, async (req, res) => {
   try {
     const { restaurantId, startDate, endDate } = req.query;
-    let query = { restaurant: restaurantId };
+    let query = supabase.from('stock_logs').select('*').eq('restaurant', restaurantId).order('date', { ascending: false });
+    
     if (startDate && endDate) {
       const end = new Date(endDate); end.setHours(23, 59, 59, 999);
-      query.date = { $gte: new Date(startDate), $lte: end };
+      query = query.gte('date', new Date(startDate).toISOString()).lte('date', end.toISOString());
     }
-    const logs = await StockLog.find(query).sort("-date");
+    
+    const { data: logs, error } = await query;
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { logs } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -2111,7 +1872,8 @@ app.get("/api/v1/stock/logs", protect, restrictToStockFeature, async (req, res) 
 // 2. مسارات الإضافة والتعديل والحذف
 app.post("/api/v1/stock", protect, restrictToStockFeature, async (req, res) => {
   try {
-    const item = await StockItem.create({ ...req.body, restaurant: req.body.restaurantId });
+    const { data: item, error } = await supabase.from('stock_items').insert([{ ...req.body, restaurant: req.body.restaurantId }]).select().single();
+    if (error) throw error;
     res.status(201).json({ status: "success", data: item });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -2119,23 +1881,36 @@ app.post("/api/v1/stock", protect, restrictToStockFeature, async (req, res) => {
 app.post("/api/v1/stock/:id/adjust", protect, restrictToStockFeature, async (req, res) => {
   try {
     const { amount, type } = req.body;
-    const item = await StockItem.findById(req.params.id);
-    item.quantity += amount;
-    await item.save();
-    await StockLog.create({ restaurant: item.restaurant, stockItem: item._id, itemName: item.name, changeAmount: amount, type });
-    res.status(200).json({ status: "success", data: item });
+    const { data: item, error: fetchError } = await supabase.from('stock_items').select('*').eq('_id', req.params.id).single();
+    if (fetchError || !item) throw new Error("العنصر غير موجود");
+
+    const newQuantity = item.quantity + amount;
+    
+    const { data: updatedItem, error: updateError } = await supabase.from('stock_items').update({ quantity: newQuantity }).eq('_id', item._id).select().single();
+    if (updateError) throw updateError;
+    
+    await supabase.from('stock_logs').insert([{ 
+      restaurant: item.restaurant, stockItem: item._id, itemName: item.name, changeAmount: amount, type 
+    }]);
+    
+    res.status(200).json({ status: "success", data: updatedItem });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.delete("/api/v1/stock/:id", protect, restrictToStockFeature, async (req, res) => {
-    try { await StockItem.findByIdAndDelete(req.params.id); res.status(204).json({ status: "success" }); }
+    try { 
+      const { error } = await supabase.from('stock_items').delete().eq('_id', req.params.id);
+      if (error) throw error;
+      res.status(204).json({ status: "success" }); 
+    }
     catch(err) { res.status(400).json({ message: err.message }); }
 });
 
 // 3. مسار جلب العناصر بالـ ID (يجب أن يكون الأخير لأنه يحتوي على متغير :restaurantId)
 app.get("/api/v1/stock/:restaurantId", protect, restrictToStockFeature, async (req, res) => {
   try {
-    const items = await StockItem.find({ restaurant: req.params.restaurantId });
+    const { data: items, error } = await supabase.from('stock_items').select('*').eq('restaurant', req.params.restaurantId);
+    if (error) throw error;
     res.status(200).json({ status: "success", data: { items } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -2145,22 +1920,23 @@ app.get("/api/v1/stock/:restaurantId", protect, restrictToStockFeature, async (r
 // 1. جلب حالة الحجز (للعميل)
 app.get("/api/v1/reservations/status/:slug", async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ slug: req.params.slug }).select("restaurantName reservationSettings isActive");
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    const { data: restaurant, error } = await supabase.from('restaurants').select('restaurantName, reservationSettings, isActive').eq('slug', req.params.slug).single();
+    if (error || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
 
-    if (!restaurant.reservationSettings.isEnabled) {
+    const settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
+    if (!settings.isEnabled) {
       return res.status(403).json({ message: "نظام الحجز غير مفعل حالياً" });
     }
 
-    const available = restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats;
+    const available = settings.totalSeats - settings.bookedSeats;
     const isFull = available <= 0;
 
     res.status(200).json({ 
       status: "success", 
       data: { 
         restaurantName: restaurant.restaurantName,
-        total: restaurant.reservationSettings.totalSeats,
-        booked: restaurant.reservationSettings.bookedSeats,
+        total: settings.totalSeats,
+        booked: settings.bookedSeats,
         available: available > 0 ? available : 0,
         isFull
       } 
@@ -2179,15 +1955,15 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
     if (!requestedSeats || requestedSeats <= 0) return res.status(400).json({ message: "عدد المقاعد غير صحيح" });
     if (!name || !phone) return res.status(400).json({ message: "الاسم ورقم الهاتف مطلوبين" });
 
-    const restaurant = await Restaurant.findOne({ slug: req.params.slug });
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    const { data: restaurant, error: resError } = await supabase.from('restaurants').select('_id, reservationSettings').eq('slug', req.params.slug).single();
+    if (resError || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
 
-    if (!restaurant.reservationSettings.isEnabled) {
+    const settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
+    if (!settings.isEnabled) {
       return res.status(403).json({ message: "الحجز مغلق حالياً" });
     }
 
-    // التحقق من التوفر (دون الخصم)
-    const currentAvailable = restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats;
+    const currentAvailable = settings.totalSeats - settings.bookedSeats;
     if (requestedSeats > currentAvailable) {
       return res.status(400).json({ 
         status: "fail", 
@@ -2195,16 +1971,16 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
       });
     }
 
-    // إنشاء طلب حجز
-    const newReservation = await Reservation.create({
+    const { data: newReservation, error: insertError } = await supabase.from('reservations').insert([{
       restaurant: restaurant._id,
       name,
       phone,
       seats: requestedSeats,
       status: "pending"
-    });
+    }]).select().single();
 
-    // إرسال تنبيه للأونر
+    if (insertError) throw insertError;
+
     if (req.io) {
         req.io.to(restaurant._id.toString()).emit("new_reservation_request", newReservation);
     }
@@ -2219,8 +1995,12 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
 // 3. جلب طلبات الحجز (للأونر)
 app.get("/api/v1/reservations/requests", protect, restrictTo("owner"), async (req, res) => {
     try {
-        const restaurant = await Restaurant.findOne({ owner: req.user._id });
-        const reservations = await Reservation.find({ restaurant: restaurant._id }).sort("-createdAt");
+        const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+        if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+        const { data: reservations, error } = await supabase.from('reservations').select('*').eq('restaurant', restaurant._id).order('createdAt', { ascending: false });
+        if (error) throw error;
+        
         res.status(200).json({ status: "success", data: reservations });
     } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -2228,71 +2008,56 @@ app.get("/api/v1/reservations/requests", protect, restrictTo("owner"), async (re
 // 4. اتخاذ قرار (قبول/رفض)
 app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
-    const { status } = req.body; // approved or rejected
-    const reservation = await Reservation.findById(req.params.id);
-    if(!reservation) return res.status(404).json({ message: "الطلب غير موجود" });
+    const { status } = req.body; 
+    const { data: reservation, error: fetchError } = await supabase.from('reservations').select('*').eq('_id', req.params.id).single();
+    if(fetchError || !reservation) return res.status(404).json({ message: "الطلب غير موجود" });
 
-    // السماح بتغيير الحالة إذا لم تكن نفس الحالة الحالية
     if(reservation.status === status) return res.status(400).json({ message: "الطلب بالفعل على هذه الحالة" });
 
+    const { data: restaurant } = await supabase.from('restaurants').select('_id, slug, reservationSettings').eq('_id', reservation.restaurant).single();
+    const settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
+    
     if (status === 'approved' && reservation.status !== 'approved') {
-      const restaurant = await Restaurant.findById(reservation.restaurant);
-      const currentAvailable = restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats;
+      const currentAvailable = settings.totalSeats - settings.bookedSeats;
 
-      // إذا كان معلقاً، نخصم المقاعد. أما إذا كان مرفوضاً سابقاً، نتأكد من التوفر ونخصم
       if (reservation.status === 'rejected' || reservation.status === 'pending') {
          if (reservation.seats > currentAvailable) {
             return res.status(400).json({ message: "لا توجد مقاعد كافية للموافقة الآن" });
          }
-         restaurant.reservationSettings.bookedSeats += reservation.seats;
-         await restaurant.save();
+         settings.bookedSeats += reservation.seats;
+         await supabase.from('restaurants').update({ reservationSettings: settings }).eq('_id', restaurant._id);
       }
       
       if (req.io) {
-        req.io.to(restaurant._id.toString()).emit("seats_updated", {
-          total: restaurant.reservationSettings.totalSeats,
-          booked: restaurant.reservationSettings.bookedSeats,
-          available: restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats
-        });
+        req.io.emit("seats_updated", { slug: restaurant.slug, total: settings.totalSeats, booked: settings.bookedSeats, available: settings.totalSeats - settings.bookedSeats });
       }
     } else if (status === 'rejected' && reservation.status === 'approved') {
-        // لو كان مقبول وهنرفضه، نرجع المقاعد
-        const restaurant = await Restaurant.findById(reservation.restaurant);
-        restaurant.reservationSettings.bookedSeats -= reservation.seats;
-        if(restaurant.reservationSettings.bookedSeats < 0) restaurant.reservationSettings.bookedSeats = 0;
-        await restaurant.save();
+        settings.bookedSeats -= reservation.seats;
+        if(settings.bookedSeats < 0) settings.bookedSeats = 0;
+        await supabase.from('restaurants').update({ reservationSettings: settings }).eq('_id', restaurant._id);
 
         if (req.io) {
-            req.io.to(restaurant._id.toString()).emit("seats_updated", {
-              total: restaurant.reservationSettings.totalSeats,
-              booked: restaurant.reservationSettings.bookedSeats,
-              available: restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats
-            });
+            req.io.emit("seats_updated", { slug: restaurant.slug, total: settings.totalSeats, booked: settings.bookedSeats, available: settings.totalSeats - settings.bookedSeats });
         }
     }
 
-    reservation.status = status;
-    await reservation.save();
+    const { data: updatedReservation, error: updateError } = await supabase.from('reservations').update({ status }).eq('_id', reservation._id).select().single();
+    if (updateError) throw updateError;
 
-    // إرسال تحديث لواجهة الأدمن لتحديث الجدول فوراً
-    if(req.io) req.io.to(reservation.restaurant.toString()).emit("reservation_updated", reservation);
+    if(req.io) req.io.to(reservation.restaurant.toString()).emit("reservation_updated", updatedReservation);
 
     res.status(200).json({ status: "success", message: `تم ${status === 'approved' ? 'قبول' : 'رفض'} الطلب` });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// مسار جديد: حذف طلب حجز (للطلبات المنتهية أو المرفوضة)
+// مسار جديد: حذف طلب حجز
 app.delete("/api/v1/reservations/:id", protect, restrictTo("owner"), async (req, res) => {
     try {
-        const reservation = await Reservation.findById(req.params.id);
-        if(!reservation) return res.status(404).json({ message: "الطلب غير موجود" });
+        const { data: reservation, error: fetchError } = await supabase.from('reservations').select('*').eq('_id', req.params.id).single();
+        if(fetchError || !reservation) return res.status(404).json({ message: "الطلب غير موجود" });
 
-        // إذا كان الطلب "مقبول" ونريد حذفه، يجب إعادة المقاعد أولاً (إلا إذا كان الحذف يعني أن الزبون حضر وانتهى)
-        // هنا سنفترض أن الحذف يعني التنظيف من السجل، فلو كان مقبولاً لا نرجع المقاعد لأننا نفترض انتهاء الحدث
-        // أو يمكننا إرجاع المقاعد إذا كان الحذف يعني إلغاء. 
-        // لتبسيط الأمر: الحذف يزيل السجل فقط. لو عايز تلغي الحجز وترجع المقاعد استخدم "رفض" أولاً.
-        
-        await Reservation.findByIdAndDelete(req.params.id);
+        const { error } = await supabase.from('reservations').delete().eq('_id', req.params.id);
+        if (error) throw error;
         
         if(req.io) req.io.to(reservation.restaurant.toString()).emit("reservation_deleted", req.params.id);
 
@@ -2308,23 +2073,23 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (
     const { isEnabled, totalSeats, resetCounter } = req.body;
     const rId = req.body.restaurantId;
 
-    let updateQuery = {};
-    if (isEnabled !== undefined) updateQuery["reservationSettings.isEnabled"] = isEnabled;
-    if (totalSeats !== undefined) updateQuery["reservationSettings.totalSeats"] = Number(totalSeats);
-    if (resetCounter === true) updateQuery["reservationSettings.bookedSeats"] = 0;
+    const { data: restaurant, error: fetchError } = await supabase.from('restaurants').select('_id, slug, reservationSettings').eq('_id', rId).single();
+    if (fetchError || !restaurant) throw new Error("المطعم غير موجود");
 
-    const restaurant = await Restaurant.findByIdAndUpdate(rId, { $set: updateQuery }, { new: true });
+    let settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
     
-    // تحديث الواجهات
+    if (isEnabled !== undefined) settings.isEnabled = isEnabled;
+    if (totalSeats !== undefined) settings.totalSeats = Number(totalSeats);
+    if (resetCounter === true) settings.bookedSeats = 0;
+
+    const { data: updatedRestaurant, error: updateError } = await supabase.from('restaurants').update({ reservationSettings: settings }).eq('_id', rId).select().single();
+    if (updateError) throw updateError;
+    
     if (req.io) {
-        req.io.to(restaurant._id.toString()).emit("seats_updated", {
-          total: restaurant.reservationSettings.totalSeats,
-          booked: restaurant.reservationSettings.bookedSeats,
-          available: restaurant.reservationSettings.totalSeats - restaurant.reservationSettings.bookedSeats
-        });
+        req.io.emit("seats_updated", { slug: updatedRestaurant.slug, total: settings.totalSeats, booked: settings.bookedSeats, available: settings.totalSeats - settings.bookedSeats });
     }
 
-    res.status(200).json({ status: "success", data: { reservationSettings: restaurant.reservationSettings } });
+    res.status(200).json({ status: "success", data: { reservationSettings: settings } });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -2333,14 +2098,22 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (
 app.post("/api/v1/sales/join", upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "يرجى رفع صورة" });
-    const newRequest = await SalesRequest.create({ name: req.body.name, phone: req.body.phone, walletNumber: req.body.walletNumber, image: req.file.path });
+    const { data: newRequest, error } = await supabase.from('sales_requests').insert([{ 
+      name: req.body.name, phone: req.body.phone, walletNumber: req.body.walletNumber, image: req.file.path, status: 'pending'
+    }]).select().single();
+    
+    if (error) throw error;
     if (req.io) req.io.emit("new-sales-request", newRequest);
     res.status(201).json({ status: "success", data: newRequest });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.get("/api/v1/sales/requests", protect, restrictTo("admin"), async (req, res) => {
-  try { const requests = await SalesRequest.find().sort({ createdAt: -1 }); res.status(200).json({ status: "success", data: requests }); }
+  try { 
+    const { data: requests, error } = await supabase.from('sales_requests').select('*').order('createdAt', { ascending: false });
+    if (error) throw error;
+    res.status(200).json({ status: "success", data: requests }); 
+  }
   catch(err) { res.status(400).json({ message: err.message }); }
 });
 
@@ -2350,39 +2123,35 @@ app.get("/api/v1/sales/requests", protect, restrictTo("admin"), async (req, res)
 app.post("/api/v1/users/create-sales-agent", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
-    
-    // التأكد من أن الايميل ينتهي بـ @sales.com (اختياري، للترتيب فقط)
-    // if (!email.includes("@sales.com")) return res.status(400).json({ message: "يفضل أن يكون إيميل السيلز @sales.com" });
-
     const hashedPassword = await bcrypt.hash(password, 12);
-    const newSales = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      phone,
-      role: "sales",
-      active: true
-    });
+    
+    const { data: newSales, error } = await supabase.from('users').insert([{
+      name, email, password: hashedPassword, phone, role: "sales", active: true
+    }]).select().single();
 
+    if (error) {
+      if (error.code === '23505') throw new Error("هذا البريد مستخدم بالفعل");
+      throw error;
+    }
     res.status(201).json({ status: "success", data: { user: newSales } });
   } catch (err) {
-    res.status(400).json({ message: err.code === 11000 ? "هذا البريد مستخدم بالفعل" : err.message });
+    res.status(400).json({ message: err.message });
   }
 });
 
 // 2. إحصائيات السيلز (Leaderboard) - تم التعديل لإرجاع كل البيانات
 app.get("/api/v1/admin/sales-stats", protect, restrictTo("admin"), async (req, res) => {
   try {
-    // نجلب كل مستخدمين السيلز أولاً
-    const salesAgents = await User.find({ role: "sales" });
+    const { data: salesAgents, error: agentsError } = await supabase.from('users').select('*').eq('role', 'sales');
+    if (agentsError) throw agentsError;
     
-    const stats = await Promise.all(salesAgents.map(async (agent) => {
-      // البحث عن العملاء الذين أنشأهم هذا السيلز
-      const clients = await User.find({ createdBy: agent._id });
+    const stats = await Promise.all((salesAgents || []).map(async (agent) => {
+      const { data: clients } = await supabase.from('users').select('*').eq('createdBy', agent._id);
       
-      const totalClients = clients.length;
-      const activeClients = clients.filter(c => c.active && !c.isTrial).length; // مفعل وحقيقي
-      const trialClients = clients.filter(c => c.isTrial).length;
+      const safeClients = clients || [];
+      const totalClients = safeClients.length;
+      const activeClients = safeClients.filter(c => c.active && !c.isTrial).length; 
+      const trialClients = safeClients.filter(c => c.isTrial).length;
       
       return {
         _id: agent._id,
@@ -2392,110 +2161,89 @@ app.get("/api/v1/admin/sales-stats", protect, restrictTo("admin"), async (req, r
         totalClients,
         activeClients,
         trialClients,
-        clientsList: clients.map(c => ({
-            name: c.name,
-            email: c.email,
-            phone: c.phone,
-            isTrial: c.isTrial,
-            active: c.active,
-            createdAt: c.createdAt
+        clientsList: safeClients.map(c => ({
+            name: c.name, email: c.email, phone: c.phone, isTrial: c.isTrial, active: c.active, createdAt: c.createdAt
         }))
       };
     }));
 
-    // ترتيب التنازلي حسب عدد العملاء النشطين
     stats.sort((a, b) => b.activeClients - a.activeClients);
-
     res.status(200).json({ status: "success", data: { stats } });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 3. السيلز ينشئ عميل جديد (كما هو، لا تغيير في المنطق لكن تأكد من وجوده)
+// 3. السيلز ينشئ عميل جديد (كلا المسارين المكررين تم دمجهما في هذا المنطق)
 app.post("/api/v1/sales/create-client", protect, restrictTo("sales", "admin"), async (req, res) => {
   try {
     const { name, email, password, phone, restaurantName, slug } = req.body;
     
     const trialEnds = new Date();
     trialEnds.setHours(trialEnds.getHours() + 24);
-
     const hashedPassword = await bcrypt.hash(password, 12);
     
-    const newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      phone,
-      role: "owner",
-      isTrial: true,
-      trialExpires: trialEnds,
-      createdBy: req.user._id,
-      productLimit: 75,
-      hasStock: false
-    });
+    const { data: newUser, error: userError } = await supabase.from('users').insert([{
+      name, email, password: hashedPassword, phone, role: "owner",
+      isTrial: true, trialExpires: trialEnds.toISOString(), createdBy: req.user._id,
+      productLimit: 75, hasStock: false
+    }]).select().single();
 
-    const newRestaurant = await Restaurant.create({
-      restaurantName,
-      slug,
-      owner: newUser._id,
-      contactInfo: { phone, whatsapp: phone, address: "العنوان الافتراضي" }
-    });
+    if (userError) {
+      if (userError.code === '23505') throw new Error("البيانات (الايميل أو الرابط) مكررة");
+      throw userError;
+    }
+
+    const { data: newRestaurant, error: resError } = await supabase.from('restaurants').insert([{
+      restaurantName, slug, owner: newUser._id, contactInfo: { phone, whatsapp: phone, address: "العنوان الافتراضي" }
+    }]).select().single();
+    
+    if (resError) throw resError;
 
     res.status(201).json({ status: "success", data: { user: newUser, restaurant: newRestaurant } });
   } catch (err) {
-    res.status(400).json({ message: err.code === 11000 ? "البيانات (الايميل أو الرابط) مكررة" : err.message });
+    res.status(400).json({ message: err.message });
   }
 });
 
-// ✅ تم إضافة سطر الراوت الناقص هنا
 app.patch("/api/v1/sales/requests/:id", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { status, email, password } = req.body;
-    const request = await SalesRequest.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    const { data: request, error: reqError } = await supabase.from('sales_requests').update({ status }).eq('_id', req.params.id).select().single();
+    if (reqError) throw reqError;
     
-    // إذا تمت الموافقة، ننشئ له حساب sales
     if (status === "approved" && email && password) {
       const hashedPassword = await bcrypt.hash(password, 12);
-      await User.create({
-        name: request.name,
-        email: email,
-        password: hashedPassword,
-        phone: request.phone,
-        role: "sales",
-        active: true
-      });
+      await supabase.from('users').insert([{
+        name: request.name, email: email, password: hashedPassword, phone: request.phone, role: "sales", active: true
+      }]);
     }
 
     res.status(200).json({ status: "success", data: request });
   } catch(err) { res.status(400).json({ message: err.message }); }
 });
 
-// حذف طلب انضمام سيلز
 app.delete("/api/v1/sales/requests/:id", protect, restrictTo("admin"), async (req, res) => {
     try { 
-        await SalesRequest.findByIdAndDelete(req.params.id); 
+        const { error } = await supabase.from('sales_requests').delete().eq('_id', req.params.id); 
+        if (error) throw error;
         res.status(200).json({ status: "success", message: "تم حذف الطلب" }); 
     }
     catch(err) { res.status(400).json({ message: err.message }); }
 });
 
-// حذف وكيل مبيعات نهائياً (تم التصحيح)
 app.delete("/api/v1/sales/:id", protect, restrictTo("admin"), async (req, res) => {
     try {
-        // 1. نبدأ بحذف الطلب أولاً لأن الـ ID القادم من الفرونت هو ID الطلب
-        const request = await SalesRequest.findByIdAndDelete(req.params.id);
-        
-        let userDeleted = null;
+        const { data: request } = await supabase.from('sales_requests').select('*').eq('_id', req.params.id).single();
+        let userDeleted = false;
 
         if (request) {
-            // 2. إذا وجدنا الطلب، نبحث عن حساب السيلز المرتبط به (عن طريق رقم الهاتف) ونحذفه
-            // شرط role: 'sales' مهم لعدم حذف عملاء عاديين بالخطأ
-            userDeleted = await User.findOneAndDelete({ phone: request.phone, role: 'sales' });
+            await supabase.from('sales_requests').delete().eq('_id', req.params.id);
+            const { error: delError } = await supabase.from('users').delete().eq('phone', request.phone).eq('role', 'sales');
+            if (!delError) userDeleted = true;
         } else {
-            // 3. احتياطياً: إذا لم نجد طلب، نحاول حذف المستخدم مباشرة بافتراض أن الـ ID للمستخدم
-            userDeleted = await User.findOneAndDelete({ _id: req.params.id, role: 'sales' });
+            const { error: delError } = await supabase.from('users').delete().eq('_id', req.params.id).eq('role', 'sales');
+            if (!delError) userDeleted = true;
         }
 
-        // إذا لم يتم حذف أي شيء (لا طلب ولا مستخدم)
         if (!request && !userDeleted) {
             return res.status(404).json({ status: "fail", message: "الوكيل أو الطلب غير موجود" });
         }
@@ -2506,89 +2254,12 @@ app.delete("/api/v1/sales/:id", protect, restrictTo("admin"), async (req, res) =
     }
 });
 
-// --- Sales Dashboard Routes (For Sales Role) ---
-
-// 1. السيلز ينشئ عميل جديد (حساب تجريبي 24 ساعة)
-app.post("/api/v1/sales/create-client", protect, restrictTo("sales", "admin"), async (req, res) => {
-  try {
-    const { name, email, password, phone, restaurantName, slug } = req.body;
-    
-    // إعداد انتهاء التجربة بعد 24 ساعة
-    const trialEnds = new Date();
-    trialEnds.setHours(trialEnds.getHours() + 24);
-
-    const hashedPassword = await bcrypt.hash(password, 12);
-    
-    // 1. إنشاء المستخدم (Owner)
-    const newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      phone,
-      role: "owner",
-      isTrial: true,
-      trialExpires: trialEnds,
-      createdBy: req.user._id, // ربط العميل بالسيلز
-      productLimit: 75,
-      hasStock: false
-    });
-
-    // 2. إنشاء المطعم للمستخدم
-    const newRestaurant = await Restaurant.create({
-      restaurantName,
-      slug,
-      owner: newUser._id,
-      contactInfo: { phone, whatsapp: phone, address: "العنوان الافتراضي" }
-    });
-
-    res.status(201).json({ status: "success", data: { user: newUser, restaurant: newRestaurant } });
-  } catch (err) {
-    res.status(400).json({ message: err.code === 11000 ? "البيانات (الايميل أو الرابط) مكررة" : err.message });
-  }
-});
-
-// 2. إحصائيات السيلز (للأدمن)
-app.get("/api/v1/admin/sales-stats", protect, restrictTo("admin"), async (req, res) => {
-  try {
-    const stats = await User.aggregate([
-      { $match: { role: "owner", createdBy: { $exists: true } } }, // فقط العملاء الذين تم إنشاؤهم بواسطة سيلز
-      {
-        $group: {
-          _id: "$createdBy",
-          totalClients: { $sum: 1 },
-          activeClients: { $sum: { $cond: [{ $eq: ["$active", true] }, 1, 0] } },
-          trialClients: { $sum: { $cond: [{ $eq: ["$isTrial", true] }, 1, 0] } }
-        }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "_id",
-          foreignField: "_id",
-          as: "salesInfo"
-        }
-      },
-      {
-        $project: {
-          salesName: { $arrayElemAt: ["$salesInfo.name", 0] },
-          salesEmail: { $arrayElemAt: ["$salesInfo.email", 0] },
-          totalClients: 1,
-          activeClients: 1,
-          trialClients: 1
-        }
-      },
-      { $sort: { totalClients: -1 } }
-    ]);
-    res.status(200).json({ status: "success", data: { stats } });
-  } catch (err) { res.status(400).json({ message: err.message }); }
-});
-
 // ---------------- AI ROUTES ----------------
 app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.array("menuImages", 10), async (req, res) => {
   try {
     const { ownerId } = req.body;
     if (!req.files || req.files.length === 0) throw new Error("يرجى رفع صور المنيو");
-    const restaurant = await Restaurant.findOne({ owner: ownerId });
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', ownerId).single();
     if (!restaurant) throw new Error("لا يوجد مطعم لهذا المالك");
     const restaurantId = restaurant._id;
 
@@ -2626,16 +2297,26 @@ app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.a
     
     const menuData = JSON.parse(jsonText);
     for (const item of menuData) {
-      let category = await Category.findOne({ name: item.category, restaurant: restaurantId });
-      if (!category) category = await Category.create({ name: item.category, restaurant: restaurantId });
+      let { data: category } = await supabase.from('categories').select('*').eq('name', item.category).eq('restaurant_id', restaurantId).single();
+      
+      if (!category) {
+        const { data: newCat } = await supabase.from('categories').insert([{ name: item.category, restaurant_id: restaurantId }]).select().single();
+        category = newCat;
+      }
 
-      const productPromises = item.products.map((p) => {
-        return Product.create({
-          name: { ar: p.name, en: p.name }, description: { ar: p.description, en: "" },
-          price: p.price, category: category.name, restaurant: restaurantId, image: ""
-        });
-      });
-      await Promise.all(productPromises);
+      const productInserts = item.products.map((p) => ({
+          name: { ar: p.name, en: p.name }, 
+          description: { ar: p.description, en: "" },
+          price: p.price, 
+          category: category.name, 
+          restaurant: restaurantId, 
+          image: "",
+          isAvailable: true
+      }));
+      
+      if (productInserts.length > 0) {
+          await supabase.from('products').insert(productInserts);
+      }
     }
     if (req.io) req.io.to(restaurantId).emit("menu_updated");
     res.status(200).json({ status: "success", message: "تم رفع المنيو بالكامل بنجاح" });
@@ -2713,77 +2394,50 @@ app.get("/api/v1/vapid-key", (req, res) => res.json({ publicKey: publicVapidKey 
 // 1. Financial Stats (لوحة القيادة المالية - شامل التفاصيل)
 app.get("/api/v1/accounting/stats", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
     if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
 
-    // 1. تحديد التاريخ (إصلاح مشكلة الشهر)
-    let startOfMonth, endOfMonth;
-    let targetMonthStr;
-
+    let startOfMonth, endOfMonth, targetMonthStr;
     if (req.query.month) {
         const [y, m] = req.query.month.split('-');
-        startOfMonth = new Date(y, m - 1, 1);
-        startOfMonth.setHours(0, 0, 0, 0);
-        endOfMonth = new Date(y, m, 0);
-        endOfMonth.setHours(23, 59, 59, 999);
-        targetMonthStr = req.query.month; // e.g., "2024-02"
+        startOfMonth = new Date(y, m - 1, 1).toISOString();
+        endOfMonth = new Date(y, m, 0, 23, 59, 59, 999).toISOString();
+        targetMonthStr = req.query.month;
     } else {
         const now = new Date();
-        startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        startOfMonth.setHours(0, 0, 0, 0);
-        endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        endOfMonth.setHours(23, 59, 59, 999);
-        // Format YYYY-MM
+        startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).toISOString();
         const m = now.getMonth() + 1;
         targetMonthStr = `${now.getFullYear()}-${m < 10 ? '0' + m : m}`;
     }
 
-    // 2. جلب التفاصيل وحساب الإجماليات
-
-    // أ. المبيعات (تفاصيل + إجمالي)
-    const salesDetails = await Order.find({ 
-        restaurant: restaurant._id, 
-        status: 'completed', 
-        createdAt: { $gte: startOfMonth, $lte: endOfMonth } 
-    }).select('orderNum totalPrice createdAt tableNumber items').sort({ createdAt: -1 });
+    const { data: salesDetails } = await supabase.from('orders')
+        .select('orderNum, totalPrice, createdAt, tableNumber, items')
+        .eq('restaurant', restaurant._id).eq('status', 'completed')
+        .gte('createdAt', startOfMonth).lte('createdAt', endOfMonth)
+        .order('createdAt', { ascending: false });
     
-    const totalSales = salesDetails.reduce((sum, order) => sum + order.totalPrice, 0);
+    const totalSales = (salesDetails || []).reduce((sum, order) => sum + order.totalPrice, 0);
 
-    // ب. المصروفات (تفاصيل + إجمالي)
-    const expensesDetails = await Expense.find({ 
-        restaurant: restaurant._id, 
-        date: { $gte: startOfMonth, $lte: endOfMonth } 
-    }).sort({ date: -1 });
+    const { data: expensesDetails } = await supabase.from('expenses')
+        .select('*').eq('restaurant', restaurant._id)
+        .gte('date', startOfMonth).lte('date', endOfMonth)
+        .order('date', { ascending: false });
 
-    // ✅ إصلاح: استبعاد الرواتب من جمع المصروفات (لأنها ستُجمع منفصلة في totalSalaries) لمنع التكرار
-    const totalExpenses = expensesDetails
-        .filter(exp => exp.category !== 'salaries') 
-        .reduce((sum, exp) => sum + exp.amount, 0);
+    const totalExpenses = (expensesDetails || []).filter(exp => exp.category !== 'salaries').reduce((sum, exp) => sum + exp.amount, 0);
 
-    // ج. الرواتب (تفاصيل + إجمالي)
-    const payrollDetails = await Payroll.find({ 
-        restaurant: restaurant._id, 
-        month: targetMonthStr 
-    }).populate('employee', 'name jobTitle');
+    const { data: payrollDetails } = await supabase.from('payrolls')
+        .select('*, employee:employees(name, jobTitle)')
+        .eq('restaurant', restaurant._id).eq('month', targetMonthStr);
 
-    const totalSalaries = payrollDetails.reduce((sum, p) => sum + p.totalSalary, 0);
-
-    // د. صافي الربح
+    const totalSalaries = (payrollDetails || []).reduce((sum, p) => sum + p.totalSalary, 0);
     const netProfit = totalSales - (totalExpenses + totalSalaries);
 
-    // إرسال البيانات (الإجماليات + التفاصيل)
     res.status(200).json({ 
         status: "success", 
         data: { 
-            totalSales, 
-            totalExpenses, 
-            totalSalaries, 
-            netProfit,
-            details: {
-                sales: salesDetails,
-                expenses: expensesDetails,
-                salaries: payrollDetails
-            }
+            totalSales, totalExpenses, totalSalaries, netProfit,
+            details: { sales: salesDetails, expenses: expensesDetails, salaries: payrollDetails }
         } 
     });
   } catch (err) { res.status(400).json({ message: err.message }); }
@@ -2792,17 +2446,15 @@ app.get("/api/v1/accounting/stats", protect, restrictTo("owner", "admin"), async
 // 2. Expenses Management
 app.post("/api/v1/accounting/expenses", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    if (!restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم مرتبط بهذا الحساب" }); // ✅ إصلاح
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم مرتبط بهذا الحساب" });
     
-    // 1. إنشاء المصروف
-    const expense = await Expense.create({ ...req.body, restaurant: restaurant._id });
+    const { data: expense, error: insertError } = await supabase.from('expenses').insert([{ ...req.body, restaurant: restaurant._id }]).select().single();
+    if (insertError) throw insertError;
 
-    // [جديد] 2. إذا كان المصروف "سلفة"، نقوم بتحديث رصيد الموظف فوراً
     if (req.body.category === 'salary_advance' && req.body.employee) {
-        await Employee.findByIdAndUpdate(req.body.employee, { 
-            $inc: { loanBalance: req.body.amount } 
-        });
+        const { data: emp } = await supabase.from('employees').select('loanBalance').eq('_id', req.body.employee).single();
+        if (emp) await supabase.from('employees').update({ loanBalance: emp.loanBalance + req.body.amount }).eq('_id', req.body.employee);
     }
 
     res.status(201).json({ status: "success", data: expense });
@@ -2811,29 +2463,28 @@ app.post("/api/v1/accounting/expenses", protect, restrictTo("owner", "admin"), a
 
 app.get("/api/v1/accounting/expenses", protect, async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    if (!restaurant) return res.status(200).json({ status: "success", data: [] }); // ✅ إصلاح: إرجاع مصفوفة فارغة بدلاً من الخطأ
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    if (!restaurant) return res.status(200).json({ status: "success", data: [] });
 
-    const expenses = await Expense.find({ restaurant: restaurant._id }).sort("-date");
+    const { data: expenses, error } = await supabase.from('expenses').select('*').eq('restaurant', restaurant._id).order('date', { ascending: false });
+    if (error) throw error;
+    
     res.status(200).json({ status: "success", data: expenses });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.delete("/api/v1/accounting/expenses/:id", protect, restrictTo("owner"), async (req, res) => {
   try { 
-      // 1. نحضر المصروف أولاً قبل الحذف لنعرف تفاصيله
-      const expense = await Expense.findById(req.params.id);
-      if (!expense) return res.status(404).json({ message: "المصروف غير موجود" });
+      const { data: expense, error: fetchError } = await supabase.from('expenses').select('*').eq('_id', req.params.id).single();
+      if (fetchError || !expense) return res.status(404).json({ message: "المصروف غير موجود" });
 
-      // 2. إذا كان المصروف "سلفة"، نعكس العملية ونخصمها من رصيد الموظف (استرداد)
       if (expense.category === 'salary_advance' && expense.employee) {
-          await Employee.findByIdAndUpdate(expense.employee, { 
-              $inc: { loanBalance: -expense.amount } 
-          });
+          const { data: emp } = await supabase.from('employees').select('loanBalance').eq('_id', expense.employee).single();
+          if (emp) await supabase.from('employees').update({ loanBalance: emp.loanBalance - expense.amount }).eq('_id', expense.employee);
       }
 
-      // 3. حذف المصروف نهائياً
-      await Expense.findByIdAndDelete(req.params.id); 
+      const { error: delError } = await supabase.from('expenses').delete().eq('_id', req.params.id); 
+      if (delError) throw delError;
       
       res.status(200).json({ status: "success" }); 
   } 
@@ -2843,20 +2494,24 @@ app.delete("/api/v1/accounting/expenses/:id", protect, restrictTo("owner"), asyn
 // 3. Employees & Advances
 app.post("/api/v1/accounting/employees", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    const emp = await Employee.create({ ...req.body, restaurant: restaurant._id });
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const { data: emp, error } = await supabase.from('employees').insert([{ ...req.body, restaurant: restaurant._id }]).select().single();
+    if (error) throw error;
+
     res.status(201).json({ status: "success", data: emp });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
+
 // تعديل بيانات موظف (محاسبة)
 app.patch("/api/v1/accounting/employees/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const updates = req.body;
-    // منع تعديل المطعم المالك
+    const updates = { ...req.body };
     delete updates.restaurant; 
     
-    const emp = await Employee.findByIdAndUpdate(req.params.id, updates, { new: true });
-    if (!emp) return res.status(404).json({ message: "الموظف غير موجود" });
+    const { data: emp, error } = await supabase.from('employees').update(updates).eq('_id', req.params.id).select().single();
+    if (error || !emp) return res.status(404).json({ message: "الموظف غير موجود" });
     
     res.status(200).json({ status: "success", data: emp });
   } catch (err) {
@@ -2866,10 +2521,12 @@ app.patch("/api/v1/accounting/employees/:id", protect, restrictTo("owner", "admi
 
 app.get("/api/v1/accounting/employees", protect, async (req, res) => {
   try {
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    if (!restaurant) return res.status(200).json({ status: "success", data: [] }); // ✅ إصلاح
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    if (!restaurant) return res.status(200).json({ status: "success", data: [] });
 
-    const employees = await Employee.find({ restaurant: restaurant._id }).sort("-createdAt");
+    const { data: employees, error } = await supabase.from('employees').select('*').eq('restaurant', restaurant._id).order('createdAt', { ascending: false });
+    if (error) throw error;
+
     res.status(200).json({ status: "success", data: employees });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
@@ -2878,94 +2535,108 @@ app.get("/api/v1/accounting/employees", protect, async (req, res) => {
 app.post("/api/v1/accounting/employees/:id/advance", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { amount } = req.body;
-    const emp = await Employee.findById(req.params.id);
-    emp.loanBalance += Number(amount);
-    await emp.save();
-    
-    // تسجيل السلفة كمصروف أيضاً لتظبيط الحسابات
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    await Expense.create({
-      restaurant: restaurant._id,
-      title: `سلفة للموظف: ${emp.name}`,
-      amount: Number(amount),
-      category: 'other',
-      description: 'سلفة تخصم من الراتب'
-    });
+    const { data: emp, error: fetchError } = await supabase.from('employees').select('*').eq('_id', req.params.id).single();
+    if (fetchError || !emp) throw new Error("الموظف غير موجود");
 
-    res.status(200).json({ status: "success", data: emp });
+    const newLoanBalance = emp.loanBalance + Number(amount);
+    const { data: updatedEmp, error: updateError } = await supabase.from('employees').update({ loanBalance: newLoanBalance }).eq('_id', emp._id).select().single();
+    if (updateError) throw updateError;
+    
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    if (restaurant) {
+      await supabase.from('expenses').insert([{
+        restaurant: restaurant._id,
+        title: `سلفة للموظف: ${emp.name}`,
+        amount: Number(amount),
+        category: 'salary_advance', 
+        employee: emp._id,
+        description: 'سلفة تخصم من الراتب'
+      }]);
+    }
+
+    res.status(200).json({ status: "success", data: updatedEmp });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.delete("/api/v1/accounting/employees/:id", protect, restrictTo("owner"), async (req, res) => {
-  try { await Employee.findByIdAndDelete(req.params.id); res.status(200).json({ status: "success" }); } 
-  catch (err) { res.status(400).json({ message: err.message }); }
+  try { 
+    const { error } = await supabase.from('employees').delete().eq('_id', req.params.id);
+    if (error) throw error;
+    res.status(200).json({ status: "success" }); 
+  } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 4. Attendance (كما هو)
+// 4. Attendance 
 app.post("/api/v1/accounting/attendance", protect, restrictTo("owner", "admin", "cashier"), async (req, res) => {
   try {
     const { employeeId, type, date } = req.body;
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    let att = await Attendance.findOne({ employee: employeeId, date: date });
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    
+    const { data: att } = await supabase.from('attendances').select('*').eq('employee', employeeId).eq('date', date).single();
     
     if (type === "checkIn") {
       if (att) return res.status(400).json({ message: "تم تسجيل الحضور مسبقاً" });
-      att = await Attendance.create({ employee: employeeId, restaurant: restaurant._id, date, checkIn: new Date(), status: 'present' });
+      
+      const { data: newAtt, error: insertError } = await supabase.from('attendances').insert([{ 
+        employee: employeeId, restaurant: restaurant._id, date, checkIn: new Date().toISOString(), status: 'present' 
+      }]).select().single();
+      
+      if (insertError) throw insertError;
+      return res.status(200).json({ status: "success", data: newAtt });
+
     } else if (type === "checkOut") {
       if (!att) return res.status(400).json({ message: "يجب تسجيل الحضور أولاً" });
-      att.checkOut = new Date();
-      const emp = await Employee.findById(employeeId);
-      const hoursWorked = (att.checkOut - att.checkIn) / 36e5;
-      if (hoursWorked > emp.workHours) att.overtimeHours = (hoursWorked - emp.workHours).toFixed(2);
-      await att.save();
+      
+      const checkOutTime = new Date();
+      const checkInTime = new Date(att.checkIn);
+      const hoursWorked = (checkOutTime - checkInTime) / 36e5;
+      
+      const { data: emp } = await supabase.from('employees').select('workHours').eq('_id', employeeId).single();
+      let overtimeHours = 0;
+      if (emp && hoursWorked > emp.workHours) {
+        overtimeHours = Number((hoursWorked - emp.workHours).toFixed(2));
+      }
+      
+      const { data: updatedAtt, error: updateError } = await supabase.from('attendances').update({ 
+        checkOut: checkOutTime.toISOString(), overtimeHours 
+      }).eq('_id', att._id).select().single();
+      
+      if (updateError) throw updateError;
+      return res.status(200).json({ status: "success", data: updatedAtt });
     }
-    res.status(200).json({ status: "success", data: att });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
 app.get("/api/v1/accounting/attendance", protect, async (req, res) => {
   try {
     const { date } = req.query;
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
-    const logs = await Attendance.find({ restaurant: restaurant._id, date }).populate("employee");
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    
+    const { data: logs, error } = await supabase.from('attendances').select('*, employee:employees(*)').eq('restaurant', restaurant._id).eq('date', date);
+    if (error) throw error;
+
     res.status(200).json({ status: "success", data: logs });
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 5. Payroll (توليد الرواتب مع خصم السلف)
-// 4. Attendance & Payroll Logic (Developed)
+// 5. Payroll Logic (Developed)
 app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
-    const { month, bonuses, deductions, deductLoan, isPreview } = req.body; // isPreview flag added
-    const restaurant = await Restaurant.findOne({ owner: req.user._id });
+    const { month, bonuses, deductions, deductLoan, isPreview } = req.body; 
+    const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
     
-    // تحديد بداية ونهاية الشهر
-    const [y, m] = month.split('-');
-    const startDate = new Date(y, m - 1, 1);
-    const endDate = new Date(y, m, 0, 23, 59, 59);
-    
-    // جلب جميع الموظفين
-    const employees = await Employee.find({ restaurant: restaurant._id });
-    
-    // جلب سجلات الحضور لهذا الشهر لكل الموظفين دفعة واحدة
-    // (ملاحظة: نفترض أن التاريخ في الحضور مخزن بصيغة YYYY-MM-DD string كما في الكود الأصلي)
-    const monthRegex = new RegExp(`^${month}`); // يطابق أي تاريخ يبدأ بـ 2024-01 مثلاً
-    const allAttendance = await Attendance.find({ 
-        restaurant: restaurant._id,
-        date: { $regex: monthRegex }
-    });
+    const { data: employees } = await supabase.from('employees').select('*').eq('restaurant', restaurant._id);
+    const { data: allAttendance } = await supabase.from('attendances').select('*').eq('restaurant', restaurant._id).ilike('date', `${month}%`);
 
     const payrolls = [];
 
-    for (const emp of employees) {
-      // 1. حسابات الحضور التلقائية
-      const empLogs = allAttendance.filter(log => log.employee.toString() === emp._id.toString());
+    for (const emp of (employees || [])) {
+      const empLogs = (allAttendance || []).filter(log => log.employee === emp._id);
       
       const totalOvertimeHours = empLogs.reduce((sum, log) => sum + (log.overtimeHours || 0), 0);
       const totalDeductionHours = empLogs.reduce((sum, log) => sum + (log.deductionHours || 0), 0);
       
-      // حساب قيمة الساعة (الراتب / 30 يوم / عدد ساعات العمل)
-      // إذا كان راتب يومي، نقسم على ساعات العمل فقط
       let hourlyRate = 0;
       if (emp.salaryType === 'monthly') {
           hourlyRate = emp.baseSalary / 30 / (emp.workHours || 9);
@@ -2973,73 +2644,70 @@ app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "ad
           hourlyRate = emp.baseSalary / (emp.workHours || 9);
       }
 
-      const autoOvertimePay = Math.round(totalOvertimeHours * hourlyRate); // يمكن ضربها في 1.5 لو أردت
+      const autoOvertimePay = Math.round(totalOvertimeHours * hourlyRate); 
       const autoDeductionVal = Math.round(totalDeductionHours * hourlyRate);
 
-      // 2. الحسابات اليدوية (الإضافات والخصومات اليدوية من المستخدم)
       const manualBonus = bonuses && bonuses[emp._id] ? Number(bonuses[emp._id]) : 0;
       const manualDeduct = deductions && deductions[emp._id] ? Number(deductions[emp._id]) : 0;
       
-      // 3. خصم السلف
       let loanDeduction = 0;
       if (deductLoan && deductLoan[emp._id]) {
         const amountToDeduct = Number(deductLoan[emp._id]);
-        // لا نخصم أكثر من رصيد السلفة المتبقي
         loanDeduction = amountToDeduct > emp.loanBalance ? emp.loanBalance : amountToDeduct;
         
-        // تحديث السلفة فقط إذا لم يكن وضع "المعاينة"
         if (!isPreview) {
-            emp.loanBalance -= loanDeduction;
-            await emp.save();
+            await supabase.from('employees').update({ loanBalance: emp.loanBalance - loanDeduction }).eq('_id', emp._id);
         }
       }
 
-      // 4. الراتب النهائي
       const totalSalary = Math.round(emp.baseSalary + autoOvertimePay + manualBonus - autoDeductionVal - manualDeduct - loanDeduction);
 
       const payrollEntry = {
-        employee: emp, // نرسل الأوبجكت كامل للمعاينة
+        employee: emp, 
         restaurant: restaurant._id,
         month,
         baseAmount: emp.baseSalary,
-        overtimeAmount: autoOvertimePay, // القيمة المحسوبة تلقائياً
+        overtimeAmount: autoOvertimePay, 
         bonuses: manualBonus,
-        deductions: manualDeduct + autoDeductionVal, // نجمع الخصم التلقائي واليدوي
+        deductions: manualDeduct + autoDeductionVal, 
         loansDeducted: loanDeduction,
         totalSalary: totalSalary > 0 ? totalSalary : 0,
-        stats: { // بيانات إضافية للعرض
+        stats: { 
             otHours: totalOvertimeHours,
             deductHours: totalDeductionHours
-        }
+        },
+        status: 'Pending',
+        isPaid: false
       };
 
       payrolls.push(payrollEntry);
     }
 
-    // إذا لم يكن معاينة، نقوم بالحفظ في قاعدة البيانات
    if (!isPreview) {
-            // 1. استرجاع الرواتب القديمة لهذا الشهر (إن وجدت) لإعادة السلف لأصحابها
-            const oldPayrolls = await Payroll.find({ restaurant: restaurant._id, month });
+            const { data: oldPayrolls } = await supabase.from('payrolls').select('*').eq('restaurant', restaurant._id).eq('month', month);
             
-            for (const p of oldPayrolls) {
+            for (const p of (oldPayrolls || [])) {
                 if (p.loansDeducted > 0) {
-                    // إعادة المبلغ المخصوم سابقاً لرصيد الموظف
-                    await User.findByIdAndUpdate(p.employee, { $inc: { loanBalance: p.loansDeducted } });
+                    const { data: oldEmp } = await supabase.from('employees').select('loanBalance').eq('_id', p.employee).single();
+                    if (oldEmp) await supabase.from('employees').update({ loanBalance: oldEmp.loanBalance + p.loansDeducted }).eq('_id', p.employee);
                 }
             }
 
-            // 2. حذف السجلات القديمة
-            await Payroll.deleteMany({ restaurant: restaurant._id, month });
+            await supabase.from('payrolls').delete().eq('restaurant', restaurant._id).eq('month', month);
             
-            // 3. حفظ السجلات الجديدة
-            const dbPayload = payrolls.map(p => ({...p, employee: p.employee._id}));
-            await Payroll.insertMany(dbPayload);
+            const dbPayload = payrolls.map(p => {
+                const { stats, ...rest } = p;
+                return { ...rest, employee: p.employee._id };
+            });
 
-            // 4. خصم السلف الجديدة من رصيد الموظفين الفعلي
+            if (dbPayload.length > 0) {
+                await supabase.from('payrolls').insert(dbPayload);
+            }
+
             for (const p of dbPayload) {
                 if (p.loansDeducted > 0) {
-                    // خصم المبلغ الجديد من الرصيد
-                    await User.findByIdAndUpdate(p.employee, { $inc: { loanBalance: -p.loansDeducted } });
+                    const { data: curEmp } = await supabase.from('employees').select('loanBalance').eq('_id', p.employee).single();
+                    if (curEmp) await supabase.from('employees').update({ loanBalance: curEmp.loanBalance - p.loansDeducted }).eq('_id', p.employee);
                 }
             }
         }
