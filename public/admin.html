@@ -17,6 +17,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 
     
 
@@ -3709,6 +3710,15 @@
                     <button type="button" class="btn btn-outline" style="width:auto; padding:8px 12px;" onclick="copyStorePageLink()"><i class="fas fa-copy"></i></button>
                     <a id="sp-open-link" href="#" target="_blank" class="btn btn-outline" style="width:auto; padding:8px 12px;"><i class="fas fa-external-link-alt"></i></a>
                   </div>
+
+                  <div style="display:flex; align-items:center; gap:14px; margin-top:14px; background:var(--bg); border:1px solid var(--border-color); border-radius:10px; padding:14px;">
+                    <canvas id="sp-qr-canvas" width="90" height="90" style="border-radius:8px; background:#fff; flex-shrink:0;"></canvas>
+                    <div style="flex:1;">
+                      <div style="font-weight:bold; font-size:13.5px; margin-bottom:4px;"><i class="fas fa-qrcode"></i> كود QR لصفحة متجرك</div>
+                      <p style="font-size:11.5px; color:var(--secondary); margin:0 0 8px;">اطبعه أو حطه في المحل، أي زبون يمسحه هيدخل صفحة متجرك على طول.</p>
+                      <button type="button" class="btn btn-primary" style="width:auto; font-size:12.5px; padding:8px 14px;" onclick="downloadStorePageQR()"><i class="fas fa-download"></i> تحميل QR</button>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="design-section">
@@ -6588,10 +6598,63 @@ window.addBulkRow = function() { addBulkRows(1); };
         const link = `${window.location.origin}/store/${restaurantData.slug}`;
         document.getElementById("sp-link-input").value = link;
         document.getElementById("sp-open-link").href = link;
+        renderStorePageQR(link);
 
         const previewFrame = document.getElementById("store-live-preview");
         previewFrame.src = `/store/${restaurantData.slug}`;
         previewFrame.onload = () => storePageUpdatePreview();
+      }
+
+      // ✅ توليد QR لصفحة المتجر
+      function renderStorePageQR(link) {
+        const canvas = document.getElementById("sp-qr-canvas");
+        if (!canvas || typeof QRious === "undefined") return;
+        new QRious({ element: canvas, value: link, size: 300, background: "#fff", foreground: "#000", level: "H" });
+      }
+
+      // ✅ تحميل QR بصيغة PNG مع اسم المتجر تحته (جاهز للطباعة)
+      function downloadStorePageQR() {
+        const qrCanvas = document.getElementById("sp-qr-canvas");
+        if (!qrCanvas || typeof QRious === "undefined") return;
+
+        const storeName = (document.getElementById("sp-title").value.trim() || restaurantData.restaurantName || "").trim();
+        const qrSize = 500;
+        const padding = 40;
+        const labelHeight = storeName ? 70 : 0;
+
+        // نعيد توليد QR بدقة عالية على كانفاس مؤقت
+        const hiResQR = document.createElement("canvas");
+        new QRious({ element: hiResQR, value: document.getElementById("sp-link-input").value, size: qrSize, background: "#fff", foreground: "#000", level: "H" });
+
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width = qrSize + padding * 2;
+        finalCanvas.height = qrSize + padding * 2 + labelHeight;
+        const ctx = finalCanvas.getContext("2d");
+
+        // خلفية بيضاء
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+        // رسم الـ QR
+        ctx.drawImage(hiResQR, padding, padding, qrSize, qrSize);
+
+        // اسم المتجر تحت الـ QR
+        if (storeName) {
+          ctx.fillStyle = "#111111";
+          ctx.font = "bold 32px Tahoma, Arial, sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.direction = "rtl";
+          ctx.fillText(storeName, finalCanvas.width / 2, qrSize + padding + labelHeight / 2);
+        }
+
+        const dataUrl = finalCanvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = `store-qr-${(restaurantData.slug || "menu")}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }
 
       function renderStoreLinksList() {
