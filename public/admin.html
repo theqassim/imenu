@@ -4411,11 +4411,16 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
               timer: 1500,
             });
           } else {
-            throw new Error("فشل الحفظ");
+            let serverMsg = "فشل الحفظ";
+            try {
+              const errJson = await res.json();
+              serverMsg = errJson.message || serverMsg;
+            } catch (parseErr) {}
+            throw new Error(serverMsg);
           }
         } catch (e) {
           console.error(e);
-          Swal.fire("خطأ", "حدث خطأ أثناء الحفظ", "error");
+          Swal.fire("خطأ", e.message || "حدث خطأ أثناء الحفظ", "error");
         }
       }
 
