@@ -2442,6 +2442,7 @@ app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.a
 // Static HTML Pages
 app.get("/menu/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "menu.html")));
 app.get("/reserve/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "reservation.html")));
+app.get("/rate/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "rate.html")));
 app.get("/owner", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.get("/super-admin", (req, res) => res.sendFile(path.join(__dirname, "public", "super.html")));
 app.get("/sales-dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "sales.html")));
@@ -2548,43 +2549,128 @@ app.post("/api/v1/owner/push-unsubscribe", protect, async (req, res) => {
   }
 });
 
-// إشعار المالك لحظة ما عميل يضغط على رابط "تقييمنا" في المنيو
-app.post("/api/v1/menu/:slug/notify-rating", async (req, res) => {
+// ==========================================
+// نظام التقييمات الداخلي (بديل رابط جوجل الخارجي)
+// ==========================================
+
+// دالة مساعدة: إرسال إشعار Push لكل الأجهزة المشتركة لمطعم معيّن
+async function sendPushToRestaurant(restaurantId, payloadObj) {
   try {
-    const { data: restaurant } = await supabase
+    const { data: subs } = await supabase
+      .from("push_subscriptions")
+      .select("*")
+      .eq("restaurant_id", restaurantId);
+
+    if (!subs || subs.length === 0) return;
+
+    const payload = JSON.stringify(payloadObj);
+    subs.forEach((sub) => {
+      webPush
+        .sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
+        .catch((e) => {
+          if (e.statusCode === 410 || e.statusCode === 404) {
+            supabase.from("push_subscriptions").delete().eq("id", sub.id).then(() => {});
+          } else {
+            console.error("Push error:", e.message);
+          }
+        });
+    });
+  } catch (e) {
+    console.error("sendPushToRestaurant error:", e.message);
+  }
+}
+
+// 1. بيانات المطعم لصفحة التقييم (اسم + هوية بصرية بسيطة)
+app.get("/api/v1/ratings/info/:slug", async (req, res) => {
+  try {
+    const { data: restaurant, error } = await supabase
+      .from("restaurants")
+      .select("restaurantName, customUI, isActive")
+      .eq("slug", req.params.slug)
+      .single();
+
+    if (error || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        restaurantName: restaurant.restaurantName,
+        primaryColor: restaurant.customUI?.primaryColor || "#B78728",
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 2. استقبال تقييم جديد من العميل (نجوم + كومنت) - مباشرة داخل السيستم
+app.post("/api/v1/ratings/submit/:slug", async (req, res) => {
+  try {
+    const { name, stars, comment } = req.body;
+    const starsNum = Number(stars);
+
+    if (!name || !name.trim()) return res.status(400).json({ message: "من فضلك اكتب اسمك" });
+    if (!starsNum || starsNum < 1 || starsNum > 5) return res.status(400).json({ message: "من فضلك اختر تقييم من 1 إلى 5 نجوم" });
+
+    const { data: restaurant, error: resError } = await supabase
       .from("restaurants")
       .select("_id, restaurantName")
       .eq("slug", req.params.slug)
       .single();
 
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (resError || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
 
-    const { data: subs } = await supabase
-      .from("push_subscriptions")
-      .select("*")
-      .eq("restaurant_id", restaurant._id);
+    const { data: newRating, error: insertError } = await supabase
+      .from("ratings")
+      .insert([{
+        restaurant: restaurant._id,
+        customerName: name.trim(),
+        stars: starsNum,
+        comment: (comment || "").trim(),
+      }])
+      .select()
+      .single();
 
-    if (subs && subs.length > 0) {
-      const payload = JSON.stringify({
-        title: "⭐ عميل بيفتح صفحة تقييمك الآن!",
-        body: `عميل داخل يقيّم ${restaurant.restaurantName} - افتحها وتابعه`,
-        url: "/owner",
-      });
-      subs.forEach((sub) => {
-        webPush
-          .sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
-          .catch((e) => {
-            // لو الاشتراك بقى منتهي/غير صالح احذفه من القاعدة
-            if (e.statusCode === 410 || e.statusCode === 404) {
-              supabase.from("push_subscriptions").delete().eq("id", sub.id).then(() => {});
-            } else {
-              console.error("Push error:", e.message);
-            }
-          });
-      });
+    if (insertError) throw insertError;
+
+    if (req.io) {
+      req.io.to(restaurant._id.toString()).emit("new_rating", newRating);
     }
 
-    res.status(200).json({ status: "success" });
+    const starsEmoji = "⭐".repeat(starsNum);
+    sendPushToRestaurant(restaurant._id, {
+      title: `${starsEmoji} تقييم جديد من ${name.trim()}`,
+      body: (comment || "").trim() || `تقييم ${starsNum} نجوم على ${restaurant.restaurantName}`,
+      url: "/owner",
+    });
+
+    res.status(200).json({ status: "success", message: "تم إرسال تقييمك، شكراً لوقتك!" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 3. جلب كل التقييمات لصاحب المطعم + المتوسط العام
+app.get("/api/v1/ratings/list", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const { data: ratings, error } = await supabase
+      .from("ratings")
+      .select("*")
+      .eq("restaurant", restaurant._id)
+      .order("createdAt", { ascending: false });
+
+    if (error) throw error;
+
+    const count = ratings ? ratings.length : 0;
+    const average = count > 0 ? ratings.reduce((sum, r) => sum + Number(r.stars || 0), 0) / count : 0;
+
+    res.status(200).json({
+      status: "success",
+      data: { ratings: ratings || [], average: Math.round(average * 10) / 10, count },
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
