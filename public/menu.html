@@ -852,6 +852,13 @@
       .category-header-text {
         color: var(--sec-title-color) !important;
       }
+      .section-label.on-image {
+        color: #ffffff !important;
+        text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      }
+      .section-label.on-image::after {
+        background: rgba(255,255,255,0.45);
+      }
       .section-label::after {
         content: "";
         flex: 1;
@@ -2130,13 +2137,20 @@
 
           first = false;
 
-          let sectionHTML = `<div class="menu-section" data-category="${cat}">`;
+          const hasCatImg = !!categoryImages[cat];
+          const sectionBgAttr = hasCatImg
+            ? ` style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.55)), url('${categoryImages[cat]}') center/cover no-repeat; border-radius:20px; padding:20px 14px 26px;"`
+            : "";
+          let sectionHTML = `<div class="menu-section" data-category="${cat}"${sectionBgAttr}>`;
 
-          const secImg = categoryImages[cat]
-            ? `<img src="${categoryImages[cat]}" style="width:44px; height:44px; border-radius:10px; object-fit:cover; margin-left:10px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">`
+          const secImg = hasCatImg
+            ? ""
             : '<i class="fas fa-certificate" style="font-size:14px; margin-left:8px; color:var(--primary)"></i>';
+          const labelClass = hasCatImg
+            ? "section-label category-header-text on-image"
+            : "section-label category-header-text";
 
-          sectionHTML += `<div class="section-label category-header-text" id="sec-${cat}" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
+          sectionHTML += `<div class="${labelClass}" id="sec-${cat}" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
 
           items.forEach((p) => {
             const imgHTML =
