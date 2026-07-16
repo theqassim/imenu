@@ -744,7 +744,7 @@ app.get("/api/v1/restaurants/:slug", async (req, res) => {
     }
 
     const { data: products } = await supabase.from('products').select('*').eq('restaurant', restaurant._id).order('sortOrder', { ascending: true }).order('createdAt', { ascending: false });
-    const { data: categories } = await supabase.from('categories').select('*').eq('restaurant', restaurant._id).order('sortOrder', { ascending: true });
+    const { data: categories } = await supabase.from('categories').select('*').eq('restaurant', restaurant._id).order('sort_order', { ascending: true });
 
     res.status(200).json({ status: "success", data: { restaurant, menu: products || [], categories: categories || [], warning } });
   } catch (err) {
