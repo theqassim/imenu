@@ -7,6 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const multer = require("multer");
@@ -2450,7 +2451,64 @@ app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.a
 app.get("/menu/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "menu.html")));
 app.get("/reserve/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "reservation.html")));
 app.get("/rate/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "rate.html")));
-app.get("/store/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "store.html")));
+app.get("/store/:slug", async (req, res) => {
+  const filePath = path.join(__dirname, "public", "store.html");
+  try {
+    const { data: restaurant } = await supabase
+      .from("restaurants")
+      .select("restaurantName, slug, storePage")
+      .eq("slug", req.params.slug)
+      .single();
+
+    let html = fs.readFileSync(filePath, "utf8");
+
+    if (restaurant) {
+      const sp = restaurant.storePage || {};
+      const title = sp.title || restaurant.restaurantName || "صفحة المتجر";
+      const description =
+        sp.message || sp.subtitle || sp.greeting || `تابع ${title} وكل روابطنا من هنا`;
+
+      let logo = (sp.logo || "").replace(/\\/g, "/");
+      if (logo && !/^https?:\/\//i.test(logo)) {
+        logo = `${req.protocol}://${req.get("host")}/${logo.replace(/^\/+/, "")}`;
+      }
+
+      const pageUrl = `${req.protocol}://${req.get("host")}/store/${req.params.slug}`;
+
+      const escapeHtml = (str) =>
+        String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+      const metaTags = `
+    <title>${escapeHtml(title)}</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:url" content="${escapeHtml(pageUrl)}" />
+    ${logo ? `<meta property="og:image" content="${escapeHtml(logo)}" />\n    <meta property="og:image:width" content="512" />\n    <meta property="og:image:height" content="512" />` : ""}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
+    ${logo ? `<meta name="twitter:image" content="${escapeHtml(logo)}" />` : ""}
+`;
+
+      // نشيل أي عنوان/ميتا تاجز قديمة عشان مايبقاش فيه تكرار أو تعارض
+      html = html.replace(/<title>.*?<\/title>/is, "");
+      html = html.replace(/<meta\s+property=["']og:[^"']+["'][^>]*>/gi, "");
+      html = html.replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>/gi, "");
+
+      html = html.replace(/<head(\s[^>]*)?>/i, (match) => `${match}\n${metaTags}`);
+    }
+
+    res.send(html);
+  } catch (err) {
+    console.error("Store page meta injection error:", err);
+    res.sendFile(filePath);
+  }
+});
 app.get("/owner", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.get("/super-admin", (req, res) => res.sendFile(path.join(__dirname, "public", "super.html")));
 app.get("/sales-dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "sales.html")));
