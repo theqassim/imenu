@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>قيّم تجربتك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<style>
+  :root {
+    --primary: #B78728;
+    --bg: #f7f5f2;
+    --card-bg: #ffffff;
+    --text-main: #2d2d2d;
+    --text-sub: #8a8a8a;
+    --border: #ececec;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Tajawal', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card-bg);
+    border-radius: 22px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    padding: 30px 24px;
+    text-align: center;
+  }
+  .icon-badge {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--primary) 15%, white);
+    color: var(--primary);
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+  h1 {
+    font-size: 19px;
+    margin: 0 0 4px;
+  }
+  .res-name {
+    color: var(--primary);
+    font-weight: 800;
+  }
+  p.sub {
+    color: var(--text-sub);
+    font-size: 13.5px;
+    margin: 0 0 22px;
+  }
+  .stars {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    font-size: 40px;
+    margin-bottom: 22px;
+    direction: ltr;
+  }
+  .stars i {
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: transform 0.15s ease, color 0.15s ease;
+  }
+  .stars i.active {
+    color: #f5b301;
+  }
+  .stars i:active {
+    transform: scale(0.9);
+  }
+  .stars-label {
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-top: -14px;
+    margin-bottom: 20px;
+    min-height: 16px;
+  }
+  .field {
+    text-align: right;
+    margin-bottom: 14px;
+  }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-sub);
+    margin-bottom: 6px;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 14.5px;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus,
+  .field textarea:focus {
+    border-color: var(--primary);
+  }
+  .field textarea {
+    resize: none;
+    min-height: 80px;
+  }
+  .submit-btn {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    padding: 15px;
+    font-family: inherit;
+    font-size: 15.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+  }
+  .submit-btn:active { transform: scale(0.98); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .error-msg {
+    color: #e53e3e;
+    font-size: 13px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+  .thanks {
+    display: none;
+  }
+  .thanks .icon-badge {
+    background: #e7f9ef;
+    color: #16a34a;
+  }
+  .loading-state, .notfound-state {
+    color: var(--text-sub);
+    font-size: 14px;
+    padding: 30px 0;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+  <div class="card" id="loading-card">
+    <div class="loading-state"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>
+  </div>
+
+  <div class="card hidden" id="notfound-card">
+    <div class="notfound-state">
+      <i class="fas fa-exclamation-triangle" style="font-size:26px; margin-bottom:10px; display:block;"></i>
+      هذه الصفحة غير متاحة حالياً
+    </div>
+  </div>
+
+  <div class="card hidden" id="form-card">
+    <div class="icon-badge"><i class="fas fa-star"></i></div>
+    <h1>قيّم تجربتك في <span class="res-name" id="res-name"></span></h1>
+    <p class="sub">رأيك بيهمنا ويوصل لصاحب المطعم فوراً</p>
+
+    <div class="stars" id="stars-picker">
+      <i class="fas fa-star" data-val="1"></i>
+      <i class="fas fa-star" data-val="2"></i>
+      <i class="fas fa-star" data-val="3"></i>
+      <i class="fas fa-star" data-val="4"></i>
+      <i class="fas fa-star" data-val="5"></i>
+    </div>
+    <div class="stars-label" id="stars-label">اضغط على النجوم للتقييم</div>
+
+    <div class="field">
+      <label>اسمك</label>
+      <input type="text" id="rate-name" placeholder="اسمك بالكامل" maxlength="60" />
+    </div>
+
+    <div class="field">
+      <label>تعليقك (اختياري)</label>
+      <textarea id="rate-comment" placeholder="احكيلنا تجربتك كانت إيه..." maxlength="500"></textarea>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitRating()">
+      <i class="fas fa-paper-plane"></i> إرسال التقييم
+    </button>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <div class="card thanks" id="thanks-card">
+    <div class="icon-badge"><i class="fas fa-check"></i></div>
+    <h1>شكراً لتقييمك! 🎉</h1>
+    <p class="sub">تم إرسال رأيك لصاحب المطعم مباشرة</p>
+  </div>
+
+  <script>
+    const slug = window.location.pathname.split("/").pop();
+    let selectedStars = 0;
+
+    const starsLabels = {
+      1: "ضعيف جداً",
+      2: "مقبول",
+      3: "جيد",
+      4: "جيد جداً",
+      5: "ممتاز!",
+    };
+
+    async function init() {
+      if (!slug || slug === "rate") return showNotFound();
+      try {
+        const res = await fetch(`/api/v1/ratings/info/${slug}`);
+        const data = await res.json();
+        if (data.status !== "success") return showNotFound();
+
+        document.getElementById("res-name").innerText = data.data.restaurantName;
+        if (data.data.primaryColor) {
+          document.documentElement.style.setProperty("--primary", data.data.primaryColor);
+        }
+
+        document.getElementById("loading-card").classList.add("hidden");
+        document.getElementById("form-card").classList.remove("hidden");
+      } catch (e) {
+        showNotFound();
+      }
+    }
+
+    function showNotFound() {
+      document.getElementById("loading-card").classList.add("hidden");
+      document.getElementById("notfound-card").classList.remove("hidden");
+    }
+
+    document.getElementById("stars-picker").addEventListener("click", (e) => {
+      const star = e.target.closest("i[data-val]");
+      if (!star) return;
+      selectedStars = Number(star.dataset.val);
+      renderStars();
+    });
+
+    function renderStars() {
+      document.querySelectorAll("#stars-picker i").forEach((s) => {
+        s.classList.toggle("active", Number(s.dataset.val) <= selectedStars);
+      });
+      document.getElementById("stars-label").innerText = selectedStars
+        ? starsLabels[selectedStars]
+        : "اضغط على النجوم للتقييم";
+    }
+
+    async function submitRating() {
+      const errorEl = document.getElementById("error-msg");
+      errorEl.innerText = "";
+
+      const name = document.getElementById("rate-name").value.trim();
+      const comment = document.getElementById("rate-comment").value.trim();
+
+      if (!name) { errorEl.innerText = "من فضلك اكتب اسمك"; return; }
+      if (!selectedStars) { errorEl.innerText = "من فضلك اختر تقييم بالنجوم"; return; }
+
+      const btn = document.getElementById("submit-btn");
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+
+      try {
+        const res = await fetch(`/api/v1/ratings/submit/${slug}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, stars: selectedStars, comment }),
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          document.getElementById("form-card").classList.add("hidden");
+          document.getElementById("thanks-card").classList.add("hidden");
+          document.getElementById("thanks-card").style.display = "block";
+        } else {
+          errorEl.innerText = data.message || "حصل خطأ، حاول تاني";
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال التقييم';
+        }
+      } catch (e) {
+        errorEl.innerText = "فشل الاتصال بالسيرفر";
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال التقييم';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
