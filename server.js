@@ -587,6 +587,18 @@ app.post("/api/v1/users/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: "أدخل البريد وكلمة المرور" });
 
+    // ✅ فحص حساب السوبر أدمن من ملف الـ env
+    if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+      const superAdminUser = {
+        _id: "000000000000000000000000", // نفس الـ ID المخصص للسوبر أدمن في النظام
+        name: "Super Admin",
+        email: email,
+        role: "admin",
+        active: true
+      };
+      return createSendToken(superAdminUser, 200, res);
+    }
+
     // ✅ جلب المستخدم من Supabase
     const { data: user, error } = await supabase
       .from('users')
