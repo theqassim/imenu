@@ -193,6 +193,16 @@
     </div>
 
     <div class="field">
+      <label>رقم تليفونك</label>
+      <input type="tel" id="rate-phone" placeholder="01xxxxxxxxx" maxlength="20" inputmode="numeric" />
+    </div>
+
+    <div class="field">
+      <label>وقت زيارتك (اختياري)</label>
+      <input type="time" id="rate-visit-time" />
+    </div>
+
+    <div class="field">
       <label>تعليقك (اختياري)</label>
       <textarea id="rate-comment" placeholder="احكيلنا تجربتك كانت إيه..." maxlength="500"></textarea>
     </div>
@@ -268,9 +278,13 @@
       errorEl.innerText = "";
 
       const name = document.getElementById("rate-name").value.trim();
+      const phone = document.getElementById("rate-phone").value.trim();
+      const visitTime = document.getElementById("rate-visit-time").value;
       const comment = document.getElementById("rate-comment").value.trim();
 
       if (!name) { errorEl.innerText = "من فضلك اكتب اسمك"; return; }
+      if (!phone) { errorEl.innerText = "من فضلك اكتب رقم تليفونك"; return; }
+      if (!/^01[0-9]{9}$/.test(phone)) { errorEl.innerText = "رقم التليفون غير صحيح"; return; }
       if (!selectedStars) { errorEl.innerText = "من فضلك اختر تقييم بالنجوم"; return; }
 
       const btn = document.getElementById("submit-btn");
@@ -281,7 +295,7 @@
         const res = await fetch(`/api/v1/ratings/submit/${slug}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, stars: selectedStars, comment }),
+          body: JSON.stringify({ name, phone, visitTime, stars: selectedStars, comment }),
         });
         const data = await res.json();
 
