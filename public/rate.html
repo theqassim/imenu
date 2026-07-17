@@ -205,13 +205,14 @@
 
   <div class="card thanks" id="thanks-card">
     <div class="icon-badge"><i class="fas fa-check"></i></div>
-    <h1>شكراً لتقييمك! 🎉</h1>
-    <p class="sub">تم إرسال رأيك لصاحب المطعم مباشرة</p>
+    <h1 id="thanks-title">شكراً لتقييمك! 🎉</h1>
+    <p class="sub" id="thanks-sub">تم إرسال رأيك لصاحب المطعم مباشرة</p>
   </div>
 
   <script>
     const slug = window.location.pathname.split("/").pop();
     let selectedStars = 0;
+    let restaurantName = "";
 
     const starsLabels = {
       1: "ضعيف جداً",
@@ -228,7 +229,8 @@
         const data = await res.json();
         if (data.status !== "success") return showNotFound();
 
-        document.getElementById("res-name").innerText = data.data.restaurantName;
+        restaurantName = data.data.restaurantName;
+        document.getElementById("res-name").innerText = restaurantName;
         if (data.data.primaryColor) {
           document.documentElement.style.setProperty("--primary", data.data.primaryColor);
         }
@@ -284,9 +286,10 @@
         const data = await res.json();
 
         if (data.status === "success") {
+          document.getElementById("thanks-title").innerText = `شكراً لتقييمك يا ${name}! 🎉`;
+          document.getElementById("thanks-sub").innerText = `تم إرسال رأيك في ${restaurantName} لصاحب المطعم مباشرة`;
           document.getElementById("form-card").classList.add("hidden");
-          document.getElementById("thanks-card").classList.add("hidden");
-          document.getElementById("thanks-card").style.display = "block";
+          document.getElementById("thanks-card").classList.remove("hidden");
         } else {
           errorEl.innerText = data.message || "حصل خطأ، حاول تاني";
           btn.disabled = false;
