@@ -2785,6 +2785,47 @@ app.get("/api/v1/ratings/list", protect, restrictTo("owner", "admin"), async (re
   }
 });
 
+// 4. مسح تقييم واحد (لازم يكون تابع لمطعم صاحب الطلب)
+app.delete("/api/v1/ratings/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const { data: rating, error: findError } = await supabase
+      .from("ratings")
+      .select("_id, restaurant")
+      .eq("_id", req.params.id)
+      .single();
+
+    if (findError || !rating) return res.status(404).json({ message: "التقييم غير موجود" });
+    if (String(rating.restaurant) !== String(restaurant._id)) {
+      return res.status(403).json({ message: "غير مسموح لك بمسح هذا التقييم" });
+    }
+
+    const { error: deleteError } = await supabase.from("ratings").delete().eq("_id", req.params.id);
+    if (deleteError) throw deleteError;
+
+    res.status(200).json({ status: "success", message: "تم مسح التقييم" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// 5. مسح كل التقييمات الخاصة بالمطعم
+app.delete("/api/v1/ratings", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+
+    const { error: deleteError } = await supabase.from("ratings").delete().eq("restaurant", restaurant._id);
+    if (deleteError) throw deleteError;
+
+    res.status(200).json({ status: "success", message: "تم مسح كل التقييمات" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // ---------------- ACCOUNTING & FINANCE ROUTES (المطور) ----------------
 
 // 1. Financial Stats (لوحة القيادة المالية - شامل التفاصيل)
