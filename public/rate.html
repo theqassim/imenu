@@ -289,7 +289,9 @@
           document.getElementById("thanks-title").innerText = `شكراً لتقييمك يا ${name}! 🎉`;
           document.getElementById("thanks-sub").innerText = `تم إرسال رأيك في ${restaurantName} لصاحب المطعم مباشرة`;
           document.getElementById("form-card").classList.add("hidden");
-          document.getElementById("thanks-card").classList.remove("hidden");
+          const thanksCard = document.getElementById("thanks-card");
+          thanksCard.classList.remove("hidden");
+          thanksCard.style.display = "block";
         } else {
           errorEl.innerText = data.message || "حصل خطأ، حاول تاني";
           btn.disabled = false;
