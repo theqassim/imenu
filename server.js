@@ -2711,10 +2711,12 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
 // 2. استقبال تقييم جديد من العميل (نجوم + كومنت) - مباشرة داخل السيستم
 app.post("/api/v1/ratings/submit/:slug", async (req, res) => {
   try {
-    const { name, stars, comment } = req.body;
+    const { name, phone, visitTime, stars, comment } = req.body;
     const starsNum = Number(stars);
 
     if (!name || !name.trim()) return res.status(400).json({ message: "من فضلك اكتب اسمك" });
+    if (!phone || !phone.trim()) return res.status(400).json({ message: "من فضلك اكتب رقم تليفونك" });
+    if (!/^01[0-9]{9}$/.test(phone.trim())) return res.status(400).json({ message: "رقم التليفون غير صحيح" });
     if (!starsNum || starsNum < 1 || starsNum > 5) return res.status(400).json({ message: "من فضلك اختر تقييم من 1 إلى 5 نجوم" });
 
     const { data: restaurant, error: resError } = await supabase
@@ -2730,6 +2732,8 @@ app.post("/api/v1/ratings/submit/:slug", async (req, res) => {
       .insert([{
         restaurant: restaurant._id,
         customerName: name.trim(),
+        customerPhone: phone.trim(),
+        visitTime: (visitTime || "").trim(),
         stars: starsNum,
         comment: (comment || "").trim(),
       }])
