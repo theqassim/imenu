@@ -2804,7 +2804,10 @@
         <div id="view-ratings" class="hidden">
           <div class="header">
             <h3 class="page-title">تقييمات العملاء</h3>
-            <button class="btn btn-outline" onclick="loadRatings()"><i class="fas fa-sync"></i> تحديث</button>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-outline" onclick="loadRatings()"><i class="fas fa-sync"></i> تحديث</button>
+              <button class="btn btn-danger" onclick="deleteAllRatings()"><i class="fas fa-trash"></i> مسح كل التقييمات</button>
+            </div>
           </div>
 
           <div class="card" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
@@ -2828,6 +2831,7 @@
                   <th>التقييم</th>
                   <th>التعليق</th>
                   <th>الوقت</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="ratings-list"></tbody>
@@ -4190,7 +4194,7 @@ function renderStarsHtml(stars) {
 async function loadRatings() {
   const list = document.getElementById("ratings-list");
   if (!list) return;
-  list.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">جاري التحميل... <i class="fas fa-spinner fa-spin"></i></td></tr>';
+  list.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">جاري التحميل... <i class="fas fa-spinner fa-spin"></i></td></tr>';
 
   try {
     const res = await fetch('/api/v1/ratings/list', {
@@ -4207,7 +4211,7 @@ async function loadRatings() {
 
       list.innerHTML = "";
       if (!ratings || ratings.length === 0) {
-        list.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#64748b;">لسه معندكش تقييمات، شارك رابط التقييم مع عملائك</td></tr>';
+        list.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">لسه معندكش تقييمات، شارك رابط التقييم مع عملائك</td></tr>';
         return;
       }
 
@@ -4221,13 +4225,52 @@ async function loadRatings() {
             <td style="color:#f5b301; direction:ltr; white-space:nowrap;">${renderStarsHtml(r.stars)}</td>
             <td style="font-size:13px; color:var(--secondary); max-width:260px;">${r.comment ? r.comment : '-'}</td>
             <td style="font-size:12px; direction:ltr">${date}</td>
+            <td><button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="deleteRating('${r._id}')"><i class="fas fa-trash"></i></button></td>
           </tr>
         `;
       });
     }
   } catch (e) {
     console.error(e);
-    list.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">فشل الاتصال بالسيرفر</td></tr>';
+    list.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">فشل الاتصال بالسيرفر</td></tr>';
+  }
+}
+
+async function deleteRating(id) {
+  if (!confirm("متأكد إنك عايز تمسح التقييم ده؟")) return;
+  try {
+    const res = await fetch(`/api/v1/ratings/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      loadRatings();
+    } else {
+      alert(data.message || "حصل خطأ أثناء المسح");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("فشل الاتصال بالسيرفر");
+  }
+}
+
+async function deleteAllRatings() {
+  if (!confirm("متأكد إنك عايز تمسح كل التقييمات؟ الإجراء ده مش هينفع يتراجع عنه")) return;
+  try {
+    const res = await fetch('/api/v1/ratings', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      loadRatings();
+    } else {
+      alert(data.message || "حصل خطأ أثناء المسح");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("فشل الاتصال بالسيرفر");
   }
 }
 
