@@ -2823,6 +2823,8 @@
               <thead>
                 <tr>
                   <th>العميل</th>
+                  <th>رقم التليفون</th>
+                  <th>وقت الزيارة</th>
                   <th>التقييم</th>
                   <th>التعليق</th>
                   <th>الوقت</th>
@@ -4188,7 +4190,7 @@ function renderStarsHtml(stars) {
 async function loadRatings() {
   const list = document.getElementById("ratings-list");
   if (!list) return;
-  list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">جاري التحميل... <i class="fas fa-spinner fa-spin"></i></td></tr>';
+  list.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px;">جاري التحميل... <i class="fas fa-spinner fa-spin"></i></td></tr>';
 
   try {
     const res = await fetch('/api/v1/ratings/list', {
@@ -4205,7 +4207,7 @@ async function loadRatings() {
 
       list.innerHTML = "";
       if (!ratings || ratings.length === 0) {
-        list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#64748b;">لسه معندكش تقييمات، شارك رابط التقييم مع عملائك</td></tr>';
+        list.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:#64748b;">لسه معندكش تقييمات، شارك رابط التقييم مع عملائك</td></tr>';
         return;
       }
 
@@ -4214,6 +4216,8 @@ async function loadRatings() {
         list.innerHTML += `
           <tr>
             <td>${r.customerName}</td>
+            <td style="direction:ltr; text-align:right;">${r.customerPhone ? r.customerPhone : '-'}</td>
+            <td>${r.visitTime ? r.visitTime : '-'}</td>
             <td style="color:#f5b301; direction:ltr; white-space:nowrap;">${renderStarsHtml(r.stars)}</td>
             <td style="font-size:13px; color:var(--secondary); max-width:260px;">${r.comment ? r.comment : '-'}</td>
             <td style="font-size:12px; direction:ltr">${date}</td>
@@ -4223,7 +4227,7 @@ async function loadRatings() {
     }
   } catch (e) {
     console.error(e);
-    list.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">فشل الاتصال بالسيرفر</td></tr>';
+    list.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">فشل الاتصال بالسيرفر</td></tr>';
   }
 }
 
