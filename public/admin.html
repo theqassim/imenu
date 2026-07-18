@@ -4,6 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>لوحة التحكم | Smart Menu</title>
+
+    <!-- PWA: تثبيت لوحة التحكم كتطبيق -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#4338ca" />
+    <link rel="icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Smart Menu" />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap"
       rel="stylesheet"
@@ -3303,6 +3314,18 @@
                     <i class="fas fa-bell"></i> تفعيل الإشعارات على هذا الجهاز
                   </button>
                 </div>
+
+                <div id="install-app-box" style="display:none; background: var(--bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-top: 15px; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <div>
+                    <b><i class="fas fa-mobile-alt"></i> ثبّت لوحة التحكم كتطبيق</b>
+                    <div style="color: var(--secondary); font-size: 13px; margin-top: 3px">
+                      بعد التثبيت، الإشعارات بتوصلك بشكل أثبت من غير ما تكون فاتح كروم بالتاب.
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-primary" id="btn-install-app" onclick="installApp()">
+                    <i class="fas fa-download"></i> تثبيت التطبيق
+                  </button>
+                </div>
               </div>
 
               <div class="card" style="margin-top: 30px; border: 1px solid var(--success);">
@@ -4615,6 +4638,38 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         const ratingVisEl = document.getElementById("sl-visible-rating");
         result.rating = { visible: ratingVisEl ? ratingVisEl.checked : true };
         return result;
+      }
+
+      // ==========================================
+      // تثبيت لوحة التحكم كتطبيق (PWA)
+      // ==========================================
+      let deferredInstallPrompt = null;
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const box = document.getElementById("install-app-box");
+        if (box) box.style.display = "flex";
+      });
+
+      window.addEventListener("appinstalled", () => {
+        const box = document.getElementById("install-app-box");
+        if (box) box.style.display = "none";
+        deferredInstallPrompt = null;
+      });
+
+      async function installApp() {
+        if (!deferredInstallPrompt) {
+          return Swal.fire({
+            icon: "info",
+            title: "التثبيت مش متاح دلوقتي",
+            text: "لو بتستخدم آيفون، افتح زرار المشاركة في Safari واختار \"إضافة إلى الشاشة الرئيسية\". لو على كروم، دور على أيقونة التثبيت في شريط العنوان.",
+          });
+        }
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        document.getElementById("install-app-box").style.display = "none";
       }
 
       // ==========================================
