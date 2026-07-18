@@ -255,7 +255,7 @@ const restrictTo = (...roles) => {
 app.post("/api/v1/users/signup", async (req, res) => {
   try {
     const {
-      name, email, password, passwordConfirm, phone, role, subscriptionExpires, hasStock, productLimit
+      name, email, password, passwordConfirm, phone, role, subscriptionExpires, hasStock, hasAccounting, productLimit, allowedSections
     } = req.body;
 
     if (password !== passwordConfirm) {
@@ -285,7 +285,9 @@ app.post("/api/v1/users/signup", async (req, res) => {
         role,
         subscriptionExpires: expiryDate,
         hasStock: hasStock === true || hasStock === "true",
+        hasAccounting: hasAccounting === true || hasAccounting === "true",
         productLimit: productLimit || 75,
+        allowedSections: Array.isArray(allowedSections) && allowedSections.length > 0 ? allowedSections : null,
         active: true
       }])
       .select()
@@ -534,6 +536,11 @@ app.patch("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) =>
     if (updates.productLimit !== undefined) updates.productLimit = Number(updates.productLimit);
     if (updates.hasStock !== undefined) updates.hasStock = Boolean(updates.hasStock);
     if (updates.hasAccounting !== undefined) updates.hasAccounting = Boolean(updates.hasAccounting);
+    if (updates.allowedSections !== undefined) {
+      updates.allowedSections = Array.isArray(updates.allowedSections) && updates.allowedSections.length > 0
+        ? updates.allowedSections
+        : null; // null = مسموح بكل الأقسام (توافق مع الحسابات القديمة)
+    }
 
     if (updates.subscriptionExpires) {
       const newExpiry = new Date(updates.subscriptionExpires);
@@ -673,7 +680,7 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
 
     const { data: restaurant, error } = await supabase
       .from('restaurants')
-      .select('*, owner:users(hasStock, hasAccounting, subscriptionExpires, active, isTrial, trialExpires)')
+      .select('*, owner:users(hasStock, hasAccounting, subscriptionExpires, active, isTrial, trialExpires, allowedSections)')
       .eq(queryKey, queryVal)
       .single();
 
@@ -684,6 +691,8 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
     
     const stockPermission = ownerData ? ownerData.hasStock : req.user.hasStock;
     const accountingPermission = ownerData ? ownerData.hasAccounting : req.user.hasAccounting;
+    // 🟢 الأقسام المسموح للمالك برؤيتها (يتحكم بها السوبر أدمن) - null تعني كل الأقسام متاحة
+    const allowedSectionsPermission = ownerData ? ownerData.allowedSections : req.user.allowedSections;
     
     let warning = null;
     if (ownerData && ownerData.isTrial) {
@@ -710,6 +719,7 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
         shiftEnd: req.user.shiftEnd,
         hasStock: stockPermission,
         hasAccounting: accountingPermission,
+        allowedSections: allowedSectionsPermission,
         warning: warning
       },
     });
