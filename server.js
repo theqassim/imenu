@@ -542,11 +542,19 @@ app.patch("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) =>
         : null; // null = مسموح بكل الأقسام (توافق مع الحسابات القديمة)
     }
 
-    if (updates.subscriptionExpires) {
-      const newExpiry = new Date(updates.subscriptionExpires);
-      newExpiry.setHours(23, 59, 59, 999);
-      updates.subscriptionExpires = newExpiry.toISOString();
-      if (newExpiry > new Date()) updates.active = true;
+    if (updates.subscriptionExpires !== undefined) {
+      if (updates.subscriptionExpires) {
+        const newExpiry = new Date(updates.subscriptionExpires);
+        if (!isNaN(newExpiry.getTime())) {
+          newExpiry.setHours(23, 59, 59, 999);
+          updates.subscriptionExpires = newExpiry.toISOString();
+          if (newExpiry > new Date()) updates.active = true;
+        } else {
+          updates.subscriptionExpires = null; // قيمة غير صالحة → اعتبرها بلا تاريخ انتهاء
+        }
+      } else {
+        updates.subscriptionExpires = null; // 🟢 الحقل اتبعت فاضي "" → لازم يتحول null مش يتبعت زي ما هو (كان بيسبب: invalid input syntax for type timestamp)
+      }
     }
 
     const { data: updatedUser, error } = await supabase
