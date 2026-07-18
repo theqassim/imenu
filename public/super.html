@@ -414,6 +414,17 @@
                     </label>
                 </div>
 
+                <div class="form-group" style="margin-top: 15px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <label class="label" style="margin:0;"><i class="fas fa-eye"></i> الأقسام الظاهرة للمالك في لوحة التحكم</label>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" onclick="toggleAllSections('sec', true)" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer;">تحديد الكل</button>
+                            <button type="button" onclick="toggleAllSections('sec', false)" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer;">إلغاء الكل</button>
+                        </div>
+                    </div>
+                    <div id="sec-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:8px;"></div>
+                </div>
+
                 <div class="form-group" style="margin-top: 10px;">
                     <label class="label">باقة المنتجات المسموحة</label>
                     <select id="u-limit" style="font-weight:bold; color:var(--primary);">
@@ -870,6 +881,56 @@
             Toast.fire({ icon: 'success', title: 'تم نسخ البيانات' });
         }
 
+        // 🟢 قائمة موحّدة بكل الأقسام التي يمكن للسوبر أدمن التحكم في ظهورها لدى المالك
+        // (المعرّفات هنا تطابق أرقام IDs الخاصة بعناصر الـ sidebar في admin.html)
+        const OWNER_SECTIONS = [
+            { id: 'nav-categories',    label: 'الأقسام (التصنيفات)' },
+            { id: 'nav-products',      label: 'المنتجات' },
+            { id: 'nav-bulk',          label: 'إضافة جملة' },
+            { id: 'nav-orders',        label: 'الطلبات الحية' },
+            { id: 'nav-manual-pos',    label: 'أوردر مباشر' },
+            { id: 'nav-stock',         label: 'إدارة المخزن' },
+            { id: 'nav-recipes',       label: 'إدارة المقادير' },
+            { id: 'nav-accounting',    label: 'المحاسب والرواتب' },
+            { id: 'nav-history',       label: 'سجل المبيعات' },
+            { id: 'nav-design',        label: 'التصميم' },
+            { id: 'nav-store-page',    label: 'صفحة المتجر' },
+            { id: 'nav-settings',      label: 'إعدادات المتجر' },
+            { id: 'nav-staff',         label: 'إدارة الموظفين' },
+            { id: 'nav-coupons',       label: 'الكوبونات' },
+            { id: 'nav-reservations',  label: 'طلبات الحجز' },
+            { id: 'nav-ratings',       label: 'التقييمات' }
+        ];
+
+        // يبني HTML لشبكة الاختيارات. allowedList = null/undefined/[] تعني "الكل متاح" (توافق مع الحسابات القديمة)
+        function buildSectionsCheckboxes(prefix, allowedList) {
+            const hasRestriction = Array.isArray(allowedList) && allowedList.length > 0;
+            return OWNER_SECTIONS.map(s => {
+                const checked = hasRestriction ? allowedList.includes(s.id) : true;
+                return `<label style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.04); padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13px; margin:0;">
+                            <input type="checkbox" id="${prefix}-${s.id}" ${checked ? 'checked' : ''} style="width:16px; height:16px;">
+                            <span>${s.label}</span>
+                        </label>`;
+            }).join('');
+        }
+
+        function collectCheckedSections(prefix) {
+            return OWNER_SECTIONS.filter(s => {
+                const el = document.getElementById(`${prefix}-${s.id}`);
+                return el && el.checked;
+            }).map(s => s.id);
+        }
+
+        function toggleAllSections(prefix, checked) {
+            OWNER_SECTIONS.forEach(s => {
+                const el = document.getElementById(`${prefix}-${s.id}`);
+                if (el) el.checked = checked;
+            });
+        }
+
+        // تعبئة شبكة الأقسام في فورم "إضافة مالك جديد" (كل الأقسام مفعّلة افتراضياً)
+        document.getElementById('sec-grid').innerHTML = buildSectionsCheckboxes('sec', null);
+
         async function createOwner() {
             const name = document.getElementById('u-name').value;
             const email = document.getElementById('u-email').value;
@@ -886,7 +947,7 @@
                 const res = await fetch('/api/v1/users/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ name, email, phone, subscriptionExpires, password, passwordConfirm, hasStock: document.getElementById('u-stock').checked, hasAccounting: document.getElementById('u-accounting').checked, productLimit: productLimit, role: 'owner' })
+                    body: JSON.stringify({ name, email, phone, subscriptionExpires, password, passwordConfirm, hasStock: document.getElementById('u-stock').checked, hasAccounting: document.getElementById('u-accounting').checked, productLimit: productLimit, role: 'owner', allowedSections: collectCheckedSections('sec') })
                 });
                 const data = await res.json();
                 Swal.close();
@@ -900,6 +961,7 @@
                     document.getElementById('u-date').value = '';
                     document.getElementById('u-pass').value = '';
                     document.getElementById('u-pass-conf').value = '';
+                    toggleAllSections('sec', true); // إعادة كل الأقسام لحالتها الافتراضية (مفعّلة) للمالك القادم
                     loadOwnersList(); 
                 } else {
                     Swal.fire('فشلت العملية', data.message || 'تأكد من البيانات', 'error');
@@ -963,7 +1025,7 @@
                                             <i class="fas ${statusIcon}"></i>
                                         </button>
 
-                                       <button class="action-btn btn-edit" onclick="editUser('${u._id}', '${u.name}', '${u.email}', '${u.phone || ''}', '${u.whatsapp || ''}', '${expiryDate}', '${pLimit}', ${u.hasStock}, ${u.hasAccounting || false}, ${u.isTrial})">
+                                       <button class="action-btn btn-edit" onclick="editUser('${u._id}')">
     <i class="fas fa-edit"></i>
 </button>
 
@@ -1097,7 +1159,35 @@
             }
         }
 
-        async function editUser(id, currentName, currentEmail, currentPhone, currentWhatsapp, currentExpiryDate, currentLimit, currentHasStock, currentHasAccounting, isTrial) {
+        async function editUser(id) {
+            const u = allOwners.find(o => o._id === id);
+            if (!u) return Swal.fire('خطأ', 'تعذر العثور على بيانات هذا المستخدم، حاول تحديث الصفحة', 'error');
+
+            const currentName = u.name || '';
+            const currentEmail = u.email || '';
+            const currentPhone = u.phone || '';
+            const currentWhatsapp = u.whatsapp || '';
+            const currentExpiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
+            const currentLimit = u.productLimit || 75;
+            const currentHasStock = !!u.hasStock;
+            const currentHasAccounting = !!u.hasAccounting;
+            const isTrial = !!u.isTrial;
+            const isOwnerRole = u.role === 'owner';
+
+            const sectionsBlockHtml = isOwnerRole ?
+                    `<div style="margin-top: 15px; text-align: right; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">` +
+                        `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">` +
+                            `<span style="font-size:13px; font-weight:bold;"><i class="fas fa-eye"></i> الأقسام الظاهرة للمالك</span>` +
+                            `<div style="display:flex; gap:6px;">` +
+                                `<button type="button" onclick="toggleAllSections('esec', true)" style="background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer;">تحديد الكل</button>` +
+                                `<button type="button" onclick="toggleAllSections('esec', false)" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer;">إلغاء الكل</button>` +
+                            `</div>` +
+                        `</div>` +
+                        `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:6px; text-align:right;">` +
+                            buildSectionsCheckboxes('esec', u.allowedSections) +
+                        `</div>` +
+                    `</div>` : '';
+
             const { value: formValues } = await Swal.fire({
                 title: 'تعديل بيانات المالك',
                 html:
@@ -1144,14 +1234,16 @@
                             `<input type="checkbox" id="swal-accounting" style="width: 20px; height: 20px;" ${currentHasAccounting ? 'checked' : ''}>` +
                             `<span>تفعيل نظام المحاسب (Accounting)</span>` +
                         `</label>` +
-                    `</div>`,
+                    `</div>` +
+                    sectionsBlockHtml,
                 
+                width: isOwnerRole ? 600 : undefined,
                 focusConfirm: false,
                 showCancelButton: true,
                 confirmButtonText: 'حفظ البيانات',
                 cancelButtonText: 'إلغاء',
                 preConfirm: () => {
-                    return {
+                    const result = {
                         name: document.getElementById('swal-name').value,
                         email: document.getElementById('swal-email').value,
                         phone: document.getElementById('swal-phone').value,
@@ -1162,6 +1254,10 @@
                         hasAccounting: document.getElementById('swal-accounting').checked, // ✅ تم الإضافة
                         isTrial: document.getElementById('swal-trial-status').value === 'true'
                     };
+                    if (isOwnerRole) {
+                        result.allowedSections = collectCheckedSections('esec');
+                    }
+                    return result;
                 }
             });
 
