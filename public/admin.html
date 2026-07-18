@@ -3929,6 +3929,11 @@
               document.getElementById("set-whatsapp").value = data.restaurant.contactInfo.whatsapp || "";
             }
 
+            // 🟢 الأقسام المسموح للمالك برؤيتها (يحددها السوبر أدمن) - null/فارغة = كل الأقسام مسموحة
+            window.ownerAllowedSections = Array.isArray(data.allowedSections) && data.allowedSections.length > 0
+              ? data.allowedSections
+              : null;
+
             applyPermissions(data.userRole);
             currentUserRole = data.userRole;
 
@@ -4029,29 +4034,34 @@
               initDesignStudio(data.restaurant);
               initStorePageStudio(data.restaurant);
               
-              // 🟢 إصلاح منطق عرض المخازن (يعتمد الآن على القيمة القادمة من السيرفر)
-              const isStockEnabled = data.hasStock;
+              // 🟢 إصلاح منطق عرض المخازن (يعتمد الآن على القيمة القادمة من السيرفر + الأقسام المسموحة من السوبر أدمن)
+              const isStockEnabled = data.hasStock && isSectionAllowed('nav-stock');
+              const isRecipesEnabled = data.hasStock && isSectionAllowed('nav-recipes');
+              const isAccountingEnabled = data.hasAccounting && isSectionAllowed('nav-accounting');
 
               if (isStockEnabled) {
-                // إظهار العناصر
                 document.getElementById('nav-stock').classList.remove('hidden');
-                if (data.hasAccounting) {
-        document.getElementById('nav-accounting').classList.remove('hidden');
-    } else {
-        document.getElementById('nav-accounting').classList.add('hidden');
-    }
-                document.getElementById('nav-recipes').classList.remove('hidden');
-                document.getElementById('ingredients-section').classList.remove('hidden');
                 if(document.getElementById('mob-nav-stock')) document.getElementById('mob-nav-stock').classList.remove('hidden');
-                
-                loadStockItems(); 
               } else {
-                // إخفاء العناصر (لضمان اختفائها لو الميزة اتلغت)
                 document.getElementById('nav-stock').classList.add('hidden');
-                document.getElementById('nav-recipes').classList.add('hidden');
-                document.getElementById('ingredients-section').classList.add('hidden');
                 if(document.getElementById('mob-nav-stock')) document.getElementById('mob-nav-stock').classList.add('hidden');
               }
+
+              if (isRecipesEnabled) {
+                document.getElementById('nav-recipes').classList.remove('hidden');
+                document.getElementById('ingredients-section').classList.remove('hidden');
+              } else {
+                document.getElementById('nav-recipes').classList.add('hidden');
+                document.getElementById('ingredients-section').classList.add('hidden');
+              }
+
+              if (isAccountingEnabled) {
+                document.getElementById('nav-accounting').classList.remove('hidden');
+              } else {
+                document.getElementById('nav-accounting').classList.add('hidden');
+              }
+
+              if (isStockEnabled || isRecipesEnabled) loadStockItems();
             }
 
             // توجيه المستخدم لآخر صفحة كان فيها
@@ -7928,6 +7938,14 @@ async function submitPosOrder() {
         }
       };
 
+      // 🟢 يتحقق هل قسم معيّن مسموح للمالك حسب اختيار السوبر أدمن
+      // عدم وجود قيد (null) = كل الأقسام متاحة (توافق مع الحسابات القديمة)
+      function isSectionAllowed(navId) {
+        const list = window.ownerAllowedSections;
+        if (!Array.isArray(list) || list.length === 0) return true;
+        return list.includes(navId);
+      }
+
       function applyPermissions(role) {
         // 1. قائمة بكل العناصر (ديسكتوب + موبايل) لإخفائها أولاً
         const allNavs = [
@@ -7971,7 +7989,13 @@ async function submitPosOrder() {
           ]
         };
 
-        const allowed = permissions[role] || [];
+        let allowed = permissions[role] || [];
+
+        // 🟢 لو الدور "مالك"، صفّي القائمة حسب الأقسام التي حددها السوبر أدمن
+        if (role === "owner") {
+          const normalize = (id) => id.startsWith("mob-nav-") ? id.replace("mob-nav-", "nav-") : id;
+          allowed = allowed.filter((id) => isSectionAllowed(normalize(id)));
+        }
 
         // 3. إخفاء الكل أولاً
         allNavs.forEach((id) => {
