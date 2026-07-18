@@ -2241,6 +2241,25 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     </div>
                     `;
           });
+
+          // ملاحظة الضريبة والخدمة تحت آخر منتج في القسم
+          const taxVal = Number(accounting.tax) || 0;
+          const serviceVal = Number(accounting.service) || 0;
+          if (taxVal > 0 || serviceVal > 0) {
+            let noteText = "";
+            if (taxVal > 0 && serviceVal > 0) {
+              noteText = `يضاف ${taxVal}% ضريبة و ${serviceVal}% خدمة`;
+            } else if (taxVal > 0) {
+              noteText = `يضاف ${taxVal}% ضريبة`;
+            } else if (serviceVal > 0) {
+              noteText = `يضاف ${serviceVal}% خدمة`;
+            }
+            sectionHTML += `
+              <div style="text-align:center; padding:8px 10px 2px; margin-top:-6px; font-size:11px; color:var(--text-sub); opacity:0.8;">
+                * ${noteText}
+              </div>`;
+          }
+
           sectionHTML += `</div>`;
           container.innerHTML += sectionHTML;
         }
