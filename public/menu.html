@@ -1857,7 +1857,7 @@
         enableCoupons: false,
       };
       let appliedCoupon = null;
-      let accounting = { tax: 0, service: 0 };
+      let accounting = { tax: 0, service: 0, noteFontSize: 11, noteColor: "#888888" };
 
       // إظهار أيقونات التواصل الاجتماعي والتقييم حسب إعدادات المالك
       function renderSocialLinks(socialLinks, slug) {
@@ -2109,6 +2109,8 @@
             }
             accounting.tax = restaurant.taxRate || 0;
             accounting.service = restaurant.serviceRate || 0;
+            accounting.noteFontSize = restaurant.taxNoteFontSize || 11;
+            accounting.noteColor = restaurant.taxNoteColor || "#888888";
 
             socket.emit("join-restaurant", restaurantId);
 
@@ -2254,8 +2256,10 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             } else if (serviceVal > 0) {
               noteText = `يضاف ${serviceVal}% خدمة`;
             }
+            const noteFontSize = Number(accounting.noteFontSize) || 11;
+            const noteColor = accounting.noteColor || "#888888";
             sectionHTML += `
-              <div style="text-align:center; padding:8px 10px 2px; margin-top:-6px; font-size:11px; color:var(--text-sub); opacity:0.8;">
+              <div style="text-align:center; padding:8px 10px 2px; margin-top:-6px; font-size:${noteFontSize}px; color:${noteColor}; opacity:0.9;">
                 * ${noteText}
               </div>`;
           }
