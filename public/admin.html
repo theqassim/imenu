@@ -1757,6 +1757,9 @@
         <div class="nav-item" onclick="switchView('history')" id="nav-history">
           <i class="fas fa-history"></i> سجل المبيعات
         </div>
+        <div class="nav-item" onclick="switchView('offers')" id="nav-offers">
+          <i class="fas fa-percent"></i> العروض والخصومات
+        </div>
         <div class="nav-item" onclick="switchView('design')" id="nav-design">
           <i class="fas fa-paint-brush"></i> التصميم
         </div>
@@ -3457,6 +3460,17 @@
           </div>
         </div>
 
+        <div id="view-offers" class="hidden">
+          <div class="card ofr-head">
+            <div>
+              <h3 style="color: var(--primary); margin: 0 0 4px"><i class="fas fa-percent"></i> العروض والخصومات</h3>
+              <div style="color: var(--secondary); font-size: 13px">اعمل عرض يظهر للعميل كبوب أب مميز أول ما يفتح المنيو، وتقدر تطبق الخصم على المنيو كله أو أقسام أو منتجات معينة.</div>
+            </div>
+            <button class="btn btn-primary" type="button" onclick="ofrOpenEditor()"><i class="fas fa-plus"></i> عرض جديد</button>
+          </div>
+          <div id="ofr-list" class="ofr-list"></div>
+        </div>
+
        <div id="view-design" class="hidden">
           <div class="design-container">
             
@@ -3924,6 +3938,8 @@
             document.getElementById("restaurant-id").value = data.restaurant._id;
             document.getElementById("preview-link").href = `/menu/${data.restaurant.slug}`;
             window.currentRestaurantSlug = data.restaurant.slug;
+            window.offersData = Array.isArray(data.restaurant.offers) ? data.restaurant.offers : [];
+            if (typeof window.ofrRender === "function") window.ofrRender();
 
             // إعدادات المتجر
             document.getElementById("set-orderMode").value = "view_only";
@@ -4335,6 +4351,7 @@ async function deleteAllRatings() {
 function switchView(viewName) {
     if(viewName === 'reservations') setTimeout(loadReservations, 100);
     if(viewName === 'ratings') setTimeout(loadRatings, 100);
+    if(viewName === 'offers' && typeof window.ofrRender === 'function') setTimeout(window.ofrRender, 50);
     if(viewName === 'store-page') setTimeout(storePageUpdatePreview, 300);
         Swal.close(); // إغلاق أي توست أو تنبيه مفتوح فوراً
         // حفظ الصفحة الحالية عشان لما تعمل ريفريش ترجع لها
@@ -4346,7 +4363,7 @@ function switchView(viewName) {
         // 2. Hide all views and remove active states
         // تمت إضافة "recipes" و "design" للقائمة لإصلاح مشكلة عدم إغلاق التصميم
 // ✅ تمت إضافة my-orders
-const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "store-page", "coupons", "accounting", "reservations", "ratings", "my-orders"];
+const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "store-page", "coupons", "accounting", "reservations", "ratings", "my-orders", "offers"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
@@ -7981,7 +7998,7 @@ async function submitPosOrder() {
           // Desktop Sidebar IDs
           "nav-categories", "nav-products", "nav-bulk", "nav-history",
           "nav-design", "nav-store-page", "nav-settings", "nav-staff", "nav-orders",
-          "nav-manual-pos", "nav-my-orders", "nav-coupons", "nav-reservations", "nav-ratings",
+          "nav-manual-pos", "nav-my-orders", "nav-coupons", "nav-reservations", "nav-ratings", "nav-offers",
           
           // Mobile Bottom Nav IDs
           "mob-nav-orders", "mob-nav-manual-pos", "mob-nav-my-orders",
@@ -7994,7 +8011,7 @@ async function submitPosOrder() {
             // Desktop
             "nav-categories", "nav-products", "nav-bulk", "nav-history",
             "nav-design", "nav-store-page", "nav-settings", "nav-orders", "nav-staff",
-            "nav-coupons", "nav-reservations", "nav-ratings", "nav-manual-pos",
+            "nav-coupons", "nav-reservations", "nav-ratings", "nav-offers", "nav-manual-pos",
             // Mobile
             "mob-nav-orders", "mob-nav-products", "mob-nav-categories", "mob-nav-settings"
           ],
@@ -10799,6 +10816,210 @@ function calculatePreviewTotals() {
               `;
           });
       }
+    </script>
+
+    <style>
+      .ofr-head { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+      .ofr-list { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin-top:16px; }
+      .ofr-card { background:var(--surface); border:1px solid var(--border-color); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); }
+      .ofr-card.off { opacity:.6; }
+      .ofr-top { padding:16px; color:#fff; display:flex; align-items:center; gap:14px; background:linear-gradient(135deg,var(--oa),var(--ob)); }
+      .ofr-pct { min-width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,.2); border:2px dashed rgba(255,255,255,.7); display:flex; align-items:center; justify-content:center; font-weight:900; font-size:18px; }
+      .ofr-body { padding:14px 16px; font-size:13px; color:var(--text-main); }
+      .ofr-meta { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+      .ofr-tag { background:var(--primary-light); color:var(--primary); border-radius:20px; padding:3px 10px; font-size:12px; font-weight:700; }
+      .ofr-acts { display:flex; gap:8px; padding:0 16px 14px; }
+      .ofr-acts button { flex:1; }
+      .ofr-sec { font-weight:800; color:var(--primary); margin:18px 0 8px; font-size:14px; }
+      .ofr-chips { display:flex; flex-wrap:wrap; gap:8px; }
+      .ofr-chip { padding:7px 13px; border-radius:20px; border:1.5px solid var(--border-color); cursor:pointer; font-size:13px; font-weight:700; user-select:none; background:#fff; color:var(--text-main); }
+      .ofr-chip.on { background:var(--primary); border-color:var(--primary); color:#fff; }
+      .ofr-theme { width:44px; height:44px; border-radius:50%; cursor:pointer; border:3px solid transparent; }
+      .ofr-theme.on { border-color:var(--text-main); transform:scale(1.1); }
+      .ofr-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+      .ofr-lbl { display:block; font-size:12px; font-weight:700; color:var(--secondary); margin:8px 0 4px; }
+      .ofr-plist { max-height:200px; overflow:auto; border:1px solid var(--border-color); border-radius:12px; padding:8px; display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+      .ofr-modal { position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:99999; display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:20px 12px; }
+      .ofr-modal.hidden { display:none; }
+      .ofr-box { background:#fff; border-radius:20px; width:100%; max-width:640px; padding:20px; direction:rtl; }
+      .ofr-prev { border-radius:16px; padding:18px; color:#fff; text-align:center; background:linear-gradient(135deg,var(--oa),var(--ob)); margin-top:8px; }
+      .ofr-prev b { font-size:34px; display:block; }
+      @media (max-width:600px){ .ofr-row{grid-template-columns:1fr;} }
+    </style>
+    <div id="ofr-modal" class="ofr-modal hidden">
+      <div class="ofr-box">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0;color:var(--primary)" id="ofr-form-title">عرض جديد</h3>
+          <button type="button" class="btn" onclick="ofrClose()" style="width:auto"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="ofr-prev" class="ofr-prev"><b id="ofr-prev-pct">20%</b><span id="ofr-prev-title">عنوان العرض</span></div>
+
+        <div class="ofr-sec">المحتوى</div>
+        <label class="ofr-lbl">عنوان العرض</label>
+        <input type="text" id="ofr-title" maxlength="60" placeholder="مثال: عرض الافتتاح" oninput="ofrPrev()" />
+        <label class="ofr-lbl">الرسالة اللي هتظهر للعميل</label>
+        <textarea id="ofr-message" rows="3" maxlength="240" placeholder="مثال: خصم 50% على المنيو بالكامل لفترة محدودة!"></textarea>
+        <div class="ofr-row">
+          <div><label class="ofr-lbl">نسبة الخصم %</label><input type="number" id="ofr-percent" min="1" max="100" value="20" oninput="ofrPrev()" /></div>
+          <div><label class="ofr-lbl">نص الزرار</label><input type="text" id="ofr-btn" maxlength="24" value="اطلب دلوقتي" /></div>
+        </div>
+        <div class="ofr-row">
+          <div><label class="ofr-lbl">نص الشارة</label><input type="text" id="ofr-badge" maxlength="16" placeholder="خصم" /></div>
+          <div><label class="ofr-lbl">نص فرعي للشارة</label><input type="text" id="ofr-badgesub" maxlength="20" placeholder="لفترة محدودة" /></div>
+        </div>
+
+        <div class="ofr-sec">ينطبق على</div>
+        <div class="ofr-chips" id="ofr-scope">
+          <div class="ofr-chip" data-v="all" onclick="ofrScope('all')">المنيو بالكامل</div>
+          <div class="ofr-chip" data-v="categories" onclick="ofrScope('categories')">أقسام معينة</div>
+          <div class="ofr-chip" data-v="products" onclick="ofrScope('products')">منتجات معينة</div>
+        </div>
+        <div id="ofr-cats" class="ofr-chips" style="margin-top:10px"></div>
+        <div id="ofr-prods-wrap" style="display:none">
+          <input type="text" id="ofr-psearch" placeholder="ابحث عن منتج..." oninput="ofrRenderProds()" style="margin-top:10px" />
+          <div id="ofr-prods" class="ofr-plist"></div>
+        </div>
+
+        <div class="ofr-sec">المدة</div>
+        <div class="ofr-row">
+          <div><label class="ofr-lbl">يبدأ (اختياري)</label><input type="datetime-local" id="ofr-start" /></div>
+          <div><label class="ofr-lbl">ينتهي (اختياري)</label><input type="datetime-local" id="ofr-end" /></div>
+        </div>
+
+        <div class="ofr-sec">الشكل</div>
+        <div class="ofr-chips" id="ofr-themes"></div>
+        <label class="ofr-lbl">الأيقونة</label>
+        <div class="ofr-chips" id="ofr-icons"></div>
+        <label class="ofr-lbl">تكرار ظهور البوب أب</label>
+        <select id="ofr-freq">
+          <option value="always">في كل زيارة</option>
+          <option value="session">مرة كل جلسة</option>
+          <option value="daily">مرة كل يوم</option>
+          <option value="once">مرة واحدة فقط</option>
+        </select>
+
+        <div class="ofr-sec">خيارات</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><label class="toggle-switch"><input type="checkbox" id="ofr-apply" checked><span class="slider"></span></label><span style="font-size:13px;font-weight:700">طبّق الخصم على أسعار المنتجات في المنيو</span></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><label class="toggle-switch"><input type="checkbox" id="ofr-popup" checked><span class="slider"></span></label><span style="font-size:13px;font-weight:700">أظهر بوب أب للعميل</span></div>
+        <div style="display:flex;align-items:center;gap:10px"><label class="toggle-switch"><input type="checkbox" id="ofr-enabled" checked><span class="slider"></span></label><span style="font-size:13px;font-weight:700">العرض مفعّل</span></div>
+
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button type="button" class="btn btn-primary" style="flex:1" onclick="ofrSave()"><i class="fas fa-save"></i> حفظ العرض</button>
+          <button type="button" class="btn" style="flex:0 0 auto" onclick="ofrClose()">إلغاء</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var THEMES = { gold:["#f59e0b","#b45309"], fire:["#ef4444","#9a3412"], royal:["#7c3aed","#312e81"], emerald:["#10b981","#065f46"], night:["#334155","#0f172a"], rose:["#ec4899","#9d174d"] };
+        var ICONS = { percent:"fa-percent", fire:"fa-fire", gift:"fa-gift", star:"fa-star", bolt:"fa-bolt", crown:"fa-crown", tag:"fa-tag" };
+        var cur = null, selCats = [], selProds = [], scope = "all", theme = "gold", icon = "percent";
+
+        function list() { return Array.isArray(window.offersData) ? window.offersData : []; }
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]; }); }
+        function $(id) { return document.getElementById(id); }
+        function toLocal(iso) { if (!iso) return ""; var d = new Date(iso); if (isNaN(d)) return ""; d = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return d.toISOString().slice(0, 16); }
+        function fmt(iso) { if (!iso) return ""; var d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString("ar-EG", { dateStyle: "medium", timeStyle: "short" }); }
+
+        window.ofrRender = function () {
+          var box = $("ofr-list"); if (!box) return;
+          var arr = list();
+          if (!arr.length) { box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;color:#94a3b8"><i class="fas fa-percent fa-3x" style="opacity:.3"></i><p>لسه مفيش عروض.. اعمل أول عرض!</p></div>'; return; }
+          var now = Date.now();
+          box.innerHTML = arr.map(function (o, i) {
+            var t = THEMES[o.theme] || THEMES.gold;
+            var st = !o.enabled ? "متوقف" : (o.endsAt && new Date(o.endsAt) < now) ? "منتهي" : (o.startsAt && new Date(o.startsAt) > now) ? "مجدول" : "شغال";
+            var sc = o.scope === "categories" ? "أقسام: " + (o.categories || []).length : o.scope === "products" ? "منتجات: " + (o.productIds || []).length : "المنيو كله";
+            return '<div class="ofr-card ' + (st === "شغال" ? "" : "off") + '"><div class="ofr-top" style="--oa:' + t[0] + ';--ob:' + t[1] + '"><div class="ofr-pct">' + esc(o.discountPercent) + '%</div><div><div style="font-weight:800;font-size:16px"><i class="fas ' + (ICONS[o.icon] || "fa-percent") + '"></i> ' + esc(o.title || "بدون عنوان") + '</div><div style="font-size:12px;opacity:.9">' + esc(o.message) + '</div></div></div>' +
+              '<div class="ofr-body"><div class="ofr-meta"><span class="ofr-tag">' + st + '</span><span class="ofr-tag">' + sc + '</span>' + (o.startsAt ? '<span class="ofr-tag">من ' + esc(fmt(o.startsAt)) + '</span>' : '') + (o.endsAt ? '<span class="ofr-tag">إلى ' + esc(fmt(o.endsAt)) + '</span>' : '') + '</div></div>' +
+              '<div class="ofr-acts"><button class="btn" type="button" onclick="ofrToggle(' + i + ')">' + (o.enabled ? "إيقاف" : "تفعيل") + '</button><button class="btn btn-primary" type="button" onclick="ofrOpenEditor(' + i + ')">تعديل</button><button class="btn" type="button" style="color:var(--danger)" onclick="ofrDelete(' + i + ')">حذف</button></div></div>';
+          }).join("");
+        };
+
+        function chips() {
+          $("ofr-themes").innerHTML = Object.keys(THEMES).map(function (k) { return '<div class="ofr-theme ' + (k === theme ? "on" : "") + '" style="background:linear-gradient(135deg,' + THEMES[k][0] + ',' + THEMES[k][1] + ')" onclick="ofrTheme(\'' + k + '\')"></div>'; }).join("");
+          $("ofr-icons").innerHTML = Object.keys(ICONS).map(function (k) { return '<div class="ofr-chip ' + (k === icon ? "on" : "") + '" onclick="ofrIcon(\'' + k + '\')"><i class="fas ' + ICONS[k] + '"></i></div>'; }).join("");
+          var sc = $("ofr-scope").children; for (var i = 0; i < sc.length; i++) sc[i].classList.toggle("on", sc[i].getAttribute("data-v") === scope);
+          $("ofr-cats").style.display = scope === "categories" ? "flex" : "none";
+          $("ofr-prods-wrap").style.display = scope === "products" ? "block" : "none";
+          $("ofr-cats").innerHTML = (window.categoriesData || categoriesData || []).map(function (c) { return '<div class="ofr-chip ' + (selCats.indexOf(c.name) > -1 ? "on" : "") + '" data-n="' + esc(c.name) + '" onclick="ofrCat(this)">' + esc(c.name) + '</div>'; }).join("") || '<span style="color:#94a3b8;font-size:13px">لا توجد أقسام</span>';
+          ofrPrev();
+        }
+        window.ofrTheme = function (k) { theme = k; chips(); };
+        window.ofrIcon = function (k) { icon = k; chips(); };
+        window.ofrScope = function (k) { scope = k; chips(); if (k === "products") ofrRenderProds(); };
+        window.ofrCat = function (el) { var n = el.getAttribute("data-n"), i = selCats.indexOf(n); if (i > -1) selCats.splice(i, 1); else selCats.push(n); el.classList.toggle("on"); };
+        window.ofrProd = function (el) { var id = el.getAttribute("data-id"), i = selProds.indexOf(id); if (i > -1) selProds.splice(i, 1); else selProds.push(id); el.classList.toggle("on"); };
+        window.ofrRenderProds = function () {
+          var q = ($("ofr-psearch").value || "").trim().toLowerCase();
+          var ps = (window.allProductsGlobal || []).filter(function (p) { return !q || ((p.name && p.name.ar) || "").toLowerCase().indexOf(q) > -1; });
+          $("ofr-prods").innerHTML = ps.map(function (p) { return '<div class="ofr-chip ' + (selProds.indexOf(p._id) > -1 ? "on" : "") + '" data-id="' + esc(p._id) + '" onclick="ofrProd(this)">' + esc(p.name && p.name.ar) + '</div>'; }).join("") || '<span style="color:#94a3b8;font-size:13px">لا توجد منتجات</span>';
+        };
+        window.ofrPrev = function () {
+          var t = THEMES[theme] || THEMES.gold, p = $("ofr-prev"); if (!p) return;
+          p.style.setProperty("--oa", t[0]); p.style.setProperty("--ob", t[1]);
+          $("ofr-prev-pct").textContent = ($("ofr-percent").value || 0) + "%";
+          $("ofr-prev-title").textContent = $("ofr-title").value || "عنوان العرض";
+        };
+
+        window.ofrOpenEditor = async function (i) {
+          try { if (!(window.categoriesData || categoriesData || []).length) await loadCategories(); } catch (e) {}
+          try { if (!(window.allProductsGlobal || []).length) await loadProducts(); } catch (e) {}
+          cur = (typeof i === "number") ? i : null;
+          var o = cur !== null ? list()[cur] : {};
+          selCats = (o.categories || []).slice(); selProds = (o.productIds || []).slice();
+          scope = o.scope || "all"; theme = o.theme || "gold"; icon = o.icon || "percent";
+          $("ofr-form-title").textContent = cur !== null ? "تعديل العرض" : "عرض جديد";
+          $("ofr-title").value = o.title || ""; $("ofr-message").value = o.message || "";
+          $("ofr-percent").value = o.discountPercent || 20; $("ofr-btn").value = o.buttonText || "اطلب دلوقتي";
+          $("ofr-badge").value = o.badgeText || ""; $("ofr-badgesub").value = o.badgeSub || "";
+          $("ofr-start").value = toLocal(o.startsAt); $("ofr-end").value = toLocal(o.endsAt);
+          $("ofr-freq").value = o.frequency || "session"; $("ofr-psearch").value = "";
+          $("ofr-apply").checked = o.applyPrices !== false; $("ofr-popup").checked = o.showPopup !== false; $("ofr-enabled").checked = o.enabled !== false;
+          chips(); ofrRenderProds();
+          $("ofr-modal").classList.remove("hidden");
+        };
+        window.ofrClose = function () { $("ofr-modal").classList.add("hidden"); };
+
+        async function persist(arr, okMsg) {
+          var rId = $("restaurant-id").value;
+          try {
+            var res = await fetch("/api/v1/restaurants/" + rId, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ offers: arr }) });
+            var d = await res.json().catch(function () { return {}; });
+            if (res.ok) { window.offersData = arr; ofrRender(); Swal.fire({ toast: true, position: "top", icon: "success", title: okMsg, showConfirmButton: false, timer: 1800 }); return true; }
+            Swal.fire("خطأ", d.message || "فشل الحفظ. اتأكد إن عمود offers اتضاف في قاعدة البيانات.", "error");
+          } catch (e) { Swal.fire("خطأ", "فشل الاتصال بالسيرفر", "error"); }
+          return false;
+        }
+
+        window.ofrSave = async function () {
+          var pct = Number($("ofr-percent").value);
+          if (!($("ofr-title").value.trim() || $("ofr-message").value.trim())) return Swal.fire("تنبيه", "اكتب عنوان أو رسالة للعرض", "warning");
+          if (!(pct > 0 && pct <= 100)) return Swal.fire("تنبيه", "نسبة الخصم لازم تكون بين 1 و 100", "warning");
+          if (scope === "categories" && !selCats.length) return Swal.fire("تنبيه", "اختار قسم واحد على الأقل", "warning");
+          if (scope === "products" && !selProds.length) return Swal.fire("تنبيه", "اختار منتج واحد على الأقل", "warning");
+          var s = $("ofr-start").value, e = $("ofr-end").value;
+          if (s && e && new Date(e) <= new Date(s)) return Swal.fire("تنبيه", "تاريخ النهاية لازم يكون بعد البداية", "warning");
+          var old = cur !== null ? list()[cur] : null;
+          var o = {
+            id: old ? old.id : "ofr_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+            enabled: $("ofr-enabled").checked, title: $("ofr-title").value.trim(), message: $("ofr-message").value.trim(),
+            discountPercent: pct, badgeText: $("ofr-badge").value.trim(), badgeSub: $("ofr-badgesub").value.trim(),
+            scope: scope, categories: scope === "categories" ? selCats.slice() : [], productIds: scope === "products" ? selProds.slice() : [],
+            applyPrices: $("ofr-apply").checked, showPopup: $("ofr-popup").checked,
+            startsAt: s ? new Date(s).toISOString() : null, endsAt: e ? new Date(e).toISOString() : null,
+            theme: theme, icon: icon, buttonText: $("ofr-btn").value.trim() || "اطلب دلوقتي", frequency: $("ofr-freq").value
+          };
+          var arr = list().slice(); if (cur !== null) arr[cur] = o; else arr.push(o);
+          if (await persist(arr, "تم حفظ العرض")) ofrClose();
+        };
+        window.ofrToggle = function (i) { var arr = list().map(function (x) { return Object.assign({}, x); }); arr[i].enabled = !arr[i].enabled; persist(arr, arr[i].enabled ? "تم تفعيل العرض" : "تم إيقاف العرض"); };
+        window.ofrDelete = async function (i) {
+          var r = await Swal.fire({ title: "حذف العرض؟", text: "مش هتقدر ترجعه تاني", icon: "warning", showCancelButton: true, confirmButtonText: "حذف", cancelButtonText: "إلغاء" });
+          if (!r.isConfirmed) return;
+          var arr = list().slice(); arr.splice(i, 1); persist(arr, "تم حذف العرض");
+        };
+      })();
     </script>
 
     <div class="mobile-bottom-nav">
