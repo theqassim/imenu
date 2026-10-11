@@ -784,6 +784,49 @@ app.get("/api/v1/restaurants", protect, async (req, res) => {
    }
 });
 
+// ==========================================
+// 🛠️ Auto-Migration: التأكد من وجود عمود offers في جدول restaurants
+// ==========================================
+// Supabase client (REST) مبيقدرش ينفذ DDL، فبنستخدم اتصال Postgres مباشر عن طريق DATABASE_URL.
+// الأمر idempotent (IF NOT EXISTS) فآمن يتنفذ أكتر من مرة.
+let _offersColumnReady = false;
+let _offersMigrationPromise = null;
+function ensureOffersColumn() {
+  if (_offersColumnReady) return Promise.resolve(true);
+  if (_offersMigrationPromise) return _offersMigrationPromise;
+
+  _offersMigrationPromise = (async () => {
+    const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+    if (!dbUrl) {
+      console.warn("⚠️ DATABASE_URL غير موجود في .env — مش هقدر أضيف عمود offers تلقائياً. ضيف رابط اتصال Postgres من Supabase (Project Settings → Database → Connection string).");
+      return false;
+    }
+    let client;
+    try {
+      const { Client } = require("pg"); // npm i pg
+      client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+      await client.connect();
+      await client.query("ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS offers jsonb NOT NULL DEFAULT '[]'::jsonb");
+      await client.query("NOTIFY pgrst, 'reload schema'");
+      _offersColumnReady = true;
+      console.log("✅ عمود offers جاهز في جدول restaurants");
+      // نستنى ثانية عشان PostgREST يحدّث الـ schema cache
+      await new Promise((r) => setTimeout(r, 1500));
+      return true;
+    } catch (e) {
+      console.error("❌ فشل إضافة عمود offers تلقائياً:", e.message);
+      return false;
+    } finally {
+      if (client) { try { await client.end(); } catch (_) {} }
+      _offersMigrationPromise = null;
+    }
+  })();
+  return _offersMigrationPromise;
+}
+
+const isMissingOffersColumn = (err) =>
+  !!err && /offers/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
+
 app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
     let updateData = { ...req.body };
@@ -808,13 +851,21 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       }
     }
     
-    const { data: updatedRestaurant, error } = await supabase
+    const runUpdate = () => supabase
       .from('restaurants')
       .update(updateData)
       .eq('_id', req.params.id)
       .select()
       .single();
-      
+
+    let { data: updatedRestaurant, error } = await runUpdate();
+
+    // 🛠️ لو عمود offers مش موجود: أنشئه تلقائياً وأعد المحاولة مرة واحدة
+    if (error && isMissingOffersColumn(error)) {
+      const created = await ensureOffersColumn();
+      if (created) ({ data: updatedRestaurant, error } = await runUpdate());
+    }
+
     if (error) throw error;
     if (req.io) req.io.to(req.params.id).emit("menu_updated");
     res.status(200).json({ status: "success", data: { restaurant: updatedRestaurant } });
@@ -3196,6 +3247,8 @@ app.use((err, req, res, next) => {
 // تم الاستغناء عن اتصال Mongoose.
 // Supabase Client يعمل عبر REST/PostgREST ولا يحتاج لاتصال مستمر (Persistent Connection) بنفس الطريقة.
 console.log("✅ Supabase Client Initialized!");
+
+ensureOffersColumn().catch(() => {}); // تأكد من عمود offers عند بدء التشغيل
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
