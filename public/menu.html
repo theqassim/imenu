@@ -1794,7 +1794,27 @@
       @keyframes offerSpin { to { transform: rotate(360deg); } }
       @keyframes offerWiggle { 0%, 100% { transform: rotate(-10deg); } 50% { transform: rotate(12deg) scale(1.1); } }
 
-      .offer-body { padding: 4px 22px 20px; text-align: center; }
+      .offer-body { position: relative; padding: 4px 22px 20px; text-align: center; }
+      .offer-body > *:not(.offer-bg) { position: relative; z-index: 1; }
+
+      /* 🖼️ طبقات صور خلفية الجزء الأبيض (شفافية + blur لكل صورة من لوحة التحكم) */
+      .offer-bg {
+        position: absolute;
+        left: -10%;
+        right: -10%;
+        top: -36px; /* بيبدأ من منحنى الهيدر عشان الصورة تملا الجزء الأبيض كله */
+        bottom: 0;
+        z-index: 0;
+        overflow: hidden;
+        border-radius: 50% 50% 0 0 / 36px 36px 0 0;
+        pointer-events: none;
+      }
+      .offer-bg i {
+        position: absolute;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
       .offer-title { font-size: 24px; font-weight: 900; margin: 0 0 8px; line-height: 1.35; }
       .offer-msg {
         font-size: 14px;
@@ -3450,6 +3470,21 @@ function trackOrder(orderId) {
           }
           return h;
         }
+        // ---- طبقات صور الخلفية (opacity 0-100 / blur بالبكسل) ----
+        function cssUrl(u) {
+          return String(u || "").trim().replace(/["'()\\\s<>]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+        }
+        function bgLayersHTML(o) {
+          const imgs = Array.isArray(o.bgImages) ? o.bgImages : [];
+          const layers = imgs.filter((i) => i && /^https?:\/\//i.test(String(i.url || "").trim())).map((i) => {
+            const op = Math.min(100, Math.max(0, Number(i.opacity))); 
+            const bl = Math.min(30, Math.max(0, Number(i.blur) || 0));
+            const edge = bl > 0 ? -(bl * 2) : 0; // نكبّر الطبقة عشان حواف الـ blur متظهرش شفافة
+            return '<i style="inset:' + edge + "px;background-image:url('" + cssUrl(i.url) + "');opacity:" +
+              ((Number.isFinite(op) ? op : 40) / 100) + ";filter:blur(" + bl + 'px)"></i>';
+          }).join("");
+          return layers ? '<div class="offer-bg">' + layers + "</div>" : "";
+        }
         function slideHTML(o) {
           const theme = THEMES.indexOf(o.theme) > -1 ? o.theme : "gold";
           const pctNum = Number(o.discountPercent) > 0 ? Number(o.discountPercent) : 0;
@@ -3468,7 +3503,7 @@ function trackOrder(orderId) {
           return '<div class="offer-slide oc-' + theme + '">' +
             '<div class="offer-hero"><div class="offer-confetti">' + confettiHTML() + "</div>" +
             '<div class="offer-badge">' + inner + '<div class="offer-badge-icon"><i class="fas ' + icon + '"></i></div></div></div>' +
-            '<div class="offer-body">' +
+            '<div class="offer-body">' + bgLayersHTML(o) +
             (o.title ? '<h2 class="offer-title">' + esc(o.title) + "</h2>" : "") +
             (o.message ? '<p class="offer-msg">' + esc(o.message) + "</p>" : "") +
             '<div class="offer-scope">' + scopeChips(o) + "</div>" + timer +
