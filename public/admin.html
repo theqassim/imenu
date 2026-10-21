@@ -10842,12 +10842,29 @@ function calculatePreviewTotals() {
       .ofr-modal { position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:99999; display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:20px 12px; }
       .ofr-modal.hidden { display:none; }
       .ofr-box { background:#fff; border-radius:20px; width:100%; max-width:640px; padding:20px; direction:rtl; }
-      .ofr-prev { border-radius:16px; padding:18px; color:#fff; text-align:center; background:linear-gradient(135deg,var(--oa),var(--ob)); margin-top:8px; }
+      .ofr-prev { max-width:380px; margin-left:auto; margin-right:auto; border-radius:16px; padding:18px; color:#fff; text-align:center; background:linear-gradient(135deg,var(--oa),var(--ob)); margin-top:8px; }
       .ofr-prev b { font-size:34px; display:block; }
-      .ofr-prev-white { position:relative; overflow:hidden; border:1px solid var(--border-color); border-radius:0 0 16px 16px; margin-top:-6px; padding:16px; min-height:96px; background:#fff; text-align:center; color:#1e293b; }
-      .ofr-prev-white > span { position:relative; z-index:1; font-weight:800; font-size:13px; }
-      .ofr-bgl, .ofr-bgl i { position:absolute; inset:0; pointer-events:none; }
-      .ofr-bgl i { background-size:cover; background-position:center; }
+      .ofr-prev-white { position:relative; overflow:hidden; border:1px solid var(--border-color); border-radius:0 0 16px 16px; margin:-6px auto 0; max-width:380px; padding:16px 16px 18px; min-height:300px; background:#fff; text-align:center; color:#1e293b; }
+            .ofr-bgl { position:absolute; inset:0; display:grid; pointer-events:none; }
+      .ofr-bgl.stack { display:block; }
+      .ofr-bgl .c { position:relative; overflow:hidden; min-height:0; min-width:0; }
+      .ofr-bgl.stack .c { position:absolute; inset:0; }
+      .ofr-bgl i { position:absolute; background-size:cover; background-position:center; }
+      .ofr-pvw { position:relative; z-index:1; padding:6px 4px; }
+      .ofr-pvw h4 { margin:0 0 6px; font-size:22px; font-weight:900; }
+      .ofr-pvw p { margin:0 0 10px; font-size:13px; line-height:1.7; white-space:pre-line; }
+      .ofr-pvw .chip { display:inline-block; font-size:12px; font-weight:700; padding:4px 12px; border-radius:30px; background:#f1f5f9; border:1px solid #e2e8f0; color:#b45309; margin-bottom:10px; }
+      .ofr-pvw .tl { font-size:12px; font-weight:700; margin-bottom:6px; color:#64748b; }
+      .ofr-pvw .tm { display:flex; gap:6px; justify-content:center; direction:ltr; margin-bottom:12px; }
+      .ofr-pvw .tm div { min-width:46px; padding:6px 0; border-radius:12px; background:#f1f5f9; border:1px solid #e2e8f0; }
+      .ofr-pvw .tm b { display:block; font-size:18px; font-weight:900; color:#b45309; }
+      .ofr-pvw .tm small { font-size:10px; color:#64748b; font-weight:700; }
+      .ofr-pvw .cta { border-radius:14px; padding:12px; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--oa),var(--ob)); }
+      .ofr-tsrow { display:grid; grid-template-columns:96px auto 1fr; gap:8px; align-items:center; margin-top:8px; }
+      .ofr-tsrow > span.n { font-size:12px; font-weight:800; }
+      .ofr-tsrow input[type=color] { width:38px; height:32px; padding:0; border:1px solid var(--border-color); border-radius:8px; background:#fff; cursor:pointer; }
+      .ofr-tsrow select { min-width:0; }
+      .ofr-tsrow .st { font-size:10px; color:#94a3b8; font-weight:700; margin-inline-start:4px; }
       .ofr-bgrow { display:flex; gap:12px; align-items:center; border:1px solid var(--border-color); border-radius:14px; padding:10px; margin-top:10px; background:#f8fafc; }
       .ofr-bgrow .th { width:64px; height:64px; flex:0 0 64px; border-radius:10px; background-size:cover; background-position:center; border:1px solid var(--border-color); }
       .ofr-bgrow .ctl { flex:1; min-width:0; }
@@ -10865,16 +10882,25 @@ function calculatePreviewTotals() {
           <button type="button" class="btn" onclick="ofrClose()" style="width:auto"><i class="fas fa-times"></i></button>
         </div>
         <div id="ofr-prev" class="ofr-prev"><b id="ofr-prev-pct">20%</b><span id="ofr-prev-title">عنوان العرض</span></div>
-        <div id="ofr-prev-white" class="ofr-prev-white"><div class="ofr-bgl" id="ofr-prev-bgl"></div><span>معاينة الجزء الأبيض</span></div>
+        <div id="ofr-prev-white" class="ofr-prev-white"><div class="ofr-bgl" id="ofr-prev-bgl"></div>
+          <div class="ofr-pvw">
+            <h4 id="pv-title">عنوان العرض</h4>
+            <p id="pv-msg">رسالة العرض هتظهر هنا</p>
+            <span class="chip" id="pv-chip">على المنيو بالكامل</span>
+            <div class="tl" id="pv-tl">⏳ العرض ينتهي خلال</div>
+            <div class="tm" id="pv-tm"><div><b>02</b><small>يوم</small></div><div><b>10</b><small>ساعة</small></div><div><b>45</b><small>دقيقة</small></div><div><b>30</b><small>ثانية</small></div></div>
+            <div class="cta" id="pv-btn">اطلب دلوقتي 🎉</div>
+          </div>
+        </div>
 
         <div class="ofr-sec">المحتوى</div>
         <label class="ofr-lbl">عنوان العرض</label>
         <input type="text" id="ofr-title" maxlength="60" placeholder="مثال: عرض الافتتاح" oninput="ofrPrev()" />
         <label class="ofr-lbl">الرسالة اللي هتظهر للعميل</label>
-        <textarea id="ofr-message" rows="3" maxlength="240" placeholder="مثال: خصم 50% على المنيو بالكامل لفترة محدودة!"></textarea>
+        <textarea id="ofr-message" oninput="ofrPrev()" rows="3" maxlength="240" placeholder="مثال: خصم 50% على المنيو بالكامل لفترة محدودة!"></textarea>
         <div class="ofr-row">
           <div><label class="ofr-lbl">نسبة الخصم %</label><input type="number" id="ofr-percent" min="1" max="100" value="20" oninput="ofrPrev()" /></div>
-          <div><label class="ofr-lbl">نص الزرار</label><input type="text" id="ofr-btn" maxlength="24" value="اطلب دلوقتي" /></div>
+          <div><label class="ofr-lbl">نص الزرار</label><input type="text" id="ofr-btn" oninput="ofrPrev()" maxlength="24" value="اطلب دلوقتي" /></div>
         </div>
         <div class="ofr-row">
           <div><label class="ofr-lbl">نص الشارة</label><input type="text" id="ofr-badge" maxlength="16" placeholder="خصم" /></div>
@@ -10907,7 +10933,21 @@ function calculatePreviewTotals() {
         <div id="ofr-bg-list"></div>
         <input type="file" id="ofr-bg-file" accept="image/png,image/jpeg,image/webp" multiple style="display:none" onchange="ofrBgAdd(this)" />
         <button type="button" class="btn" id="ofr-bg-add" style="margin-top:10px" onclick="document.getElementById('ofr-bg-file').click()"><i class="fas fa-image"></i> إضافة صورة</button>
-        <div style="font-size:11px;color:#94a3b8;margin-top:6px">لحد 6 صور. الصور بتتحط فوق بعض بالترتيب (الأولى تحت)، ولكل صورة شفافية وblur مستقلين.</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:6px">لحد 6 صور، ولكل صورة شفافية وblur مستقلين.</div>
+        <div id="ofr-bg-layout-wrap" style="display:none">
+          <label class="ofr-lbl">طريقة تقسيم الصور</label>
+          <div class="ofr-chips" id="ofr-bg-layout"></div>
+          <label class="ofr-lbl" id="ofr-bg-gap-wrap">المسافة بين الصور <b id="ofr-bg-gap-v" style="color:var(--primary);direction:ltr;display:inline-block">6px</b></label>
+          <input type="range" id="ofr-bg-gap" min="0" max="24" step="1" value="6" style="padding:0" oninput="ofrBgGap(this.value)" />
+        </div>
+
+        <div class="ofr-sec">🔤 ألوان وخطوط النصوص</div>
+        <div class="ofr-tsrow" style="background:#f8fafc;border-radius:12px;padding:8px">
+          <span class="n">الكل</span>
+          <input type="color" id="ofr-ts-all-c" value="#000000" />
+          <div style="display:flex;gap:6px"><select id="ofr-ts-all-f" style="flex:1;min-width:0"></select><button type="button" class="btn btn-primary" style="width:auto;white-space:nowrap" onclick="ofrTSAll()">طبّق على الكل</button></div>
+        </div>
+        <div id="ofr-ts-list"></div>
 
         <label class="ofr-lbl">تكرار ظهور البوب أب</label>
         <select id="ofr-freq">
@@ -10932,7 +10972,7 @@ function calculatePreviewTotals() {
       (function () {
         var THEMES = { gold:["#f59e0b","#b45309"], fire:["#ef4444","#9a3412"], royal:["#7c3aed","#312e81"], emerald:["#10b981","#065f46"], night:["#334155","#0f172a"], rose:["#ec4899","#9d174d"] };
         var ICONS = { percent:"fa-percent", fire:"fa-fire", gift:"fa-gift", star:"fa-star", bolt:"fa-bolt", crown:"fa-crown", tag:"fa-tag" };
-        var cur = null, selCats = [], selProds = [], scope = "all", theme = "gold", icon = "percent", bgImgs = [];
+        var cur = null, selCats = [], selProds = [], scope = "all", theme = "gold", icon = "percent", bgImgs = [], bgLayout = "auto", bgGap = 6, textStyle = {};
 
         function list() { return Array.isArray(window.offersData) ? window.offersData : []; }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]; }); }
@@ -10976,13 +11016,76 @@ function calculatePreviewTotals() {
         };
         // ---------- صور خلفية الجزء الأبيض ----------
         function bgUrl(u) { return String(u || "").replace(/["'()\\\s<>]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); }); }
+        var FONTS = { "Tajawal":1, "Cairo":1, "Almarai":1, "Amiri":1, "Zain":1, "Changa":1, "El Messiri":1, "Reem Kufi":1, "Readex Pro":1, "IBM Plex Sans Arabic":1, "Noto Kufi Arabic":1, "Markazi Text":1, "Mada":1, "Harmattan":1, "Lemonada":1, "Rubik":1, "Baloo Bhaijaan 2":1, "Aref Ruqaa":1, "Lalezar":0, "Katibeh":0 };
+        var TS_KEYS = [["badge","الشارة (النسبة)"],["title","العنوان"],["message","الرسالة"],["chips","شارات النطاق"],["timerLabel","نص العداد"],["timer","أرقام العداد"],["button","الزرار"]];
+        var LAYOUTS = [["auto","تلقائي"],["stack","فوق بعض"],["columns","أعمدة"],["rows","صفوف"],["grid","شبكة"],["mosaic","موزايك"]];
+        var fontsLoaded = {};
+        function loadFont(n) {
+          if (!Object.prototype.hasOwnProperty.call(FONTS, n) || fontsLoaded[n]) return; fontsLoaded[n] = true;
+          var l = document.createElement("link"); l.rel = "stylesheet";
+          l.href = "https://fonts.googleapis.com/css2?family=" + encodeURIComponent(n).replace(/%20/g, "+") + (FONTS[n] ? ":wght@400;700" : "") + "&display=swap";
+          document.head.appendChild(l);
+        }
+        function effLayout() {
+          var n = bgImgs.length, l = bgLayout;
+          if (l === "auto") l = n === 1 ? "stack" : n === 2 ? "columns" : n === 3 ? "mosaic" : "grid";
+          return n === 1 ? "stack" : l;
+        }
         function bgPreview() {
           var box = $("ofr-prev-bgl"); if (!box) return;
-          box.innerHTML = bgImgs.map(function (b) {
-            var bl = Number(b.blur) || 0;
-            return '<i style="inset:' + (bl ? -bl * 2 : 0) + "px;background-image:url('" + bgUrl(b.url) + "');opacity:" + (Number(b.opacity) / 100) + ";filter:blur(" + bl + 'px)"></i>';
+          var n = bgImgs.length, l = effLayout(), g = bgGap + "px", st = "";
+          if (l === "columns") st = "grid-template-columns:repeat(" + n + ",1fr);gap:" + g;
+          else if (l === "rows") st = "grid-template-rows:repeat(" + n + ",1fr);gap:" + g;
+          else if (l === "grid") st = "grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;gap:" + g;
+          else if (l === "mosaic") st = "grid-template-columns:1.15fr 1fr;grid-template-rows:repeat(" + (n - 1) + ",1fr);gap:" + g;
+          box.className = "ofr-bgl" + (l === "stack" ? " stack" : ""); box.style.cssText = st;
+          box.innerHTML = bgImgs.map(function (b, k) {
+            var bl = Number(b.blur) || 0, cs = "";
+            if (l === "grid" && n % 2 === 1 && k === n - 1) cs = ' style="grid-column:1/-1"';
+            if (l === "mosaic" && k === 0) cs = ' style="grid-row:1/span ' + (n - 1) + '"';
+            return '<div class="c"' + cs + '><i style="inset:' + (bl ? -bl * 2 : 0) + "px;background-image:url('" + bgUrl(b.url) + "');opacity:" + (Number(b.opacity) / 100) + ";filter:blur(" + bl + 'px)"></i></div>';
           }).join("");
         }
+        function applyTS(el, key) {
+          if (!el) return; var t = textStyle[key] || {};
+          el.style.color = t.color || ""; el.style.fontFamily = t.font ? "'" + t.font + "',sans-serif" : "";
+          if (t.font) loadFont(t.font);
+        }
+        function textPreview() {
+          var q = function (id) { return $(id); };
+          q("pv-title").textContent = $("ofr-title").value || "عنوان العرض";
+          q("pv-msg").textContent = $("ofr-message").value || "رسالة العرض هتظهر هنا";
+          q("pv-btn").textContent = ($("ofr-btn").value || "اطلب دلوقتي") + " 🎉";
+          applyTS(q("pv-title"), "title"); applyTS(q("pv-msg"), "message"); applyTS(q("pv-chip"), "chips");
+          applyTS(q("pv-tl"), "timerLabel"); applyTS(q("pv-btn"), "button"); applyTS($("ofr-prev-pct"), "badge");
+          Array.prototype.forEach.call(q("pv-tm").querySelectorAll("b,small"), function (e) { applyTS(e, "timer"); });
+        }
+        function fontOpts(sel) { return '<option value="">الخط الافتراضي</option>' + Object.keys(FONTS).map(function (f) { return '<option value="' + esc(f) + '"' + (sel === f ? " selected" : "") + ">" + esc(f) + "</option>"; }).join(""); }
+        function tsRender() {
+          $("ofr-ts-all-f").innerHTML = fontOpts("");
+          $("ofr-ts-list").innerHTML = TS_KEYS.map(function (k) {
+            var t = textStyle[k[0]] || {};
+            return '<div class="ofr-tsrow"><span class="n">' + k[1] + '</span>' +
+              '<div style="display:flex;align-items:center"><input type="color" value="' + (t.color || "#000000") + '" oninput="ofrTS(\'' + k[0] + '\',\'color\',this.value,this)" /><span class="st">' + (t.color ? "مخصص" : "تلقائي") + '</span></div>' +
+              '<div style="display:flex;gap:6px"><select style="flex:1" onchange="ofrTS(\'' + k[0] + '\',\'font\',this.value)">' + fontOpts(t.font) + '</select>' +
+              '<button type="button" class="btn" style="width:auto;padding:0 10px" title="إرجاع للافتراضي" onclick="ofrTSReset(\'' + k[0] + '\')"><i class="fas fa-undo"></i></button></div></div>';
+          }).join("");
+        }
+        window.ofrTS = function (key, prop, val, el) {
+          var t = textStyle[key] = textStyle[key] || {};
+          if (val) t[prop] = val; else delete t[prop];
+          if (!t.color && !t.font) delete textStyle[key];
+          if (prop === "color" && el && el.nextSibling) el.nextSibling.textContent = "مخصص";
+          textPreview();
+        };
+        window.ofrTSReset = function (key) { delete textStyle[key]; tsRender(); textPreview(); };
+        window.ofrTSAll = function () {
+          var c = $("ofr-ts-all-c").value, f = $("ofr-ts-all-f").value;
+          TS_KEYS.forEach(function (k) { var t = { color: c }; if (f) t.font = f; textStyle[k[0]] = t; });
+          tsRender(); textPreview();
+        };
+        window.ofrBgLayout = function (l) { bgLayout = l; bgRender(); };
+        window.ofrBgGap = function (v) { bgGap = Number(v); $("ofr-bg-gap-v").textContent = v + "px"; bgPreview(); };
         function bgRender() {
           var box = $("ofr-bg-list"); if (!box) return;
           box.innerHTML = bgImgs.map(function (b, i) {
@@ -10995,6 +11098,10 @@ function calculatePreviewTotals() {
               '<button type="button" title="حذف" style="color:var(--danger)" onclick="ofrBgDel(' + i + ')"><i class="fas fa-trash"></i></button></div></div>';
           }).join("");
           var add = $("ofr-bg-add"); if (add) add.style.display = bgImgs.length >= 6 ? "none" : "";
+          var lw = $("ofr-bg-layout-wrap"); if (lw) lw.style.display = bgImgs.length > 1 ? "block" : "none";
+          $("ofr-bg-layout").innerHTML = LAYOUTS.map(function (l) { return '<div class="ofr-chip ' + (l[0] === bgLayout ? "on" : "") + '" onclick="ofrBgLayout(\'' + l[0] + '\')">' + l[1] + '</div>'; }).join("");
+          $("ofr-bg-gap").value = bgGap; $("ofr-bg-gap-v").textContent = bgGap + "px";
+          $("ofr-bg-gap-wrap").style.display = effLayout() === "stack" ? "none" : ""; $("ofr-bg-gap").style.display = effLayout() === "stack" ? "none" : "";
           bgPreview();
         }
         window.ofrBgSet = function (i, key, val, el) {
@@ -11032,6 +11139,7 @@ function calculatePreviewTotals() {
           p.style.setProperty("--oa", t[0]); p.style.setProperty("--ob", t[1]);
           $("ofr-prev-pct").textContent = ($("ofr-percent").value || 0) + "%";
           $("ofr-prev-title").textContent = $("ofr-title").value || "عنوان العرض";
+          textPreview();
         };
 
         window.ofrOpenEditor = async function (i) {
@@ -11050,6 +11158,10 @@ function calculatePreviewTotals() {
           $("ofr-apply").checked = o.applyPrices !== false; $("ofr-popup").checked = o.showPopup !== false; $("ofr-enabled").checked = o.enabled !== false;
           bgImgs = (Array.isArray(o.bgImages) ? o.bgImages : []).map(function (b) { return { url: b.url, opacity: isFinite(Number(b.opacity)) ? Number(b.opacity) : 40, blur: Number(b.blur) || 0 }; });
           bgRender();
+          bgLayout = ["auto","stack","columns","rows","grid","mosaic"].indexOf(o.bgLayout) > -1 ? o.bgLayout : "auto";
+          bgGap = isFinite(Number(o.bgGap)) && o.bgGap !== undefined && o.bgGap !== null ? Number(o.bgGap) : 6;
+          textStyle = JSON.parse(JSON.stringify(o.textStyle || {}));
+          tsRender(); bgRender(); textPreview();
           chips(); ofrRenderProds();
           $("ofr-modal").classList.remove("hidden");
         };
@@ -11082,6 +11194,7 @@ function calculatePreviewTotals() {
             scope: scope, categories: scope === "categories" ? selCats.slice() : [], productIds: scope === "products" ? selProds.slice() : [],
             applyPrices: $("ofr-apply").checked, showPopup: $("ofr-popup").checked,
             startsAt: s ? new Date(s).toISOString() : null, endsAt: e ? new Date(e).toISOString() : null,
+            bgLayout: bgLayout, bgGap: bgGap, textStyle: JSON.parse(JSON.stringify(textStyle)),
             bgImages: bgImgs.map(function (b) { return { url: b.url, opacity: Number(b.opacity), blur: Number(b.blur) || 0 }; }),
             theme: theme, icon: icon, buttonText: $("ofr-btn").value.trim() || "اطلب دلوقتي", frequency: $("ofr-freq").value
           };
