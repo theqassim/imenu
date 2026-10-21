@@ -10844,6 +10844,18 @@ function calculatePreviewTotals() {
       .ofr-box { background:#fff; border-radius:20px; width:100%; max-width:640px; padding:20px; direction:rtl; }
       .ofr-prev { border-radius:16px; padding:18px; color:#fff; text-align:center; background:linear-gradient(135deg,var(--oa),var(--ob)); margin-top:8px; }
       .ofr-prev b { font-size:34px; display:block; }
+      .ofr-prev-white { position:relative; overflow:hidden; border:1px solid var(--border-color); border-radius:0 0 16px 16px; margin-top:-6px; padding:16px; min-height:96px; background:#fff; text-align:center; color:#1e293b; }
+      .ofr-prev-white > span { position:relative; z-index:1; font-weight:800; font-size:13px; }
+      .ofr-bgl, .ofr-bgl i { position:absolute; inset:0; pointer-events:none; }
+      .ofr-bgl i { background-size:cover; background-position:center; }
+      .ofr-bgrow { display:flex; gap:12px; align-items:center; border:1px solid var(--border-color); border-radius:14px; padding:10px; margin-top:10px; background:#f8fafc; }
+      .ofr-bgrow .th { width:64px; height:64px; flex:0 0 64px; border-radius:10px; background-size:cover; background-position:center; border:1px solid var(--border-color); }
+      .ofr-bgrow .ctl { flex:1; min-width:0; }
+      .ofr-bgrow .ctl label { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; margin:2px 0; }
+      .ofr-bgrow .ctl label b { min-width:44px; direction:ltr; text-align:left; color:var(--primary); }
+      .ofr-bgrow .ctl input[type=range] { flex:1; min-width:0; padding:0; }
+      .ofr-bgrow .acts { display:flex; flex-direction:column; gap:4px; }
+      .ofr-bgrow .acts button { width:30px; height:30px; padding:0; border-radius:8px; border:1px solid var(--border-color); background:#fff; cursor:pointer; }
       @media (max-width:600px){ .ofr-row{grid-template-columns:1fr;} }
     </style>
     <div id="ofr-modal" class="ofr-modal hidden">
@@ -10853,6 +10865,7 @@ function calculatePreviewTotals() {
           <button type="button" class="btn" onclick="ofrClose()" style="width:auto"><i class="fas fa-times"></i></button>
         </div>
         <div id="ofr-prev" class="ofr-prev"><b id="ofr-prev-pct">20%</b><span id="ofr-prev-title">عنوان العرض</span></div>
+        <div id="ofr-prev-white" class="ofr-prev-white"><div class="ofr-bgl" id="ofr-prev-bgl"></div><span>معاينة الجزء الأبيض</span></div>
 
         <div class="ofr-sec">المحتوى</div>
         <label class="ofr-lbl">عنوان العرض</label>
@@ -10890,6 +10903,12 @@ function calculatePreviewTotals() {
         <div class="ofr-chips" id="ofr-themes"></div>
         <label class="ofr-lbl">الأيقونة</label>
         <div class="ofr-chips" id="ofr-icons"></div>
+        <div class="ofr-sec">🖼️ خلفية الجزء الأبيض (اختياري)</div>
+        <div id="ofr-bg-list"></div>
+        <input type="file" id="ofr-bg-file" accept="image/png,image/jpeg,image/webp" multiple style="display:none" onchange="ofrBgAdd(this)" />
+        <button type="button" class="btn" id="ofr-bg-add" style="margin-top:10px" onclick="document.getElementById('ofr-bg-file').click()"><i class="fas fa-image"></i> إضافة صورة</button>
+        <div style="font-size:11px;color:#94a3b8;margin-top:6px">لحد 6 صور. الصور بتتحط فوق بعض بالترتيب (الأولى تحت)، ولكل صورة شفافية وblur مستقلين.</div>
+
         <label class="ofr-lbl">تكرار ظهور البوب أب</label>
         <select id="ofr-freq">
           <option value="always">في كل زيارة</option>
@@ -10913,7 +10932,7 @@ function calculatePreviewTotals() {
       (function () {
         var THEMES = { gold:["#f59e0b","#b45309"], fire:["#ef4444","#9a3412"], royal:["#7c3aed","#312e81"], emerald:["#10b981","#065f46"], night:["#334155","#0f172a"], rose:["#ec4899","#9d174d"] };
         var ICONS = { percent:"fa-percent", fire:"fa-fire", gift:"fa-gift", star:"fa-star", bolt:"fa-bolt", crown:"fa-crown", tag:"fa-tag" };
-        var cur = null, selCats = [], selProds = [], scope = "all", theme = "gold", icon = "percent";
+        var cur = null, selCats = [], selProds = [], scope = "all", theme = "gold", icon = "percent", bgImgs = [];
 
         function list() { return Array.isArray(window.offersData) ? window.offersData : []; }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]; }); }
@@ -10955,6 +10974,59 @@ function calculatePreviewTotals() {
           var ps = (window.allProductsGlobal || []).filter(function (p) { return !q || ((p.name && p.name.ar) || "").toLowerCase().indexOf(q) > -1; });
           $("ofr-prods").innerHTML = ps.map(function (p) { return '<div class="ofr-chip ' + (selProds.indexOf(p._id) > -1 ? "on" : "") + '" data-id="' + esc(p._id) + '" onclick="ofrProd(this)">' + esc(p.name && p.name.ar) + '</div>'; }).join("") || '<span style="color:#94a3b8;font-size:13px">لا توجد منتجات</span>';
         };
+        // ---------- صور خلفية الجزء الأبيض ----------
+        function bgUrl(u) { return String(u || "").replace(/["'()\\\s<>]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); }); }
+        function bgPreview() {
+          var box = $("ofr-prev-bgl"); if (!box) return;
+          box.innerHTML = bgImgs.map(function (b) {
+            var bl = Number(b.blur) || 0;
+            return '<i style="inset:' + (bl ? -bl * 2 : 0) + "px;background-image:url('" + bgUrl(b.url) + "');opacity:" + (Number(b.opacity) / 100) + ";filter:blur(" + bl + 'px)"></i>';
+          }).join("");
+        }
+        function bgRender() {
+          var box = $("ofr-bg-list"); if (!box) return;
+          box.innerHTML = bgImgs.map(function (b, i) {
+            return '<div class="ofr-bgrow"><div class="th" style="background-image:url(\'' + bgUrl(b.url) + '\')"></div>' +
+              '<div class="ctl">' +
+              '<label>الشفافية <input type="range" min="0" max="100" step="1" value="' + b.opacity + '" oninput="ofrBgSet(' + i + ',\'opacity\',this.value,this)"> <b>' + b.opacity + '%</b></label>' +
+              '<label>Blur <input type="range" min="0" max="30" step="1" value="' + b.blur + '" oninput="ofrBgSet(' + i + ',\'blur\',this.value,this)"> <b>' + b.blur + 'px</b></label></div>' +
+              '<div class="acts"><button type="button" title="لفوق" onclick="ofrBgMove(' + i + ',-1)"><i class="fas fa-arrow-up"></i></button>' +
+              '<button type="button" title="لتحت" onclick="ofrBgMove(' + i + ',1)"><i class="fas fa-arrow-down"></i></button>' +
+              '<button type="button" title="حذف" style="color:var(--danger)" onclick="ofrBgDel(' + i + ')"><i class="fas fa-trash"></i></button></div></div>';
+          }).join("");
+          var add = $("ofr-bg-add"); if (add) add.style.display = bgImgs.length >= 6 ? "none" : "";
+          bgPreview();
+        }
+        window.ofrBgSet = function (i, key, val, el) {
+          if (!bgImgs[i]) return;
+          bgImgs[i][key] = Number(val);
+          var b = el && el.parentNode && el.parentNode.querySelector("b");
+          if (b) b.textContent = val + (key === "opacity" ? "%" : "px");
+          bgPreview();
+        };
+        window.ofrBgDel = function (i) { bgImgs.splice(i, 1); bgRender(); };
+        window.ofrBgMove = function (i, d) {
+          var j = i + d; if (j < 0 || j >= bgImgs.length) return;
+          var t = bgImgs[i]; bgImgs[i] = bgImgs[j]; bgImgs[j] = t; bgRender();
+        };
+        window.ofrBgAdd = async function (inp) {
+          var files = Array.prototype.slice.call(inp.files || []); inp.value = "";
+          if (!files.length) return;
+          var btn = $("ofr-bg-add"), old = btn.innerHTML; btn.disabled = true;
+          try {
+            for (var k = 0; k < files.length && bgImgs.length < 6; k++) {
+              btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري رفع ' + (k + 1) + "/" + files.length;
+              var fd = new FormData(); fd.append("image", files[k]);
+              var res = await fetch("/api/v1/offers/upload-bg", { method: "POST", headers: { Authorization: "Bearer " + token }, body: fd });
+              var d = await res.json().catch(function () { return {}; });
+              if (!res.ok || !d.url) { Swal.fire("خطأ", d.message || "فشل رفع الصورة", "error"); break; }
+              bgImgs.push({ url: d.url, opacity: 40, blur: 0 });
+              bgRender();
+            }
+          } catch (e) { Swal.fire("خطأ", "فشل الاتصال بالسيرفر", "error"); }
+          btn.innerHTML = old; btn.disabled = false; bgRender();
+        };
+
         window.ofrPrev = function () {
           var t = THEMES[theme] || THEMES.gold, p = $("ofr-prev"); if (!p) return;
           p.style.setProperty("--oa", t[0]); p.style.setProperty("--ob", t[1]);
@@ -10976,6 +11048,8 @@ function calculatePreviewTotals() {
           $("ofr-start").value = toLocal(o.startsAt); $("ofr-end").value = toLocal(o.endsAt);
           $("ofr-freq").value = o.frequency || "session"; $("ofr-psearch").value = "";
           $("ofr-apply").checked = o.applyPrices !== false; $("ofr-popup").checked = o.showPopup !== false; $("ofr-enabled").checked = o.enabled !== false;
+          bgImgs = (Array.isArray(o.bgImages) ? o.bgImages : []).map(function (b) { return { url: b.url, opacity: isFinite(Number(b.opacity)) ? Number(b.opacity) : 40, blur: Number(b.blur) || 0 }; });
+          bgRender();
           chips(); ofrRenderProds();
           $("ofr-modal").classList.remove("hidden");
         };
@@ -11008,6 +11082,7 @@ function calculatePreviewTotals() {
             scope: scope, categories: scope === "categories" ? selCats.slice() : [], productIds: scope === "products" ? selProds.slice() : [],
             applyPrices: $("ofr-apply").checked, showPopup: $("ofr-popup").checked,
             startsAt: s ? new Date(s).toISOString() : null, endsAt: e ? new Date(e).toISOString() : null,
+            bgImages: bgImgs.map(function (b) { return { url: b.url, opacity: Number(b.opacity), blur: Number(b.blur) || 0 }; }),
             theme: theme, icon: icon, buttonText: $("ofr-btn").value.trim() || "اطلب دلوقتي", frequency: $("ofr-freq").value
           };
           var arr = list().slice(); if (cur !== null) arr[cur] = o; else arr.push(o);
