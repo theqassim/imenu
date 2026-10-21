@@ -836,6 +836,15 @@ const _clampNum = (v, min, max, def) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
 };
+// الخطوط المسموحة (whitelist) — نفس القائمة في menu.html و admin.html
+const OFFER_FONTS = [
+  "Tajawal", "Cairo", "Almarai", "Amiri", "Zain", "Changa", "El Messiri", "Reem Kufi",
+  "Readex Pro", "IBM Plex Sans Arabic", "Noto Kufi Arabic", "Markazi Text", "Mada", "Harmattan",
+  "Lemonada", "Rubik", "Baloo Bhaijaan 2", "Aref Ruqaa", "Lalezar", "Katibeh",
+];
+const OFFER_TEXT_KEYS = ["badge", "title", "message", "chips", "timerLabel", "timer", "button"];
+const OFFER_BG_LAYOUTS = ["auto", "stack", "columns", "rows", "grid", "mosaic"];
+
 function sanitizeOfferBgImages(o) {
   if (!o || typeof o !== "object") return o;
   const imgs = (Array.isArray(o.bgImages) ? o.bgImages : [])
@@ -846,7 +855,26 @@ function sanitizeOfferBgImages(o) {
       opacity: _clampNum(i.opacity, 0, 100, 40), // % شفافية
       blur: _clampNum(i.blur, 0, 30, 0),         // px
     }));
-  return { ...o, bgImages: imgs };
+
+  // 🔤 ألوان وخطوط النصوص لكل عنصر (قيم مسموحة بس)
+  const textStyle = {};
+  const ts = o.textStyle && typeof o.textStyle === "object" ? o.textStyle : {};
+  OFFER_TEXT_KEYS.forEach((k) => {
+    const t = ts[k];
+    if (!t || typeof t !== "object") return;
+    const item = {};
+    if (typeof t.color === "string" && /^#[0-9a-fA-F]{6}$/.test(t.color.trim())) item.color = t.color.trim();
+    if (typeof t.font === "string" && OFFER_FONTS.includes(t.font)) item.font = t.font;
+    if (item.color || item.font) textStyle[k] = item;
+  });
+
+  return {
+    ...o,
+    bgImages: imgs,
+    bgLayout: OFFER_BG_LAYOUTS.includes(o.bgLayout) ? o.bgLayout : "auto",
+    bgGap: _clampNum(o.bgGap, 0, 24, 6),
+    textStyle,
+  };
 }
 
 // رفع صورة خلفية للعرض (بيرجع الـ URL بس، والحفظ بيتم مع باقي العرض عن طريق PATCH /restaurants/:id)
