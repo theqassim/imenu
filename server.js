@@ -827,9 +827,47 @@ function ensureOffersColumn() {
 const isMissingOffersColumn = (err) =>
   !!err && /offers/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
 
+// ==========================================
+// 🖼️ صور خلفية بوب أب العروض (الجزء الأبيض)
+// ==========================================
+// الصور بتتخزن كـ URL جوه كل عرض في عمود offers (jsonb) => offer.bgImages = [{ url, opacity, blur }]
+// فمفيش جدول جديد مطلوب، وعمود offers بيتعمل تلقائياً بواسطة ensureOffersColumn().
+const _clampNum = (v, min, max, def) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
+};
+function sanitizeOfferBgImages(o) {
+  if (!o || typeof o !== "object") return o;
+  const imgs = (Array.isArray(o.bgImages) ? o.bgImages : [])
+    .filter((i) => i && typeof i.url === "string" && /^https?:\/\//i.test(i.url.trim()))
+    .slice(0, 6) // أقصى عدد صور لكل عرض
+    .map((i) => ({
+      url: i.url.trim(),
+      opacity: _clampNum(i.opacity, 0, 100, 40), // % شفافية
+      blur: _clampNum(i.blur, 0, 30, 0),         // px
+    }));
+  return { ...o, bgImages: imgs };
+}
+
+// رفع صورة خلفية للعرض (بيرجع الـ URL بس، والحفظ بيتم مع باقي العرض عن طريق PATCH /restaurants/:id)
+app.post("/api/v1/offers/upload-bg", protect, upload.single("image"), async (req, res) => {
+  try {
+    if (!req.file || !req.file.path) return res.status(400).json({ message: "مفيش صورة اتبعتت" });
+    // 🛠️ تأكد إن عمود offers موجود قبل ما الأدمن يحفظ العرض
+    ensureOffersColumn().catch(() => {});
+    res.status(200).json({ status: "success", url: req.file.path });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
     let updateData = { ...req.body };
+    if (typeof updateData.offers === "string") {
+      try { updateData.offers = JSON.parse(updateData.offers); } catch (e) { delete updateData.offers; }
+    }
+    if (Array.isArray(updateData.offers)) updateData.offers = updateData.offers.map(sanitizeOfferBgImages);
     if (updateData.customUI && typeof updateData.customUI === "string") {
       try { updateData.customUI = JSON.parse(updateData.customUI); } catch (e) { updateData.customUI = {}; }
     }
