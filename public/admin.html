@@ -11058,7 +11058,7 @@ function calculatePreviewTotals() {
         }
         function applyTS(el, key) {
           if (!el) return; var t = textStyle[key] || {};
-          el.style.color = t.color || ""; el.style.fontFamily = t.font ? "'" + t.font + "',sans-serif" : "";
+          el.style.fontWeight = t.weight || ""; el.style.color = t.color || ""; el.style.fontFamily = t.font ? "'" + t.font + "',sans-serif" : "";
           if (t.font) loadFont(t.font);
         }
         function textPreview() {
@@ -11071,6 +11071,7 @@ function calculatePreviewTotals() {
           Array.prototype.forEach.call(q("pv-tm").querySelectorAll("b,small"), function (e) { applyTS(e, "timer"); });
         }
         function fontOpts(sel) { return '<option value="">الخط الافتراضي</option>' + Object.keys(FONTS).map(function (f) { return '<option value="' + esc(f) + '"' + (sel === f ? " selected" : "") + ">" + esc(f) + "</option>"; }).join(""); }
+        function weightOpts(sel) { return [["","تلقائي"],["400","عادي"],["700","تقيل"],["900","تقيل جداً"]].map(function (w) { return '<option value="' + w[0] + '"' + (String(sel || "") === w[0] ? " selected" : "") + ">" + w[1] + "</option>"; }).join(""); }
         function tsRender() {
           $("ofr-ts-all-f").innerHTML = fontOpts("");
           $("ofr-ts-list").innerHTML = TS_KEYS.map(function (k) {
@@ -11078,13 +11079,14 @@ function calculatePreviewTotals() {
             return '<div class="ofr-tsrow"><span class="n">' + k[1] + '</span>' +
               '<div style="display:flex;align-items:center"><input type="color" value="' + (t.color || "#000000") + '" oninput="ofrTS(\'' + k[0] + '\',\'color\',this.value,this)" /><span class="st">' + (t.color ? "مخصص" : "تلقائي") + '</span></div>' +
               '<div style="display:flex;gap:6px"><select style="flex:1" onchange="ofrTS(\'' + k[0] + '\',\'font\',this.value)">' + fontOpts(t.font) + '</select>' +
+              '<select style="width:84px" title="تقل الخط" onchange="ofrTS(\'' + k[0] + '\',\'weight\',this.value)">' + weightOpts(t.weight) + '</select>' +
               '<button type="button" class="btn" style="width:auto;padding:0 10px" title="إرجاع للافتراضي" onclick="ofrTSReset(\'' + k[0] + '\')"><i class="fas fa-undo"></i></button></div></div>';
           }).join("");
         }
         window.ofrTS = function (key, prop, val, el) {
           var t = textStyle[key] = textStyle[key] || {};
           if (val) t[prop] = val; else delete t[prop];
-          if (!t.color && !t.font) delete textStyle[key];
+          if (!t.color && !t.font && !t.weight) delete textStyle[key];
           if (prop === "color" && el && el.nextSibling) el.nextSibling.textContent = "مخصص";
           textPreview();
         };
