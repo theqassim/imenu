@@ -969,7 +969,7 @@
         flex: 1;
       }
       .layout-grid .prod-desc {
-        display: none;
+        display: -webkit-box;
       }
 
       .layout-minimal .prod-card {
@@ -993,7 +993,7 @@
         justify-content: space-between;
       }
       .layout-minimal .prod-desc {
-        display: none;
+        display: -webkit-box;
       }
 
       .style-glass .prod-card {
@@ -2502,7 +2502,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                             <div class="prod-content">
                             <div style="flex:1">
                                 <h3 class="prod-title">${p.name.ar}${hasDiscount ? `<span class="disc-tag">خصم${Number(p.oldPrice) > 0 && !(p.sizes && p.sizes.length) ? " " + Math.round((1 - Number(p.price) / Number(p.oldPrice)) * 100) + "%" : ""}</span>` : ""}</h3>
-                                <p class="prod-desc">${p.description.ar}</p>
+                                ${p.description && p.description.ar ? `<p class="prod-desc">${p.description.ar}</p>` : ""}
                             </div>
                             
                             <div class="prod-footer" style="${p.sizes && p.sizes.length > 0 ? 'display:block;' : ''}">
