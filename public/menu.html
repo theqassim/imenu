@@ -1642,6 +1642,8 @@
       .oc-emerald { --oa: #34d399; --ob: #047857; }
       .oc-night   { --oa: #475569; --ob: #0f172a; }
       .oc-rose    { --oa: #fb7185; --ob: #be185d; }
+      .oc-brown   { --oa: #a1724e; --ob: #3e2418; }
+      .disc-tag { display:inline-block; vertical-align:middle; margin-right:6px; background:#ef4444; color:#fff; padding:1px 7px; border-radius:5px; font-size:10px; font-weight:700; line-height:1.6; white-space:nowrap; }
 
       .offer-overlay {
         position: fixed;
@@ -2493,13 +2495,13 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
                     sectionHTML += `
                         <div class="prod-card" data-name="${p.name.ar}" ${clickableAction} style="${p.sizes && p.sizes.length > 0 ? 'cursor:pointer;' : ''}">
-                            ${hasDiscount ? `<div style="position:absolute; top:10px; left:10px; background:#ef4444; color:white; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; z-index:10;">خصم</div>` : ""}
+                            
                             
                             ${imgHTML}
                             
                             <div class="prod-content">
                             <div style="flex:1">
-                                <h3 class="prod-title">${p.name.ar}</h3>
+                                <h3 class="prod-title">${p.name.ar}${hasDiscount ? `<span class="disc-tag">خصم${Number(p.oldPrice) > 0 && !(p.sizes && p.sizes.length) ? " " + Math.round((1 - Number(p.price) / Number(p.oldPrice)) * 100) + "%" : ""}</span>` : ""}</h3>
                                 <p class="prod-desc">${p.description.ar}</p>
                             </div>
                             
@@ -3380,7 +3382,13 @@ function trackOrder(orderId) {
       /* ========================================= */
       (function () {
         const ICONS = { percent: "fa-percent", fire: "fa-fire", gift: "fa-gift", star: "fa-star", bolt: "fa-bolt", crown: "fa-crown", tag: "fa-tags" };
-        const THEMES = ["gold", "fire", "royal", "emerald", "night", "rose"];
+        const THEMES = ["gold", "fire", "royal", "emerald", "night", "rose", "brown"];
+        const HEX6 = /^#[0-9a-fA-F]{6}$/;
+        // لون مخصص للعرض (لو الأونر اختار ألوان بنفسه) بيتغلب على القالب الجاهز
+        function ocStyle(o) {
+          return o && HEX6.test(o.colorA || "") && HEX6.test(o.colorB || "")
+            ? "--oa:" + o.colorA + ";--ob:" + o.colorB + ";" : "";
+        }
         const CONFETTI = ["#ffffff", "#fff3b0", "#ffd166", "#ffffff", "#fde68a"];
         const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -3428,7 +3436,7 @@ function trackOrder(orderId) {
 
         // ---- منطق "اتشاف قبل كده؟" ----
         function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
-        function seenKey(o) { return "offer_seen_" + o.id + "_" + hash([o.title, o.message, o.discountPercent, o.badgeText, o.endsAt, o.theme].join("|")); }
+        function seenKey(o) { return "offer_seen_" + o.id + "_" + hash([o.title, o.message, o.discountPercent, o.badgeText, o.endsAt, o.theme, o.colorA, o.colorB].join("|")); }
         function wasSeen(o) {
           try {
             const f = o.frequency || "session";
@@ -3558,7 +3566,7 @@ function trackOrder(orderId) {
               '<div class="t t-d"><b style="' + tsty(o, "timer") + '">00</b><small style="' + tsty(o, "timer") + '">يوم</small></div><div class="t"><b class="h" style="' + tsty(o, "timer") + '">00</b><small style="' + tsty(o, "timer") + '">ساعة</small></div>' +
               '<div class="t"><b class="m" style="' + tsty(o, "timer") + '">00</b><small style="' + tsty(o, "timer") + '">دقيقة</small></div><div class="t"><b class="s" style="' + tsty(o, "timer") + '">00</b><small style="' + tsty(o, "timer") + '">ثانية</small></div></div>'
             : "";
-          return '<div class="offer-slide oc-' + theme + '">' +
+          return '<div class="offer-slide oc-' + theme + '"' + (ocStyle(o) ? ' style="' + ocStyle(o) + '"' : "") + ">" +
             '<div class="offer-hero"><div class="offer-confetti">' + confettiHTML() + "</div>" +
             '<div class="offer-badge">' + inner + '<div class="offer-badge-icon"><i class="fas ' + icon + '"></i></div></div></div>' +
             '<div class="offer-body">' + bgLayersHTML(o) +
@@ -3613,7 +3621,9 @@ function trackOrder(orderId) {
           document.getElementById("offer-track").style.transform = "translateX(" + -idx * 100 + "%)";
           document.querySelectorAll("#offer-dots i").forEach((d, k) => d.classList.toggle("on", k === idx));
           const th = THEMES.indexOf(openList[idx].theme) > -1 ? openList[idx].theme : "gold";
-          document.getElementById("offer-dots").className = "offer-dots oc-" + th;
+          const dEl = document.getElementById("offer-dots");
+          dEl.className = "offer-dots oc-" + th;
+          dEl.style.cssText = ocStyle(openList[idx]);
         }
 
         function tick() {
@@ -3701,6 +3711,7 @@ function trackOrder(orderId) {
           if (list.length) {
             const th = THEMES.indexOf(list[0].theme) > -1 ? list[0].theme : "gold";
             fab.className = "offer-fab visible oc-" + th;
+            fab.style.cssText = ocStyle(list[0]);
           } else {
             fab.className = "offer-fab";
             closeOffers();
