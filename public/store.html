@@ -163,6 +163,78 @@
     font-size: 14px;
     padding: 60px 20px;
   }
+
+  /* ===== Reviews ===== */
+  .reviews-section { margin-top: 38px; }
+  .reviews-head { margin-bottom: 18px; }
+  .reviews-eyebrow {
+    font-size: 12px; letter-spacing: 3px; color: var(--primary); margin-bottom: 6px;
+  }
+  .reviews-title {
+    font-family: 'Aref Ruqaa', 'Tajawal', serif;
+    font-size: 26px; color: #fff; margin-bottom: 10px;
+  }
+  .reviews-summary {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 8px 18px; border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  }
+  .reviews-avg { font-size: 22px; font-weight: 800; color: var(--primary); line-height: 1; }
+  .reviews-count { font-size: 12px; color: #cfc3b0; }
+  .stars { color: var(--primary); letter-spacing: 2px; font-size: 13px; white-space: nowrap; }
+  .stars .off { color: rgba(255,255,255,0.18); }
+
+  .reviews-track {
+    display: flex; gap: 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    padding: 6px 2px 10px;
+  }
+  .reviews-track::-webkit-scrollbar { display: none; }
+
+  .review-card {
+    position: relative;
+    flex: 0 0 88%;
+    scroll-snap-align: center;
+    text-align: right;
+    padding: 24px 20px 18px;
+    border-radius: 22px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.35);
+    overflow: hidden;
+  }
+  .review-card::before {
+    content: "\201D";
+    position: absolute; top: -18px; left: 14px;
+    font-family: Georgia, serif; font-size: 110px; line-height: 1;
+    color: color-mix(in srgb, var(--primary) 22%, transparent);
+    pointer-events: none;
+  }
+  .review-comment {
+    position: relative;
+    font-size: 14.5px; line-height: 1.85; color: #eee3d0;
+    margin: 10px 0 18px; min-height: 52px;
+    display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .review-footer { display: flex; align-items: center; gap: 12px; }
+  .review-avatar {
+    width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: #1a120a;
+    background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 55%, #fff));
+  }
+  .review-meta { flex: 1; }
+  .review-name { font-size: 14px; font-weight: 700; }
+  .review-date { font-size: 11px; color: #8a7f6f; margin-top: 1px; }
+
+  .reviews-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+  .reviews-dots i {
+    width: 6px; height: 6px; border-radius: 99px; background: rgba(255,255,255,0.2);
+    transition: all .25s ease; display: block;
+  }
+  .reviews-dots i.active { width: 20px; background: var(--primary); }
   .hidden { display: none !important; }
 </style>
 </head>
@@ -196,6 +268,16 @@
 
       <div class="links-list" id="links-list"></div>
 
+      <div class="reviews-section hidden" id="reviews-section">
+        <div class="reviews-head">
+          <div class="reviews-eyebrow">★ ★ ★ ★ ★</div>
+          <div class="reviews-title">آراء عملائنا</div>
+          <div class="reviews-summary" id="reviews-summary"></div>
+        </div>
+        <div class="reviews-track" id="reviews-track"></div>
+        <div class="reviews-dots" id="reviews-dots"></div>
+      </div>
+
       <div class="divider divider-bottom"></div>
       <div class="footer" id="footer-text"></div>
     </div>
@@ -223,7 +305,12 @@
     return hex || "var(--primary)";
   }
 
+  let lastReviewsData = { reviews: [], ratingsAverage: 0, ratingsCount: 0 };
+
   function render(data) {
+    if (Array.isArray(data.reviews)) {
+      lastReviewsData = { reviews: data.reviews, ratingsAverage: data.ratingsAverage, ratingsCount: data.ratingsCount };
+    }
     document.documentElement.style.setProperty("--primary", data.primaryColor || "#B78728");
 
     renderDecoRow(data.occasionTheme || "none");
@@ -280,11 +367,101 @@
       list.appendChild(a);
     });
 
+    renderReviews(lastReviewsData);
+
     document.getElementById("footer-text").innerText = `© ${new Date().getFullYear()} ${data.title || data.restaurantName || ""}`;
 
     document.getElementById("loading-state").classList.add("hidden");
     document.getElementById("notfound-state").classList.add("hidden");
     document.getElementById("page-content").classList.remove("hidden");
+  }
+
+
+  // ===== Reviews =====
+  let reviewsTimer = null;
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
+
+  function starsHtml(n) {
+    let out = "";
+    for (let i = 1; i <= 5; i++) out += `<i class="fas fa-star${i <= n ? "" : " off"}"></i>`;
+    return `<span class="stars">${out}</span>`;
+  }
+
+  function formatReviewDate(d) {
+    if (!d) return "";
+    const date = new Date(d);
+    if (isNaN(date)) return "";
+    return date.toLocaleDateString("ar-EG", { year: "numeric", month: "long" });
+  }
+
+  function renderReviews(data) {
+    const section = document.getElementById("reviews-section");
+    const reviews = data.reviews || [];
+    if (reviewsTimer) { clearInterval(reviewsTimer); reviewsTimer = null; }
+
+    if (!reviews.length) { section.classList.add("hidden"); return; }
+
+    const avg = Number(data.ratingsAverage || 0);
+    document.getElementById("reviews-summary").innerHTML = `
+      <span class="reviews-avg">${avg.toFixed(1)}</span>
+      ${starsHtml(Math.round(avg))}
+      <span class="reviews-count">(${Number(data.ratingsCount || reviews.length)} تقييم)</span>
+    `;
+
+    const track = document.getElementById("reviews-track");
+    track.innerHTML = reviews.map((r) => `
+      <div class="review-card">
+        ${starsHtml(r.stars)}
+        <div class="review-comment">${escapeHtml(r.comment)}</div>
+        <div class="review-footer">
+          <div class="review-avatar">${escapeHtml((r.name || "ع").charAt(0))}</div>
+          <div class="review-meta">
+            <div class="review-name">${escapeHtml(r.name)}</div>
+            <div class="review-date">${formatReviewDate(r.date)}</div>
+          </div>
+        </div>
+      </div>
+    `).join("");
+
+    const dots = document.getElementById("reviews-dots");
+    dots.innerHTML = reviews.map((_, i) => `<i class="${i === 0 ? "active" : ""}"></i>`).join("");
+    dots.style.display = reviews.length > 1 ? "flex" : "none";
+    track.scrollLeft = 0;
+
+    const cards = Array.from(track.children);
+    const updateDots = () => {
+      const center = track.getBoundingClientRect().left + track.clientWidth / 2;
+      let best = 0, bestDist = Infinity;
+      cards.forEach((c, i) => {
+        const rect = c.getBoundingClientRect();
+        const dist = Math.abs(rect.left + rect.width / 2 - center);
+        if (dist < bestDist) { bestDist = dist; best = i; }
+      });
+      Array.from(dots.children).forEach((d, i) => d.classList.toggle("active", i === best));
+      return best;
+    };
+    track.onscroll = updateDots;
+
+    // تقليب تلقائي هادي
+    if (cards.length > 1) {
+      let paused = false;
+      track.addEventListener("touchstart", () => { paused = true; }, { passive: true });
+      track.addEventListener("touchend", () => { setTimeout(() => { paused = false; }, 6000); }, { passive: true });
+      track.addEventListener("mouseenter", () => { paused = true; });
+      track.addEventListener("mouseleave", () => { paused = false; });
+      reviewsTimer = setInterval(() => {
+        if (paused) return;
+        const next = (updateDots() + 1) % cards.length;
+        track.scrollTo({ left: cards[next].offsetLeft - (track.clientWidth - cards[next].offsetWidth) / 2, behavior: "smooth" });
+      }, 5000);
+    }
+
+    section.classList.remove("hidden");
   }
 
   function showNotFound() {
