@@ -10927,6 +10927,12 @@ function calculatePreviewTotals() {
 
         <div class="ofr-sec">الشكل</div>
         <div class="ofr-chips" id="ofr-themes"></div>
+        <label class="ofr-lbl">🎨 أو اختار لون الإعلان بنفسك (فاتح ← غامق)</label>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <input type="color" id="ofr-ca" value="#a1724e" style="width:46px;height:38px;padding:2px;cursor:pointer" oninput="ofrColor()" />
+          <input type="color" id="ofr-cb" value="#3e2418" style="width:46px;height:38px;padding:2px;cursor:pointer" oninput="ofrColor()" />
+          <button type="button" class="btn" onclick="ofrColorReset()">رجوع للقالب الجاهز</button>
+        </div>
         <label class="ofr-lbl">الأيقونة</label>
         <div class="ofr-chips" id="ofr-icons"></div>
         <div class="ofr-sec">🖼️ خلفية الجزء الأبيض (اختياري)</div>
@@ -10970,9 +10976,9 @@ function calculatePreviewTotals() {
     </div>
     <script>
       (function () {
-        var THEMES = { gold:["#f59e0b","#b45309"], fire:["#ef4444","#9a3412"], royal:["#7c3aed","#312e81"], emerald:["#10b981","#065f46"], night:["#334155","#0f172a"], rose:["#ec4899","#9d174d"] };
+        var THEMES = { gold:["#f59e0b","#b45309"], fire:["#ef4444","#9a3412"], royal:["#7c3aed","#312e81"], emerald:["#10b981","#065f46"], night:["#334155","#0f172a"], rose:["#ec4899","#9d174d"], brown:["#a1724e","#3e2418"] };
         var ICONS = { percent:"fa-percent", fire:"fa-fire", gift:"fa-gift", star:"fa-star", bolt:"fa-bolt", crown:"fa-crown", tag:"fa-tag" };
-        var cur = null, selCats = [], selProds = [], scope = "all", theme = "gold", icon = "percent", bgImgs = [], bgLayout = "auto", bgGap = 6, textStyle = {};
+        var cur = null, selCats = [], selProds = [], scope = "all", theme = "gold", icon = "percent", bgImgs = [], bgLayout = "auto", bgGap = 6, textStyle = {}, colorA = "", colorB = "";
 
         function list() { return Array.isArray(window.offersData) ? window.offersData : []; }
         function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]; }); }
@@ -10986,7 +10992,7 @@ function calculatePreviewTotals() {
           if (!arr.length) { box.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px;color:#94a3b8"><i class="fas fa-percent fa-3x" style="opacity:.3"></i><p>لسه مفيش عروض.. اعمل أول عرض!</p></div>'; return; }
           var now = Date.now();
           box.innerHTML = arr.map(function (o, i) {
-            var t = THEMES[o.theme] || THEMES.gold;
+            var t = (/^#[0-9a-fA-F]{6}$/.test(o.colorA || "") && /^#[0-9a-fA-F]{6}$/.test(o.colorB || "")) ? [o.colorA, o.colorB] : (THEMES[o.theme] || THEMES.gold);
             var st = !o.enabled ? "متوقف" : (o.endsAt && new Date(o.endsAt) < now) ? "منتهي" : (o.startsAt && new Date(o.startsAt) > now) ? "مجدول" : "شغال";
             var sc = o.scope === "categories" ? "أقسام: " + (o.categories || []).length : o.scope === "products" ? "منتجات: " + (o.productIds || []).length : "المنيو كله";
             return '<div class="ofr-card ' + (st === "شغال" ? "" : "off") + '"><div class="ofr-top" style="--oa:' + t[0] + ';--ob:' + t[1] + '"><div class="ofr-pct">' + esc(o.discountPercent) + '%</div><div><div style="font-weight:800;font-size:16px"><i class="fas ' + (ICONS[o.icon] || "fa-percent") + '"></i> ' + esc(o.title || "بدون عنوان") + '</div><div style="font-size:12px;opacity:.9">' + esc(o.message) + '</div></div></div>' +
@@ -10996,7 +11002,7 @@ function calculatePreviewTotals() {
         };
 
         function chips() {
-          $("ofr-themes").innerHTML = Object.keys(THEMES).map(function (k) { return '<div class="ofr-theme ' + (k === theme ? "on" : "") + '" style="background:linear-gradient(135deg,' + THEMES[k][0] + ',' + THEMES[k][1] + ')" onclick="ofrTheme(\'' + k + '\')"></div>'; }).join("");
+          $("ofr-themes").innerHTML = Object.keys(THEMES).map(function (k) { return '<div class="ofr-theme ' + (k === theme && !colorA ? "on" : "") + '" style="background:linear-gradient(135deg,' + THEMES[k][0] + ',' + THEMES[k][1] + ')" onclick="ofrTheme(\'' + k + '\')"></div>'; }).join("");
           $("ofr-icons").innerHTML = Object.keys(ICONS).map(function (k) { return '<div class="ofr-chip ' + (k === icon ? "on" : "") + '" onclick="ofrIcon(\'' + k + '\')"><i class="fas ' + ICONS[k] + '"></i></div>'; }).join("");
           var sc = $("ofr-scope").children; for (var i = 0; i < sc.length; i++) sc[i].classList.toggle("on", sc[i].getAttribute("data-v") === scope);
           $("ofr-cats").style.display = scope === "categories" ? "flex" : "none";
@@ -11004,7 +11010,11 @@ function calculatePreviewTotals() {
           $("ofr-cats").innerHTML = (window.categoriesData || categoriesData || []).map(function (c) { return '<div class="ofr-chip ' + (selCats.indexOf(c.name) > -1 ? "on" : "") + '" data-n="' + esc(c.name) + '" onclick="ofrCat(this)">' + esc(c.name) + '</div>'; }).join("") || '<span style="color:#94a3b8;font-size:13px">لا توجد أقسام</span>';
           ofrPrev();
         }
-        window.ofrTheme = function (k) { theme = k; chips(); };
+        function curCols() { return colorA && colorB ? [colorA, colorB] : (THEMES[theme] || THEMES.gold); }
+        window.ofrTheme = function (k) { theme = k; colorA = ""; colorB = ""; syncColorInputs(); chips(); };
+        function syncColorInputs() { var c = curCols(); if ($("ofr-ca")) { $("ofr-ca").value = c[0]; $("ofr-cb").value = c[1]; } }
+        window.ofrColor = function () { colorA = $("ofr-ca").value; colorB = $("ofr-cb").value; chips(); };
+        window.ofrColorReset = function () { colorA = ""; colorB = ""; syncColorInputs(); chips(); };
         window.ofrIcon = function (k) { icon = k; chips(); };
         window.ofrScope = function (k) { scope = k; chips(); if (k === "products") ofrRenderProds(); };
         window.ofrCat = function (el) { var n = el.getAttribute("data-n"), i = selCats.indexOf(n); if (i > -1) selCats.splice(i, 1); else selCats.push(n); el.classList.toggle("on"); };
@@ -11135,7 +11145,7 @@ function calculatePreviewTotals() {
         };
 
         window.ofrPrev = function () {
-          var t = THEMES[theme] || THEMES.gold, p = $("ofr-prev"); if (!p) return;
+          var t = curCols(), p = $("ofr-prev"); if (!p) return;
           p.style.setProperty("--oa", t[0]); p.style.setProperty("--ob", t[1]);
           $("ofr-prev-pct").textContent = ($("ofr-percent").value || 0) + "%";
           $("ofr-prev-title").textContent = $("ofr-title").value || "عنوان العرض";
@@ -11149,6 +11159,7 @@ function calculatePreviewTotals() {
           var o = cur !== null ? list()[cur] : {};
           selCats = (o.categories || []).slice(); selProds = (o.productIds || []).slice();
           scope = o.scope || "all"; theme = o.theme || "gold"; icon = o.icon || "percent";
+          colorA = /^#[0-9a-fA-F]{6}$/.test(o.colorA || "") && /^#[0-9a-fA-F]{6}$/.test(o.colorB || "") ? o.colorA : ""; colorB = colorA ? o.colorB : ""; syncColorInputs();
           $("ofr-form-title").textContent = cur !== null ? "تعديل العرض" : "عرض جديد";
           $("ofr-title").value = o.title || ""; $("ofr-message").value = o.message || "";
           $("ofr-percent").value = o.discountPercent || 20; $("ofr-btn").value = o.buttonText || "اطلب دلوقتي";
@@ -11196,7 +11207,7 @@ function calculatePreviewTotals() {
             startsAt: s ? new Date(s).toISOString() : null, endsAt: e ? new Date(e).toISOString() : null,
             bgLayout: bgLayout, bgGap: bgGap, textStyle: JSON.parse(JSON.stringify(textStyle)),
             bgImages: bgImgs.map(function (b) { return { url: b.url, opacity: Number(b.opacity), blur: Number(b.blur) || 0 }; }),
-            theme: theme, icon: icon, buttonText: $("ofr-btn").value.trim() || "اطلب دلوقتي", frequency: $("ofr-freq").value
+            theme: theme, colorA: colorA, colorB: colorB, icon: icon, buttonText: $("ofr-btn").value.trim() || "اطلب دلوقتي", frequency: $("ofr-freq").value
           };
           var arr = list().slice(); if (cur !== null) arr[cur] = o; else arr.push(o);
           if (await persist(arr, "تم حفظ العرض")) ofrClose();
