@@ -868,8 +868,14 @@ function sanitizeOfferBgImages(o) {
     if (item.color || item.font) textStyle[k] = item;
   });
 
+  // 🎨 لون مخصص للإعلان (hex فقط)
+  const _hex = (v) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v.trim()) ? v.trim() : "");
+  const colorA = _hex(o.colorA), colorB = _hex(o.colorB);
+
   return {
     ...o,
+    colorA: colorA && colorB ? colorA : "",
+    colorB: colorA && colorB ? colorB : "",
     bgImages: imgs,
     bgLayout: OFFER_BG_LAYOUTS.includes(o.bgLayout) ? o.bgLayout : "auto",
     bgGap: _clampNum(o.bgGap, 0, 24, 6),
