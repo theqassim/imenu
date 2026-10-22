@@ -2819,7 +2819,7 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
   try {
     const { data: restaurant, error } = await supabase
       .from("restaurants")
-      .select("restaurantName, slug, storePage, isActive")
+      .select("_id, restaurantName, slug, storePage, isActive")
       .eq("slug", req.params.slug)
       .single();
 
@@ -2830,11 +2830,45 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
       return res.status(404).json({ status: "error", message: "هذه الصفحة غير متاحة حالياً" });
     }
 
+    // ===== التقييمات: أي تقييم أكتر من 3 نجوم وفيه تعليق يظهر أوتوماتيك =====
+    let reviews = [];
+    let ratingsAverage = 0;
+    let ratingsCount = 0;
+    try {
+      const { data: allRatings } = await supabase
+        .from("ratings")
+        .select("customerName, stars, comment, createdAt")
+        .eq("restaurant", restaurant._id)
+        .order("createdAt", { ascending: false });
+
+      const list = allRatings || [];
+      ratingsCount = list.length;
+      if (ratingsCount > 0) {
+        ratingsAverage = Math.round((list.reduce((sum, r) => sum + Number(r.stars || 0), 0) / ratingsCount) * 10) / 10;
+      }
+
+      reviews = list
+        .filter((r) => Number(r.stars) > 3 && r.comment && r.comment.trim())
+        .slice(0, 12)
+        .map((r) => ({
+          // بنعرض الاسم الأول فقط حفاظاً على الخصوصية، ومن غير رقم التليفون
+          name: (r.customerName || "عميل").trim().split(/\s+/)[0],
+          stars: Number(r.stars),
+          comment: r.comment.trim(),
+          date: r.createdAt || null,
+        }));
+    } catch (e) {
+      console.error("store-page reviews error:", e.message);
+    }
+
     res.status(200).json({
       status: "success",
       data: {
         restaurantName: restaurant.restaurantName,
         slug: restaurant.slug,
+        reviews,
+        ratingsAverage,
+        ratingsCount,
         title: storePage.title || restaurant.restaurantName,
         subtitle: storePage.subtitle || "",
         greeting: storePage.greeting || "",
