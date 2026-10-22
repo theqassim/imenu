@@ -865,7 +865,8 @@ function sanitizeOfferBgImages(o) {
     const item = {};
     if (typeof t.color === "string" && /^#[0-9a-fA-F]{6}$/.test(t.color.trim())) item.color = t.color.trim();
     if (typeof t.font === "string" && OFFER_FONTS.includes(t.font)) item.font = t.font;
-    if (item.color || item.font) textStyle[k] = item;
+    if (typeof t.weight === "string" && ["400", "700", "900"].includes(t.weight.trim())) item.weight = t.weight.trim();
+    if (item.color || item.font || item.weight) textStyle[k] = item;
   });
 
   // 🎨 لون مخصص للإعلان (hex فقط)
