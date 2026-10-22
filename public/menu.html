@@ -3517,6 +3517,7 @@ function trackOrder(orderId) {
               st += "font-family:'" + t.font + "',sans-serif;";
             }
           }
+          if (t && (t.weight === "400" || t.weight === "700" || t.weight === "900")) st += "font-weight:" + t.weight + ";";
           return st + (extra || "");
         }
 
