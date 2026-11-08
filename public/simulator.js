@@ -735,8 +735,9 @@
         return result;
       };
     }
-    const screenObserver = new MutationObserver(() => {
+    const screenObserver = new MutationObserver((mutations) => {
       if (!screenTour) return;
+      if (!mutations.some((mutation) => !guide.contains(mutation.target))) return;
       clearTimeout(screenObserverTimer);
       screenObserverTimer = setTimeout(() => refreshScreenItems(true), 250);
     });
