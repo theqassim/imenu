@@ -1,1147 +1,542 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>iMenu | نظام إدارة المطاعم والكافيهات يعمل بدون إنترنت</title>
+<meta name="description" content="iMenu نظام كاشير وإدارة متكامل للمطاعم والكافيهات يعمل أوفلاين بدون إنترنت: طاولات، مطبخ، طباعة حرارية، مخزون، شيفتات وتقارير." />
+<meta name="keywords" content="نظام كاشير, برنامج مطاعم, POS اوفلاين, نظام كافيهات, iMenu, طباعة حرارية, ادارة مخزون" />
+<meta name="author" content="iMenu Digital Solutions" />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#0f1115" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://imenueg.com/" />
+<meta property="og:title" content="iMenu | نظام إدارة مطاعم يعمل بدون إنترنت" />
+<meta property="og:description" content="كاشير وطاولات ومطبخ ومخزون وتقارير — كله شغال أوفلاين وبياناتك على جهازك." />
+<meta property="og:image" content="https://imenueg.com/og-image.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+<style>
+:root{--bg:#0f1115;--panel:rgba(30,35,45,.7);--gold:#d4af37;--gold2:#966f1e;--muted:#9ca3af;--line:rgba(255,255,255,.08);--glow:0 0 25px rgba(212,175,55,.3)}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Tajawal",sans-serif;outline:none;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{background:var(--bg);color:#fff;overflow-x:hidden;line-height:1.6;
+background-image:radial-gradient(circle at 10% 20%,rgba(212,175,55,.08),transparent 40%),radial-gradient(circle at 90% 80%,rgba(60,80,100,.12),transparent 40%)}
+a{color:inherit;text-decoration:none}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.4;z-index:-1;pointer-events:none;animation:orb 10s infinite ease-in-out}
+.o1{top:-10%;left:-10%;width:min(400px,70vw);height:min(400px,70vw);background:rgba(212,175,55,.15)}
+.o2{bottom:10%;right:-5%;width:min(300px,60vw);height:min(300px,60vw);background:rgba(60,80,100,.25);animation-delay:-5s}
+@keyframes orb{50%{transform:translate(30px,30px)}}
 
-    <title>iMenu | أفضل نظام منيو إلكتروني ذكي للمطاعم والكافيهات</title>
-    <meta
-      name="description"
-      content="حول قائمة طعامك إلى منيو إلكتروني ذكي (QR Code) مع نظام iMenu. استقبال طلبات واتساب، لوحة تحكم للمالك، وبدون تطبيقات. الحل الأمثل للمطاعم والكافيهات."
-    />
-    <meta
-      name="keywords"
-      content="منيو الكتروني, QR Code مطعم, منيو رقمي, انشاء منيو مطعم, iMenu, نظام مطاعم, منيو واتساب, تصميم منيو"
-    />
-    <meta name="author" content="iMenu Digital Solutions" />
-    <meta name="robots" content="index, follow" />
+/* NAV */
+nav{position:fixed;top:0;width:100%;z-index:1000;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:18px 5%;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.05);transition:.3s}
+nav.scrolled{background:rgba(15,17,21,.95);padding:12px 5%;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.logo{font-size:26px;font-weight:900;display:flex;align-items:center;gap:10px;letter-spacing:-1px}
+.logo i{color:var(--gold);text-shadow:var(--glow)}
+.nav-links{display:flex;gap:28px}
+.nav-links a{color:var(--muted);font-weight:500;font-size:15px;position:relative;transition:.3s}
+.nav-links a:hover{color:#fff}
+.nav-links a::after{content:"";position:absolute;bottom:-5px;right:0;width:0;height:2px;background:var(--gold);transition:.3s}
+.nav-links a:hover::after{width:100%}
+.nav-actions{display:flex;gap:8px;align-items:center}
+.btn-nav{padding:10px 22px;border-radius:50px;font-weight:700;font-size:14px;transition:.3s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:1px solid transparent;cursor:pointer;font-family:inherit}
+.btn-login{border-color:var(--line);background:rgba(255,255,255,.05)}
+.btn-login:hover{background:rgba(255,255,255,.12)}
+.btn-sales{border-color:var(--gold);color:var(--gold);background:rgba(212,175,55,.1)}
+.btn-sales:hover{background:var(--gold);color:#000}
+.btn-start{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;box-shadow:0 5px 20px rgba(212,175,55,.2)}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(212,175,55,.35)}
 
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://imenueg.com/" />
-    <meta
-      property="og:title"
-      content="iMenu | ضاعف مبيعات مطعمك بالمنيو الذكي"
-    />
-    <meta
-      property="og:description"
-      content="جرب الآن أقوى نظام منيو إلكتروني في مصر. سرعة، فخامة، وسهولة في الاستخدام."
-    />
-    <meta property="og:image" content="https://imenueg.com/og-image.jpg" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="iMenu | مستقبل الضيافة الرقمية" />
-    <meta
-      name="twitter:description"
-      content="نظام المنيو الذكي الأقوى. حول مطعمك لوجهة رقمية فاخرة الآن."
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      rel="stylesheet"
-    />
+/* HERO */
+.hero{min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:space-between;gap:30px;padding:90px 5% 40px}
+.hero-text{flex:1;max-width:610px}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(212,175,55,.12);color:var(--gold);padding:7px 18px;border-radius:50px;font-size:13px;font-weight:700;border:1px solid rgba(212,175,55,.3);margin-bottom:24px}
+.badge i{animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.4}}
+.hero h1{font-size:clamp(34px,5.4vw,62px);line-height:1.15;font-weight:900;margin-bottom:22px}
+.hero h1 span{background:linear-gradient(135deg,#fff 10%,var(--gold) 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--muted);font-size:clamp(15px,1.7vw,18px);line-height:1.9;max-width:520px;margin-bottom:32px}
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap}
+.btn-hero{padding:15px 34px;border-radius:14px;font-size:16px;font-weight:800;display:inline-flex;align-items:center;gap:10px;transition:.3s;cursor:pointer;border:none;font-family:inherit}
+.b-white{background:#fff;color:#000}
+.b-white:hover{background:var(--gold);transform:translateY(-3px);box-shadow:0 10px 30px rgba(212,175,55,.3)}
+.b-ghost{background:rgba(255,255,255,.06);color:#fff;border:1px solid var(--line)}
+.b-ghost:hover{background:rgba(255,255,255,.12);transform:translateY(-3px)}
+.hero-chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.chip{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.04);border:1px solid var(--line);padding:6px 14px;border-radius:50px}
+.chip i{color:var(--gold)}
 
-    <style>
-      :root {
-        /* New Luxury Space Palette */
-        --bg-dark: #0f1115;
-        --bg-panel: rgba(30, 35, 45, 0.7);
-        --primary: #d4af37; /* Royal Gold */
-        --primary-glow: rgba(212, 175, 55, 0.4);
-        --text-main: #ffffff;
-        --text-muted: #9ca3af;
-        --glass-border: rgba(255, 255, 255, 0.08);
-        
-        /* Legacy var mapping for compatibility */
-        --accent: #d4af37; 
-        --gold: #d4af37;
-        --surface: rgba(30, 35, 45, 0.7);
-        --text: #ffffff;
-        --text-gray: #9ca3af;
-        --glow: 0 0 25px rgba(212, 175, 55, 0.3);
-      }
+.hero-visual{flex:1;display:flex;justify-content:center;position:relative;perspective:1200px;min-width:0}
+.device{width:100%;max-width:520px;aspect-ratio:4/3;background:#111319;border:8px solid #2d3038;border-radius:26px;box-shadow:0 50px 100px -20px rgba(0,0,0,.8),0 0 60px rgba(212,175,55,.08);transform:rotateY(12deg) rotateX(6deg);transition:transform .15s ease-out;animation:floatDev 6s ease-in-out infinite;position:relative;overflow:hidden;display:flex;flex-direction:column}
+@keyframes floatDev{50%{margin-top:-14px}}
+.dv-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#171a21;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}
+.dv-bar b{color:#fff;margin-inline-end:auto;font-size:12px}
+.dv-dot{width:8px;height:8px;border-radius:50%;background:#ef4444}.dv-dot:nth-of-type(2){background:#f59e0b}.dv-dot:nth-of-type(3){background:#10b981}
+.dv-body{flex:1;display:grid;grid-template-columns:1.5fr 1fr;min-height:0}
+.dv-tables{padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start}
+.tb{border-radius:12px;padding:10px 4px;text-align:center;font-size:11px;font-weight:700;border:1px solid var(--line);background:rgba(255,255,255,.04);animation:tbp 4s infinite}
+.tb small{display:block;font-weight:400;font-size:9px;opacity:.7}
+.tb.free{color:#10b981;background:rgba(16,185,129,.1)}.tb.busy{color:var(--gold);background:rgba(212,175,55,.12);border-color:rgba(212,175,55,.35)}.tb.res{color:#9ca3af}
+.tb.busy:nth-child(2){animation-delay:.6s}.tb.busy:nth-child(5){animation-delay:1.4s}
+@keyframes tbp{50%{box-shadow:0 0 14px rgba(212,175,55,.25)}}
+.dv-order{border-inline-start:1px solid var(--line);padding:12px;background:#14171d;display:flex;flex-direction:column;gap:7px;font-size:10.5px}
+.ln{display:flex;justify-content:space-between;color:#d1d5db;opacity:0;animation:lin .6s forwards}
+.ln:nth-child(2){animation-delay:.4s}.ln:nth-child(3){animation-delay:.9s}.ln:nth-child(4){animation-delay:1.4s}
+@keyframes lin{to{opacity:1}}
+.tot{margin-top:auto;display:flex;justify-content:space-between;font-weight:800;font-size:13px;color:var(--gold);border-top:1px dashed var(--line);padding-top:8px}
+.pay{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;text-align:center;border-radius:9px;padding:7px;font-weight:800;font-size:11px}
+.off-tag{position:static;display:flex;align-items:center;gap:6px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;padding:4px 10px;border-radius:50px;font-size:10px;font-weight:700}
+.nowifi{position:relative;display:inline-block}
+.nowifi::after{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:2px;background:currentColor;transform:rotate(-40deg);box-shadow:0 0 0 1px rgba(15,17,21,.9)}
+.fcard{position:absolute;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:13px 18px;border-radius:16px;border:1px solid var(--line);display:flex;align-items:center;gap:13px;box-shadow:0 20px 40px rgba(0,0,0,.6);animation:fc 4s ease-in-out infinite;z-index:6}
+.fc1{top:-44px;right:-34px}.fc2{bottom:-40px;left:-34px;animation-delay:1.5s}
+@keyframes fc{50%{transform:translateY(-10px)}}
+.ibox{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;background:rgba(212,175,55,.12);color:var(--gold);border:1px solid var(--line)}
+.fcard small{display:block;font-size:11px;color:var(--muted)}.fcard b{font-size:14px}
 
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-        font-family: "Tajawal", sans-serif;
-        scroll-behavior: smooth;
-        outline: none;
-      }
+/* SECTIONS */
+section{padding:90px 5%}
+.s-title{text-align:center;margin-bottom:54px}
+.s-title h2{font-size:clamp(28px,4vw,40px);font-weight:900;margin-bottom:12px;background:linear-gradient(to right,#fff,#b8bcc6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.s-title p{color:var(--muted);font-size:clamp(14px,1.6vw,18px)}
+.s-title .bar{width:60px;height:3px;border-radius:3px;margin:18px auto 0;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:24px}
+.fcd{background:var(--panel);padding:32px 28px;border-radius:24px;border:1px solid var(--line);transition:.4s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.fcd:hover{transform:translateY(-8px);border-color:rgba(212,175,55,.3);box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.fcd::after{content:"";position:absolute;top:-50px;left:-50px;width:110px;height:110px;background:var(--gold);border-radius:50%;filter:blur(60px);opacity:0;transition:.4s}
+.fcd:hover::after{opacity:.14}
+.f-ic{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--gold);background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.2);margin-bottom:20px}
+.fcd h3{font-size:20px;font-weight:800;margin-bottom:10px}
+.fcd p{color:var(--muted);font-size:15px;line-height:1.7}
 
-      body {
-        background-color: var(--bg-dark);
-        color: var(--text-main);
-        overflow-x: hidden;
-        line-height: 1.6;
-        /* خلفية الفضاء الفخم */
-        background-image: 
-            radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
-            radial-gradient(circle at 90% 80%, rgba(60, 80, 100, 0.1) 0%, transparent 40%);
-      }
+/* PARTNERS */
+#partners{display:none;position:relative;overflow:hidden}
+.marquee{direction:ltr;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);padding:20px 0}
+.track{display:flex;gap:22px;width:max-content;animation:scroll var(--dur,30s) linear infinite}
+.marquee:hover .track,.marquee:active .track{animation-play-state:paused}
+@keyframes scroll{to{transform:translateX(-50%)}}
+.pgrid{display:flex;flex-wrap:wrap;justify-content:center;gap:22px;padding:20px 0}
+.pcard{flex:0 0 auto;width:170px;direction:rtl;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:26px 14px 20px;transition:.4s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.pcard::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(212,175,55,.18),transparent 65%);opacity:0;transition:.4s}
+.pcard:hover{transform:translateY(-10px) scale(1.03);border-color:rgba(212,175,55,.45);box-shadow:0 22px 50px rgba(0,0,0,.5),0 0 30px rgba(212,175,55,.12)}
+.pcard:hover::before{opacity:1}
+.plogo{width:96px;height:96px;margin:0 auto 16px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;border:3px solid rgba(212,175,55,.55);box-shadow:0 0 0 6px rgba(212,175,55,.08),0 10px 25px rgba(0,0,0,.4);transition:.4s}
+.pcard:hover .plogo{box-shadow:0 0 0 8px rgba(212,175,55,.16),0 0 30px rgba(212,175,55,.35);transform:rotate(-4deg)}
+.plogo img{width:100%;height:100%;object-fit:contain}
+.plogo span{font-size:38px;font-weight:900;color:#0f1115}
+.pname{font-weight:800;font-size:15px;position:relative;word-break:break-word}
 
-      /* Orbs for Atmosphere */
-      .ambient-bg {
-        position: fixed;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1;
-        pointer-events: none;
-      }
-      .orb {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(80px);
-        opacity: 0.4;
-        animation: floatOrb 10s infinite ease-in-out;
-      }
-      .orb-1 {
-        top: -10%; left: -10%; width: 400px; height: 400px;
-        background: rgba(212, 175, 55, 0.15);
-      }
-      .orb-2 {
-        bottom: 10%; right: -5%; width: 300px; height: 300px;
-        background: rgba(60, 80, 100, 0.2);
-        animation-delay: -5s;
-      }
+/* CONTACT */
+#contact{display:none}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:18px;max-width:1000px;margin:0 auto}
+.ccard{display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:20px 22px;transition:.35s;position:relative;overflow:hidden}
+.ccard:hover{transform:translateY(-6px);border-color:var(--c,var(--gold));box-shadow:0 18px 40px rgba(0,0,0,.4)}
+.ccard .ci{background:rgba(212,175,55,.14);flex:0 0 54px;width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:25px;color:var(--c,var(--gold));background:color-mix(in srgb,var(--c,var(--gold)) 14%,transparent);transition:.35s}
+.ccard:hover .ci{background:var(--c,var(--gold));color:#000;transform:rotate(-8deg) scale(1.08)}
+.ccard small{display:block;color:var(--muted);font-size:12px}
+.ccard b{font-size:17px;direction:ltr;display:inline-block;word-break:break-all}
+.ccard .arrow{margin-inline-start:auto;color:var(--muted);transition:.3s}
+.ccard:hover .arrow{color:var(--c,var(--gold));transform:translateX(-5px)}
 
-      @keyframes floatOrb {
-        0%, 100% { transform: translate(0, 0); }
-        50% { transform: translate(30px, 30px); }
-      }
+.cta{margin:20px 5% 80px;padding:70px 30px;background:linear-gradient(135deg,var(--gold) 0%,#7c5e10 100%);border-radius:30px;text-align:center;position:relative;overflow:hidden;box-shadow:0 20px 80px rgba(212,175,55,.2)}
+.cta::before,.cta::after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.2);filter:blur(24px)}
+.cta::before{width:200px;height:200px;top:-60px;left:-50px}.cta::after{width:150px;height:150px;bottom:-40px;right:-30px}
+.cta>*{position:relative;z-index:2}
+.cta h2{font-size:clamp(26px,4vw,40px);color:#000;font-weight:900;margin-bottom:14px}
+.cta p{color:#2a2a2a;font-weight:600;font-size:clamp(15px,1.8vw,18px)}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;background:#000;color:#fff;padding:16px 44px;border-radius:50px;font-size:17px;font-weight:800;margin-top:26px;transition:.3s;box-shadow:0 10px 20px rgba(0,0,0,.2)}
+.cta-btn:hover{transform:scale(1.05);background:#1a1a1a}
 
-      nav {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px 5%;
-        position: fixed;
-        top: 0;
-        width: 100%;
-        z-index: 1000;
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        transition: 0.3s;
-        background: transparent;
-      }
-      nav.scrolled {
-        background: rgba(15, 17, 21, 0.95);
-        padding: 15px 5%;
-        border-bottom: 1px solid var(--glass-border);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      }
+footer{padding:36px 5% calc(36px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;background:rgba(0,0,0,.2)}
+.f-logo{font-size:22px;font-weight:800}.f-logo i{color:var(--gold)}
+#secret-door{color:var(--muted);font-size:14px;user-select:none;-webkit-user-select:none}
+.socials a{color:var(--muted);font-size:22px;margin-inline-start:16px;transition:.3s}.socials a:hover{color:var(--gold)}
 
-      .logo {
-        font-size: 26px;
-        font-weight: 900;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        letter-spacing: -1px;
-      }
-      .logo i {
-        color: var(--primary);
-        text-shadow: var(--glow);
-      }
+.wa-fab{position:fixed;left:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;background:#25d366;color:#fff;font-size:30px;display:none;align-items:center;justify-content:center;z-index:900;box-shadow:0 10px 30px rgba(37,211,102,.45);animation:wa 2.4s infinite}
+@keyframes wa{0%{box-shadow:0 0 0 0 rgba(37,211,102,.55),0 10px 30px rgba(0,0,0,.4)}70%,100%{box-shadow:0 0 0 20px rgba(37,211,102,0),0 10px 30px rgba(0,0,0,.4)}}
 
-      .nav-links {
-        display: flex;
-        gap: 30px;
-      }
-      .nav-links a {
-        text-decoration: none;
-        color: var(--text-gray);
-        font-weight: 500;
-        transition: 0.3s;
-        position: relative;
-        font-size: 15px;
-      }
-      .nav-links a:hover {
-        color: #fff;
-      }
-      .nav-links a::after {
-        content: "";
-        position: absolute;
-        bottom: -5px;
-        width: 0;
-        height: 2px;
-        background: var(--primary);
-        transition: 0.3s;
-        right: 0;
-      }
-      .nav-links a:hover::after {
-        width: 100%;
-      }
+.rv{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.16,1,.3,1);transition-delay:var(--d,0s)}
+.rv.in{opacity:1;transform:none}
 
-      .btn-nav {
-        padding: 10px 25px;
-        border-radius: 50px;
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 14px;
-        transition: 0.3s;
-      }
-      .btn-login {
-        border: 1px solid var(--glass-border);
-        color: #fff;
-        margin-left: 10px;
-        background: rgba(255,255,255,0.05);
-      }
-      .btn-sales {
-        border: 1px solid var(--primary);
-        color: var(--primary);
-        background: rgba(212, 175, 55, 0.1);
-        transition: 0.3s;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-      }
-      .btn-sales:hover {
-        background: var(--primary);
-        color: #000;
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
-        transform: translateY(-2px);
-      }
-      .btn-login:hover {
-        border-color: #fff;
-        background: rgba(255, 255, 255, 0.1);
-      }
-      .btn-start {
-        background: linear-gradient(135deg, var(--primary), #966f1e);
-        color: #000;
-        box-shadow: 0 5px 20px rgba(212, 175, 55, 0.2);
-        border: none;
-        position: relative;
-        overflow: hidden;
-      }
-      .btn-start:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
-      }
 
-      .hero {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 5%;
-        position: relative;
-        padding-top: 80px;
-      }
-      .hero-text {
-        flex: 1;
-        max-width: 600px;
-        z-index: 2;
-      }
-      .badge-new {
-        background: rgba(212, 175, 55, 0.15);
-        color: var(--primary);
-        padding: 6px 18px;
-        border-radius: 50px;
-        font-size: 12px;
-        font-weight: bold;
-        border: 1px solid rgba(212, 175, 55, 0.3);
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 25px;
-        backdrop-filter: blur(5px);
-      }
-      .hero h1 {
-        font-size: 60px;
-        line-height: 1.1;
-        margin-bottom: 25px;
-        color: #fff;
-        font-weight: 800;
-      }
-      .hero h1 span {
-        background: linear-gradient(135deg, #fff 20%, var(--primary) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-      .hero p {
-        color: var(--text-gray);
-        font-size: 18px;
-        margin-bottom: 35px;
-        max-width: 500px;
-        line-height: 1.8;
-      }
+/* ===== V2: PREMIUM LAYER ===== */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:64px 64px;-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 20%,#000,transparent);mask-image:radial-gradient(ellipse 80% 60% at 50% 20%,#000,transparent)}
+#prog{position:fixed;top:0;right:0;height:3px;width:0;z-index:1100;background:linear-gradient(90deg,var(--gold2),var(--gold),#fff3c4);box-shadow:0 0 12px var(--gold)}
+#spot{position:fixed;width:520px;height:520px;border-radius:50%;pointer-events:none;z-index:-1;background:radial-gradient(circle,rgba(212,175,55,.13),transparent 65%);transform:translate(-50%,-50%);left:-999px;top:-999px;transition:left .25s ease-out,top .25s ease-out}
+.eyebrow{display:inline-block;font-size:13px;font-weight:800;letter-spacing:.5px;color:var(--gold);background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.3);padding:5px 16px;border-radius:50px;margin-bottom:16px}
+.hero h1 .grad{display:inline-block;background:linear-gradient(110deg,#fff 0%,var(--gold) 35%,#fff3c4 50%,var(--gold) 65%,#fff 100%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:shine 5s linear infinite}
+@keyframes shine{to{background-position:-220% 0}}
+.rot{font-size:clamp(16px,2vw,21px);color:#d1d5db;margin-bottom:18px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hero-text .rot{justify-content:flex-start}
+.rot b{color:var(--gold);display:inline-block;min-width:74px;transition:opacity .35s,transform .35s}
+.rot b.out{opacity:0;transform:translateY(8px)}
+.btn-start,.b-white{position:relative;overflow:hidden}
+.btn-start::after,.b-white::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:sweep 3.6s ease-in-out infinite}
+@keyframes sweep{60%,100%{left:130%}}
 
-      .hero-btns {
-        display: flex;
-        gap: 15px;
-      }
-      .btn-hero {
-        padding: 16px 40px;
-        border-radius: 14px;
-        font-size: 16px;
-        font-weight: 800;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        transition: 0.3s;
-        cursor: pointer;
-      }
-      .primary-hero {
-        background: #fff;
-        color: #000;
-        box-shadow: 0 0 20px rgba(255,255,255,0.1);
-      }
-      .primary-hero:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
-        background: var(--primary);
-      }
+/* POS device v2 */
+.device{box-shadow:0 60px 120px -20px rgba(0,0,0,.85),0 0 0 1px rgba(212,175,55,.15),0 0 90px rgba(212,175,55,.12)}
+.device::before{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);background-size:250% 100%;animation:glass 6s ease-in-out infinite}
+@keyframes glass{0%{background-position:150% 0}60%,100%{background-position:-100% 0}}
+.dv-body{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}.dv-menu,.dv-order{min-width:0}
+.dv-menu{padding:10px;display:flex;flex-direction:column;gap:9px;min-height:0}
+.cats{display:flex;gap:6px;overflow:hidden}
+.cats span{font-size:10px;padding:4px 11px;border-radius:50px;background:rgba(255,255,255,.05);color:var(--muted);white-space:nowrap;border:1px solid var(--line)}
+.cats .on{background:var(--gold);color:#000;font-weight:800;border-color:var(--gold)}
+.prods{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;flex:1;min-height:0}
+.pr{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:700;text-align:center;padding:4px 2px;transition:.25s}
+.pr i{font-style:normal;font-size:24px;line-height:1.1;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
+.pr small{color:var(--gold);font-weight:800;font-size:10px}
+.pr.tap{transform:scale(.93);background:rgba(212,175,55,.2);border-color:var(--gold);box-shadow:0 0 18px rgba(212,175,55,.35)}
+.dv-order{overflow:hidden}
+#ol{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow:hidden;justify-content:flex-end}
+.dv-order .tot span:last-child{transition:transform .25s}
+.dv-order .tot.bump span:last-child{transform:scale(1.25)}
+.dv-order .pay{animation:payp 2s infinite}
+@keyframes payp{50%{box-shadow:0 0 20px rgba(212,175,55,.55)}}
 
-      .hero-visual {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        position: relative;
-        perspective: 1000px;
-      }
-      .phone-mockup {
-        width: 300px;
-        height: 600px;
-        background: #000;
-        border-radius: 40px;
-        border: 8px solid #2d3038; /* Darker bezel */
-        position: relative;
-        box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7);
-        transform: rotateY(-15deg) rotateX(10deg);
-        transition: transform 0.1s ease-out;
-        animation: floatPhone 6s ease-in-out infinite;
-        z-index: 5;
-      }
-      @keyframes floatPhone {
-        0%, 100% { transform: rotateY(-15deg) rotateX(10deg) translateY(0); }
-        50% { transform: rotateY(-15deg) rotateX(10deg) translateY(-20px); }
-      }
-      .screen {
-        width: 100%;
-        height: 100%;
-        background: #0f172a;
-        border-radius: 32px;
-        overflow: hidden;
-        position: relative;
-      }
-      .screen iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-      }
+/* ticker */
+.ticker{border-block:1px solid var(--line);background:rgba(255,255,255,.02);padding:18px 0;overflow:hidden;direction:ltr;-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.ticker .track{gap:0;animation-duration:38s;animation-direction:reverse}
+.ticker span{display:inline-flex;align-items:center;gap:14px;padding:0 22px;font-weight:800;font-size:16px;color:#cfd3dc;white-space:nowrap;direction:rtl}
+.ticker span::after{content:"✦";color:var(--gold);font-size:12px;margin-inline-start:8px}
 
-      .floating-card {
-        position: absolute;
-        background: var(--bg-panel);
-        backdrop-filter: blur(20px);
-        padding: 15px 20px;
-        border-radius: 16px;
-        border: 1px solid var(--glass-border);
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-        animation: floatCard 4s ease-in-out infinite;
-        min-width: 180px;
-      }
-      .card-1 {
-        top: 120px;
-        right: -30px;
-        z-index: 2;
-        animation-delay: 1s;
-      }
-      .card-2 {
-        bottom: 120px;
-        left: -30px;
-        z-index: 6;
-        animation-delay: 2s;
-      }
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:20px}
+.bento .fcd{grid-column:span 2;padding:30px 26px;min-height:210px}
+.bento .w3{grid-column:span 3}.bento .w6{grid-column:span 6;display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.fcd::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(380px circle at var(--mx,50%) var(--my,0%),rgba(212,175,55,.16),transparent 55%);opacity:0;transition:opacity .35s;pointer-events:none}
+.fcd:hover::before{opacity:1}
+.fcd .tag{position:absolute;top:18px;left:18px;font-size:11px;font-weight:800;color:var(--gold);background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.25);padding:3px 11px;border-radius:50px}
+.w6 .f-ic{margin:0;flex:0 0 auto}.w6 .txt{flex:1;min-width:230px}
 
-      .icon-box {
-        width: 45px;
-        height: 45px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        border: 1px solid var(--glass-border);
-      }
-      .bg-gold {
-        background: rgba(212, 175, 55, 0.1);
-        color: var(--primary);
-      }
-      .bg-blue {
-        background: rgba(255, 255, 255, 0.05);
-        color: #fff;
-      }
+/* offline showcase */
+.off-wrap{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;max-width:1100px;margin:0 auto}
+.off-vis{position:relative;aspect-ratio:1;max-width:400px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:center}
+.ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(212,175,55,.35);animation:ring 4s ease-out infinite}
+.ring:nth-child(2){animation-delay:1.3s}.ring:nth-child(3){animation-delay:2.6s}
+@keyframes ring{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.05);opacity:0}}
+.core{position:relative;z-index:2;width:46%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 30% 25%,#2a2f3a,#14171d);border:2px solid rgba(212,175,55,.5);display:flex;align-items:center;justify-content:center;font-size:clamp(34px,6vw,58px);color:var(--gold);box-shadow:0 0 60px rgba(212,175,55,.25),inset 0 0 30px rgba(0,0,0,.6)}
+.core .nowifi::after{height:3px;color:#ef4444;box-shadow:0 0 0 2px #14171d}
+.st{position:absolute;z-index:3;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;padding:8px 14px;border-radius:50px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.st i{font-size:9px}
+.st.bad{top:6%;right:0;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.4);color:#fca5a5;animation:fc 4s ease-in-out infinite}
+.st.good{bottom:6%;left:0;background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;animation:fc 4s ease-in-out 1.4s infinite}
+.off-list{list-style:none;display:grid;gap:14px;margin-top:26px}
+.off-list li{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);padding:16px 18px;border-radius:18px;transition:.3s}
+.off-list li:hover{border-color:rgba(212,175,55,.35);transform:translateX(-6px)}
+.off-list i{flex:0 0 34px;height:34px;border-radius:10px;background:rgba(16,185,129,.15);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:14px}
+.off-list b{display:block;font-size:16px}.off-list small{color:var(--muted);font-size:13.5px}
+.off-copy h2{font-size:clamp(28px,4vw,40px);font-weight:900;line-height:1.25;margin-bottom:12px}
+.off-copy h2 span{color:var(--gold)}.off-copy>p{color:var(--muted);font-size:17px}
 
-      .card-label {
-        font-size: 11px;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 4px;
-      }
-      .card-value {
-        font-weight: 800;
-        font-size: 15px;
-        color: #fff;
-      }
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1050px;margin:0 auto;position:relative}
+.steps::before{content:"";position:absolute;top:38px;right:16%;left:16%;border-top:2px dashed rgba(212,175,55,.3)}
+.step{text-align:center;position:relative}
+.step .n{width:76px;height:76px;margin:0 auto 20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#000;background:linear-gradient(135deg,var(--gold),var(--gold2));box-shadow:0 0 0 8px rgba(212,175,55,.1),0 12px 30px rgba(212,175,55,.3);transition:.4s}
+.step:hover .n{transform:scale(1.1) rotate(-6deg)}
+.step h3{font-size:20px;font-weight:800;margin-bottom:8px}.step p{color:var(--muted);font-size:15px;max-width:290px;margin:0 auto}
 
-      .features {
-        padding: 100px 5%;
-        position: relative;
-      }
-      .section-title {
-        text-align: center;
-        margin-bottom: 70px;
-      }
-      .section-title h2 {
-        font-size: 40px;
-        margin-bottom: 15px;
-        background: linear-gradient(to right, #fff, #9ca3af);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-      .section-title p {
-        color: var(--text-muted);
-        font-size: 18px;
-      }
+.pcard::after{content:"";position:absolute;top:0;bottom:0;width:45%;left:-80%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.09),transparent);transform:skewX(-20deg);transition:left .7s}
+.pcard:hover::after{left:140%}
+.cta{background:linear-gradient(135deg,#e6c24f 0%,var(--gold) 40%,#7c5e10 100%)}
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 30px;
-      }
-      .feature-card {
-        background: var(--bg-panel);
-        padding: 35px 30px;
-        border-radius: 24px;
-        border: 1px solid var(--glass-border);
-        transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        position: relative;
-        overflow: hidden;
-      }
-      .feature-card:hover {
-        transform: translateY(-10px);
-        border-color: rgba(212, 175, 55, 0.3);
-        box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-      }
-      
-      /* Orb Glow behind card */
-      .feature-card::after {
-        content: '';
-        position: absolute;
-        top: -50px; left: -50px;
-        width: 100px; height: 100px;
-        background: var(--primary);
-        border-radius: 50%;
-        filter: blur(60px);
-        opacity: 0;
-        transition: 0.4s;
-      }
-      .feature-card:hover::after {
-        opacity: 0.1;
-      }
+@media (max-width:900px){
+ nav{padding:10px 4%}nav.scrolled{padding:10px 4%}
+ .nav-links{display:none}.logo{font-size:22px}
+ .btn-nav{padding:8px 14px;font-size:13px}
+ .hero{flex-direction:column;text-align:center;padding-top:100px;gap:36px;min-height:auto}
+ .hero p{margin-inline:auto}.hero-btns,.hero-chips{justify-content:center}
+ .hero-visual{width:100%}
+ .device{transform:none!important;max-width:460px}
+ .fcard{display:none}
+ section{padding:64px 5%}.s-title{margin-bottom:38px}
+ .bento{grid-template-columns:repeat(2,1fr)}.bento .fcd,.bento .w3{grid-column:span 1}.bento .w6{grid-column:span 2}
+ .off-wrap{grid-template-columns:1fr;gap:34px}.off-vis{max-width:320px}
+ .steps{grid-template-columns:1fr;gap:34px}.steps::before{display:none}
+ .hero-text .rot{justify-content:center}
+ #spot{display:none}
+}
+@media (max-width:600px){
+ .btn-sales span{display:none}.btn-sales{padding:8px 11px}
+ .bento{grid-template-columns:1fr}.bento .fcd,.bento .w3,.bento .w6{grid-column:span 1}.bento .fcd{min-height:0;padding:26px 22px}
+ .btn-hero{width:100%;justify-content:center}.hero-btns{width:100%}
+ .pcard{width:132px;padding:20px 10px 16px;border-radius:20px}
+ .plogo{width:70px;height:70px;margin-bottom:12px}.plogo span{font-size:28px}.pname{font-size:13px}
+ .track{gap:14px}.pgrid{gap:14px}
+ .ccard{padding:16px}.ccard b{font-size:16px}
+ .cta{padding:50px 20px;border-radius:24px}
+ .dv-order{font-size:9px}.tb{font-size:10px;padding:8px 2px}.device{aspect-ratio:1/1}.cats span:nth-child(n+4){display:none}.pr{font-size:9px}.pr i{font-size:20px}.dv-menu{padding:8px;gap:7px}.dv-order{padding:8px}
+}
+@media (max-width:360px){.btn-login{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.ln{opacity:1}.track{overflow-x:auto}}
+</style>
+</head>
+<body>
+<div id="prog"></div><div id="spot"></div>
+<div class="orb o1"></div><div class="orb o2"></div>
 
-      .f-icon {
-        font-size: 32px;
-        color: var(--primary); /* All icons gold for luxury uniformity */
-        margin-bottom: 25px;
-        position: relative;
-        z-index: 2;
-        text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
-      }
-      .f-title {
-        font-size: 22px;
-        font-weight: 800;
-        margin-bottom: 12px;
-        color: #fff;
-        position: relative;
-        z-index: 2;
-      }
-      .f-desc {
-        color: var(--text-muted);
-        font-size: 15px;
-        position: relative;
-        z-index: 2;
-        line-height: 1.6;
-      }
+<nav id="navbar">
+  <a href="#top" class="logo"><i class="fas fa-bolt"></i> iMenu</a>
+  <div class="nav-links">
+    <a href="#features">المميزات</a>
+    <a href="#partners" id="nav-partners" style="display:none">شركاؤنا</a>
+    <a href="#contact" id="nav-contact" style="display:none">تواصل معنا</a>
+  </div>
+  <div class="nav-actions">
+    <a href="/join-sales" class="btn-nav btn-sales"><i class="fas fa-handshake"></i> <span>انضم كمسوق</span></a>
+    <a href="/login" class="btn-nav btn-login">دخول</a>
+    <a href="#contact" class="btn-nav btn-start js-contact"><i class="fas fa-headset"></i> تواصل معنا</a>
+  </div>
+</nav>
 
-      .stats {
-        padding: 80px 5%;
-        background: rgba(255, 255, 255, 0.02);
-        display: flex;
-        justify-content: space-around;
-        flex-wrap: wrap;
-        text-align: center;
-        border-top: 1px solid var(--glass-border);
-        border-bottom: 1px solid var(--glass-border);
-        backdrop-filter: blur(10px);
-      }
-      .stat-item h3 {
-        font-size: 48px;
-        color: #fff;
-        margin-bottom: 5px;
-        font-weight: 800;
-      }
-      .stat-item p {
-        color: var(--primary);
-        font-weight: bold;
-        letter-spacing: 1px;
-        text-transform: uppercase;
-        font-size: 14px;
-      }
-
-      .cta-section {
-        margin: 100px 5%;
-        padding: 80px 40px;
-        /* Gold Gradient */
-        background: linear-gradient(135deg, var(--primary) 0%, #7c5e10 100%);
-        border-radius: 30px;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 20px 80px rgba(212, 175, 55, 0.2);
-      }
-      .cta-content {
-        position: relative;
-        z-index: 2;
-      }
-      .cta-section h2 {
-        font-size: 40px;
-        margin-bottom: 20px;
-        color: #000;
-        font-weight: 900;
-      }
-      .cta-section p {
-          color: #2a2a2a;
-          font-weight: 600;
-      }
-      .cta-btn-large {
-        background: #000;
-        color: #fff;
-        padding: 18px 50px;
-        border-radius: 50px;
-        font-size: 18px;
-        font-weight: bold;
-        text-decoration: none;
-        display: inline-block;
-        transition: 0.3s;
-        margin-top: 25px;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-      }
-      .cta-btn-large:hover {
-        transform: scale(1.05);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-        background: #1a1a1a;
-      }
-      .circle-dec {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        filter: blur(20px);
-      }
-
-      footer {
-        padding: 50px 5%;
-        border-top: 1px solid var(--glass-border);
-        margin-top: 50px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 20px;
-        background: rgba(0,0,0,0.2);
-      }
-      .footer-logo {
-        font-size: 24px;
-        font-weight: 800;
-        color: #fff;
-      }
-      .socials a {
-        color: var(--text-gray);
-        font-size: 20px;
-        margin-left: 15px;
-        transition: 0.3s;
-      }
-      .socials a:hover {
-        color: var(--primary);
-      }
-
-      /* Modal Styling Update to Match Login */
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 2000;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        backdrop-filter: blur(10px);
-        animation: fadeIn 0.3s ease;
-      }
-      .modal-container {
-        background: #1e232d; /* لون ثابت لضمان القراءة */
-        width: 95%; /* توسيع العرض قليلاً في الموبايل */
-        max-width: 450px;
-        padding: 40px;
-        border-radius: 24px;
-        position: relative;
-        border: 1px solid var(--glass-border);
-        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-        animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        /* إضافات الموبايل */
-        max-height: 90vh; /* أقصى ارتفاع 90% من الشاشة */
-        overflow-y: auto; /* السماح بالسكرول لو الشاشة صغيرة */
-        display: flex;
-        flex-direction: column;
-      }
-      .close-modal {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        font-size: 24px;
-        cursor: pointer;
-        transition: 0.3s;
-      }
-      .close-modal:hover {
-        color: var(--primary);
-        transform: rotate(90deg);
-      }
-      .modal-header {
-        text-align: center;
-        margin-bottom: 30px;
-      }
-      .modal-header h3 {
-        font-size: 26px;
-        color: #fff;
-        margin-bottom: 10px;
-        font-weight: 800;
-      }
-      .modal-header p {
-        color: var(--text-muted);
-        font-size: 14px;
-      }
-
-      .input-group {
-        position: relative;
-        margin-bottom: 20px;
-      }
-      .input-group i {
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-muted);
-        font-size: 16px;
-        transition: 0.3s;
-      }
-      .input-group input {
-        width: 100%;
-        padding: 16px 45px 16px 15px;
-        background: rgba(0, 0, 0, 0.3);
-        border: 1px solid var(--glass-border);
-        border-radius: 14px;
-        color: #fff;
-        font-size: 16px; /* 16px يمنع الزووم التلقائي في الايفون */
-        outline: none;
-        transition: 0.3s;
-        font-family: inherit;
-      }
-      .input-group input:focus {
-        border-color: var(--primary);
-        background: rgba(0, 0, 0, 0.5);
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
-      }
-      .input-group input:focus + i {
-        color: var(--primary);
-      }
-
-      .submit-btn {
-        width: 100%;
-        padding: 16px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, var(--primary), #966f1e);
-        color: #000;
-        border: none;
-        font-size: 16px;
-        font-weight: 800;
-        cursor: pointer;
-        transition: 0.3s;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
-        margin-top: 10px;
-        position: relative;
-        overflow: hidden;
-      }
-      .submit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
-        color: #fff;
-      }
-
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-
-      /* تحسينات الموبايل والتابلت */
-      @media (max-width: 900px) {
-        .hero {
-          flex-direction: column;
-          text-align: center;
-          padding-top: 100px;
-          gap: 30px;
-        }
-
-        .hero-text {
-          margin-bottom: 20px;
-        }
-
-        .hero h1 {
-          font-size: 32px;
-          line-height: 1.3;
-        }
-        
-        .hero p {
-          font-size: 16px;
-          padding: 0 10px;
-        }
-
-        .hero-btns {
-          justify-content: center;
-          flex-direction: column;
-          gap: 15px;
-          padding: 0 20px;
-        }
-        
-        .btn-hero {
-          width: 100%;
-          justify-content: center;
-        }
-
-        .phone-mockup {
-          width: 220px;
-          height: 450px;
-          margin: 0 auto;
-          transform: none !important;
-          border-width: 5px;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-
-        .floating-card {
-          display: none;
-        }
-
-        /* تنسيق النافبار للموبايل */
-        nav {
-          padding: 10px 5%;
-          background: rgba(15, 17, 21, 0.95);
-          flex-direction: column; 
-          gap: 15px;
-        }
-
-        .nav-links {
-          display: none;
-        }
-        
-        .logo {
-            font-size: 24px;
-        }
-
-        nav > div:last-child {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px; 
-            flex-wrap: wrap;
-        }
-
-        .btn-nav {
-            padding: 8px 12px;
-            font-size: 13px;
-            margin: 0 !important;
-        }
-        
-        .btn-login { 
-            display: inline-block; 
-        }
-
-        /* تحسينات المودال للموبايل */
-        .modal-container {
-            padding: 25px 20px; /* تقليل الحواف الداخلية */
-            width: 92%;
-        }
-        
-        .modal-header h3 {
-            font-size: 22px;
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-        }
-        
-        .close-modal {
-            top: 15px;
-            right: 15px;
-            background: rgba(255,255,255,0.1);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="ambient-bg">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
+<main id="top">
+<header class="hero">
+  <div class="hero-text">
+    <div class="badge"><i class="fas fa-circle"></i> يعمل بدون إنترنت</div>
+    <h1>نظام إدارة المطاعم والكافيهات<br /><span class="grad">يعمل أوفلاين</span> بالكامل</h1>
+    <div class="rot">كل ما يخص <b id="rot">الكاشير</b> في مكان واحد</div>
+    <p>نظام واحد سريع وثابت يجمع الكاشير والطاولات والمطبخ والمخزون والتقارير. مبيعاتك مبتقفش لو النت فصل، وبياناتك محفوظة عندك على جهازك.</p>
+    <div class="hero-btns">
+      <a href="#contact" class="btn-hero b-white js-contact">تواصل معنا <i class="fas fa-arrow-left"></i></a>
+      <a href="#features" class="btn-hero b-ghost">اعرف المميزات</a>
     </div>
+    <div class="hero-chips">
+      <span class="chip"><i class="fas fa-bolt"></i> سرعة فورية</span>
+      <span class="chip"><i class="fas fa-lock"></i> بياناتك عندك</span>
+      <span class="chip"><i class="fas fa-print"></i> طباعة حرارية</span>
+    </div>
+  </div>
 
-    <nav id="navbar">
-      <div class="logo"><i class="fas fa-bolt"></i> iMenu</div>
-      <div class="nav-links">
-        <a href="#features">المميزات</a>
-      </div>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <a href="/join-sales" class="btn-nav btn-sales">
-            <i class="fas fa-handshake"></i> انضم كمسوق
-        </a>
-        
-        <a href="/login" class="btn-nav btn-login">دخول</a>
-        <button
-          onclick="openRequestModal()"
-          class="btn-nav btn-start"
-          style="cursor: pointer"
-        >
-          سجل الأن!
-        </button>
-      </div>
-    </nav>
-
-    <main>
-      <header class="hero">
-        <div class="hero-text">
-          <div class="badge-new">
-            <i class="fas fa-star"></i> الإصدار الجديد 2.0
-          </div>
-          <h1>
-            حول مطعمك إلى <br />
-            <span>تحفة رقمية</span> متكاملة
-          </h1>
-          <p>
-            نظام المنيو الذكي الأقوى. استقبال طلبات عبر الواتساب، لوحة تحكم
-            شاملة، QR Code، وبدون تطبيقات معقدة. زد مبيعاتك وأبهر عملائك.
-          </p>
-          <div class="hero-btns">
-            <button
-              onclick="openRequestModal()"
-              class="btn-hero primary-hero"
-              style="border: none"
-            >
-              إنشاء حساب جديد <i class="fas fa-arrow-left"></i>
-            </button>
+  <div class="hero-visual" id="heroVisual">
+    <div class="device" id="device">
+      <div class="dv-bar"><i class="dv-dot"></i><i class="dv-dot"></i><i class="dv-dot"></i><b>iMenu POS</b><span class="off-tag"><i class="fas fa-wifi nowifi"></i> بدون إنترنت</span></div>
+      <div class="dv-body">
+        <div class="dv-menu">
+          <div class="cats"><span class="on">الكل</span><span>برجر</span><span>بيتزا</span><span>مشروبات</span><span>حلويات</span></div>
+          <div class="prods" id="prods">
+            <div class="pr" data-n="برجر كلاسيك" data-p="120"><i>🍔</i>برجر<small>120</small></div>
+            <div class="pr" data-n="بيتزا مارجريتا" data-p="150"><i>🍕</i>بيتزا<small>150</small></div>
+            <div class="pr" data-n="بطاطس مقرمشة" data-p="45"><i>🍟</i>بطاطس<small>45</small></div>
+            <div class="pr" data-n="قهوة لاتيه" data-p="60"><i>☕</i>لاتيه<small>60</small></div>
+            <div class="pr" data-n="عصير ليمون" data-p="35"><i>🥤</i>ليمون<small>35</small></div>
+            <div class="pr" data-n="تشيز كيك" data-p="80"><i>🍰</i>تشيز كيك<small>80</small></div>
           </div>
         </div>
-
-        <div class="hero-visual" id="heroVisual">
-          <div class="phone-mockup">
-            <div class="screen">
-              <iframe
-                src="/promo"
-                style="pointer-events: none"
-                title="Smart Menu Demo"
-              ></iframe>
-            </div>
-          </div>
-
-          <div class="floating-card card-1">
-            <div class="icon-box bg-gold"><i class="fas fa-crown"></i></div>
-            <div>
-              <div class="card-label">المظهر العام</div>
-              <div class="card-value">تصميم فاخر وعصري</div>
-            </div>
-          </div>
-
-          <div class="floating-card card-2">
-            <div class="icon-box bg-blue">
-              <i class="fas fa-mobile-alt"></i>
-            </div>
-            <div>
-              <div class="card-label">سهولة الوصول</div>
-              <div class="card-value">بدون تحميل تطبيقات</div>
-            </div>
-          </div>
+        <div class="dv-order">
+          <b style="color:#fff;font-size:11px">طلب طاولة 3</b>
+          <div id="ol"></div>
+          <div class="tot" id="tot"><span>الإجمالي</span><span id="tt">0 ج</span></div>
+          <div class="pay">دفع وطباعة</div>
         </div>
-      </header>
-
-      <section class="stats">
-        <div class="stat-item">
-          <h3>+500</h3>
-          <p>مطعم وكافيه</p>
-        </div>
-        <div class="stat-item">
-          <h3>+50K</h3>
-          <p>طلب شهرياً</p>
-        </div>
-        <div class="stat-item">
-          <h3>%30</h3>
-          <p>زيادة في المبيعات</p>
-        </div>
-      </section>
-
-      <section class="features" id="features">
-        <div class="section-title">
-          <h2>لماذا iMenu؟</h2>
-          <p>كل ما تحتاجه لإدارة طلباتك بذكاء وسهولة</p>
-        </div>
-
-        <div class="grid">
-          <div class="feature-card">
-            <i class="fas fa-qrcode f-icon"></i>
-            <h3 class="f-title">QR Code ديناميكي</h3>
-            <p class="f-desc">
-              ودع المنيو الورقي. عميلك يمسح الكود ويطلب فوراً من هاتفه بتجربة
-              سلسة وسريعة.
-            </p>
-          </div>
-          <div class="feature-card">
-            <i class="fab fa-whatsapp f-icon"></i>
-            <h3 class="f-title">طلبات واتساب</h3>
-            <p class="f-desc">
-              استقبل الطلبات مفصلة (النوع، الإضافات، الطاولة) مباشرة على واتساب
-              المطعم.
-            </p>
-          </div>
-          <div class="feature-card">
-            <i class="fas fa-chart-pie f-icon"></i>
-            <h3 class="f-title">لوحة تحكم للمالك</h3>
-            <p class="f-desc">
-              تابع مبيعاتك اليومية، عدل الأسعار، وشاهد تقارير الأرباح من أي مكان
-              في العالم.
-            </p>
-          </div>
-          <div class="feature-card">
-            <i class="fas fa-paint-brush f-icon"></i>
-            <h3 class="f-title">ستوديو التصميم</h3>
-            <p class="f-desc">
-              غير ألوان وشكل المنيو بضغطة زر ليتناسب مع هوية مطعمك البصرية.
-            </p>
-          </div>
-          <div class="feature-card">
-            <i class="fas fa-bell f-icon"></i>
-            <h3 class="f-title">نظام Live Orders</h3>
-            <p class="f-desc">
-              شاشة للمطبخ والكاشير تظهر الطلبات لحظياً مع تنبيهات صوتية لإدارة
-              التشغيل.
-            </p>
-          </div>
-          <div class="feature-card">
-            <i class="fas fa-users-cog f-icon"></i>
-            <h3 class="f-title">صلاحيات الموظفين</h3>
-            <p class="f-desc">
-              أنشئ حسابات للكاشير والشيف بصلاحيات محددة ومتابعة شيفتات العمل.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <div class="cta-section">
-        <div
-          class="circle-dec"
-          style="width: 200px; height: 200px; top: -50px; left: -50px"
-        ></div>
-        <div
-          class="circle-dec"
-          style="width: 150px; height: 150px; bottom: -30px; right: -30px"
-        ></div>
-
-        <div class="cta-content">
-          <h2>جاهز لنقل مطعمك للمستقبل؟</h2>
-          <p style="opacity: 0.9; font-size: 18px">
-            انضم لمئات المطاعم التي تستخدم iMenu اليوم.
-          </p>
-          <button
-            onclick="openRequestModal()"
-            class="cta-btn-large"
-            style="border: none; cursor: pointer"
-          >
-            اشترك الآن <i class="fas fa-rocket"></i>
-          </button>
-        </div>
-      </div>
-    </main>
-
-    <footer>
-      <div class="footer-logo"><i class="fas fa-bolt"></i> iMenu</div>
-
-      <div
-        id="secret-door"
-        onclick="openSecretDoor()"
-        style="
-          color: var(--text-gray);
-          font-size: 14px;
-          cursor: default;
-          user-select: none;
-        "
-      >
-        جميع الحقوق محفوظة &copy; 2026
-      </div>
-    </footer>
-
-    <div id="requestModal" class="modal-overlay" style="display: none">
-      <div class="modal-container">
-        <button class="close-modal" onclick="closeRequestModal()">
-          &times;
-        </button>
-        <div class="modal-header">
-          <h3>انضم لعائلة iMenu</h3>
-          <p>املأ البيانات وسنقوم بتجهيز حسابك فوراً</p>
-        </div>
-        <form id="requestForm" onsubmit="submitRequest(event)">
-          <div class="input-group">
-            <input
-              type="text"
-              id="req-name"
-              placeholder="اسمك الكريم"
-              required
-            />
-            <i class="fas fa-user"></i>
-          </div>
-          <div class="input-group">
-            <input
-              type="text"
-              id="req-store"
-              placeholder="اسم المطعم / الكافيه"
-              required
-            />
-            <i class="fas fa-store"></i>
-          </div>
-          <div class="input-group">
-            <input
-              type="tel"
-              id="req-phone"
-              placeholder="رقم الهاتف"
-              required
-              oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-            />
-            <i class="fas fa-phone"></i>
-          </div>
-          <div class="input-group">
-            <input
-              type="text"
-              id="req-address"
-              placeholder="عنوان المتجر"
-              required
-            />
-            <i class="fas fa-map-marker-alt"></i>
-          </div>
-          <button type="submit" class="submit-btn">
-            إرسال الطلب <i class="fas fa-paper-plane"></i>
-          </button>
-        </form>
       </div>
     </div>
+    <div class="fcard fc1"><div class="ibox"><i class="fas fa-wifi nowifi"></i></div><div><small>الاتصال</small><b>يعمل بدون إنترنت</b></div></div>
+    <div class="fcard fc2"><div class="ibox"><i class="fas fa-shield-halved"></i></div><div><small>الأمان</small><b>بياناتك على جهازك</b></div></div>
+  </div>
+</header>
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-      function openRequestModal() {
-        document.getElementById("requestModal").style.display = "flex";
-      }
-      function closeRequestModal() {
-        document.getElementById("requestModal").style.display = "none";
-      }
+<div class="ticker" aria-hidden="true"><div class="track"><span>كاشير سريع</span><span>إدارة الطاولات</span><span>طباعة حرارية</span><span>المخزون</span><span>الشيفتات</span><span>التقارير</span><span>صلاحيات الموظفين</span><span>يعمل بدون إنترنت</span><span>كاشير سريع</span><span>إدارة الطاولات</span><span>طباعة حرارية</span><span>المخزون</span><span>الشيفتات</span><span>التقارير</span><span>صلاحيات الموظفين</span><span>يعمل بدون إنترنت</span></div></div>
 
-      async function submitRequest(e) {
-        e.preventDefault();
-        const btn = e.target.querySelector("button");
-        const originalContent = btn.innerHTML;
-        btn.innerHTML =
-          '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
-        btn.disabled = true;
+<section id="features">
+  <div class="s-title rv"><span class="eyebrow">المميزات</span><h2>كل اللي مطعمك محتاجه... في نظام واحد</h2><p>أدوات احترافية مصممة لسرعة التشغيل اليومي</p><div class="bar"></div></div>
+  <div class="bento">
+    <div class="fcd w3 rv"><span class="tag">الأساس</span><div class="f-ic"><i class="fas fa-cash-register"></i></div><h3>كاشير سريع</h3><p>شاشة كاشير سلسة للطلبات والفواتير والدفع المقسّم بأكتر من طريقة، بتشتغل بأقصى سرعة من غير ما تحتاج إنترنت.</p></div>
+    <div class="fcd w3 rv" style="--d:.08s"><span class="tag">الصالة</span><div class="f-ic"><i class="fas fa-chair"></i></div><h3>إدارة الطاولات</h3><p>افتح الطاولات وانقلها وادمجها وقسّم الحساب بسهولة، وتابع حالة كل طاولة لحظة بلحظة.</p></div>
+    <div class="fcd rv"><div class="f-ic"><i class="fas fa-print"></i></div><h3>طباعة حرارية</h3><p>فواتير وأوردرات المطبخ على الطابعات الحرارية، موزعة على أقسام التحضير.</p></div>
+    <div class="fcd rv" style="--d:.08s"><div class="f-ic"><i class="fas fa-boxes-stacked"></i></div><h3>المخزون</h3><p>تابع الخامات والكميات وحركة الاستهلاك، واستورد وصدّر ببيانات Excel.</p></div>
+    <div class="fcd rv" style="--d:.16s"><div class="f-ic"><i class="fas fa-chart-line"></i></div><h3>شيفتات وتقارير</h3><p>قفل الشيفتات وملخصات مبيعات وتقارير يومية وشهرية لكل طرق الدفع.</p></div>
+    <div class="fcd w6 rv"><div class="f-ic"><i class="fas fa-users-gear"></i></div><div class="txt"><h3>صلاحيات الموظفين</h3><p>حسابات للكاشير والكابتن والشيف بصلاحيات محددة لكل واحد، وتحكم كامل للمالك في كل حاجة.</p></div></div>
+  </div>
+</section>
 
-        const data = {
-          name: document.getElementById("req-name").value,
-          storeName: document.getElementById("req-store").value,
-          phone: document.getElementById("req-phone").value,
-          address: document.getElementById("req-address").value,
-        };
+<section id="offline" style="background:linear-gradient(180deg,transparent,rgba(212,175,55,.04),transparent)">
+  <div class="off-wrap">
+    <div class="off-vis rv">
+      <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+      <div class="core"><i class="fas fa-wifi nowifi"></i></div>
+      <div class="st bad"><i class="fas fa-circle"></i> مفيش إنترنت</div>
+      <div class="st good"><i class="fas fa-circle"></i> النظام شغّال عادي</div>
+    </div>
+    <div class="off-copy rv" style="--d:.1s">
+      <span class="eyebrow">أوفلاين بالكامل</span>
+      <h2>النت فصل؟ <span>شغلك مكملش</span></h2>
+      <p>iMenu مصمم يشتغل على جهازك مباشرة، فمفيش حاجة بتوقف مبيعاتك.</p>
+      <ul class="off-list">
+        <li><i class="fas fa-check"></i><div><b>تشغيل مستمر</b><small>الكاشير والمطبخ والطباعة شغالين من غير اتصال.</small></div></li>
+        <li><i class="fas fa-check"></i><div><b>بياناتك على جهازك</b><small>الفواتير والمبيعات محفوظة عندك أنت.</small></div></li>
+        <li><i class="fas fa-check"></i><div><b>سرعة بدون انتظار</b><small>مفيش تحميل ولا تأخير بسبب بطء الشبكة.</small></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
 
-        try {
-          const res = await fetch("/api/v1/requests", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-          const result = await res.json();
+<section id="steps">
+  <div class="s-title rv"><span class="eyebrow">ازاي تبدأ؟</span><h2>تبدأ في 3 خطوات بسيطة</h2><div class="bar"></div></div>
+  <div class="steps">
+    <div class="step rv"><div class="n">1</div><h3>تواصل معنا</h3><p>كلمنا واحكيلنا عن مطعمك أو الكافيه واحتياجاتك.</p></div>
+    <div class="step rv" style="--d:.12s"><div class="n">2</div><h3>نجهز النظام</h3><p>بنجهزلك النظام ونظبطه على شغلك والمنيو بتاعك.</p></div>
+    <div class="step rv" style="--d:.24s"><div class="n">3</div><h3>ابدأ الشغل</h3><p>تشتغل أوفلاين بكل سرعة وثبات من أول يوم.</p></div>
+  </div>
+</section>
 
-          if (result.status === "success") {
-            closeRequestModal();
-            Swal.fire({
-              icon: "success",
-              title: "تم استلام طلبك!",
-              text: "سيتواصل معك فريق المبيعات في أقرب وقت لتفعيل حسابك.",
-              background: "#1e293b",
-              color: "#fff",
-              confirmButtonColor: "#d4af37",
-            });
-            document.getElementById("requestForm").reset();
-          } else {
-            throw new Error(result.message);
-          }
-        } catch (err) {
-          Swal.fire({
-            icon: "error",
-            title: "عفواً",
-            text: "حدث خطأ أثناء الإرسال، يرجى المحاولة لاحقاً",
-            background: "#1e293b",
-            color: "#fff",
-            confirmButtonColor: "#d4af37"
-          });
-        } finally {
-          btn.innerHTML = originalContent;
-          btn.disabled = false;
-        }
-      }
+<section id="partners">
+  <div class="s-title rv"><span class="eyebrow">عملاؤنا</span><h2 id="p-title">أبرز شركائنا</h2><p id="p-sub"></p><div class="bar"></div></div>
+  <div id="p-wrap" class="rv"></div>
+</section>
 
-      window.addEventListener("scroll", () => {
-        const nav = document.getElementById("navbar");
-        if (window.scrollY > 50) nav.classList.add("scrolled");
-        else nav.classList.remove("scrolled");
-      });
+<section id="contact">
+  <div class="s-title rv"><span class="eyebrow">كلمنا</span><h2>تواصل معنا</h2><p>فريقنا جاهز يرد عليك ويجهزلك النظام المناسب لمطعمك</p><div class="bar"></div></div>
+  <div class="cgrid" id="c-grid"></div>
+</section>
 
-      const heroSection = document.querySelector(".hero");
-      const phone = document.querySelector(".phone-mockup");
+<div class="cta rv" id="cta" style="display:none">
+  <h2>جاهز تنقل مطعمك لمستوى أعلى؟</h2>
+  <p>كلمنا دلوقتي وهنجهزلك النظام المناسب لنشاطك.</p>
+  <a href="#contact" class="cta-btn js-contact">تواصل معنا <i class="fas fa-headset"></i></a>
+</div>
+</main>
 
-      heroSection.addEventListener("mousemove", (e) => {
-        const x = (window.innerWidth / 2 - e.pageX) / 25;
-        const y = (window.innerHeight / 2 - e.pageY) / 25;
-        phone.style.transform = `rotateY(${-15 + x}deg) rotateX(${10 + y}deg)`;
-      });
+<footer>
+  <div class="f-logo"><i class="fas fa-bolt"></i> iMenu</div>
+  <div id="secret-door" onclick="openSecretDoor()">جميع الحقوق محفوظة &copy; 2026</div>
+  <div class="socials" id="f-socials"></div>
+</footer>
 
-    </script>
-  </body>
+<a class="wa-fab" id="wa-fab" href="#" target="_blank" rel="noopener" aria-label="واتساب"><i class="fab fa-whatsapp"></i></a>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// Navbar
+const nav = $("navbar");
+const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 50);
+addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+// Hero tilt (desktop mouse only)
+if (matchMedia("(hover:hover) and (pointer:fine) and (min-width:901px)").matches) {
+  const dev = $("device");
+  $("heroVisual").addEventListener("mousemove", (e) => {
+    const r = $("heroVisual").getBoundingClientRect();
+    const x = (e.clientX - r.left - r.width / 2) / 30, y = (e.clientY - r.top - r.height / 2) / 30;
+    dev.style.transform = `rotateY(${12 - x}deg) rotateX(${6 + y}deg)`;
+  });
+  $("heroVisual").addEventListener("mouseleave", () => (dev.style.transform = ""));
+}
+
+// Scroll reveal
+const io = "IntersectionObserver" in window
+  ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: 0.12 })
+  : null;
+const watch = (el) => (io ? io.observe(el) : el.classList.add("in"));
+const watchAll = () => document.querySelectorAll(".rv:not(.in)").forEach(watch);
+
+// Helpers for contact links
+const waLink = (n) => {
+  let d = String(n).replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0")) d = "20" + d.slice(1);
+  return "https://wa.me/" + d;
+};
+const telLink = (n) => "tel:" + String(n).replace(/[^\d+]/g, "");
+
+function renderPartners(p) {
+  if (!p || p.enabled === false || !p.items || !p.items.length) return;
+  $("p-title").textContent = p.title || "أبرز شركائنا";
+  $("p-sub").textContent = p.subtitle || "";
+  const card = (x, i) => {
+    const ini = esc((x.name || "?").trim().charAt(0));
+    const logo = x.image ? `<img src="${esc(x.image)}" alt="${esc(x.name)}" loading="lazy" data-i="${ini}" onerror="this.parentNode.innerHTML='<span>'+this.dataset.i+'</span>'">` : `<span>${ini}</span>`;
+    return `<div class="pcard"><div class="plogo">${logo}</div><div class="pname">${esc(x.name)}</div></div>`;
+  };
+  const wrap = $("p-wrap");
+  if (p.items.length >= 5) {
+    const html = p.items.map(card).join("");
+    wrap.innerHTML = `<div class="marquee"><div class="track" style="--dur:${Math.max(20, p.items.length * 5)}s">${html}${html}</div></div>`;
+  } else {
+    wrap.innerHTML = `<div class="pgrid">${p.items.map((x, i) => card(x, i).replace('class="pcard"', `class="pcard rv" style="--d:${i * 0.1}s"`)).join("")}</div>`;
+  }
+  $("partners").style.display = "block";
+  $("nav-partners").style.display = "";
+}
+
+function renderContacts(c) {
+  if (!c) return;
+  const items = [];
+  if (c.facebook) items.push(`<a class="ccard rv" style="--c:#1877f2" href="${esc(c.facebook)}" target="_blank" rel="noopener"><div class="ci"><i class="fab fa-facebook-f"></i></div><div><small>تابعنا على</small><b style="direction:rtl">صفحة الفيسبوك</b></div><i class="fas fa-arrow-left arrow"></i></a>`);
+  (c.whatsapps || []).forEach((x) => items.push(`<a class="ccard rv" style="--c:#25d366" href="${esc(waLink(x.number))}" target="_blank" rel="noopener"><div class="ci"><i class="fab fa-whatsapp"></i></div><div><small>${esc(x.label || "واتساب")}</small><b>${esc(x.number)}</b></div><i class="fas fa-arrow-left arrow"></i></a>`));
+  (c.phones || []).forEach((x) => items.push(`<a class="ccard rv" href="${esc(telLink(x.number))}"><div class="ci"><i class="fas fa-phone"></i></div><div><small>${esc(x.label || "اتصل بنا")}</small><b>${esc(x.number)}</b></div><i class="fas fa-arrow-left arrow"></i></a>`));
+  if (!items.length) return;
+  $("c-grid").innerHTML = items.join("");
+  $("contact").style.display = "block";
+  $("cta").style.display = "block";
+  $("nav-contact").style.display = "";
+  if (c.facebook) $("f-socials").innerHTML = `<a href="${esc(c.facebook)}" target="_blank" rel="noopener" aria-label="فيسبوك"><i class="fab fa-facebook"></i></a>`;
+  if (c.whatsapps && c.whatsapps.length) {
+    const fab = $("wa-fab"); fab.href = waLink(c.whatsapps[0].number); fab.style.display = "flex";
+  }
+}
+
+(async function init() {
+  try {
+    const res = await fetch("/api/v1/site/public", { cache: "no-store" });
+    const json = await res.json();
+    if (json && json.data) { renderPartners(json.data.partners); renderContacts(json.data.contacts); }
+  } catch (_) {}
+  // لو مفيش بيانات تواصل، أزرار "تواصل معنا" توجه للمميزات
+  if ($("contact").style.display !== "block") {
+    document.querySelectorAll(".js-contact").forEach((a) => (a.getAttribute("href") === "#contact") && a.setAttribute("href", "#features"));
+  }
+  watchAll();
+})();
+watchAll();
+
+
+// ===== V2 interactions =====
+(function () {
+  const prog = $("prog");
+  const upd = () => { const h = document.documentElement; const m = h.scrollHeight - innerHeight; prog.style.width = (m > 0 ? (scrollY / m) * 100 : 0) + "%"; };
+  addEventListener("scroll", upd, { passive: true }); upd();
+
+  const fine = matchMedia("(hover:hover) and (pointer:fine)").matches;
+  if (fine) {
+    const sp = $("spot");
+    addEventListener("mousemove", (e) => { sp.style.left = e.clientX + "px"; sp.style.top = e.clientY + "px"; }, { passive: true });
+    document.querySelectorAll(".fcd").forEach((c) => c.addEventListener("mousemove", (e) => {
+      const r = c.getBoundingClientRect(); c.style.setProperty("--mx", e.clientX - r.left + "px"); c.style.setProperty("--my", e.clientY - r.top + "px");
+    }));
+  }
+
+  // word rotator
+  const words = ["الكاشير", "الطاولات", "المطبخ", "المخزون", "التقارير"], rot = $("rot"); let wi = 0;
+  setInterval(() => { rot.classList.add("out"); setTimeout(() => { wi = (wi + 1) % words.length; rot.textContent = words[wi]; rot.classList.remove("out"); }, 350); }, 2200);
+
+  // live POS demo
+  const prods = [...document.querySelectorAll("#prods .pr")], ol = $("ol"), tt = $("tt"), tot = $("tot");
+  let k = 0, sum = 0;
+  const addItem = () => {
+    if (k >= 5) { ol.innerHTML = ""; sum = 0; k = 0; tt.textContent = "0 ج"; return; }
+    const el = prods[[0, 2, 3, 1, 5][k]]; k++;
+    el.classList.add("tap"); setTimeout(() => el.classList.remove("tap"), 450);
+    sum += +el.dataset.p;
+    const d = document.createElement("div"); d.className = "ln"; d.style.animationDelay = "0s";
+    d.innerHTML = "<span></span><span>" + el.dataset.p + "</span>"; d.firstChild.textContent = el.dataset.n;
+    ol.appendChild(d); while (ol.children.length > 4) ol.removeChild(ol.firstChild);
+    tt.textContent = sum + " ج"; tot.classList.add("bump"); setTimeout(() => tot.classList.remove("bump"), 250);
+  };
+  setTimeout(() => { addItem(); setInterval(addItem, 1500); }, 900);
+})();
+
+// الباب السري للسوبر أدمن: 5 ضغطات سريعة على حقوق النشر
+let _sd = [];
+function openSecretDoor() {
+  const now = Date.now();
+  _sd = _sd.filter((t) => now - t < 3000); _sd.push(now);
+  if (_sd.length >= 5) location.href = "/super-admin";
+}
+</script>
+</body>
 </html>
