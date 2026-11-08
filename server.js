@@ -2652,6 +2652,7 @@ app.get("/store/:slug", async (req, res) => {
     res.sendFile(filePath);
   }
 });
+app.get("/simulator", (req, res) => res.sendFile(path.join(__dirname, "public", "simulator.html")));
 app.get("/owner", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.get("/super-admin", (req, res) => res.sendFile(path.join(__dirname, "public", "super.html")));
 app.get("/sales-dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "sales.html")));
