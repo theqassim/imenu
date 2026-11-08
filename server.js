@@ -3365,8 +3365,14 @@ const SITE_DEFAULTS = {
 
 const _isMissing = (err) => !!err && /not.?found|does not exist|404/i.test(String(err.message || "") + " " + String(err.statusCode || err.status || ""));
 
+// كاش في الذاكرة (write-through): Supabase Storage بيعمل كاش للملفات، فلو قرينا الملف بعد ما اتعدل
+// ممكن ييجي القديم (وده كان بيخلي آخر شريك يمسح اللي قبله). السيرفر بيعتمد على آخر نسخة كتبها هو.
+const _siteCache = {};
+const _clone = (o) => JSON.parse(JSON.stringify(o));
+
 async function readSiteSetting(key) {
-  const base = JSON.parse(JSON.stringify(SITE_DEFAULTS[key])); // نسخة جديدة عشان الافتراضي ميتعدلش
+  if (_siteCache[key]) return _clone(_siteCache[key]);
+  const base = _clone(SITE_DEFAULTS[key]); // نسخة جديدة عشان الافتراضي ميتعدلش
   const { data, error } = await supabase.storage.from(SITE_BUCKET).download(key + ".json");
   if (error) {
     if (_isMissing(error)) return base; // لسه مفيش ملف/bucket = إعدادات افتراضية
@@ -3374,7 +3380,9 @@ async function readSiteSetting(key) {
   }
   let value = {};
   try { value = JSON.parse(await data.text()) || {}; } catch (_) {}
-  return { ...base, ...value };
+  const merged = { ...base, ...value };
+  _siteCache[key] = _clone(merged);
+  return merged;
 }
 
 async function writeSiteSetting(key, value) {
@@ -3385,6 +3393,7 @@ async function writeSiteSetting(key, value) {
     if (await ensureSiteSettingsTable()) ({ error } = await up());
   }
   if (error) throw error;
+  _siteCache[key] = _clone(value);
   return value;
 }
 
