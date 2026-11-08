@@ -73,19 +73,6 @@ nav.scrolled{background:rgba(15,17,21,.95);padding:12px 5%;box-shadow:0 10px 30p
 .dv-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#171a21;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}
 .dv-bar b{color:#fff;margin-inline-end:auto;font-size:12px}
 .dv-dot{width:8px;height:8px;border-radius:50%;background:#ef4444}.dv-dot:nth-of-type(2){background:#f59e0b}.dv-dot:nth-of-type(3){background:#10b981}
-.dv-body{flex:1;display:grid;grid-template-columns:1.5fr 1fr;min-height:0}
-.dv-tables{padding:12px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-content:start}
-.tb{border-radius:12px;padding:10px 4px;text-align:center;font-size:11px;font-weight:700;border:1px solid var(--line);background:rgba(255,255,255,.04);animation:tbp 4s infinite}
-.tb small{display:block;font-weight:400;font-size:9px;opacity:.7}
-.tb.free{color:#10b981;background:rgba(16,185,129,.1)}.tb.busy{color:var(--gold);background:rgba(212,175,55,.12);border-color:rgba(212,175,55,.35)}.tb.res{color:#9ca3af}
-.tb.busy:nth-child(2){animation-delay:.6s}.tb.busy:nth-child(5){animation-delay:1.4s}
-@keyframes tbp{50%{box-shadow:0 0 14px rgba(212,175,55,.25)}}
-.dv-order{border-inline-start:1px solid var(--line);padding:12px;background:#14171d;display:flex;flex-direction:column;gap:7px;font-size:10.5px}
-.ln{display:flex;justify-content:space-between;color:#d1d5db;opacity:0;animation:lin .6s forwards}
-.ln:nth-child(2){animation-delay:.4s}.ln:nth-child(3){animation-delay:.9s}.ln:nth-child(4){animation-delay:1.4s}
-@keyframes lin{to{opacity:1}}
-.tot{margin-top:auto;display:flex;justify-content:space-between;font-weight:800;font-size:13px;color:var(--gold);border-top:1px dashed var(--line);padding-top:8px}
-.pay{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;text-align:center;border-radius:9px;padding:7px;font-weight:800;font-size:11px}
 .off-tag{position:static;display:flex;align-items:center;gap:6px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;padding:4px 10px;border-radius:50px;font-size:10px;font-weight:700}
 .nowifi{position:relative;display:inline-block}
 .nowifi::after{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:2px;background:currentColor;transform:rotate(-40deg);box-shadow:0 0 0 1px rgba(15,17,21,.9)}
@@ -179,22 +166,6 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .device{box-shadow:0 60px 120px -20px rgba(0,0,0,.85),0 0 0 1px rgba(212,175,55,.15),0 0 90px rgba(212,175,55,.12)}
 .device::before{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);background-size:250% 100%;animation:glass 6s ease-in-out infinite}
 @keyframes glass{0%{background-position:150% 0}60%,100%{background-position:-100% 0}}
-.dv-body{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}.dv-menu,.dv-order{min-width:0}
-.dv-menu{padding:10px;display:flex;flex-direction:column;gap:9px;min-height:0}
-.cats{display:flex;gap:6px;overflow:hidden}
-.cats span{font-size:10px;padding:4px 11px;border-radius:50px;background:rgba(255,255,255,.05);color:var(--muted);white-space:nowrap;border:1px solid var(--line)}
-.cats .on{background:var(--gold);color:#000;font-weight:800;border-color:var(--gold)}
-.prods{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;flex:1;min-height:0}
-.pr{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:700;text-align:center;padding:4px 2px;transition:.25s}
-.pr i{font-style:normal;font-size:24px;line-height:1.1;filter:drop-shadow(0 4px 6px rgba(0,0,0,.4))}
-.pr small{color:var(--gold);font-weight:800;font-size:10px}
-.pr.tap{transform:scale(.93);background:rgba(212,175,55,.2);border-color:var(--gold);box-shadow:0 0 18px rgba(212,175,55,.35)}
-.dv-order{overflow:hidden}
-#ol{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow:hidden;justify-content:flex-end}
-.dv-order .tot span:last-child{transition:transform .25s}
-.dv-order .tot.bump span:last-child{transform:scale(1.25)}
-.dv-order .pay{animation:payp 2s infinite}
-@keyframes payp{50%{box-shadow:0 0 20px rgba(212,175,55,.55)}}
 
 /* ticker */
 .ticker{border-block:1px solid var(--line);background:rgba(255,255,255,.02);padding:18px 0;overflow:hidden;direction:ltr;-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
@@ -268,10 +239,61 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
  .track{gap:14px}.pgrid{gap:14px}
  .ccard{padding:16px}.ccard b{font-size:16px}
  .cta{padding:50px 20px;border-radius:24px}
- .dv-order{font-size:9px}.tb{font-size:10px;padding:8px 2px}.device{aspect-ratio:1/1}.cats span:nth-child(n+4){display:none}.pr{font-size:9px}.pr i{font-size:20px}.dv-menu{padding:8px;gap:7px}.dv-order{padding:8px}
 }
 @media (max-width:360px){.btn-login{display:none}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.ln{opacity:1}.track{overflow-x:auto}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.track{overflow-x:auto}}
+
+/* POS device v3: نفس شكل شاشة الكاشير الحقيقية في admin.html (نفس المتغيرات والأبعاد) */
+.device{--primary:#4338ca;--primary-light:#e0e7ff;--secondary:#64748b;--bg:#f3f4f6;--surface:#fff;--border-color:#e2e8f0;--text-main:#1e293b;--success:#10b981;--danger:#ef4444;
+background:var(--bg);color:var(--text-main);aspect-ratio:auto;height:clamp(360px,44vw,400px)}
+.rd-body{flex:1;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;padding:10px;min-height:0}
+.rd-menu{display:flex;flex-direction:column;min-width:0;min-height:0}
+.rd-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.rd-top b{font-size:12px;font-weight:800;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.rd-top b i{color:var(--primary)}
+.rd-search{flex:1;max-width:120px;height:24px;border:1px solid var(--border-color);background:var(--surface);border-radius:8px;display:flex;align-items:center;gap:5px;padding:0 8px;font-size:9px;color:var(--secondary)}
+.rd-split{flex:1;display:flex;gap:8px;min-height:0}
+.rd-cats{width:62px;flex:0 0 62px;display:flex;flex-direction:column;gap:6px;padding-inline-start:0;border-inline-start:1px solid var(--border-color);padding-inline-start:8px}
+.rd-cat{background:var(--surface);border:1px solid var(--border-color);border-radius:10px;padding:7px 2px;text-align:center;font-size:9px;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,.03);transition:.2s}
+.rd-cat i{display:block;font-size:15px;color:var(--primary);margin-bottom:3px}
+.rd-cat.on{border-color:var(--primary);background:var(--primary-light)}
+.rd-prods{flex:1;display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;gap:7px;min-height:0}
+.rd-p{background:var(--surface);border:1px solid var(--border-color);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:.2s;min-height:0}
+.rd-pi{flex:1;min-height:0;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:22px;line-height:1}
+.rd-pn{padding:5px 7px 6px}
+.rd-pn div{font-weight:800;font-size:10.5px;line-height:1.3}
+.rd-pn span{color:var(--primary);font-weight:800;font-size:11px}
+.rd-p.tap{border-color:var(--primary);box-shadow:0 4px 12px rgba(67,56,202,.28);transform:scale(.95)}
+.rd-cart{background:var(--surface);border:1px solid var(--border-color);border-radius:12px;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,.05);min-width:0;min-height:0;overflow:hidden}
+.rd-ch{padding:8px 10px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;color:var(--primary);font-size:11px;font-weight:800}
+.rd-ch i{margin-inline-end:4px}
+.rd-badge{background:var(--primary);color:#fff;border-radius:20px;padding:1px 8px;font-size:10px;font-weight:800}
+.rd-seg{display:flex;gap:3px;background:var(--bg);border:1px solid var(--border-color);border-radius:9px;padding:3px;margin:8px 8px 0}
+.rd-seg span{flex:1;text-align:center;padding:4px 0;border-radius:7px;font-size:9px;font-weight:800;color:var(--secondary);white-space:nowrap}
+.rd-seg .on{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+#ol{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;padding:8px}
+.rd-ci{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--border-color);border-radius:8px;padding:5px 7px;animation:rdin .35s both}
+@keyframes rdin{from{opacity:0;transform:translateY(8px)}}
+.rd-ci .m{flex:1;min-width:0}
+.rd-ci .n{font-weight:800;font-size:10px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rd-ci .u{color:var(--secondary);font-size:8.5px}
+.rd-qty{display:flex;align-items:center;gap:1px;background:var(--bg);border:1px solid var(--border-color);border-radius:7px;padding:1px;font-size:9px;font-weight:900}
+.rd-qty b{width:15px;height:15px;border-radius:5px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.rd-qty span{min-width:13px;text-align:center}
+.rd-ct{min-width:26px;text-align:left;font-weight:900;font-size:10.5px;color:var(--primary)}
+.rd-ft{padding:8px 10px 10px;border-top:1px solid var(--border-color)}
+.rd-sub{display:flex;justify-content:space-between;font-size:9px;color:var(--secondary);margin-bottom:5px}
+.rd-tot{display:flex;justify-content:space-between;align-items:baseline;border-top:1px dashed var(--border-color);padding-top:6px;margin-bottom:7px;font-weight:900;color:var(--primary)}
+.rd-tot span:first-child{font-size:11px}.rd-tot span:last-child{font-size:19px;line-height:1;transition:transform .25s}
+.rd-tot.bump span:last-child{transform:scale(1.2)}
+.rd-pay{height:30px;border-radius:9px;background:var(--success);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:5px;animation:rdpay 2s infinite}
+@keyframes rdpay{50%{box-shadow:0 0 16px rgba(16,185,129,.55)}}
+
+/* بطاقة الشريك لما تكون مربوطة بمنيو */
+a.pcard{display:block;color:inherit}
+.pmenu{margin-top:10px;font-size:12px;font-weight:700;color:var(--gold);position:relative;display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:50px;background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.25);transition:.3s}
+a.pcard:hover .pmenu{background:var(--gold);color:#000}
+@media (max-width:600px){.device{height:380px}.rd-cats{display:none}.rd-body{gap:8px;padding:8px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.rd-search{display:none}.rd-ci .u{display:none}.rd-ci{padding:6px}.rd-ci .n{font-size:9.5px}}
 </style>
 </head>
 <body>
@@ -313,23 +335,35 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
   <div class="hero-visual" id="heroVisual">
     <div class="device" id="device">
       <div class="dv-bar"><i class="dv-dot"></i><i class="dv-dot"></i><i class="dv-dot"></i><b>iMenu POS</b><span class="off-tag"><i class="fas fa-wifi nowifi"></i> بدون إنترنت</span></div>
-      <div class="dv-body">
-        <div class="dv-menu">
-          <div class="cats"><span class="on">الكل</span><span>برجر</span><span>بيتزا</span><span>مشروبات</span><span>حلويات</span></div>
-          <div class="prods" id="prods">
-            <div class="pr" data-n="برجر كلاسيك" data-p="120"><i>🍔</i>برجر<small>120</small></div>
-            <div class="pr" data-n="بيتزا مارجريتا" data-p="150"><i>🍕</i>بيتزا<small>150</small></div>
-            <div class="pr" data-n="بطاطس مقرمشة" data-p="45"><i>🍟</i>بطاطس<small>45</small></div>
-            <div class="pr" data-n="قهوة لاتيه" data-p="60"><i>☕</i>لاتيه<small>60</small></div>
-            <div class="pr" data-n="عصير ليمون" data-p="35"><i>🥤</i>ليمون<small>35</small></div>
-            <div class="pr" data-n="تشيز كيك" data-p="80"><i>🍰</i>تشيز كيك<small>80</small></div>
+      <div class="rd-body">
+        <div class="rd-menu">
+          <div class="rd-top"><b><i class="fas fa-layer-group"></i> القائمة</b><span class="rd-search"><i class="fas fa-search"></i> بحث عن منتج...</span></div>
+          <div class="rd-split">
+            <div class="rd-cats">
+              <div class="rd-cat on"><i class="fas fa-burger"></i>برجر</div>
+              <div class="rd-cat"><i class="fas fa-pizza-slice"></i>بيتزا</div>
+              <div class="rd-cat"><i class="fas fa-mug-hot"></i>مشروبات</div>
+              <div class="rd-cat"><i class="fas fa-ice-cream"></i>حلويات</div>
+            </div>
+            <div class="rd-prods" id="prods">
+              <div class="rd-p" data-n="برجر كلاسيك" data-p="120"><div class="rd-pi">🍔</div><div class="rd-pn"><div>برجر كلاسيك</div><span>120 ج.م</span></div></div>
+              <div class="rd-p" data-n="بيتزا مارجريتا" data-p="150"><div class="rd-pi">🍕</div><div class="rd-pn"><div>بيتزا مارجريتا</div><span>150 ج.م</span></div></div>
+              <div class="rd-p" data-n="بطاطس مقرمشة" data-p="45"><div class="rd-pi">🍟</div><div class="rd-pn"><div>بطاطس مقرمشة</div><span>45 ج.م</span></div></div>
+              <div class="rd-p" data-n="قهوة لاتيه" data-p="60"><div class="rd-pi">☕</div><div class="rd-pn"><div>قهوة لاتيه</div><span>60 ج.م</span></div></div>
+              <div class="rd-p" data-n="عصير ليمون" data-p="35"><div class="rd-pi">🥤</div><div class="rd-pn"><div>عصير ليمون</div><span>35 ج.م</span></div></div>
+              <div class="rd-p" data-n="تشيز كيك" data-p="80"><div class="rd-pi">🍰</div><div class="rd-pn"><div>تشيز كيك</div><span>80 ج.م</span></div></div>
+            </div>
           </div>
         </div>
-        <div class="dv-order">
-          <b style="color:#fff;font-size:11px">طلب طاولة 3</b>
+        <div class="rd-cart">
+          <div class="rd-ch"><span><i class="fas fa-shopping-basket"></i> فاتورة الطلب</span><span class="rd-badge" id="rc">0</span></div>
+          <div class="rd-seg"><span class="on">تيك أواي</span><span>صالة / طاولة</span></div>
           <div id="ol"></div>
-          <div class="tot" id="tot"><span>الإجمالي</span><span id="tt">0 ج</span></div>
-          <div class="pay">دفع وطباعة</div>
+          <div class="rd-ft">
+            <div class="rd-sub"><span>المجموع:</span><span id="rs">0</span></div>
+            <div class="rd-tot" id="tot"><span>الإجمالي:</span><span id="tt">0</span></div>
+            <div class="rd-pay"><i class="fas fa-bolt"></i> كاش وطباعة</div>
+          </div>
         </div>
       </div>
     </div>
@@ -450,7 +484,10 @@ function renderPartners(p) {
   const card = (x, i) => {
     const ini = esc((x.name || "?").trim().charAt(0));
     const logo = x.image ? `<img src="${esc(x.image)}" alt="${esc(x.name)}" loading="lazy" data-i="${ini}" onerror="this.parentNode.innerHTML='<span>'+this.dataset.i+'</span>'">` : `<span>${ini}</span>`;
-    return `<div class="pcard"><div class="plogo">${logo}</div><div class="pname">${esc(x.name)}</div></div>`;
+    const inner = `<div class="plogo">${logo}</div><div class="pname">${esc(x.name)}</div>`;
+    // مربوط بمنيو: الكارت بيفتح المنيو في تاب جديد
+    if (x.slug) return `<a class="pcard" href="/menu/${encodeURIComponent(x.slug)}" target="_blank" rel="noopener">${inner}<div class="pmenu"><i class="fas fa-utensils"></i> شوف المنيو</div></a>`;
+    return `<div class="pcard">${inner}</div>`;
   };
   const wrap = $("p-wrap");
   if (p.items.length >= 5) {
@@ -514,19 +551,30 @@ watchAll();
   const words = ["الكاشير", "الطاولات", "المطبخ", "المخزون", "التقارير"], rot = $("rot"); let wi = 0;
   setInterval(() => { rot.classList.add("out"); setTimeout(() => { wi = (wi + 1) % words.length; rot.textContent = words[wi]; rot.classList.remove("out"); }, 350); }, 2200);
 
-  // live POS demo
-  const prods = [...document.querySelectorAll("#prods .pr")], ol = $("ol"), tt = $("tt"), tot = $("tot");
-  let k = 0, sum = 0;
-  const addItem = () => {
-    if (k >= 5) { ol.innerHTML = ""; sum = 0; k = 0; tt.textContent = "0 ج"; return; }
-    const el = prods[[0, 2, 3, 1, 5][k]]; k++;
-    el.classList.add("tap"); setTimeout(() => el.classList.remove("tap"), 450);
-    sum += +el.dataset.p;
-    const d = document.createElement("div"); d.className = "ln"; d.style.animationDelay = "0s";
-    d.innerHTML = "<span></span><span>" + el.dataset.p + "</span>"; d.firstChild.textContent = el.dataset.n;
-    ol.appendChild(d); while (ol.children.length > 4) ol.removeChild(ol.firstChild);
-    tt.textContent = sum + " ج"; tot.classList.add("bump"); setTimeout(() => tot.classList.remove("bump"), 250);
+  // live POS demo (نفس منطق السلة في الكاشير: نفس الصنف بيزود الكمية)
+  const prods = [...document.querySelectorAll("#prods .rd-p")], ol = $("ol"), tt = $("tt"), tot = $("tot"), rc = $("rc"), rs = $("rs");
+  let k = 0, cart = [];
+  const render = () => {
+    ol.innerHTML = "";
+    cart.slice(-3).forEach((c) => {
+      const d = document.createElement("div"); d.className = "rd-ci";
+      d.innerHTML = '<div class="m"><div class="n"></div><div class="u"></div></div><div class="rd-qty"><b>−</b><span></span><b>+</b></div><div class="rd-ct"></div>';
+      d.querySelector(".n").textContent = c.n; d.querySelector(".u").textContent = c.p + " ج.م";
+      d.querySelector(".rd-qty span").textContent = c.q; d.querySelector(".rd-ct").textContent = c.p * c.q;
+      ol.appendChild(d);
+    });
+    const sum = cart.reduce((a, c) => a + c.p * c.q, 0), cnt = cart.reduce((a, c) => a + c.q, 0);
+    tt.textContent = sum; rs.textContent = sum; rc.textContent = cnt;
   };
+  const addItem = () => {
+    if (k >= 6) { cart = []; k = 0; render(); return; }
+    const el = prods[[0, 3, 0, 1, 2, 5][k]]; k++;
+    el.classList.add("tap"); setTimeout(() => el.classList.remove("tap"), 450);
+    const n = el.dataset.n, p = +el.dataset.p, ex = cart.find((c) => c.n === n);
+    if (ex) { ex.q++; cart = cart.filter((c) => c !== ex); cart.push(ex); } else cart.push({ n, p, q: 1 });
+    render(); tot.classList.add("bump"); setTimeout(() => tot.classList.remove("bump"), 250);
+  };
+  render();
   setTimeout(() => { addItem(); setInterval(addItem, 1500); }, 900);
 })();
 
