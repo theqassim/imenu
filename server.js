@@ -3330,6 +3330,183 @@ app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "ad
     res.status(400).json({ message: err.message });
   }
 });
+
+// ==========================================
+// 🌐 إعدادات الصفحة الرئيسية (الشركاء + روابط التواصل) - يديرها السوبر أدمن
+// ==========================================
+// جدول واحد بسيط: site_settings(key, value jsonb). بيتعمل تلقائياً عن طريق DATABASE_URL
+// (نفس أسلوب ensureOffersColumn). لو DATABASE_URL مش موجود شغّل الـ SQL ده يدوي في Supabase:
+//   create table if not exists public.site_settings (key text primary key, value jsonb not null default '{}'::jsonb);
+let _siteTableReady = false;
+async function ensureSiteSettingsTable() {
+  if (_siteTableReady) return true;
+  const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+  if (!dbUrl) {
+    console.warn("⚠️ DATABASE_URL غير موجود — لو جدول site_settings مش موجود اعمله يدوي من SQL Editor في Supabase.");
+    return false;
+  }
+  let client;
+  try {
+    const { Client } = require("pg");
+    client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+    await client.connect();
+    await client.query("CREATE TABLE IF NOT EXISTS public.site_settings (key text PRIMARY KEY, value jsonb NOT NULL DEFAULT '{}'::jsonb)");
+    await client.query("NOTIFY pgrst, 'reload schema'");
+    _siteTableReady = true;
+    console.log("✅ جدول site_settings جاهز");
+    await new Promise((r) => setTimeout(r, 1500));
+    return true;
+  } catch (e) {
+    console.error("❌ فشل تجهيز جدول site_settings:", e.message);
+    return false;
+  } finally {
+    if (client) { try { await client.end(); } catch (_) {} }
+  }
+}
+
+const SITE_DEFAULTS = {
+  partners: { enabled: true, title: "أبرز شركائنا", subtitle: "نفتخر بثقة عملائنا ونجاحنا معاً", items: [] },
+  contacts: { facebook: "", phones: [], whatsapps: [] },
+};
+
+async function readSiteSetting(key) {
+  const { data, error } = await supabase.from("site_settings").select("value").eq("key", key).maybeSingle();
+  if (error) throw error;
+  return { ...SITE_DEFAULTS[key], ...(data && data.value ? data.value : {}) };
+}
+async function writeSiteSetting(key, value) {
+  let { error } = await supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" });
+  if (error && /site_settings/i.test(error.message || "")) {
+    if (await ensureSiteSettingsTable()) {
+      ({ error } = await supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" }));
+    }
+  }
+  if (error) throw error;
+  return value;
+}
+
+const _str = (v, max = 200) => String(v == null ? "" : v).trim().slice(0, max);
+const _cleanList = (arr) =>
+  (Array.isArray(arr) ? arr : [])
+    .map((x) => ({ label: _str(x && x.label, 40), number: _str(x && x.number, 25).replace(/[^\d+\s-]/g, "") }))
+    .filter((x) => x.number.replace(/\D/g, "").length >= 7)
+    .slice(0, 12);
+const _cleanUrl = (u) => {
+  const v = _str(u, 500);
+  if (!v) return "";
+  const full = /^https?:\/\//i.test(v) ? v : "https://" + v;
+  try { const url = new URL(full); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch (_) { return ""; }
+};
+
+// عام: الصفحة الرئيسية بتقرأ منه (الشركاء الظاهرين فقط)
+app.get("/api/v1/site/public", async (req, res) => {
+  try {
+    const [partners, contacts] = await Promise.all([readSiteSetting("partners"), readSiteSetting("contacts")]);
+    const items = (partners.items || []).filter((p) => p.visible !== false).map(({ id, name, image }) => ({ id, name, image }));
+    res.set("Cache-Control", "no-store");
+    res.json({ status: "success", data: { partners: { enabled: partners.enabled !== false, title: partners.title, subtitle: partners.subtitle, items }, contacts } });
+  } catch (err) {
+    // لو الجدول لسه مش موجود الصفحة تشتغل عادي بدون الأقسام دي
+    res.json({ status: "success", data: { partners: { enabled: false, items: [] }, contacts: SITE_DEFAULTS.contacts } });
+  }
+});
+
+// سوبر أدمن: قراءة كل شيء (بما فيهم المخفيين)
+app.get("/api/v1/site/admin", protect, restrictTo("admin"), async (req, res) => {
+  try {
+    await ensureSiteSettingsTable();
+    const [partners, contacts] = await Promise.all([readSiteSetting("partners"), readSiteSetting("contacts")]);
+    res.json({ status: "success", data: { partners, contacts } });
+  } catch (err) { res.status(500).json({ status: "error", message: err.message }); }
+});
+
+// سوبر أدمن: روابط التواصل
+app.put("/api/v1/site/contacts", protect, restrictTo("admin"), async (req, res) => {
+  try {
+    const value = {
+      facebook: _cleanUrl(req.body.facebook),
+      phones: _cleanList(req.body.phones),
+      whatsapps: _cleanList(req.body.whatsapps),
+    };
+    await writeSiteSetting("contacts", value);
+    res.json({ status: "success", data: value });
+  } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
+});
+
+// سوبر أدمن: عنوان القسم وإظهاره/إخفاؤه كله
+app.put("/api/v1/site/partners-settings", protect, restrictTo("admin"), async (req, res) => {
+  try {
+    const cur = await readSiteSetting("partners");
+    const value = {
+      ...cur,
+      enabled: req.body.enabled !== false && req.body.enabled !== "false",
+      title: _str(req.body.title, 60) || SITE_DEFAULTS.partners.title,
+      subtitle: _str(req.body.subtitle, 120),
+    };
+    await writeSiteSetting("partners", value);
+    res.json({ status: "success", data: value });
+  } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
+});
+
+// سوبر أدمن: ترتيب الشركاء (لازم قبل :id)
+app.patch("/api/v1/site/partners/reorder", protect, restrictTo("admin"), async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
+    const cur = await readSiteSetting("partners");
+    const byId = new Map((cur.items || []).map((p) => [p.id, p]));
+    const sorted = ids.map((id) => byId.get(id)).filter(Boolean);
+    (cur.items || []).forEach((p) => { if (!ids.includes(p.id)) sorted.push(p); });
+    cur.items = sorted;
+    await writeSiteSetting("partners", cur);
+    res.json({ status: "success" });
+  } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
+});
+
+// سوبر أدمن: إضافة شريك (اسم + صورة + ظاهر/مخفي)
+app.post("/api/v1/site/partners", protect, restrictTo("admin"), upload.single("image"), async (req, res) => {
+  try {
+    const name = _str(req.body.name, 80);
+    if (!name) return res.status(400).json({ status: "fail", message: "اسم الشريك مطلوب" });
+    const cur = await readSiteSetting("partners");
+    cur.items = cur.items || [];
+    if (cur.items.length >= 60) return res.status(400).json({ status: "fail", message: "وصلت للحد الأقصى (60 شريك)" });
+    const partner = {
+      id: require("crypto").randomUUID(),
+      name,
+      image: req.file ? req.file.path : "",
+      visible: req.body.visible !== "false",
+    };
+    cur.items.push(partner);
+    await writeSiteSetting("partners", cur);
+    res.status(201).json({ status: "success", data: partner });
+  } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
+});
+
+// سوبر أدمن: تعديل شريك (اسم / صورة / ظاهر)
+app.patch("/api/v1/site/partners/:id", protect, restrictTo("admin"), upload.single("image"), async (req, res) => {
+  try {
+    const cur = await readSiteSetting("partners");
+    const p = (cur.items || []).find((x) => x.id === req.params.id);
+    if (!p) return res.status(404).json({ status: "fail", message: "الشريك غير موجود" });
+    if (req.body.name !== undefined) { const n = _str(req.body.name, 80); if (n) p.name = n; }
+    if (req.body.visible !== undefined) p.visible = req.body.visible !== "false" && req.body.visible !== false;
+    if (req.body.removeImage === "true") p.image = "";
+    if (req.file) p.image = req.file.path;
+    await writeSiteSetting("partners", cur);
+    res.json({ status: "success", data: p });
+  } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
+});
+
+// سوبر أدمن: حذف شريك
+app.delete("/api/v1/site/partners/:id", protect, restrictTo("admin"), async (req, res) => {
+  try {
+    const cur = await readSiteSetting("partners");
+    cur.items = (cur.items || []).filter((x) => x.id !== req.params.id);
+    await writeSiteSetting("partners", cur);
+    res.json({ status: "success" });
+  } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
+});
+
 // Back handling
 app.get(/.*/, (req, res) => {
   // ✅ إصلاح: إذا كان الرابط API وغير موجود، أرجع خطأ JSON بدلاً من HTML
@@ -3356,6 +3533,7 @@ app.use((err, req, res, next) => {
 console.log("✅ Supabase Client Initialized!");
 
 ensureOffersColumn().catch(() => {}); // تأكد من عمود offers عند بدء التشغيل
+ensureSiteSettingsTable().catch(() => {}); // جدول إعدادات الصفحة الرئيسية
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
