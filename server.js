@@ -805,6 +805,7 @@ function ensureOffersColumn() {
     try {
       const { Client } = require("pg"); // npm i pg
       client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+      client.on("error", (e) => console.error("⚠️ pg client error (offers):", e.message));
       await client.connect();
       await client.query("ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS offers jsonb NOT NULL DEFAULT '[]'::jsonb");
       await client.query("NOTIFY pgrst, 'reload schema'");
@@ -3338,8 +3339,14 @@ app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "ad
 // (نفس أسلوب ensureOffersColumn). لو DATABASE_URL مش موجود شغّل الـ SQL ده يدوي في Supabase:
 //   create table if not exists public.site_settings (key text primary key, value jsonb not null default '{}'::jsonb);
 let _siteTableReady = false;
-async function ensureSiteSettingsTable() {
-  if (_siteTableReady) return true;
+let _siteTablePromise = null;
+function ensureSiteSettingsTable() {
+  if (_siteTableReady) return Promise.resolve(true);
+  if (_siteTablePromise) return _siteTablePromise;
+  _siteTablePromise = _ensureSiteSettingsTable().finally(() => { _siteTablePromise = null; });
+  return _siteTablePromise;
+}
+async function _ensureSiteSettingsTable() {
   const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
   if (!dbUrl) {
     console.warn("⚠️ DATABASE_URL غير موجود — لو جدول site_settings مش موجود اعمله يدوي من SQL Editor في Supabase.");
@@ -3349,6 +3356,7 @@ async function ensureSiteSettingsTable() {
   try {
     const { Client } = require("pg");
     client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+    client.on("error", (e) => console.error("⚠️ pg client error (site_settings):", e.message)); // بدونه أي قطع اتصال بيوقع السيرفر
     await client.connect();
     await client.query("CREATE TABLE IF NOT EXISTS public.site_settings (key text PRIMARY KEY, value jsonb NOT NULL DEFAULT '{}'::jsonb)");
     await client.query("NOTIFY pgrst, 'reload schema'");
@@ -3372,7 +3380,9 @@ const SITE_DEFAULTS = {
 async function readSiteSetting(key) {
   const { data, error } = await supabase.from("site_settings").select("value").eq("key", key).maybeSingle();
   if (error) throw error;
-  return { ...SITE_DEFAULTS[key], ...(data && data.value ? data.value : {}) };
+  // نسخة جديدة من الافتراضي (لو استخدمنا نفس الـ items array هيتعدل الافتراضي نفسه في الذاكرة)
+  const base = JSON.parse(JSON.stringify(SITE_DEFAULTS[key]));
+  return { ...base, ...(data && data.value ? data.value : {}) };
 }
 async function writeSiteSetting(key, value) {
   let { error } = await supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" });
@@ -3531,6 +3541,9 @@ app.use((err, req, res, next) => {
 // تم الاستغناء عن اتصال Mongoose.
 // Supabase Client يعمل عبر REST/PostgREST ولا يحتاج لاتصال مستمر (Persistent Connection) بنفس الطريقة.
 console.log("✅ Supabase Client Initialized!");
+
+process.on("unhandledRejection", (r) => console.error("🔥 unhandledRejection:", r));
+process.on("uncaughtException", (e) => console.error("🔥 uncaughtException:", e));
 
 ensureOffersColumn().catch(() => {}); // تأكد من عمود offers عند بدء التشغيل
 ensureSiteSettingsTable().catch(() => {}); // جدول إعدادات الصفحة الرئيسية
