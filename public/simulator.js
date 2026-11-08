@@ -344,11 +344,22 @@
     if (path === "/api/v1/hr/attendance/all" || path === "/api/v1/accounting/attendance") return response(ok({ attendance: state.attendance }));
     if (parts[2] === "hr" && (parts[3] === "summary" || parts[3] === "deductions")) return response(ok({ summary: {}, deductions: [], employee: state.employees[0] }));
     if (path === "/api/v1/coupons/" + restaurantId) return response(ok({ coupons: [] }));
+    if (path === "/api/v1/devices") return response(ok([]));
+    if (path === "/api/v1/devices/block" || path === "/api/v1/devices/unblock") {
+      return response({ status: "success", simulated: true, message: "تمت محاكاة تحديث حالة الجهاز." });
+    }
+    if (path === "/api/v1/network/qr") {
+      const placeholder = '<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#475569">محاكاة فقط</text></svg>';
+      return response(ok({
+        qrCode: "data:image/svg+xml;charset=utf-8," + encodeURIComponent(placeholder),
+        url: "المحاكي لا يدعم الاتصال بالشبكة"
+      }));
+    }
 
     if (parts[2] === "users" && parts[3] === "login") {
       return response(ok({ token: TOKEN, user: { _id: "sim-user", name: "مدير المطعم", role: "owner" } }));
     }
-    if (parts[2] === "users" && parts[3] === "changeMyPassword" && method === "POST") {
+    if (parts[2] === "users" && parts[3] === "changeMyPassword" && method === "PATCH") {
       return response({ status: "success", simulated: true, message: "تمت محاكاة تغيير كلمة المرور فقط." });
     }
     if (path.startsWith("/api/v1/")) {
@@ -372,6 +383,15 @@
   window.print = function () {
     showNotice("الطباعة الفعلية غير مفعّلة في المحاكي.", "info");
   };
+  window.toggleFullScreen = function () {
+    showNotice("المحاكي يعمل داخل نافذة عادية حتى تقدر تشوف الشرح والنظام مع بعض.", "info");
+  };
+  window.exitApplication = async function () {
+    showNotice("إغلاق التطبيق الحقيقي غير متاح في المحاكي. تقدر تقفل تبويب المتصفح بأمان.", "info");
+  };
+  window.logout = function () {
+    showNotice("تسجيل الخروج غير مطلوب في التجربة. بياناتك التجريبية محفوظة في هذا المتصفح.", "info");
+  };
 
   window.io = window.io || function () {
     const listeners = {};
@@ -385,31 +405,31 @@
   };
 
   const lessons = [
-    { view: "categories", title: "ابدأ بتقسيم المنيو", text: "الأقسام هي طريقة ترتيب المنتجات أمام الكاشير والعميل. أنشئ أقسامًا واضحة مثل البرجر والمشروبات، وحدد محطة التحضير لكل قسم حتى يصل الطلب للمكان الصحيح." },
-    { view: "products", title: "أضف المنتجات وأسعارها", text: "أضف اسم المنتج وسعر البيع واربطه بالقسم. حدّد التوفر ومحطة التحضير، ثم أضف المقادير من شاشة الوصفات ليتابع النظام تكلفة المنتج واستهلاك المخزون." },
-    { view: "stock", title: "سجّل الخامات ووحداتها", text: "في المخزن سجّل كل خامة بوحدة شراء ثابتة، مثل كيلو أو لتر أو قطعة، مع الكمية الحالية وتكلفة الوحدة وحد التنبيه. أدخل تاريخ الصلاحية عند توفره حتى تظهر تنبيهات التشغيلات القريبة من الانتهاء." },
-    { view: "stock", title: "استلام فاتورة المورد", text: "بعد إنشاء الخامة، استخدم إضافة رصيد لتسجيل الكمية المستلمة وتاريخ صلاحيتها. كل استلام يظهر كتشغيلة منفصلة، وتُخصم الكميات من الأقدم صلاحية أولًا لتقليل الهدر." },
-    { view: "stock", title: "التسويات والهالك والجرد", text: "سجّل الهالك والتسوية بسبب الكسر أو فرق الجرد مع السبب والكمية. راجع سجل حركة المخزون بعد كل تعديل، ونفّذ الجرد المفاجئ بمقارنة الرصيد الفعلي مع المسجل قبل اعتماد الفرق." },
-    { view: "shift", nav: "nav-surprise-inventory", action: "printSurpriseInventory", title: "الجرد المفاجئ للمخزون", text: "ابدأ جردًا مفاجئًا لمقارنة كميات الخامات الفعلية بما هو مسجل. راجع الفروقات صنفًا بصنف، وحدد سبب النقص أو الزيادة قبل اعتماد أي تسوية؛ لا تستخدم الجرد بدل تسجيل الاستلام أو الهالك." },
-    { view: "recipes", title: "اربط وصفة المنتج بالخامات", text: "افتح الوصفات وحدد المنتج ثم الخامة والكمية التي يستهلكها كل طبق. مثال: برجر كلاسيك يستهلك 150 جرام لحم وقطعة خبز. البيع بعد ذلك يخفض الرصيد تلقائيًا بحسب الوصفة والكمية المباعة." },
-    { view: "staff", title: "جهّز الموظفين والصلاحيات", text: "أضف حسابات العاملين وحدد الدور المناسب: مالك، مدير، كاشير، كابتن أو مطبخ. امنح أقل صلاحية لازمة لكل مستخدم، وراجع أن إجراءات الأسعار والمخزون والإغلاق مقصورة على المخولين." },
-    { view: "shift", title: "افتح الوردية وسجّل العهدة", text: "قبل استقبال الطلبات افتح وردية جديدة وسجّل النقدية الافتتاحية الموجودة في الدرج. الوردية تربط الطلبات والمصروفات والحركات بالفترة والموظف والجهاز، فلا تبدأ بيعًا قبل فتحها." },
-    { view: "orders", title: "تابع طلبات الصالة والمطبخ", text: "شاشة الطلبات تعرض الحالات من جديد إلى التحضير ثم الجاهز والتسليم. راجع الملاحظات والإضافات، وأرسل كل صنف لمحطة التحضير المحددة في إعداد القسم." },
-    { view: "manual-pos", title: "أنشئ فاتورة كاشير", text: "في البيع المباشر اختر المنتجات والكميات، واختر تيك أواي أو طاولة، ثم راجع الإجمالي والضرائب والخدمة والخصم قبل التأكيد. الطباعة في هذا المحاكي معاينة فقط ولا ترسل لأي طابعة." },
-    { view: "tables", title: "إدارة الطاولات", text: "افتح طاولة للعميل وسجل الطلب عليها، ثم تابع حالتها حتى طلب الحساب والدفع. يمكنك من الشاشة الحقيقية نقل الطلب أو دمج الحسابات وفق صلاحيات المستخدم." },
-    { view: "delivery", title: "طلبات الدليفري", text: "سجل بيانات العميل والعنوان ورقم الهاتف ومندوب التوصيل، وتابع حالة الطلب والتحصيل. راجع طريقة الدفع والعمولة وأي مديونية للمندوب عند التسوية." },
-    { view: "talabat", title: "قنوات الطلبات الخارجية", text: "تابع طلبات منصات التوصيل ومطابقة إجمالي الطلب والعمولة والتحصيل. لا تعتمد التسوية قبل مطابقة كشف المنصة مع الطلبات المسجلة." },
-    { view: "bulk", title: "البيع بالجملة", text: "استخدم البيع بالجملة لإدخال مجموعة أصناف وكمياتها في فاتورة واحدة، ثم راجع الإجمالي والخصم وبيانات العميل قبل الحفظ." },
-    { view: "coupons", title: "الكوبونات والعروض", text: "أنشئ كوبونًا برمز واضح، وحدد نوع الخصم وقيمته وفترة الصلاحية والحدود المسموحة. اختبر شروطه على فاتورة تدريبية قبل نشره للعملاء." },
-    { view: "expenses", title: "سجّل مصروفات الوردية", text: "سجّل المصروف فور حدوثه مع التصنيف والقيمة والبيان. المصروفات تقلل النقدية المتوقعة عند الجرد؛ لا تسجل مشتريات الخامات كاستهلاك، بل أدخلها كاستلام مخزون لتبقى الكمية والتكلفة دقيقة." },
-    { view: "history", title: "راجع البيع والفواتير", text: "سجل المبيعات يعرض الفواتير وحالة الدفع وطريقة التحصيل. راجع المرتجعات والإلغاءات والخصومات قبل الإغلاق، لأن أي تصحيح يجب أن يكون موثقًا ومسموحًا للمستخدم." },
-    { view: "hr", title: "الحضور والموارد البشرية", text: "سجل حضور وانصراف الموظفين وراجع ساعات العمل والجزاءات والسلف والرواتب. استخدم الملخصات للتأكد من اكتمال سجلات الفريق قبل اعتماد المستحقات." },
-    { view: "reports", title: "حلّل أداء اليوم", text: "التقارير تلخص المبيعات حسب المنتج والقسم ومحطة التحضير وطريقة الدفع والموظف. قارن الفترة نفسها، وتأكد من اختيار التاريخ الصحيح قبل الطباعة أو التصدير." },
-    { view: "devices", title: "الأجهزة والطابعات", text: "راجع الأجهزة المتصلة وتسمياتها ومحطات التحضير والطابعات المعروفة. الاختبار والاكتشاف في النسخة الفعلية يحتاجان شبكة محلية؛ في هذا المحاكي لن يتم الاتصال بأي جهاز." },
-    { view: "shift", title: "جرد الدرج قبل الإغلاق", text: "عدّ النقدية الفعلية وسجلها، ثم قارنها بالنقدية المتوقعة بعد المبيعات والمصروفات والعهدة. راجع المدفوعات الإلكترونية والطلبات المعلقة، ولا تخلطها مع نقدية الدرج." },
-    { view: "shift", title: "أغلق الوردية واحفظ ملخصها", text: "بعد المطابقة أغلق الوردية من شاشة الشيفت. راجع إجمالي المبيعات، النقدي والبطاقات، المصروفات، الفرق بين المتوقع والفعلي، وعدد الطلبات. سيُحفظ سجل الإغلاق للمراجعة والتقارير." },
-    { view: "shift-history", title: "ارجع لسجل الورديات", text: "سجل الورديات يتيح مراجعة الورديات المغلقة وملخصاتها. استخدمه لمراجعة الفروقات والأرقام، ولا تعد فتح أو تعديل وردية إلا وفق إجراء إداري موثق." },
-    { view: "settings", title: "اضبط إعدادات المطعم والطباعة", text: "راجع الضرائب والخدمة وأرقام الطاولات وطرق الدفع وإعدادات الفاتورة. عرّف الطابعات ومحطات التحضير في النظام الفعلي؛ في المحاكي لا يتم إرسال أوامر طباعة حقيقية." },
+    { view: "categories", target: "#view-categories", title: "ابدأ بتقسيم المنيو", text: "دي شاشة الأقسام. كل قسم بيظهر للكاشير في ترتيب واضح. اكتب اسم القسم وحدد محطة التحضير المناسبة، زي المطبخ أو المشروبات، وبعدها اضغط حفظ. بص على الجدول تحت عشان تراجع الأقسام الموجودة." },
+    { view: "products", target: "#view-products", title: "أضف المنتجات وأسعارها", text: "من شاشة المنتجات ضيف اسم الصنف وسعره واختار القسم. خليك متأكد إن المنتج متاح للبيع، وبعد الحفظ تقدر تربطه بالمقادير من شاشة الوصفات." },
+    { view: "stock", target: "#view-stock", title: "سجّل الخامات ووحداتها", text: "دي شاشة المخزن. سجّل اسم كل خامة بوحدة ثابتة: كيلو أو لتر أو قطعة، وحدد الرصيد الحالي والتكلفة وحد التنبيه. الرصيد القليل أو الصلاحية القريبة بيظهروا هنا للتنبيه." },
+    { view: "stock", target: "#view-stock", title: "استلام فاتورة المورد", text: "بعد إنشاء الخامة، استخدم زر إضافة رصيد لتسجيل الكمية المستلمة وتاريخ الصلاحية. كل استلام بيتسجل كتشغيلة منفصلة، والرصيد بيتحدث قدامك." },
+    { view: "stock", target: "#view-stock", title: "التسويات والهالك والجرد", text: "من نفس الشاشة سجّل الهالك أو التسوية لو فيه كسر أو فرق جرد. راجع سجل الحركة قبل اعتماد التعديل، وقارن الكمية الفعلية بالرصيد المسجل." },
+    { view: "shift", nav: "nav-surprise-inventory", action: "printSurpriseInventory", title: "الجرد المفاجئ للمخزون", text: "من أيقونة الجرد المفاجئ ابدأ عدّ الخامات وقارنها بالرصيد في النظام. راجع الفروق وحدد سببها قبل اعتماد التسوية." },
+    { view: "recipes", target: "#view-recipes", title: "اربط وصفة المنتج بالخامات", text: "دي شاشة الوصفات. اختار المنتج، وبعدها اربط كل خامة بالكمية اللي بيستهلكها الطبق. مثال: البرجر يستهلك 150 جرام لحم وقطعة خبز. بيع المنتج بعد كده يخصم المقادير من المخزن." },
+    { view: "staff", target: "#view-staff", title: "جهّز الموظفين والصلاحيات", text: "من إدارة الموظفين ضيف كل مستخدم بدوره الصحيح: مالك أو مدير أو كاشير أو مطبخ. راجع الصلاحيات قبل الحفظ عشان كل موظف يشوف المهام المطلوبة منه بس." },
+    { view: "shift", target: "#view-shift", title: "افتح الوردية وسجّل العهدة", text: "قبل البيع افتح وردية جديدة وسجّل النقدية الافتتاحية في الدرج. الوردية بتجمع الطلبات والمصروفات والحركات لحد وقت الإغلاق." },
+    { view: "orders", target: "#view-orders", title: "تابع طلبات الصالة والمطبخ", text: "هنا تتابع الطلبات وحالتها: جديد، قيد التحضير، جاهز أو تم التسليم. افتح الطلب لمراجعة الأصناف والملاحظات، وكل صنف بيتوجه لمحطة التحضير المحددة لقسمه." },
+    { view: "manual-pos", target: "#view-manual-pos", title: "أنشئ فاتورة كاشير", text: "في شاشة البيع المباشر اختار القسم والمنتج واضغط لإضافته للفاتورة. راجع الكمية والإجمالي، وبعدها اختار طريقة الدفع وأكد البيع. الطباعة هنا معاينة تجريبية فقط." },
+    { view: "tables", target: "#view-tables", title: "إدارة الطاولات", text: "دي خريطة الطاولات. اختار طاولة متاحة عشان تفتح طلبها، ضيف الأصناف وسجل ملاحظات العميل. تابع لون وحالة الطاولة لحد ما الحساب يتدفع والطاولة تفضى." },
+    { view: "delivery", target: "#view-delivery", title: "طلبات الدليفري", text: "سجّل رقم العميل والعنوان ومندوب التوصيل، وضيف الأصناف وطريقة الدفع. تابع حالة الطلب والتحصيل، وراجع مديونية المندوب عند التسوية." },
+    { view: "talabat", target: "#view-talabat", title: "قنوات الطلبات الخارجية", text: "تابع طلبات منصات التوصيل وراجع قيمة الطلب والعمولة وطريقة التحصيل. قبل التسوية طابق الطلبات المسجلة مع كشف المنصة." },
+    { view: "bulk", target: "#view-bulk", title: "البيع بالجملة", text: "ضيف أكتر من صنف وكميته في فاتورة واحدة، وبعدها راجع الإجمالي والخصم وبيانات العميل قبل تأكيد العملية." },
+    { view: "expenses", target: "#view-expenses", title: "سجّل مصروفات الوردية", text: "سجّل المصروف وقت حدوثه مع التصنيف والقيمة والبيان. المصروف بيأثر على النقدية المتوقعة عند إغلاق الوردية. مشتريات الخامات سجّلها كاستلام مخزون مش كمصروف استهلاك." },
+    { view: "history", target: "#view-history", title: "راجع البيع والفواتير", text: "من سجل المبيعات راجع الفواتير وحالة الدفع وطريقة التحصيل. راجع الإلغاءات والخصومات والمرتجعات قبل الإغلاق." },
+    { view: "hr", target: "#view-hr", title: "الحضور والموارد البشرية", text: "تابع حضور وانصراف الموظفين، ساعات العمل، السلف والخصومات والرواتب. راجع سجلات الفريق قبل اعتماد المستحقات." },
+    { view: "attendance-log", target: "#view-attendance-log", title: "راجع سجل الحضور", text: "افتح سجل الحضور لمراجعة تسجيلات الدخول والخروج حسب الموظف والتاريخ. راجع أي تسجيل ناقص قبل اعتماد ساعات العمل." },
+    { view: "reports", target: "#view-reports", title: "حلّل أداء اليوم", text: "التقارير بتعرض المبيعات حسب المنتج والقسم ومحطة التحضير وطريقة الدفع والموظف. اختار الفترة الصح، وقارن المؤشرات قبل التصدير." },
+    { view: "devices", target: "#view-devices", title: "الأجهزة والطابعات", text: "من هنا تراجع الأجهزة والطابعات ومحطات التحضير. في النظام الحقيقي اكتشاف الطابعات مرتبط بالشبكة المحلية؛ المحاكي يعرض واجهة الإعدادات من غير اتصال بأجهزة فعلية." },
+    { view: "shift", target: "#view-shift", title: "جرد الدرج قبل الإغلاق", text: "عدّ النقدية الفعلية وقارنها بالمبيعات النقدية بعد العهدة والمصروفات. راجع المدفوعات الإلكترونية والطلبات المعلقة كلٌ على حدة." },
+    { view: "shift", target: "#view-shift", title: "أغلق الوردية واحفظ ملخصها", text: "بعد المطابقة اقفل الوردية. راجع إجمالي المبيعات، النقدي والبطاقات، المصروفات، الفرق بين المتوقع والفعلي، وعدد الطلبات. الملخص يتسجل في سجل الورديات." },
+    { view: "shift-history", target: "#view-shift-history", title: "ارجع لسجل الورديات", text: "من سجل الورديات راجع عمليات الإغلاق السابقة وملخص كل وردية. استخدمه لمراجعة الفروقات والأرقام عند الحاجة." },
+    { view: "settings", target: "#view-settings", title: "اضبط إعدادات المطعم والطباعة", text: "راجع الضرائب والخدمة وأرقام الطاولات وطرق الدفع وشكل الفاتورة. احفظ الإعدادات بعد مراجعتها. الطباعة الفعلية غير مفعّلة في المحاكي." },
     { view: "design", title: "صمّم منيو العميل", text: "خصص شكل المنيو الإلكتروني، الألوان والصور وترتيب المنتجات ورسائل المطعم. اختبر العرض على الهاتف قبل نشر رابط المنيو." },
     { view: "paper-menu", title: "تصميم المنيو الورقي", text: "اختر قالب المنيو الورقي والأقسام والخطوط والألوان، واضبط ترتيب العناصر ثم عاين الصفحات قبل التصدير أو الطباعة." },
     { view: "playstation", title: "جلسات البلايستيشن", text: "إذا كان النشاط يقدم جلسات ألعاب، سجّل الأجهزة والأسعار وابدأ الجلسات وأوقفها عند انتهائها، ثم راجع مدة الاستخدام وقيمة الجلسة ضمن المبيعات." },
@@ -430,19 +450,33 @@
 
   function installGuide() {
     if (document.getElementById("sim-guide")) return;
+    window.toggleFullScreen = function () {
+      showNotice("المحاكي يعمل داخل نافذة عادية حتى تقدر تشوف الشرح والنظام مع بعض.", "info");
+    };
+    window.exitApplication = async function () {
+      showNotice("إغلاق التطبيق الحقيقي غير متاح في المحاكي. تقدر تقفل تبويب المتصفح بأمان.", "info");
+    };
+    window.logout = function () {
+      showNotice("تسجيل الخروج غير مطلوب في التجربة. بياناتك التجريبية محفوظة في هذا المتصفح.", "info");
+    };
     const style = document.createElement("style");
     style.textContent = [
-      "#sim-banner{position:fixed;z-index:10001;top:10px;left:50%;transform:translateX(-50%);background:#172554;color:#fff;padding:8px 16px;border-radius:999px;font:700 13px/1.5 Arial,sans-serif;box-shadow:0 6px 24px #0f172a55;white-space:nowrap}",
-      "#sim-launch{position:fixed;z-index:10002;bottom:22px;left:22px;border:0;border-radius:50px;padding:13px 18px;background:#4338ca;color:#fff;font:700 15px Arial,sans-serif;box-shadow:0 8px 25px #4338ca66;cursor:pointer}",
-      "#sim-guide{position:fixed;z-index:10003;inset:0;background:#0f172a88;display:none;align-items:center;justify-content:center;padding:18px;font-family:Arial,sans-serif}",
-      "#sim-guide.open{display:flex}#sim-guide-card{background:#fff;color:#1e293b;width:min(560px,100%);border-radius:20px;padding:24px;box-shadow:0 25px 80px #0005;text-align:right}",
-      "#sim-guide-card h2{margin:8px 0 12px;font-size:23px;color:#312e81}#sim-guide-card p{font-size:16px;line-height:1.9;margin:0 0 16px}",
+      "#sim-banner{position:fixed;z-index:10001;top:8px;left:50%;transform:translateX(-50%);background:#172554;color:#fff;padding:6px 14px;border-radius:999px;font:700 12px/1.5 Arial,sans-serif;box-shadow:0 6px 24px #0f172a33;white-space:nowrap}",
+      "#sim-launch{position:fixed;z-index:10002;bottom:18px;left:18px;border:0;border-radius:50px;padding:12px 16px;background:#4338ca;color:#fff;font:700 14px Arial,sans-serif;box-shadow:0 8px 25px #4338ca55;cursor:pointer}",
+      "#sim-guide{position:fixed;z-index:10006;left:16px;top:64px;bottom:82px;width:340px;display:none;align-items:flex-start;justify-content:flex-start;padding:0;font-family:Arial,sans-serif;pointer-events:none}",
+      "#sim-guide.open{display:flex}#sim-guide-card{pointer-events:auto;background:#fff;color:#1e293b;width:100%;max-height:100%;overflow:auto;border:1px solid #c7d2fe;border-radius:18px;padding:19px;box-shadow:0 12px 38px #0f172a25;text-align:right}",
+      "#sim-guide-card h2{margin:8px 0 9px;font-size:20px;color:#312e81}#sim-guide-card p{font-size:15px;line-height:1.8;margin:0 0 14px}",
       "#sim-guide-progress{height:7px;background:#e2e8f0;border-radius:8px;overflow:hidden}#sim-guide-progress span{display:block;height:100%;background:#4f46e5;transition:width .2s}",
       "#sim-guide-meta{display:flex;justify-content:space-between;align-items:center;color:#64748b;font-size:13px;margin:12px 0}",
       "#sim-guide-actions{display:flex;gap:8px;flex-wrap:wrap}#sim-guide-actions button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;cursor:pointer}",
       "#sim-guide-actions .primary{background:#4338ca;color:white;margin-inline-start:auto}#sim-guide-actions .sub{background:#eef2ff;color:#3730a3}#sim-guide-actions .reset{background:#fff1f2;color:#be123c}",
-      ".sim-highlight{outline:4px solid #f59e0b!important;outline-offset:3px!important;position:relative;z-index:10004!important;filter:drop-shadow(0 0 10px #f59e0b88)}",
-      "@media(max-width:600px){#sim-banner{top:auto;bottom:82px;font-size:11px}#sim-launch{bottom:15px;left:12px}#sim-guide-card{padding:18px}}"
+      "#sim-screen-guide{border-top:1px solid #e2e8f0;margin-top:14px;padding-top:12px}#sim-screen-guide>button{width:100%;border:0;border-radius:10px;padding:10px;background:#ecfdf5;color:#047857;font-weight:700;cursor:pointer}#sim-screen-actions{display:none;gap:8px;margin-top:9px}#sim-screen-actions.active{display:flex}#sim-screen-actions button{border:0;border-radius:9px;padding:8px 12px;background:#eef2ff;color:#3730a3;font-weight:700;cursor:pointer}#sim-screen-actions button:disabled{opacity:.45;cursor:default}#sim-screen-meta{font-size:12px;color:#64748b;margin:8px 0}",
+      "#dashboard-section.sim-guide-visible .main-content{margin-left:370px;width:auto;min-width:0}",
+      ".sim-highlight{outline:3px solid #f59e0b!important;outline-offset:3px!important;position:relative!important;z-index:10004!important;box-shadow:0 0 0 8px #f59e0b22!important;scroll-margin-top:85px}",
+      ".sim-guide-arrow{display:inline-flex;align-items:center;gap:7px;color:#92400e;background:#fef3c7;border-radius:9px;padding:7px 10px;margin-bottom:12px;font-size:13px;font-weight:700}",
+      "button[onclick=\"toggleFullScreen()\"]{display:none!important}",
+      "@media(max-width:1100px){#sim-guide{top:auto;left:12px;right:auto;bottom:76px;width:min(340px,calc(100vw - 24px));max-height:34vh}#sim-guide-card{max-height:34vh}#dashboard-section.sim-guide-visible .main-content{margin-left:0;width:100%}#sim-launch{bottom:12px;left:12px}}",
+      "@media(max-width:600px){#sim-banner{top:62px;left:50%;font-size:10px;max-width:95vw;white-space:normal;text-align:center}#sim-guide{bottom:72px;max-height:31vh}#sim-guide-card{max-height:31vh;padding:14px}#sim-guide-card p{font-size:14px;line-height:1.65}#sim-guide-actions button{padding:9px 11px;font-size:12px}}"
     ].join("");
     document.head.appendChild(style);
     const banner = document.createElement("div");
@@ -458,13 +492,279 @@
     const guide = document.createElement("div");
     guide.id = "sim-guide";
     guide.setAttribute("role", "dialog");
-    guide.setAttribute("aria-modal", "true");
-    guide.innerHTML = '<div id="sim-guide-card"><div id="sim-guide-progress"><span></span></div><div id="sim-guide-meta"><span></span><button type="button" class="sub" data-action="close">إغلاق الشرح</button></div><h2></h2><p></p><div id="sim-guide-actions"><button type="button" class="reset" data-action="reset">إعادة بيانات التجربة</button><button type="button" class="sub" data-action="prev">السابق</button><button type="button" class="sub" data-action="open">افتح الشاشة</button><button type="button" class="primary" data-action="next">التالي</button></div></div>';
+    guide.setAttribute("aria-modal", "false");
+    guide.innerHTML = '<div id="sim-guide-card"><div id="sim-guide-progress"><span></span></div><div id="sim-guide-meta"><span></span><button type="button" class="sub" data-action="close">إخفاء الشرح</button></div><h2></h2><p></p><div class="sim-guide-arrow"><i class="fas fa-location-arrow"></i><span>العنصر المشروح متظلل داخل الشاشة</span></div><div id="sim-guide-actions"><button type="button" class="reset" data-action="reset">إعادة التجربة</button><button type="button" class="sub" data-action="prev">السابق</button><button type="button" class="sub" data-action="open">أرني الإجراء</button><button type="button" class="primary" data-action="next">التالي</button></div><div id="sim-screen-guide"><button type="button" data-action="screen-start">اشرح كل عناصر الشاشة الحالية</button><small>يشمل الشرح الحقول والأزرار الظاهرة، ويتجدد تلقائيًا عند فتح نموذج أو تبويب فرعي.</small><div id="sim-screen-meta"></div><div id="sim-screen-actions"><button type="button" data-action="screen-prev">العنصر السابق</button><button type="button" data-action="screen-next">العنصر التالي</button></div></div></div>';
     document.body.appendChild(guide);
     let current = 0;
+    let screenTour = false;
+    let screenItems = [];
+    let screenIndex = 0;
+    let screenViewId = "";
+    let screenObserverTimer;
+    const screenContext = {
+      categories: "تنظيم الأصناف في أقسام يسهل على الكاشير الوصول لها، وربط كل قسم بمحطة التحضير الصحيحة.",
+      products: "تعريف الصنف وسعره وقسمه وتوفّره؛ راجع بيانات الصنف قبل إضافته لقائمة البيع.",
+      stock: "تسجيل أرصدة الخامات ووحداتها وتكلفتها ومتابعة الوارد والصادر والصلاحية.",
+      recipes: "ربط كل منتج بالخامات والكميات التي يستهلكها حتى تنعكس المبيعات على المخزون.",
+      staff: "إضافة حسابات الفريق وتحديد الدور والصلاحيات المناسبة لكل موظف.",
+      shift: "متابعة الوردية النشطة والنقدية والطلبات والمصروفات ثم مراجعة الأرقام قبل الإغلاق.",
+      orders: "متابعة الطلبات وحالات التحضير والتسليم والتعامل مع تفاصيل كل طلب.",
+      "manual-pos": "إنشاء فاتورة بيع مباشرة، مراجعة الأصناف والكميات والإجمالي ثم تسجيل طريقة الدفع.",
+      tables: "إدارة الطاولات وربط الطلب بالطاولة ومتابعة حالتها حتى إغلاق الحساب.",
+      delivery: "تسجيل طلبات التوصيل وبيانات العميل والمندوب والتحصيل.",
+      talabat: "مراجعة طلبات القنوات الخارجية ومطابقة مبالغها وعمولاتها.",
+      bulk: "إعداد فاتورة بيع بالجملة ومراجعة الأصناف والكميات والأسعار قبل التأكيد.",
+      expenses: "تسجيل مصروفات التشغيل ومراجعة أثرها على حسابات الوردية.",
+      history: "مراجعة الفواتير المسجلة وحالاتها وطرق الدفع.",
+      hr: "متابعة ملفات الموظفين والرواتب والحضور والسلف والخصومات.",
+      "attendance-log": "مراجعة سجلات الحضور والانصراف حسب الموظف والتاريخ.",
+      reports: "اختيار نطاق التقرير ومراجعة مؤشرات الأداء قبل التصدير.",
+      devices: "مراجعة إعدادات الاتصال والطابعات والأجهزة؛ لا يتصل المحاكي بأجهزة حقيقية.",
+      settings: "ضبط تفضيلات المطعم والضرائب والطباعة وطرق الدفع قبل حفظها.",
+      design: "تخصيص واجهة المنيو الإلكتروني ومراجعة شكلها قبل النشر.",
+      "paper-menu": "اختيار قالب المنيو الورقي وترتيب محتواه ثم معاينته أو تصديره.",
+      playstation: "متابعة الأجهزة والجلسات والأسعار وتسجيل بدء الجلسة وانتهائها.",
+      "match-tickets": "إدارة بيانات المباراة والتذاكر ومراجعة العدد والتحصيل.",
+      appearance: "تخصيص مظهر لوحة الإدارة وترتيبها على هذا الجهاز.",
+      "switch-account": "اختيار حساب محفوظ للتبديل؛ لا تدخل بيانات حقيقية في المحاكي."
+    };
+    const actionHelp = [
+      [/حفظ|تأكيد|اعتماد|إنشاء|إضافة|تسجيل|بدء|فتح/, "راجع الحقول والقيم أولًا، ثم استخدم هذا الزر لتسجيل الإجراء في بيانات المحاكي التجريبية."],
+      [/حذف|إزالة|مسح|إلغاء الطلب/, "استخدمه لإزالة السجل المحدد. راجع الاسم أو الرقم جيدًا قبل التأكيد؛ بيانات المحاكي فقط هي التي تتأثر."],
+      [/تعديل|تحرير|تحديث البيانات/, "يفتح أو يحفظ تعديلات السجل المحدد. راجع القيم الجديدة قبل اعتمادها."],
+      [/بحث|فلتر|تصفية|عرض التقرير/, "طبّق البحث أو المرشحات المختارة لعرض السجلات المطابقة. تحقق من الفترة أو معيار البحث."],
+      [/طباعة|معاينة/, "يعرض معاينة تجريبية للمستند؛ لا يرسل المحاكي مهمة إلى طابعة حقيقية."],
+      [/تصدير|Excel|PDF|تحميل/, "يجهز نسخة قابلة للتصدير من البيانات الظاهرة. راجع الفترة والمحتوى قبل التنزيل."],
+      [/استيراد|رفع ملف/, "يحمّل بيانات من ملف. تأكد من اختيار الملف والقالب الصحيحين قبل المتابعة."],
+      [/تحديث|إعادة تحميل/, "يعيد تحميل بيانات هذا القسم من حالة المحاكي الحالية."],
+      [/إغلاق|تقفيل|إنهاء الوردية/, "ابدأ الإغلاق بعد مراجعة المبيعات والمدفوعات والمصروفات ومطابقة النقدية الفعلية."],
+      [/التالي|السابق|رجوع|إغلاق|إلغاء/, "ينقلك للخطوة أو الشاشة المناسبة من دون تسجيل عملية بيع أو تغيير بيانات بمفرده."]
+    ];
+    const specificActionHelp = [
+      [/openStockModal|تسجيل خامة|إضافة خامة/, "يفتح نموذج الخامة. أدخل اسمًا واضحًا، ووحدة قياس ثابتة، والرصيد والتكلفة وحد التنبيه؛ لا تخلط بين الكيلو والجرام أو اللتر والملليلتر."],
+      [/adjustStock|جرد/, "سجّل الكمية الفعلية التي تم عدّها، وحدد هل الحركة استلام أو هالك أو تسوية، ثم راجع سبب الفرق والرصيد الجديد."],
+      [/open.*Recipe|recipe|وصفة|مقادير/, "اختَر المنتج ثم أضف كل خامة والكمية المستهلكة في الحصة الواحدة. راجع وحدات القياس؛ هذه المقادير هي أساس خصم المخزون عند البيع."],
+      [/startShift|بدء وردية/, "ابدأ الوردية بعد عدّ النقدية الموجودة في الدرج. أدخل رصيد الافتتاح الفعلي، ثم راجعه قبل بدء البيع."],
+      [/endShift|تقفيل|إغلاق وردية/, "قبل الإغلاق، طابق النقدية الفعلية مع المتوقع وراجع المدفوعات الإلكترونية والمصروفات والطلبات غير المكتملة."],
+      [/add.*Order|create.*Order|manual-pos|تأكيد البيع|إنشاء فاتورة/, "راجع الأصناف والكميات والأسعار والخصم وطريقة الدفع. بعد التأكيد تسجّل الفاتورة تجريبيًا وقد تُخصم مقادير الوصفة من المخزون."],
+      [/delete|حذف/, "تحقق من السجل المحدد قبل حذفه. الحذف في المحاكي يؤثر على بيانات التجربة المحفوظة في هذا المتصفح فقط."]
+    ];
+    const fieldHelp = [
+      [/اسم الخامة/, "اكتب اسمًا مميزًا للخامة كما تظهر في الفواتير، مثل لحم البرجر أو زيت القلي، لتسهيل اختيارها في الوصفات."],
+      [/الوحدة/, "اختر وحدة شراء ومتابعة ثابتة للخامة. وحّد القياس بين الرصيد والوصفة، ولا تسجل نفس الخامة مرة بالكيلو ومرة بالجرام من غير تحويل."],
+      [/الكمية|الرصيد الحالي|رصيد الافتتاح|العهدة/, "أدخل الكمية أو الرصيد الفعلي وقت التسجيل، وليس تقديرًا. راجع الوحدة الظاهرة بجوار الحقل."],
+      [/التكلفة|سعر الشراء|سعر الوحدة/, "أدخل تكلفة وحدة القياس المحددة للخامة، لا تكلفة كمية الفاتورة كلها، حتى تكون تكلفة الاستهلاك والتقارير منطقية."],
+      [/حد التنبيه|الحد الأدنى/, "حدّد أقل رصيد تريد التنبيه عنده. اجعله مناسبًا لمعدل الاستهلاك ومدة توريد الخامة."],
+      [/الصلاحية|تاريخ الانتهاء/, "أدخل تاريخ الصلاحية الصحيح من العبوة أو فاتورة المورد؛ استخدمه لمراجعة التشغيلات القريبة من الانتهاء."],
+      [/اسم القسم/, "اكتب اسمًا قصيرًا واضحًا يظهر للكاشير، ثم اربطه بمحطة التحضير التي تستقبل الطلب."],
+      [/اسم المنتج|اسم الصنف/, "اكتب الاسم الذي سيظهر للعميل والكاشير، ثم اختر القسم والسعر وحالة التوفر."],
+      [/محطة التجهيز|محطة التحضير/, "اختر المحطة التي ستجهز الصنف، مثل المطبخ أو المشروبات، حتى يصل الطلب للمكان الصحيح."],
+      [/رقم الهاتف|الهاتف|الموبايل/, "أدخل رقم التواصل بالصيغة الصحيحة، وراجعه قبل حفظ ملف الموظف أو العميل أو الطلب."],
+      [/الدور|الصلاحية/, "اختر دور المستخدم حسب مسؤولياته الفعلية. امنح أقل صلاحيات تكفيه لإنجاز عمله."],
+      [/الملاحظات|البيان|الوصف/, "اكتب سببًا أو تفاصيل واضحة تساعد في فهم العملية ومراجعتها لاحقًا، خصوصًا للمصروفات والتسويات."],
+      [/الخصم/, "أدخل الخصم المصرح به فقط، وتأكد هل القيمة مبلغ أم نسبة قبل اعتماده."],
+      [/طريقة الدفع|الدفع/, "اختر وسيلة التحصيل التي استُخدمت فعلًا حتى يظهر توزيع النقدية والمدفوعات الإلكترونية صحيحًا."]
+    ];
+    function visible(element) {
+      if (!element || !element.isConnected || element.disabled || element.type === "hidden") return false;
+      if (element.closest("#sim-guide, #sim-banner, #sim-launch")) return false;
+      const style = window.getComputedStyle(element);
+      return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
+    }
+    function activeView() {
+      return document.querySelector('[id^="view-"]:not(.hidden)');
+    }
+    function getScreenViewId() {
+      const view = activeView();
+      return view ? view.id : "";
+    }
+    function collectScreenItems() {
+      const view = activeView();
+      const roots = [];
+      if (view) roots.push(view);
+      document.querySelectorAll(".swal2-popup, .modal.show, [role='dialog']:not(#sim-guide)").forEach((dialog) => {
+        if (visible(dialog)) roots.push(dialog);
+      });
+      const selector = "input:not([type='hidden']), select, textarea, button, a[href], [role='button'], [onclick], label[for]";
+      const items = [];
+      roots.forEach((root) => root.querySelectorAll(selector).forEach((element) => {
+        if (!visible(element)) return;
+        if (element.tagName === "LABEL") {
+          const field = document.getElementById(element.htmlFor);
+          if (!field || field.type !== "file") return;
+        }
+        if (element.matches("[onclick]") && element.querySelector(selector)) return;
+        if (!items.includes(element)) items.push(element);
+      }));
+      return items;
+    }
+    function controlName(element) {
+      if (element.tagName === "LABEL") return element.innerText.trim();
+      const labelledBy = element.getAttribute("aria-labelledby");
+      const ariaLabel = element.getAttribute("aria-label");
+      const associatedLabel = element.labels && element.labels.length ? element.labels[0] : null;
+      let parent = element.parentElement;
+      let parentLabel = null;
+      for (let depth = 0; parent && depth < 4 && !parentLabel; depth++, parent = parent.parentElement) {
+        parentLabel = parent.querySelector(":scope > label, :scope > div > label");
+      }
+      const ownText = (element.innerText || element.value || "").replace(/[\uE000-\uF8FF]/g, "").trim();
+      const derivedId = element.id ? element.id.replace(/[-_]/g, " ") : "";
+      const clickHandler = element.getAttribute("onclick") || "";
+      const handlerName = clickHandler.match(/^\s*([a-zA-Z_$][\w$]*)\s*\(/);
+      const icon = element.querySelector("i, svg");
+      const iconClasses = icon ? icon.className.baseVal || icon.className : "";
+      const iconName = /trash|delete|remove/i.test(iconClasses) ? "حذف السجل" :
+        /edit|pen/i.test(iconClasses) ? "تعديل السجل" :
+        /eye|view/i.test(iconClasses) ? "عرض التفاصيل" :
+        /plus|add/i.test(iconClasses) ? "إضافة سجل" :
+        /print/i.test(iconClasses) ? "طباعة أو معاينة" : "";
+      const handlerLabels = {
+        editStockItem: "تعديل بيانات الخامة", adjustStock: "تسوية أو جرد الخامة",
+        deleteStockItem: "حذف الخامة", editProduct: "تعديل بيانات المنتج",
+        deleteProduct: "حذف المنتج", editCategory: "تعديل القسم",
+        deleteCategory: "حذف القسم", endShift: "تقفيل الوردية",
+        startShift: "بدء وردية جديدة", printStockLogThermal: "طباعة سجل حركة المخزن",
+        exportStockReportExcel: "تصدير تقرير المخزن إلى Excel"
+      };
+      return (ariaLabel || (associatedLabel && associatedLabel.innerText) || (parentLabel && parentLabel.innerText) ||
+        (labelledBy && document.getElementById(labelledBy)?.innerText) || element.getAttribute("title") ||
+        element.getAttribute("placeholder") || ownText || handlerLabels[handlerName && handlerName[1]] ||
+        iconName || element.name || derivedId).trim().replace(/\s+/g, " ").slice(0, 100) || "هذا العنصر";
+    }
+    function describeControl(element) {
+      const name = controlName(element);
+      const type = (element.type || element.tagName).toLowerCase();
+      const view = activeView();
+      const section = view && view.querySelector("h2, h3, h4");
+      const sectionName = section ? section.innerText.trim() : "القسم الحالي";
+      const context = screenContext[view && view.id.replace("view-", "")] || "إدارة البيانات ومراجعة الإجراء قبل حفظه.";
+      const hint = element.getAttribute("data-sim-help");
+      if (hint) return hint;
+      if (element.tagName === "BUTTON" || element.getAttribute("role") === "button" || element.hasAttribute("onclick")) {
+        const label = name;
+        const action = element.getAttribute("onclick") || "";
+        const specific = specificActionHelp.find(([pattern]) => pattern.test(label + " " + action));
+        const match = actionHelp.find(([pattern]) => pattern.test(label));
+        return "في شاشة " + sectionName + "، زر «" + label + "»: " +
+          (specific ? specific[1] : match ? match[1] : "نفّذ الإجراء المرتبط بالسجل أو الخيار المحدد. راجع البيانات الظاهرة قبل المتابعة.") +
+          " " + context;
+      }
+      if (element.tagName === "SELECT") return "في شاشة " + sectionName + "، اختَر «" + name + "» من القائمة. راجع الاختيار لأنه يحدد طريقة تصنيف السجل أو الحساب الذي ستطبّق عليه العملية. " + context;
+      if (type === "checkbox" || type === "radio") return "في شاشة " + sectionName + "، فعّل أو ألغِ «" + name + "» حسب الإعداد المطلوب. راجع أثر الخيار قبل حفظ النموذج. " + context;
+      if (type === "file" || element.tagName === "LABEL") return "استخدم «" + name + "» لاختيار ملف أو صورة عند الحاجة. تأكد من اختيار الملف الصحيح، ثم راجع المعاينة قبل حفظ التغيير. " + context;
+      if (type === "date" || type === "datetime-local" || type === "time") return "حدّد «" + name + "» بالتاريخ أو الوقت المطلوب. عند إعداد تقرير، تأكد من أن بداية الفترة ونهايتها صحيحتان قبل عرض النتائج. " + context;
+      const field = fieldHelp.find(([pattern]) => pattern.test(name));
+      if (field) return "في شاشة " + sectionName + "، «" + name + "»: " + field[1] + " " + context;
+      if (type === "number" || type === "range") return "أدخل قيمة «" + name + "» رقمًا، وتأكد من الوحدة والكمية أو المبلغ المطلوب. راجع الإجمالي قبل التأكيد. " + context;
+      if (element.tagName === "TEXTAREA") return "اكتب في «" + name + "» الملاحظات أو التفاصيل التي يحتاجها الموظف التالي لفهم العملية. اجعل الوصف واضحًا ومختصرًا. " + context;
+      if (element.tagName === "INPUT") return "أدخل «" + name + "» في هذا الحقل. استخدم الاسم أو الرقم الصحيح، وتحقق من القيمة قبل حفظ النموذج. " + context;
+      return "راجع «" + name + "» في شاشة " + sectionName + ". " + context;
+    }
+    function showScreenStep(index, scroll) {
+      if (!screenItems.length) {
+        const view = activeView();
+        const section = view && view.querySelector("h2, h3, h4");
+        const viewName = view ? view.id.replace("view-", "") : "";
+        const title = section ? section.innerText.trim() : "محتوى الشاشة";
+        const content = view ? view.innerText.replace(/\s+/g, " ").trim().slice(0, 260) : "";
+        guide.querySelector("#sim-screen-meta").textContent = "شرح محتوى الشاشة • لا توجد عناصر تفاعلية متاحة الآن";
+        guide.querySelector("#sim-guide-meta span").textContent = "شرح الشاشة";
+        guide.querySelector("#sim-guide-card h2").textContent = title;
+        guide.querySelector("#sim-guide-card p").textContent =
+          (screenContext[viewName] || "تعرض الشاشة معلومات القسم وحالته الحالية.") +
+          (content && content !== title ? " الحالة الظاهرة الآن: " + content : "");
+        guide.querySelector("#sim-guide-progress span").style.width = "100%";
+        guide.querySelector("#sim-screen-actions").classList.remove("active");
+        document.querySelectorAll(".sim-highlight").forEach((node) => node.classList.remove("sim-highlight"));
+        return;
+      }
+      screenIndex = Math.max(0, Math.min(screenItems.length - 1, index));
+      const element = screenItems[screenIndex];
+      guide.querySelector("#sim-screen-meta").textContent = "شرح العنصر " + (screenIndex + 1) + " من " + screenItems.length + " • " + controlName(element);
+      guide.querySelector("#sim-guide-meta span").textContent = "شرح الشاشة • " + (screenIndex + 1) + " / " + screenItems.length;
+      guide.querySelector("#sim-guide-card h2").textContent = controlName(element);
+      guide.querySelector("#sim-guide-card p").textContent = describeControl(element);
+      guide.querySelector("#sim-guide-progress span").style.width = ((screenIndex + 1) / screenItems.length * 100) + "%";
+      guide.querySelector("#sim-screen-actions").classList.add("active");
+      guide.querySelector('[data-action="screen-prev"]').disabled = screenIndex === 0;
+      guide.querySelector('[data-action="screen-next"]').textContent = screenIndex === screenItems.length - 1 ? "إنهاء شرح الشاشة" : "العنصر التالي";
+      document.querySelectorAll(".sim-highlight").forEach((node) => node.classList.remove("sim-highlight"));
+      element.classList.add("sim-highlight");
+      if (scroll) element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    function refreshScreenItems(preferDialog) {
+      const previous = screenItems[screenIndex];
+      const nextViewId = getScreenViewId();
+      screenItems = collectScreenItems();
+      if (screenViewId && nextViewId !== screenViewId) {
+        screenIndex = 0;
+      } else if (preferDialog) {
+        const dialog = document.querySelector(".swal2-popup, .modal.show, [role='dialog']:not(#sim-guide)");
+        const firstDialogItem = dialog && screenItems.findIndex((element) => dialog.contains(element));
+        if (firstDialogItem >= 0) screenIndex = firstDialogItem;
+      } else {
+        const previousIndex = previous && screenItems.indexOf(previous);
+        if (previousIndex >= 0) screenIndex = previousIndex;
+        else screenIndex = Math.min(screenIndex, Math.max(0, screenItems.length - 1));
+      }
+      screenViewId = nextViewId;
+      if (screenTour) showScreenStep(screenIndex, false);
+    }
+    function startScreenTour() {
+      screenTour = true;
+      guide.querySelector('[data-action="screen-start"]').textContent = "إنهاء شرح الشاشة";
+      screenViewId = getScreenViewId();
+      refreshScreenItems(false);
+      if (!screenItems.length) {
+        showScreenStep(0, false);
+        return;
+      }
+      guide.classList.add("open");
+      document.getElementById("dashboard-section").classList.add("sim-guide-visible");
+      showScreenStep(0, true);
+    }
+    const originalSwitchView = window.switchView;
+    if (typeof originalSwitchView === "function") {
+      window.switchView = function (...args) {
+        const result = originalSwitchView.apply(this, args);
+        if (screenTour) {
+          clearTimeout(screenObserverTimer);
+          screenObserverTimer = setTimeout(() => refreshScreenItems(false), 180);
+        }
+        return result;
+      };
+    }
+    const screenObserver = new MutationObserver(() => {
+      if (!screenTour) return;
+      clearTimeout(screenObserverTimer);
+      screenObserverTimer = setTimeout(() => refreshScreenItems(true), 250);
+    });
+    screenObserver.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener("focusin", (event) => {
+      if (!screenTour) return;
+      const element = event.target.closest("input, select, textarea, button, a[href], [role='button'], [onclick]");
+      const index = element && screenItems.indexOf(element);
+      if (index >= 0) showScreenStep(index, false);
+    });
+    document.addEventListener("click", (event) => {
+      if (!screenTour || guide.contains(event.target)) return;
+      const element = event.target.closest("input, select, textarea, button, a[href], [role='button'], [onclick], label[for]");
+      const index = element && screenItems.indexOf(element);
+      if (index >= 0) showScreenStep(index, false);
+      clearTimeout(screenObserverTimer);
+      screenObserverTimer = setTimeout(() => refreshScreenItems(true), 350);
+    });
     function render(index) {
+      screenTour = false;
+      guide.querySelector('[data-action="screen-start"]').textContent = "اشرح كل عناصر الشاشة الحالية";
+      guide.querySelector("#sim-screen-actions").classList.remove("active");
       current = Math.max(0, Math.min(lessons.length - 1, index));
       const lesson = lessons[current];
+      if (lesson.action === "openChangePasswordDialog") {
+        lesson.view = "settings";
+      }
+      if (typeof window.switchView === "function") window.switchView(lesson.view);
       guide.querySelector("#sim-guide-meta span").textContent = "الخطوة " + (current + 1) + " من " + lessons.length;
       guide.querySelector("#sim-guide-card h2").textContent = lesson.title;
       guide.querySelector("#sim-guide-card p").textContent = lesson.text;
@@ -474,6 +774,14 @@
       document.querySelectorAll(".sim-highlight").forEach((node) => node.classList.remove("sim-highlight"));
       const nav = document.getElementById(lesson.nav || "nav-" + lesson.view);
       if (nav) nav.classList.add("sim-highlight");
+      const target = document.querySelector(lesson.target || "#view-" + lesson.view);
+      if (target) {
+        target.classList.add("sim-highlight");
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else if (nav) {
+        nav.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      document.getElementById("dashboard-section").classList.add("sim-guide-visible");
     }
     function openLesson(index) {
       render(index);
@@ -481,13 +789,42 @@
       launcher.textContent = "استكمل الشرح";
     }
     guide.addEventListener("click", (event) => {
-      if (event.target === guide) guide.classList.remove("open");
-      const action = event.target && event.target.dataset && event.target.dataset.action;
+      const actionButton = event.target.closest && event.target.closest("[data-action]");
+      const action = actionButton && actionButton.dataset.action;
       if (!action) return;
-      if (action === "close") guide.classList.remove("open");
+      if (action === "screen-start") {
+        if (screenTour) {
+          screenTour = false;
+          guide.querySelector("#sim-screen-actions").classList.remove("active");
+          render(current);
+        } else startScreenTour();
+        return;
+      }
+      if (action === "screen-prev" || action === "screen-next") {
+        if (action === "screen-next" && screenIndex === screenItems.length - 1) {
+          screenTour = false;
+          guide.querySelector('[data-action="screen-start"]').textContent = "اشرح كل عناصر الشاشة الحالية";
+          guide.querySelector("#sim-screen-actions").classList.remove("active");
+          document.querySelectorAll(".sim-highlight").forEach((node) => node.classList.remove("sim-highlight"));
+          guide.querySelector("#sim-screen-meta").textContent = "انتهى شرح عناصر الشاشة. افتح نموذجًا أو قسمًا فرعيًا لعرض عناصره وشرحها.";
+        } else showScreenStep(screenIndex + (action === "screen-next" ? 1 : -1), true);
+        return;
+      }
+      if (action === "close") {
+        screenTour = false;
+        guide.querySelector('[data-action="screen-start"]').textContent = "اشرح كل عناصر الشاشة الحالية";
+        guide.classList.remove("open");
+        document.getElementById("dashboard-section").classList.remove("sim-guide-visible");
+        document.querySelectorAll(".sim-highlight").forEach((node) => node.classList.remove("sim-highlight"));
+      }
       if (action === "prev") render(current - 1);
       if (action === "next") {
-        if (current === lessons.length - 1) { guide.classList.remove("open"); showNotice("أحسنت! انتهت الجولة التعليمية. يمكنك فتح أي قسم ومتابعة التجربة.", "success"); }
+        if (current === lessons.length - 1) {
+          guide.classList.remove("open");
+          document.getElementById("dashboard-section").classList.remove("sim-guide-visible");
+          document.querySelectorAll(".sim-highlight").forEach((node) => node.classList.remove("sim-highlight"));
+          showNotice("أحسنت! انتهت الجولة التعليمية. يمكنك فتح أي قسم ومتابعة التجربة.", "success");
+        }
         else render(current + 1);
       }
       if (action === "open") {
@@ -495,8 +832,6 @@
         if (lesson.action && typeof window[lesson.action] === "function") window[lesson.action]();
         else if (typeof window.switchView === "function") window.switchView(lesson.view);
         else showNotice("انتظر لحظات حتى تكتمل تهيئة النظام.", "info");
-        guide.classList.remove("open");
-        launcher.textContent = "استكمل الشرح";
       }
       if (action === "reset") {
         if (window.confirm("سيتم إعادة بيانات المحاكي التجريبية إلى حالتها الأولى. هل تريد المتابعة؟")) {
