@@ -462,7 +462,7 @@
     const style = document.createElement("style");
     style.textContent = [
       "#sim-banner{position:fixed;z-index:10001;top:8px;left:50%;transform:translateX(-50%);background:#172554;color:#fff;padding:6px 14px;border-radius:999px;font:700 12px/1.5 Arial,sans-serif;box-shadow:0 6px 24px #0f172a33;white-space:nowrap}",
-      "#sim-launch{position:fixed;z-index:10002;bottom:18px;left:18px;border:0;border-radius:50px;padding:12px 16px;background:#4338ca;color:#fff;font:700 14px Arial,sans-serif;box-shadow:0 8px 25px #4338ca55;cursor:pointer}",
+      "#sim-launch{position:fixed;z-index:10002;bottom:calc(84px + env(safe-area-inset-bottom));left:12px;border:0;border-radius:50px;padding:11px 15px;background:#4338ca;color:#fff;font:700 13px Arial,sans-serif;box-shadow:0 8px 25px #4338ca55;cursor:pointer}",
       "#sim-guide{position:fixed;z-index:10006;left:16px;top:64px;bottom:82px;width:340px;display:none;align-items:flex-start;justify-content:flex-start;padding:0;font-family:Arial,sans-serif;pointer-events:none}",
       "#sim-guide.open{display:flex}#sim-guide-card{pointer-events:auto;background:#fff;color:#1e293b;width:100%;max-height:100%;overflow:auto;border:1px solid #c7d2fe;border-radius:18px;padding:19px;box-shadow:0 12px 38px #0f172a25;text-align:right}",
       "#sim-guide-card h2{margin:8px 0 9px;font-size:20px;color:#312e81}#sim-guide-card p{font-size:15px;line-height:1.8;margin:0 0 14px}",
@@ -475,8 +475,9 @@
       ".sim-highlight{outline:3px solid #f59e0b!important;outline-offset:3px!important;position:relative!important;z-index:10004!important;box-shadow:0 0 0 8px #f59e0b22!important;scroll-margin-top:85px}",
       ".sim-guide-arrow{display:inline-flex;align-items:center;gap:7px;color:#92400e;background:#fef3c7;border-radius:9px;padding:7px 10px;margin-bottom:12px;font-size:13px;font-weight:700}",
       "button[onclick=\"toggleFullScreen()\"]{display:none!important}",
-      "@media(max-width:1100px){#sim-guide{top:auto;left:12px;right:auto;bottom:76px;width:min(340px,calc(100vw - 24px));max-height:34vh}#sim-guide-card{max-height:34vh}#dashboard-section.sim-guide-visible .main-content{margin-left:0;width:100%}#sim-launch{bottom:12px;left:12px}}",
-      "@media(max-width:600px){#sim-banner{top:62px;left:50%;font-size:10px;max-width:95vw;white-space:normal;text-align:center}#sim-guide{bottom:72px;max-height:31vh}#sim-guide-card{max-height:31vh;padding:14px}#sim-guide-card p{font-size:14px;line-height:1.65}#sim-guide-actions button{padding:9px 11px;font-size:12px}}"
+      "@media(max-width:1100px){#sim-guide{top:64px;left:12px;right:auto;bottom:calc(84px + env(safe-area-inset-bottom));width:min(340px,calc(100vw - 24px));max-height:none}#sim-guide-card{max-height:100%}#dashboard-section.sim-guide-visible .main-content{margin-left:0;width:100%}}",
+      "@media(max-width:768px){#dashboard-section{height:100dvh!important;min-height:0;overflow:hidden;padding:0!important}#dashboard-section.sim-guide-visible .main-content{height:100%;min-height:0;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;padding:calc(70px + env(safe-area-inset-top)) 12px calc(88px + env(safe-area-inset-bottom))!important}#sim-banner{display:none}#sim-guide{top:auto;left:12px;right:auto;bottom:calc(72px + env(safe-area-inset-bottom));width:min(420px,calc(100vw - 24px));max-height:min(40dvh,360px)}#sim-guide-card{max-height:min(40dvh,360px);padding:12px;border-radius:16px}#sim-guide-card:before{content:'محاكي • بيانات تجريبية فقط';display:block;margin-bottom:8px;color:#64748b;font-size:11px;font-weight:700}#sim-guide-card h2{font-size:17px;margin:6px 0}#sim-guide-card p{font-size:13px;line-height:1.55;margin-bottom:9px}#sim-guide-meta{font-size:11px;margin:7px 0}#sim-guide-arrow{display:none}.sim-guide-arrow{font-size:11px;padding:5px 8px;margin-bottom:8px}#sim-guide-actions{gap:5px}#sim-guide-actions button{padding:8px 9px;font-size:11px}#sim-screen-guide{margin-top:9px;padding-top:9px}#sim-screen-guide small{display:none}#sim-screen-guide>button{padding:8px;font-size:12px}#sim-screen-actions button{padding:7px 9px;font-size:11px}body.sim-guide-open #sim-launch{display:none!important}.mobile-header{padding-inline:10px!important;gap:6px}.mobile-header>div{gap:7px!important}.mobile-header .logo{font-size:16px!important}.mobile-header button{width:34px;height:36px;padding:0;flex:0 0 34px}.mobile-bottom-nav{height:calc(68px + env(safe-area-inset-bottom));padding:5px 3px calc(5px + env(safe-area-inset-bottom));box-sizing:border-box}.nav-icon{min-width:0;flex:1;padding:5px 2px;font-size:9px;gap:3px}.nav-icon i{font-size:19px;margin:0}.main-content .card{padding:15px;margin-bottom:14px}.main-content .header{gap:8px;margin-bottom:14px}.page-title{font-size:19px}.form-grid{grid-template-columns:minmax(0,1fr)!important}.main-content input,.main-content select,.main-content textarea{max-width:100%;min-width:0}}",
+      "@media(max-width:380px){#sim-guide{left:6px;right:6px}#sim-guide-card{padding:10px}#sim-guide-actions button{padding:7px;font-size:10px}.mobile-header .logo{font-size:14px!important}.mobile-header button{width:31px;height:34px;flex-basis:31px}.mobile-header>div{gap:4px!important}.page-title{font-size:17px}}"
     ].join("");
     document.head.appendChild(style);
     const banner = document.createElement("div");
@@ -713,6 +714,7 @@
     }
     function startScreenTour() {
       screenTour = true;
+      document.body.classList.add("sim-guide-open");
       guide.querySelector('[data-action="screen-start"]').textContent = "إنهاء شرح الشاشة";
       screenViewId = getScreenViewId();
       refreshScreenItems(false);
@@ -786,6 +788,7 @@
     }
     function openLesson(index) {
       render(index);
+      document.body.classList.add("sim-guide-open");
       guide.classList.add("open");
       launcher.textContent = "استكمل الشرح";
     }
@@ -813,6 +816,7 @@
       }
       if (action === "close") {
         screenTour = false;
+        document.body.classList.remove("sim-guide-open");
         guide.querySelector('[data-action="screen-start"]').textContent = "اشرح كل عناصر الشاشة الحالية";
         guide.classList.remove("open");
         document.getElementById("dashboard-section").classList.remove("sim-guide-visible");
@@ -822,6 +826,7 @@
       if (action === "next") {
         if (current === lessons.length - 1) {
           guide.classList.remove("open");
+          document.body.classList.remove("sim-guide-open");
           document.getElementById("dashboard-section").classList.remove("sim-guide-visible");
           document.querySelectorAll(".sim-highlight").forEach((node) => node.classList.remove("sim-highlight"));
           showNotice("أحسنت! انتهت الجولة التعليمية. يمكنك فتح أي قسم ومتابعة التجربة.", "success");
