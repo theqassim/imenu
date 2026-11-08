@@ -316,6 +316,37 @@
         div:where(.swal2-container) h2.swal2-title { color: var(--primary) !important; }
         div:where(.swal2-container) div:where(.swal2-html-container) { color: #ccc !important; }
 
+
+        /* --- Site (Landing page) manager --- */
+        .site-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+        .site-row input { margin:0; }
+        .site-row .rm { flex:0 0 44px; height:44px; border-radius:12px; border:1px solid var(--glass-border); background:rgba(239,68,68,0.12); color:var(--danger); cursor:pointer; font-size:15px; }
+        .site-add { background:rgba(212,175,55,0.1); border:1px dashed rgba(212,175,55,0.4); color:var(--primary); padding:10px 16px; border-radius:12px; cursor:pointer; font-family:inherit; font-weight:700; font-size:13px; }
+        .site-sub { margin:26px 0 12px; font-size:15px; color:#fff; font-weight:700; display:flex; align-items:center; gap:8px; }
+        .partner-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:16px; margin-top:20px; }
+        .partner-card { background:rgba(255,255,255,0.04); border:1px solid var(--glass-border); border-radius:20px; padding:18px 14px 14px; text-align:center; position:relative; transition:var(--transition); animation:fadeIn .4s ease both; }
+        .partner-card:hover { transform:translateY(-4px); border-color:rgba(212,175,55,0.35); }
+        .partner-card.is-hidden { opacity:.5; }
+        .partner-logo { width:86px; height:86px; border-radius:50%; margin:0 auto 12px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; border:3px solid rgba(212,175,55,0.5); box-shadow:0 0 20px rgba(212,175,55,0.2); }
+        .partner-logo img { width:100%; height:100%; object-fit:contain; }
+        .partner-logo span { font-weight:900; font-size:30px; color:#0f1115; }
+        .partner-name { font-weight:800; font-size:14px; margin-bottom:12px; word-break:break-word; }
+        .partner-actions { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; }
+        .partner-actions button { border:none; border-radius:10px; width:34px; height:34px; cursor:pointer; color:#fff; background:rgba(255,255,255,0.1); font-size:13px; }
+        .partner-actions .del { background:rgba(239,68,68,0.25); color:var(--danger); }
+        .vis-badge { position:absolute; top:10px; right:10px; font-size:10px; padding:3px 9px; border-radius:20px; font-weight:700; }
+        .vis-on { background:rgba(16,185,129,0.18); color:var(--success); }
+        .vis-off { background:rgba(245,158,11,0.18); color:var(--warning); }
+        .file-preview { width:70px; height:70px; border-radius:50%; background:#fff; object-fit:contain; border:2px solid var(--primary); display:none; margin-top:10px; }
+        @media (max-width:768px) {
+            .partner-grid { grid-template-columns:repeat(2,1fr); gap:12px; }
+            .site-row { flex-wrap:wrap; }
+            .site-row input { flex:1 1 100%; }
+            .site-row .rm { flex:1 1 100%; height:38px; }
+            .sidebar { overflow-x:auto; justify-content:flex-start !important; gap:6px; }
+            .sidebar .nav-btn { flex-shrink:0; }
+        }
+
         /* --- Responsive --- */
         @media (max-width: 768px) {
             body { flex-direction: column; height: auto; overflow: auto; padding-bottom: 80px; }
@@ -341,6 +372,7 @@
         <button class="nav-btn" onclick="switchTab('ai-upload')" id="btn-ai-upload"><i class="fas fa-magic"></i> <span>رفع بالذكاء AI</span></button>
         <button class="nav-btn" onclick="switchTab('sales-stats')" id="btn-sales-stats"><i class="fas fa-chart-pie"></i> <span>أداء المبيعات</span></button>
         <button class="nav-btn" onclick="switchTab('sales-agents')" id="btn-sales-agents"><i class="fas fa-users"></i> <span>الوكلاء والطلبات</span></button>
+        <button class="nav-btn" onclick="switchTab('site')" id="btn-site"><i class="fas fa-globe"></i> <span>الصفحة الرئيسية</span></button>
         <button class="nav-btn" onclick="switchTab('requests')" id="btn-requests">
             <i class="fas fa-bell"></i> <span>طلبات الانضمام</span> 
             <span id="req-badge" style="background:var(--danger); color:white; font-size:10px; padding:2px 6px; border-radius:10px; display:none; margin-right:5px;">New</span>
@@ -610,6 +642,68 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <div id="tab-site" class="hidden">
+            <div class="content-card">
+                <h3 style="margin-top:0; margin-bottom:6px; color:var(--primary); font-size:20px;"><i class="fas fa-address-book"></i> روابط التواصل</h3>
+                <p style="color:var(--text-muted); font-size:13px; margin:0 0 20px;">بتظهر في الصفحة الرئيسية للموقع (قسم تواصل معنا + زر الواتساب العائم). اترك الحقل فاضي عشان يختفي.</p>
+
+                <div class="form-group">
+                    <label class="label"><i class="fab fa-facebook" style="color:#1877f2"></i> رابط صفحة الفيسبوك</label>
+                    <input type="text" id="site-facebook" placeholder="https://facebook.com/yourpage" dir="ltr" style="text-align:left;">
+                </div>
+
+                <div class="site-sub"><i class="fas fa-phone" style="color:var(--primary)"></i> أرقام الاتصال</div>
+                <div id="site-phones"></div>
+                <button class="site-add" type="button" onclick="siteAddRow('phones')"><i class="fas fa-plus"></i> إضافة رقم</button>
+
+                <div class="site-sub"><i class="fab fa-whatsapp" style="color:#25d366"></i> أرقام الواتساب</div>
+                <div id="site-whatsapps"></div>
+                <button class="site-add" type="button" onclick="siteAddRow('whatsapps')"><i class="fas fa-plus"></i> إضافة رقم واتساب</button>
+
+                <button class="action-btn" onclick="siteSaveContacts()" style="background:var(--primary); color:#000; width:100%; justify-content:center; padding:14px; font-size:15px; margin:28px 0 0;">
+                    <i class="fas fa-save"></i> حفظ روابط التواصل
+                </button>
+            </div>
+
+            <div class="content-card">
+                <h3 style="margin-top:0; margin-bottom:6px; color:var(--primary); font-size:20px;"><i class="fas fa-handshake"></i> أبرز شركائنا (العملاء)</h3>
+                <p style="color:var(--text-muted); font-size:13px; margin:0 0 20px;">أضف العملاء اللي عايز يظهروا في الصفحة الرئيسية بصورة (لوجو) واحكم مين يظهر ومين لا.</p>
+
+                <div class="form-group">
+                    <label class="label">عنوان القسم</label>
+                    <input type="text" id="site-partners-title" placeholder="أبرز شركائنا">
+                </div>
+                <div class="form-group">
+                    <label class="label">وصف قصير تحت العنوان</label>
+                    <input type="text" id="site-partners-subtitle" placeholder="نفتخر بثقة عملائنا ونجاحنا معاً">
+                </div>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:18px; font-size:14px;">
+                    <input type="checkbox" id="site-partners-enabled" style="width:20px; height:20px; margin:0;"> إظهار قسم الشركاء في الصفحة الرئيسية
+                </label>
+                <button class="action-btn" onclick="siteSavePartnersSettings()" style="background:rgba(255,255,255,0.1); padding:11px 18px;"><i class="fas fa-save"></i> حفظ إعدادات القسم</button>
+
+                <div class="site-sub" style="margin-top:34px;"><i class="fas fa-plus-circle" style="color:var(--primary)"></i> إضافة شريك جديد</div>
+                <div class="form-group">
+                    <label class="label">اسم الشريك / العميل</label>
+                    <input type="text" id="site-new-name" placeholder="مثال: مطعم الشرق">
+                </div>
+                <div class="form-group">
+                    <label class="label">الصورة (لوجو)</label>
+                    <input type="file" id="site-new-image" accept="image/*" onchange="sitePreviewFile(this,'site-new-preview')">
+                    <img id="site-new-preview" class="file-preview" alt="">
+                </div>
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom:16px; font-size:14px;">
+                    <input type="checkbox" id="site-new-visible" checked style="width:20px; height:20px; margin:0;"> يظهر في الصفحة الرئيسية
+                </label>
+                <button class="action-btn" id="site-add-partner-btn" onclick="siteAddPartner()" style="background:var(--primary); color:#000; width:100%; justify-content:center; padding:14px; font-size:15px; margin:0;">
+                    <i class="fas fa-plus"></i> إضافة الشريك
+                </button>
+
+                <div class="site-sub" style="margin-top:34px;"><i class="fas fa-th-large" style="color:var(--primary)"></i> الشركاء الحاليين <span id="site-partners-count" style="color:var(--text-muted); font-weight:500; font-size:12px;"></span></div>
+                <div id="site-partners-grid" class="partner-grid"></div>
             </div>
         </div>
 
@@ -1131,7 +1225,7 @@
 
         function switchTab(tab) {
             localStorage.setItem('activeTab', tab); // حفظ مكانك الحالي لاستعادته عند الريفريش
-            const allTabs = ['owners', 'restaurants', 'ai-upload', 'requests', 'sales-stats', 'sales-agents'];
+            const allTabs = ['owners', 'restaurants', 'ai-upload', 'requests', 'sales-stats', 'sales-agents', 'site'];
 
             allTabs.forEach(t => {
                 const tabEl = document.getElementById(`tab-${t}`);
@@ -1157,6 +1251,8 @@
                 loadRestaurantsList();
             } else if (tab === 'owners') {
                 loadOwnersList();
+            } else if (tab === 'site') {
+                siteLoad();
             }
         }
 
@@ -2172,6 +2268,212 @@
                     Swal.fire('خطأ', 'حدث خطأ في الاتصال', 'error');
                 }
             }
+        }
+
+
+        // =====================================================
+        // 🌐 إدارة الصفحة الرئيسية: الشركاء + روابط التواصل
+        // =====================================================
+        let sitePartners = [];
+        const siteEsc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const siteAuth = () => ({ 'Authorization': `Bearer ${token}` });
+
+        async function siteLoad() {
+            try {
+                const res = await fetch('/api/v1/site/admin', { headers: siteAuth() });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.message || 'فشل التحميل');
+                const { partners, contacts } = json.data;
+                document.getElementById('site-facebook').value = contacts.facebook || '';
+                document.getElementById('site-phones').innerHTML = '';
+                document.getElementById('site-whatsapps').innerHTML = '';
+                (contacts.phones || []).forEach(x => siteAddRow('phones', x));
+                (contacts.whatsapps || []).forEach(x => siteAddRow('whatsapps', x));
+                document.getElementById('site-partners-title').value = partners.title || '';
+                document.getElementById('site-partners-subtitle').value = partners.subtitle || '';
+                document.getElementById('site-partners-enabled').checked = partners.enabled !== false;
+                sitePartners = partners.items || [];
+                siteRenderPartners();
+                document.getElementById('site-new-visible').checked = true;
+                hasUnsavedChanges = false;
+            } catch (e) {
+                Swal.fire('خطأ', e.message || 'تعذر تحميل بيانات الصفحة الرئيسية', 'error');
+            }
+        }
+
+        function siteAddRow(kind, data) {
+            const box = document.getElementById(`site-${kind}`);
+            const row = document.createElement('div');
+            row.className = 'site-row';
+            const ph = kind === 'whatsapps' ? 'رقم الواتساب مثال: 01012345678' : 'رقم الهاتف مثال: 01012345678';
+            row.innerHTML = `<input type="text" class="s-label" placeholder="الاسم (اختياري) مثل: المبيعات" maxlength="40" style="flex:0 0 38%;">
+                <input type="tel" class="s-number" placeholder="${ph}" dir="ltr" style="text-align:left;" inputmode="tel">
+                <button type="button" class="rm" onclick="this.parentElement.remove()" title="حذف"><i class="fas fa-trash"></i></button>`;
+            row.querySelector('.s-label').value = (data && data.label) || '';
+            row.querySelector('.s-number').value = (data && data.number) || '';
+            box.appendChild(row);
+        }
+
+        function siteReadRows(kind) {
+            return [...document.querySelectorAll(`#site-${kind} .site-row`)].map(r => ({
+                label: r.querySelector('.s-label').value.trim(),
+                number: r.querySelector('.s-number').value.trim()
+            })).filter(x => x.number);
+        }
+
+        async function siteSaveContacts() {
+            try {
+                Swal.showLoading();
+                const res = await fetch('/api/v1/site/contacts', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', ...siteAuth() },
+                    body: JSON.stringify({
+                        facebook: document.getElementById('site-facebook').value.trim(),
+                        phones: siteReadRows('phones'),
+                        whatsapps: siteReadRows('whatsapps')
+                    })
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.message || 'فشل الحفظ');
+                hasUnsavedChanges = false;
+                Swal.fire({ icon: 'success', title: 'تم الحفظ', text: 'اتحدثت روابط التواصل في الصفحة الرئيسية', timer: 1800, showConfirmButton: false });
+                siteLoad();
+            } catch (e) { Swal.fire('خطأ', e.message, 'error'); }
+        }
+
+        async function siteSavePartnersSettings() {
+            try {
+                const res = await fetch('/api/v1/site/partners-settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', ...siteAuth() },
+                    body: JSON.stringify({
+                        title: document.getElementById('site-partners-title').value.trim(),
+                        subtitle: document.getElementById('site-partners-subtitle').value.trim(),
+                        enabled: document.getElementById('site-partners-enabled').checked
+                    })
+                });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.message || 'فشل الحفظ');
+                hasUnsavedChanges = false;
+                Swal.fire({ icon: 'success', title: 'تم الحفظ', timer: 1500, showConfirmButton: false });
+            } catch (e) { Swal.fire('خطأ', e.message, 'error'); }
+        }
+
+        function sitePreviewFile(input, imgId) {
+            const img = document.getElementById(imgId);
+            const f = input.files && input.files[0];
+            if (!f) { img.style.display = 'none'; return; }
+            img.src = URL.createObjectURL(f);
+            img.style.display = 'block';
+        }
+
+        function siteRenderPartners() {
+            const grid = document.getElementById('site-partners-grid');
+            document.getElementById('site-partners-count').textContent = sitePartners.length ? `(${sitePartners.length})` : '';
+            if (!sitePartners.length) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:30px 10px;">لسه مفيش شركاء — أضف أول شريك من الفورم اللي فوق</div>';
+                return;
+            }
+            grid.innerHTML = sitePartners.map((p, i) => {
+                const vis = p.visible !== false;
+                const logo = p.image ? `<img src="${siteEsc(p.image)}" alt="" loading="lazy">` : `<span>${siteEsc((p.name || '?').trim().charAt(0))}</span>`;
+                return `<div class="partner-card ${vis ? '' : 'is-hidden'}" style="animation-delay:${Math.min(i, 12) * 40}ms">
+                    <span class="vis-badge ${vis ? 'vis-on' : 'vis-off'}">${vis ? 'ظاهر' : 'مخفي'}</span>
+                    <div class="partner-logo">${logo}</div>
+                    <div class="partner-name">${siteEsc(p.name)}</div>
+                    <div class="partner-actions">
+                        <button title="${vis ? 'إخفاء' : 'إظهار'}" onclick="siteToggleVisible('${p.id}')"><i class="fas ${vis ? 'fa-eye' : 'fa-eye-slash'}"></i></button>
+                        <button title="تعديل" onclick="siteEditPartner('${p.id}')"><i class="fas fa-pen"></i></button>
+                        <button title="تقديم" onclick="siteMove('${p.id}', -1)" ${i === 0 ? 'disabled style="opacity:.3"' : ''}><i class="fas fa-arrow-right"></i></button>
+                        <button title="تأخير" onclick="siteMove('${p.id}', 1)" ${i === sitePartners.length - 1 ? 'disabled style="opacity:.3"' : ''}><i class="fas fa-arrow-left"></i></button>
+                        <button class="del" title="حذف" onclick="siteDeletePartner('${p.id}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function siteAddPartner() {
+            const name = document.getElementById('site-new-name').value.trim();
+            if (!name) return Swal.fire('تنبيه', 'اكتب اسم الشريك الأول', 'warning');
+            const btn = document.getElementById('site-add-partner-btn');
+            const fd = new FormData();
+            fd.append('name', name);
+            fd.append('visible', document.getElementById('site-new-visible').checked ? 'true' : 'false');
+            const f = document.getElementById('site-new-image').files[0];
+            if (f) fd.append('image', f);
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الرفع...';
+            try {
+                const res = await fetch('/api/v1/site/partners', { method: 'POST', headers: siteAuth(), body: fd });
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.message || 'فشل الإضافة');
+                document.getElementById('site-new-name').value = '';
+                document.getElementById('site-new-image').value = '';
+                document.getElementById('site-new-preview').style.display = 'none';
+                document.getElementById('site-new-visible').checked = true;
+                hasUnsavedChanges = false;
+                await siteLoad();
+            } catch (e) { Swal.fire('خطأ', e.message, 'error'); }
+            finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus"></i> إضافة الشريك'; }
+        }
+
+        async function sitePatchPartner(id, fd) {
+            const res = await fetch(`/api/v1/site/partners/${id}`, { method: 'PATCH', headers: siteAuth(), body: fd });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.message || 'فشل التعديل');
+            return json.data;
+        }
+
+        async function siteToggleVisible(id) {
+            const p = sitePartners.find(x => x.id === id); if (!p) return;
+            const fd = new FormData(); fd.append('visible', p.visible === false ? 'true' : 'false');
+            try { await sitePatchPartner(id, fd); await siteLoad(); } catch (e) { Swal.fire('خطأ', e.message, 'error'); }
+        }
+
+        async function siteEditPartner(id) {
+            const p = sitePartners.find(x => x.id === id); if (!p) return;
+            const r = await Swal.fire({
+                title: 'تعديل الشريك',
+                html: `<input id="swal-pname" class="swal2-input" placeholder="الاسم" value="${siteEsc(p.name)}">
+                       <input id="swal-pimg" type="file" accept="image/*" class="swal2-input" style="padding:10px;">
+                       ${p.image ? `<label style="display:flex;gap:8px;justify-content:center;align-items:center;margin-top:8px;font-size:13px;"><input type="checkbox" id="swal-prm" style="width:18px;height:18px;margin:0;"> حذف الصورة الحالية</label>` : ''}`,
+                showCancelButton: true, confirmButtonText: 'حفظ', cancelButtonText: 'إلغاء', confirmButtonColor: '#d4af37',
+                preConfirm: () => {
+                    const name = document.getElementById('swal-pname').value.trim();
+                    if (!name) { Swal.showValidationMessage('الاسم مطلوب'); return false; }
+                    return { name, file: document.getElementById('swal-pimg').files[0], rm: !!(document.getElementById('swal-prm') && document.getElementById('swal-prm').checked) };
+                }
+            });
+            if (!r.isConfirmed) return;
+            const fd = new FormData();
+            fd.append('name', r.value.name);
+            if (r.value.file) fd.append('image', r.value.file);
+            else if (r.value.rm) fd.append('removeImage', 'true');
+            try { Swal.showLoading(); await sitePatchPartner(id, fd); Swal.close(); await siteLoad(); } catch (e) { Swal.fire('خطأ', e.message, 'error'); }
+        }
+
+        async function siteMove(id, dir) {
+            const i = sitePartners.findIndex(x => x.id === id), j = i + dir;
+            if (i < 0 || j < 0 || j >= sitePartners.length) return;
+            [sitePartners[i], sitePartners[j]] = [sitePartners[j], sitePartners[i]];
+            siteRenderPartners();
+            try {
+                await fetch('/api/v1/site/partners/reorder', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', ...siteAuth() },
+                    body: JSON.stringify({ ids: sitePartners.map(x => x.id) })
+                });
+            } catch (e) { siteLoad(); }
+        }
+
+        async function siteDeletePartner(id) {
+            const p = sitePartners.find(x => x.id === id); if (!p) return;
+            const c = await Swal.fire({ title: 'حذف الشريك؟', text: p.name, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'نعم، احذف', cancelButtonText: 'إلغاء' });
+            if (!c.isConfirmed) return;
+            try {
+                const res = await fetch(`/api/v1/site/partners/${id}`, { method: 'DELETE', headers: siteAuth() });
+                if (!res.ok) throw new Error((await res.json()).message || 'فشل الحذف');
+                await siteLoad();
+            } catch (e) { Swal.fire('خطأ', e.message, 'error'); }
         }
 
         function viewSalesImage(url, name) {
