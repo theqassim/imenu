@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>iMenu | نظام إدارة المطاعم والكافيهات يعمل بدون إنترنت</title>
-<meta name="description" content="iMenu نظام كاشير وإدارة متكامل للمطاعم والكافيهات يعمل أوفلاين بدون إنترنت: طاولات، مطبخ، طباعة حرارية، مخزون، شيفتات وتقارير." />
-<meta name="keywords" content="نظام كاشير, برنامج مطاعم, POS اوفلاين, نظام كافيهات, iMenu, طباعة حرارية, ادارة مخزون" />
+<title>iMenu | نظام إدارة المطاعم والكافيهات</title>
+<meta name="description" content="iMenu نظام كاشير وإدارة متكامل للمطاعم والكافيهات: طاولات، مطبخ، طباعة حرارية، مخزون، شيفتات وتقارير." />
+<meta name="keywords" content="نظام كاشير, برنامج مطاعم, POS, نظام كافيهات, iMenu, طباعة حرارية, ادارة مخزون" />
 <meta name="author" content="iMenu Digital Solutions" />
 <meta name="robots" content="index, follow" />
 <meta name="theme-color" content="#0f1115" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://imenueg.com/" />
-<meta property="og:title" content="iMenu | نظام إدارة مطاعم يعمل بدون إنترنت" />
-<meta property="og:description" content="كاشير وطاولات ومطبخ ومخزون وتقارير — كله شغال أوفلاين وبياناتك على جهازك." />
+<meta property="og:title" content="iMenu | نظام إدارة المطاعم والكافيهات" />
+<meta property="og:description" content="كاشير وطاولات ومطبخ ومخزون وتقارير — كل اللي مطعمك محتاجه في نظام واحد." />
 <meta property="og:image" content="https://imenueg.com/og-image.jpg" />
 <meta name="twitter:card" content="summary_large_image" />
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet" />
@@ -73,9 +73,6 @@ nav.scrolled{background:rgba(15,17,21,.95);padding:12px 5%;box-shadow:0 10px 30p
 .dv-bar{display:flex;align-items:center;gap:6px;padding:9px 12px;background:#171a21;border-bottom:1px solid var(--line);font-size:11px;color:var(--muted)}
 .dv-bar b{color:#fff;margin-inline-end:auto;font-size:12px}
 .dv-dot{width:8px;height:8px;border-radius:50%;background:#ef4444}.dv-dot:nth-of-type(2){background:#f59e0b}.dv-dot:nth-of-type(3){background:#10b981}
-.off-tag{position:static;display:flex;align-items:center;gap:6px;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;padding:4px 10px;border-radius:50px;font-size:10px;font-weight:700}
-.nowifi{position:relative;display:inline-block}
-.nowifi::after{content:"";position:absolute;left:-3px;right:-3px;top:50%;height:2px;background:currentColor;transform:rotate(-40deg);box-shadow:0 0 0 1px rgba(15,17,21,.9)}
 .fcard{position:absolute;background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:13px 18px;border-radius:16px;border:1px solid var(--line);display:flex;align-items:center;gap:13px;box-shadow:0 20px 40px rgba(0,0,0,.6);animation:fc 4s ease-in-out infinite;z-index:6}
 .fc1{top:-44px;right:-34px}.fc2{bottom:-40px;left:-34px;animation-delay:1.5s}
 @keyframes fc{50%{transform:translateY(-10px)}}
@@ -182,25 +179,6 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
 .fcd .tag{position:absolute;top:18px;left:18px;font-size:11px;font-weight:800;color:var(--gold);background:rgba(212,175,55,.1);border:1px solid rgba(212,175,55,.25);padding:3px 11px;border-radius:50px}
 .w6 .f-ic{margin:0;flex:0 0 auto}.w6 .txt{flex:1;min-width:230px}
 
-/* offline showcase */
-.off-wrap{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;max-width:1100px;margin:0 auto}
-.off-vis{position:relative;aspect-ratio:1;max-width:400px;margin:0 auto;width:100%;display:flex;align-items:center;justify-content:center}
-.ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(212,175,55,.35);animation:ring 4s ease-out infinite}
-.ring:nth-child(2){animation-delay:1.3s}.ring:nth-child(3){animation-delay:2.6s}
-@keyframes ring{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.05);opacity:0}}
-.core{position:relative;z-index:2;width:46%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 30% 25%,#2a2f3a,#14171d);border:2px solid rgba(212,175,55,.5);display:flex;align-items:center;justify-content:center;font-size:clamp(34px,6vw,58px);color:var(--gold);box-shadow:0 0 60px rgba(212,175,55,.25),inset 0 0 30px rgba(0,0,0,.6)}
-.core .nowifi::after{height:3px;color:#ef4444;box-shadow:0 0 0 2px #14171d}
-.st{position:absolute;z-index:3;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;padding:8px 14px;border-radius:50px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.st i{font-size:9px}
-.st.bad{top:6%;right:0;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.4);color:#fca5a5;animation:fc 4s ease-in-out infinite}
-.st.good{bottom:6%;left:0;background:rgba(16,185,129,.14);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;animation:fc 4s ease-in-out 1.4s infinite}
-.off-list{list-style:none;display:grid;gap:14px;margin-top:26px}
-.off-list li{display:flex;gap:14px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);padding:16px 18px;border-radius:18px;transition:.3s}
-.off-list li:hover{border-color:rgba(212,175,55,.35);transform:translateX(-6px)}
-.off-list i{flex:0 0 34px;height:34px;border-radius:10px;background:rgba(16,185,129,.15);color:#34d399;display:flex;align-items:center;justify-content:center;font-size:14px}
-.off-list b{display:block;font-size:16px}.off-list small{color:var(--muted);font-size:13.5px}
-.off-copy h2{font-size:clamp(28px,4vw,40px);font-weight:900;line-height:1.25;margin-bottom:12px}
-.off-copy h2 span{color:var(--gold)}.off-copy>p{color:var(--muted);font-size:17px}
 
 /* steps */
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;max-width:1050px;margin:0 auto;position:relative}
@@ -225,7 +203,6 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;ba
  .fcard{display:none}
  section{padding:64px 5%}.s-title{margin-bottom:38px}
  .bento{grid-template-columns:repeat(2,1fr)}.bento .fcd,.bento .w3{grid-column:span 1}.bento .w6{grid-column:span 2}
- .off-wrap{grid-template-columns:1fr;gap:34px}.off-vis{max-width:320px}
  .steps{grid-template-columns:1fr;gap:34px}.steps::before{display:none}
  .hero-text .rot{justify-content:center}
  #spot{display:none}
@@ -317,24 +294,24 @@ a.pcard:hover .pmenu{background:var(--gold);color:#000}
 <main id="top">
 <header class="hero">
   <div class="hero-text">
-    <div class="badge"><i class="fas fa-circle"></i> يعمل بدون إنترنت</div>
-    <h1>نظام إدارة المطاعم والكافيهات<br /><span class="grad">يعمل أوفلاين</span> بالكامل</h1>
+    <div class="badge"><i class="fas fa-circle"></i> نظام متكامل للمطاعم والكافيهات</div>
+    <h1>نظام إدارة المطاعم والكافيهات<br /><span class="grad">سريع وسهل</span> وكامل</h1>
     <div class="rot">كل ما يخص <b id="rot">الكاشير</b> في مكان واحد</div>
-    <p>نظام واحد سريع وثابت يجمع الكاشير والطاولات والمطبخ والمخزون والتقارير. مبيعاتك مبتقفش لو النت فصل، وبياناتك محفوظة عندك على جهازك.</p>
+    <p>نظام واحد سريع وثابت يجمع الكاشير والطاولات والمطبخ والمخزون والتقارير، علشان تدير مطعمك بسهولة وتركز على شغلك.</p>
     <div class="hero-btns">
       <a href="#contact" class="btn-hero b-white js-contact">تواصل معنا <i class="fas fa-arrow-left"></i></a>
       <a href="#features" class="btn-hero b-ghost">اعرف المميزات</a>
     </div>
     <div class="hero-chips">
       <span class="chip"><i class="fas fa-bolt"></i> سرعة فورية</span>
-      <span class="chip"><i class="fas fa-lock"></i> بياناتك عندك</span>
+      <span class="chip"><i class="fas fa-chart-line"></i> تقارير لحظية</span>
       <span class="chip"><i class="fas fa-print"></i> طباعة حرارية</span>
     </div>
   </div>
 
   <div class="hero-visual" id="heroVisual">
     <div class="device" id="device">
-      <div class="dv-bar"><i class="dv-dot"></i><i class="dv-dot"></i><i class="dv-dot"></i><b>iMenu POS</b><span class="off-tag"><i class="fas fa-wifi nowifi"></i> بدون إنترنت</span></div>
+      <div class="dv-bar"><i class="dv-dot"></i><i class="dv-dot"></i><i class="dv-dot"></i><b>iMenu POS</b></div>
       <div class="rd-body">
         <div class="rd-menu">
           <div class="rd-top"><b><i class="fas fa-layer-group"></i> القائمة</b><span class="rd-search"><i class="fas fa-search"></i> بحث عن منتج...</span></div>
@@ -367,17 +344,17 @@ a.pcard:hover .pmenu{background:var(--gold);color:#000}
         </div>
       </div>
     </div>
-    <div class="fcard fc1"><div class="ibox"><i class="fas fa-wifi nowifi"></i></div><div><small>الاتصال</small><b>يعمل بدون إنترنت</b></div></div>
-    <div class="fcard fc2"><div class="ibox"><i class="fas fa-shield-halved"></i></div><div><small>الأمان</small><b>بياناتك على جهازك</b></div></div>
+    <div class="fcard fc1"><div class="ibox"><i class="fas fa-bolt"></i></div><div><small>السرعة</small><b>كاشير فوري وسلس</b></div></div>
+    <div class="fcard fc2"><div class="ibox"><i class="fas fa-shield-halved"></i></div><div><small>الأمان</small><b>بياناتك محمية</b></div></div>
   </div>
 </header>
 
-<div class="ticker" aria-hidden="true"><div class="track"><span>كاشير سريع</span><span>إدارة الطاولات</span><span>طباعة حرارية</span><span>المخزون</span><span>الشيفتات</span><span>التقارير</span><span>صلاحيات الموظفين</span><span>يعمل بدون إنترنت</span><span>كاشير سريع</span><span>إدارة الطاولات</span><span>طباعة حرارية</span><span>المخزون</span><span>الشيفتات</span><span>التقارير</span><span>صلاحيات الموظفين</span><span>يعمل بدون إنترنت</span></div></div>
+<div class="ticker" aria-hidden="true"><div class="track"><span>كاشير سريع</span><span>إدارة الطاولات</span><span>طباعة حرارية</span><span>المخزون</span><span>الشيفتات</span><span>التقارير</span><span>صلاحيات الموظفين</span><span>كاشير سريع</span><span>إدارة الطاولات</span><span>طباعة حرارية</span><span>المخزون</span><span>الشيفتات</span><span>التقارير</span><span>صلاحيات الموظفين</span></div></div>
 
 <section id="features">
   <div class="s-title rv"><span class="eyebrow">المميزات</span><h2>كل اللي مطعمك محتاجه... في نظام واحد</h2><p>أدوات احترافية مصممة لسرعة التشغيل اليومي</p><div class="bar"></div></div>
   <div class="bento">
-    <div class="fcd w3 rv"><span class="tag">الأساس</span><div class="f-ic"><i class="fas fa-cash-register"></i></div><h3>كاشير سريع</h3><p>شاشة كاشير سلسة للطلبات والفواتير والدفع المقسّم بأكتر من طريقة، بتشتغل بأقصى سرعة من غير ما تحتاج إنترنت.</p></div>
+    <div class="fcd w3 rv"><span class="tag">الأساس</span><div class="f-ic"><i class="fas fa-cash-register"></i></div><h3>كاشير سريع</h3><p>شاشة كاشير سلسة للطلبات والفواتير والدفع المقسّم بأكتر من طريقة، بتشتغل بأقصى سرعة وسلاسة.</p></div>
     <div class="fcd w3 rv" style="--d:.08s"><span class="tag">الصالة</span><div class="f-ic"><i class="fas fa-chair"></i></div><h3>إدارة الطاولات</h3><p>افتح الطاولات وانقلها وادمجها وقسّم الحساب بسهولة، وتابع حالة كل طاولة لحظة بلحظة.</p></div>
     <div class="fcd rv"><div class="f-ic"><i class="fas fa-print"></i></div><h3>طباعة حرارية</h3><p>فواتير وأوردرات المطبخ على الطابعات الحرارية، موزعة على أقسام التحضير.</p></div>
     <div class="fcd rv" style="--d:.08s"><div class="f-ic"><i class="fas fa-boxes-stacked"></i></div><h3>المخزون</h3><p>تابع الخامات والكميات وحركة الاستهلاك، واستورد وصدّر ببيانات Excel.</p></div>
@@ -386,33 +363,12 @@ a.pcard:hover .pmenu{background:var(--gold);color:#000}
   </div>
 </section>
 
-<section id="offline" style="background:linear-gradient(180deg,transparent,rgba(212,175,55,.04),transparent)">
-  <div class="off-wrap">
-    <div class="off-vis rv">
-      <span class="ring"></span><span class="ring"></span><span class="ring"></span>
-      <div class="core"><i class="fas fa-wifi nowifi"></i></div>
-      <div class="st bad"><i class="fas fa-circle"></i> مفيش إنترنت</div>
-      <div class="st good"><i class="fas fa-circle"></i> النظام شغّال عادي</div>
-    </div>
-    <div class="off-copy rv" style="--d:.1s">
-      <span class="eyebrow">أوفلاين بالكامل</span>
-      <h2>النت فصل؟ <span>شغلك مكملش</span></h2>
-      <p>iMenu مصمم يشتغل على جهازك مباشرة، فمفيش حاجة بتوقف مبيعاتك.</p>
-      <ul class="off-list">
-        <li><i class="fas fa-check"></i><div><b>تشغيل مستمر</b><small>الكاشير والمطبخ والطباعة شغالين من غير اتصال.</small></div></li>
-        <li><i class="fas fa-check"></i><div><b>بياناتك على جهازك</b><small>الفواتير والمبيعات محفوظة عندك أنت.</small></div></li>
-        <li><i class="fas fa-check"></i><div><b>سرعة بدون انتظار</b><small>مفيش تحميل ولا تأخير بسبب بطء الشبكة.</small></div></li>
-      </ul>
-    </div>
-  </div>
-</section>
-
 <section id="steps">
   <div class="s-title rv"><span class="eyebrow">ازاي تبدأ؟</span><h2>تبدأ في 3 خطوات بسيطة</h2><div class="bar"></div></div>
   <div class="steps">
     <div class="step rv"><div class="n">1</div><h3>تواصل معنا</h3><p>كلمنا واحكيلنا عن مطعمك أو الكافيه واحتياجاتك.</p></div>
     <div class="step rv" style="--d:.12s"><div class="n">2</div><h3>نجهز النظام</h3><p>بنجهزلك النظام ونظبطه على شغلك والمنيو بتاعك.</p></div>
-    <div class="step rv" style="--d:.24s"><div class="n">3</div><h3>ابدأ الشغل</h3><p>تشتغل أوفلاين بكل سرعة وثبات من أول يوم.</p></div>
+    <div class="step rv" style="--d:.24s"><div class="n">3</div><h3>ابدأ الشغل</h3><p>تشتغل بكل سرعة وثبات من أول يوم.</p></div>
   </div>
 </section>
 
