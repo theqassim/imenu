@@ -72,7 +72,7 @@
       @font-face { font-family: 'Caveat'; src: url('assets/fonts/Caveat-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
       @font-face { font-family: 'Caveat'; src: url('assets/fonts/Caveat-Bold.ttf') format('truetype'); font-weight: 700 900; font-display: swap; }
     </style>
-    <script src="simulator.js"></script>
+    <script src="simulator.js?v=9"></script>
     <script src="assets/js/sweetalert2.min.js"></script>
     <script src="assets/js/xlsx.full.min.js"></script>
     <script src="assets/js/jspdf.umd.min.js"></script>
@@ -10027,6 +10027,10 @@ select:not(.shift-picker-select) option { background: var(--surface); color: var
       /* ============================ نهاية المظهر (Appearance) ============================ */
 
       function toggleFullScreen() {
+        if (window.__imenuSimulator) {
+          if (typeof window.Swal !== "undefined") Swal.fire({ toast: true, position: "top-end", icon: "info", title: "المحاكي يعمل داخل نافذة عادية لإظهار الشرح بجانب النظام", showConfirmButton: false, timer: 2200 });
+          return;
+        }
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch(e => console.error("تعذر تفعيل ملء الشاشة:", e));
         } else {
@@ -10058,7 +10062,7 @@ select:not(.shift-picker-select) option { background: var(--surface); color: var
       }
 
       document.addEventListener('click', function initFS() {
-          if (!document.fullscreenElement) {
+          if (!window.__imenuSimulator && !document.fullscreenElement) {
               document.documentElement.requestFullscreen().catch(()=>{});
           }
           document.removeEventListener('click', initFS);
