@@ -3335,41 +3335,27 @@ app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "ad
 // ==========================================
 // 🌐 إعدادات الصفحة الرئيسية (الشركاء + روابط التواصل) - يديرها السوبر أدمن
 // ==========================================
-// جدول واحد بسيط: site_settings(key, value jsonb). بيتعمل تلقائياً عن طريق DATABASE_URL
-// (نفس أسلوب ensureOffersColumn). لو DATABASE_URL مش موجود شغّل الـ SQL ده يدوي في Supabase:
-//   create table if not exists public.site_settings (key text primary key, value jsonb not null default '{}'::jsonb);
-let _siteTableReady = false;
-let _siteTablePromise = null;
-function ensureSiteSettingsTable() {
-  if (_siteTableReady) return Promise.resolve(true);
-  if (_siteTablePromise) return _siteTablePromise;
-  _siteTablePromise = _ensureSiteSettingsTable().finally(() => { _siteTablePromise = null; });
-  return _siteTablePromise;
-}
-async function _ensureSiteSettingsTable() {
-  const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
-  if (!dbUrl) {
-    console.warn("⚠️ DATABASE_URL غير موجود — لو جدول site_settings مش موجود اعمله يدوي من SQL Editor في Supabase.");
-    return false;
-  }
-  let client;
-  try {
-    const { Client } = require("pg");
-    client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
-    client.on("error", (e) => console.error("⚠️ pg client error (site_settings):", e.message)); // بدونه أي قطع اتصال بيوقع السيرفر
-    await client.connect();
-    await client.query("CREATE TABLE IF NOT EXISTS public.site_settings (key text PRIMARY KEY, value jsonb NOT NULL DEFAULT '{}'::jsonb)");
-    await client.query("NOTIFY pgrst, 'reload schema'");
-    _siteTableReady = true;
-    console.log("✅ جدول site_settings جاهز");
-    await new Promise((r) => setTimeout(r, 1500));
-    return true;
-  } catch (e) {
-    console.error("❌ فشل تجهيز جدول site_settings:", e.message);
-    return false;
-  } finally {
-    if (client) { try { await client.end(); } catch (_) {} }
-  }
+// بنخزن الإعدادات كملفات JSON جوه Supabase Storage (bucket بيتعمل تلقائياً بالـ Service Role Key).
+// مفيش جدول ولا DDL ولا حزمة pg ولا DATABASE_URL مطلوبين.
+const SITE_BUCKET = "site-settings";
+let _siteBucketReady = false;
+let _siteBucketPromise = null;
+function ensureSiteSettingsTable() { // الاسم قديم عشان باقي الكود، بس بيجهّز الـ bucket
+  if (_siteBucketReady) return Promise.resolve(true);
+  if (_siteBucketPromise) return _siteBucketPromise;
+  _siteBucketPromise = (async () => {
+    try {
+      const { error } = await supabase.storage.createBucket(SITE_BUCKET, { public: false });
+      if (error && !/already exists|duplicate/i.test(error.message || "")) throw error;
+      _siteBucketReady = true;
+      console.log("✅ إعدادات الصفحة الرئيسية جاهزة (Supabase Storage)");
+      return true;
+    } catch (e) {
+      console.error("❌ فشل تجهيز bucket الإعدادات:", e.message);
+      return false;
+    } finally { _siteBucketPromise = null; }
+  })();
+  return _siteBucketPromise;
 }
 
 const SITE_DEFAULTS = {
@@ -3377,19 +3363,26 @@ const SITE_DEFAULTS = {
   contacts: { facebook: "", phones: [], whatsapps: [] },
 };
 
+const _isMissing = (err) => !!err && /not.?found|does not exist|404/i.test(String(err.message || "") + " " + String(err.statusCode || err.status || ""));
+
 async function readSiteSetting(key) {
-  const { data, error } = await supabase.from("site_settings").select("value").eq("key", key).maybeSingle();
-  if (error) throw error;
-  // نسخة جديدة من الافتراضي (لو استخدمنا نفس الـ items array هيتعدل الافتراضي نفسه في الذاكرة)
-  const base = JSON.parse(JSON.stringify(SITE_DEFAULTS[key]));
-  return { ...base, ...(data && data.value ? data.value : {}) };
+  const base = JSON.parse(JSON.stringify(SITE_DEFAULTS[key])); // نسخة جديدة عشان الافتراضي ميتعدلش
+  const { data, error } = await supabase.storage.from(SITE_BUCKET).download(key + ".json");
+  if (error) {
+    if (_isMissing(error)) return base; // لسه مفيش ملف/bucket = إعدادات افتراضية
+    throw error;
+  }
+  let value = {};
+  try { value = JSON.parse(await data.text()) || {}; } catch (_) {}
+  return { ...base, ...value };
 }
+
 async function writeSiteSetting(key, value) {
-  let { error } = await supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" });
-  if (error && /site_settings/i.test(error.message || "")) {
-    if (await ensureSiteSettingsTable()) {
-      ({ error } = await supabase.from("site_settings").upsert({ key, value }, { onConflict: "key" }));
-    }
+  const body = Buffer.from(JSON.stringify(value));
+  const up = () => supabase.storage.from(SITE_BUCKET).upload(key + ".json", body, { contentType: "application/json", upsert: true, cacheControl: "0" });
+  let { error } = await up();
+  if (error && _isMissing(error)) { // الـ bucket لسه مش موجود: اعمله وجرّب تاني
+    if (await ensureSiteSettingsTable()) ({ error } = await up());
   }
   if (error) throw error;
   return value;
@@ -3408,11 +3401,18 @@ const _cleanUrl = (u) => {
   try { const url = new URL(full); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch (_) { return ""; }
 };
 
+// يتأكد إن الـ slug بتاع المطعم موجود فعلاً. بيرجّع { slug, restaurantName } أو null لو مش موجود
+async function _findRestaurantBySlug(slug) {
+  const { data, error } = await supabase.from("restaurants").select("slug, restaurantName").eq("slug", slug).maybeSingle();
+  if (error) throw error;
+  return data || null;
+}
+
 // عام: الصفحة الرئيسية بتقرأ منه (الشركاء الظاهرين فقط)
 app.get("/api/v1/site/public", async (req, res) => {
   try {
     const [partners, contacts] = await Promise.all([readSiteSetting("partners"), readSiteSetting("contacts")]);
-    const items = (partners.items || []).filter((p) => p.visible !== false).map(({ id, name, image }) => ({ id, name, image }));
+    const items = (partners.items || []).filter((p) => p.visible !== false).map(({ id, name, image, slug }) => ({ id, name, image, slug: slug || "" }));
     res.set("Cache-Control", "no-store");
     res.json({ status: "success", data: { partners: { enabled: partners.enabled !== false, title: partners.title, subtitle: partners.subtitle, items }, contacts } });
   } catch (err) {
@@ -3427,6 +3427,19 @@ app.get("/api/v1/site/admin", protect, restrictTo("admin"), async (req, res) => 
     await ensureSiteSettingsTable();
     const [partners, contacts] = await Promise.all([readSiteSetting("partners"), readSiteSetting("contacts")]);
     res.json({ status: "success", data: { partners, contacts } });
+  } catch (err) { res.status(500).json({ status: "error", message: err.message }); }
+});
+
+// سوبر أدمن: قائمة المطاعم الموجودة (للربط بالشريك) - خفيفة: slug + الاسم فقط
+app.get("/api/v1/site/restaurants", protect, restrictTo("admin"), async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("restaurants").select("slug, restaurantName");
+    if (error) throw error;
+    const list = (data || [])
+      .filter((r) => r.slug)
+      .map((r) => ({ slug: r.slug, name: r.restaurantName || r.slug }))
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), "ar"));
+    res.json({ status: "success", data: list });
   } catch (err) { res.status(500).json({ status: "error", message: err.message }); }
 });
 
@@ -3475,7 +3488,13 @@ app.patch("/api/v1/site/partners/reorder", protect, restrictTo("admin"), async (
 // سوبر أدمن: إضافة شريك (اسم + صورة + ظاهر/مخفي)
 app.post("/api/v1/site/partners", protect, restrictTo("admin"), upload.single("image"), async (req, res) => {
   try {
-    const name = _str(req.body.name, 80);
+    let name = _str(req.body.name, 80);
+    const slug = _str(req.body.slug, 120);
+    if (slug) {
+      const r = await _findRestaurantBySlug(slug);
+      if (!r) return res.status(400).json({ status: "fail", message: "المطعم المختار غير موجود" });
+      if (!name) name = _str(r.restaurantName, 80);
+    }
     if (!name) return res.status(400).json({ status: "fail", message: "اسم الشريك مطلوب" });
     const cur = await readSiteSetting("partners");
     cur.items = cur.items || [];
@@ -3484,6 +3503,7 @@ app.post("/api/v1/site/partners", protect, restrictTo("admin"), upload.single("i
       id: require("crypto").randomUUID(),
       name,
       image: req.file ? req.file.path : "",
+      slug,
       visible: req.body.visible !== "false",
     };
     cur.items.push(partner);
@@ -3499,6 +3519,11 @@ app.patch("/api/v1/site/partners/:id", protect, restrictTo("admin"), upload.sing
     const p = (cur.items || []).find((x) => x.id === req.params.id);
     if (!p) return res.status(404).json({ status: "fail", message: "الشريك غير موجود" });
     if (req.body.name !== undefined) { const n = _str(req.body.name, 80); if (n) p.name = n; }
+    if (req.body.slug !== undefined) {
+      const slug = _str(req.body.slug, 120);
+      if (slug && !(await _findRestaurantBySlug(slug))) return res.status(400).json({ status: "fail", message: "المطعم المختار غير موجود" });
+      p.slug = slug; // فاضي = فك الربط
+    }
     if (req.body.visible !== undefined) p.visible = req.body.visible !== "false" && req.body.visible !== false;
     if (req.body.removeImage === "true") p.image = "";
     if (req.file) p.image = req.file.path;
