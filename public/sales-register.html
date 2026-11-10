@@ -9,10 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
-            /* Palette: Deep Luxury Space */
             --bg-dark: #0f1115;
             --bg-panel: rgba(30, 35, 45, 0.7);
-            --primary: #d4af37; /* Royal Gold */
+            --primary: #d4af37;
             --primary-glow: rgba(212, 175, 55, 0.4);
             --text-main: #ffffff;
             --text-muted: #9ca3af;
@@ -34,7 +33,6 @@
             overflow-x: hidden; 
             position: relative; 
             
-            /* خلفية الفضاء الفخم */
             background-image: 
                 radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
                 radial-gradient(circle at 90% 80%, rgba(60, 80, 100, 0.1) 0%, transparent 40%);
@@ -65,7 +63,6 @@
             position: relative;
         }
         
-        /* Shine effect */
         .container::before {
             content: '';
             position: absolute;
@@ -80,7 +77,6 @@
             margin-bottom: 10px; 
             font-weight: 900; 
             font-size: 32px;
-            /* Gold Gradient Text */
             background: linear-gradient(135deg, #fff 20%, var(--primary) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -167,7 +163,6 @@
             overflow: hidden;
         }
         
-        /* Shine effect on button */
         button::after {
             content: '';
             position: absolute;
@@ -185,7 +180,6 @@
         
         button:hover::after { left: 100%; }
 
-        /* Custom Scrollbar for dropdowns if needed */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-dark); }
         ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
@@ -254,7 +248,6 @@
                     document.getElementById('upload-text').style.display = 'none';
                     document.querySelector('.file-upload i').style.display = 'none';
                     
-                    // Add animation to the image
                     preview.animate([
                         { transform: 'scale(0.8)', opacity: 0 },
                         { transform: 'scale(1)', opacity: 1 }

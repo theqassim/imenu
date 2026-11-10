@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>لوحة التحكم | Smart Menu</title>
 
-    <!-- PWA: تثبيت لوحة التحكم كتطبيق -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#4338ca" />
     <link rel="icon" href="/icon-192.png" />
@@ -43,7 +42,7 @@
     </script>
 
     <style>
-      * { box-sizing: border-box; } /* هذا السطر سيضبط مقاسات العناصر تماماً */
+      * { box-sizing: border-box; }
       :root {
         --primary: #4338ca;
         --primary-light: #e0e7ff;
@@ -432,20 +431,15 @@
         display: none !important;
       }
 
-/* ================================================= */
-/* 📱 نظام التطبيق الكامل (Mobile App System) */
-/* ================================================= */
 
-/* إخفاء البار السفلي في الكمبيوتر */
 .mobile-bottom-nav { display: none; }
 
 @media (max-width: 768px) {
     
-    /* 1. إخفاء القائمة الجانبية وتحويلها لقائمة "المزيد" */
     .sidebar {
-        position: fixed !important; /* هذا السطر هو الحل لتثبيت القائمة وإخفائها */
+        position: fixed !important;
         z-index: 9999 !important;
-        width: 100% !important; /* تغطي الشاشة بالكامل عند الفتح */
+        width: 100% !important;
         right: -100% !important;
         top: 0 !important;
         background: rgba(255,255,255,0.98) !important;
@@ -454,7 +448,6 @@
     }
     .sidebar.active { right: 0 !important; }
 
-    /* 2. تصميم البار السفلي (App Bar) */
     .mobile-bottom-nav {
         display: flex;
         position: fixed;
@@ -466,7 +459,7 @@
         justify-content: space-around;
         align-items: center;
         border-top: 1px solid #f1f5f9;
-        padding-bottom: 5px; /* عشان الـ iPhone Home Indicator */
+        padding-bottom: 5px;
     }
 
     .nav-icon {
@@ -486,16 +479,14 @@
     .nav-icon.active { color: var(--primary); font-weight: bold; }
     .nav-icon.active i { transform: translateY(-3px); }
 
-    /* 3. ضبط جسم الصفحة ليتناسب مع البار السفلي */
-    body { background: #f8fafc; padding-bottom: 80px; } /* مساحة للبار */
+    body { background: #f8fafc; padding-bottom: 80px; }
     
     .main-content {
         width: 100% !important;
-        padding: 70px 15px 20px 15px !important; /* مساحة للهيدر */
+        padding: 70px 15px 20px 15px !important;
         margin: 0 !important;
     }
 
-    /* 4. الهيدر العلوي (App Header) */
     .mobile-header {
         height: 60px;
         background: #ffffff;
@@ -508,21 +499,18 @@
         justify-content: space-between;
     }
     
-    /* إخفاء زر القائمة القديم في الهيدر لأننا نقلناه تحت */
     .mobile-menu-btn { display: none !important; }
 
-    /* 5. تحويل الجداول إلى كروت (Cards UI) - نسخة مدمجة */
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
-    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
+        margin-bottom: 10px;
         border-radius: 12px;
-        padding: 12px; /* تقليل الحشو الداخلي للكارت */
+        padding: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -532,31 +520,29 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
+        padding: 6px 0 !important;
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px; /* تصغير الخط قليلاً */
+        font-size: 13px;
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
-    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
-    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important; /* تقليل حشو النماذج */
+        padding: 15px !important;
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
+        height: 40px !important;
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -564,7 +550,6 @@
         padding: 0 10px !important;
     }
 
-    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -572,16 +557,15 @@
         padding: 0 15px !important;
     }
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
-    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
+        margin-bottom: 10px;
         border-radius: 12px;
-        padding: 12px; /* تقليل الحشو الداخلي للكارت */
+        padding: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -591,31 +575,29 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
+        padding: 6px 0 !important;
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px; /* تصغير الخط قليلاً */
+        font-size: 13px;
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
-    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
-    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important; /* تقليل حشو النماذج */
+        padding: 15px !important;
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
+        height: 40px !important;
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -623,7 +605,6 @@
         padding: 0 10px !important;
     }
 
-    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -631,26 +612,20 @@
         padding: 0 15px !important;
     }
 
-    /* 7. إخفاء العناصر غير الضرورية */
-    /* --- بداية كود إصلاح الفواتير السابقة --- */
 
-    /* إخفاء زر المعاينة فقط (بدون إخفاء الـ overlay) */
     #preview-link { display: none !important; }
 
-    /* إجبار نافذة الفواتير على الظهور فوق القائمة السفلية */
     #recent-orders-modal {
-        z-index: 999999 !important; /* رقم أعلى من القائمة السفلية */
-        background: rgba(0,0,0,0.85) !important; /* تعتيم الخلفية */
+        z-index: 999999 !important;
+        background: rgba(0,0,0,0.85) !important;
     }
 
-    /* عندما تعمل النافذة، اجعلها في منتصف الشاشة */
     #recent-orders-modal[style*="block"] {
         display: flex !important;
         align-items: center;
         justify-content: center;
     }
 
-    /* ضبط حجم كارت الفاتورة نفسه */
     #recent-orders-modal .card {
         width: 90% !important;
         max-width: 90% !important;
@@ -658,32 +633,24 @@
         max-height: 80vh !important;
     }
 
-    /* --- نهاية كود الإصلاح --- */
     
-    /* التأكد من أن المودال يظهر فوق كل العناصر عند الفتح */
     #recent-orders-modal.overlay { 
         display: none; 
-        z-index: 99999 !important; /* رقم عالي جداً ليظهر فوق القوائم */
+        z-index: 99999 !important;
     }
 
-    /* 8. إصلاحات الصفحات */
     #orders-grid { grid-template-columns: 1fr !important; }
     .phone-frame { width: 100% !important; height: 550px !important; border-width: 4px !important; }
 }
-/* ================================================= */
-/* 📱 نظام التطبيق الكامل (Mobile App System) */
-/* ================================================= */
 
-/* إخفاء البار السفلي في الكمبيوتر */
 .mobile-bottom-nav { display: none; }
 
 @media (max-width: 768px) {
     
-    /* 1. إخفاء القائمة الجانبية وتحويلها لقائمة "المزيد" */
     .sidebar {
-        position: fixed !important; /* هذا السطر هو الحل لتثبيت القائمة وإخفائها */
+        position: fixed !important;
         z-index: 9999 !important;
-        width: 100% !important; /* تغطي الشاشة بالكامل عند الفتح */
+        width: 100% !important;
         right: -100% !important;
         top: 0 !important;
         background: rgba(255,255,255,0.98) !important;
@@ -692,7 +659,6 @@
     }
     .sidebar.active { right: 0 !important; }
 
-    /* 2. تصميم البار السفلي (App Bar) */
     .mobile-bottom-nav {
         display: flex;
         position: fixed;
@@ -704,7 +670,7 @@
         justify-content: space-around;
         align-items: center;
         border-top: 1px solid #f1f5f9;
-        padding-bottom: 5px; /* عشان الـ iPhone Home Indicator */
+        padding-bottom: 5px;
     }
 
     .nav-icon {
@@ -724,16 +690,14 @@
     .nav-icon.active { color: var(--primary); font-weight: bold; }
     .nav-icon.active i { transform: translateY(-3px); }
 
-    /* 3. ضبط جسم الصفحة ليتناسب مع البار السفلي */
-    body { background: #f8fafc; padding-bottom: 80px; } /* مساحة للبار */
+    body { background: #f8fafc; padding-bottom: 80px; }
     
     .main-content {
         width: 100% !important;
-        padding: 70px 15px 20px 15px !important; /* مساحة للهيدر */
+        padding: 70px 15px 20px 15px !important;
         margin: 0 !important;
     }
 
-    /* 4. الهيدر العلوي (App Header) */
     .mobile-header {
         height: 60px;
         background: #ffffff;
@@ -746,21 +710,18 @@
         justify-content: space-between;
     }
     
-    /* إخفاء زر القائمة القديم في الهيدر لأننا نقلناه تحت */
     .mobile-menu-btn { display: none !important; }
 
-    /* 5. تحويل الجداول إلى كروت (Cards UI) - نسخة مدمجة */
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
-    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
+        margin-bottom: 10px;
         border-radius: 12px;
-        padding: 12px; /* تقليل الحشو الداخلي للكارت */
+        padding: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -770,31 +731,29 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
+        padding: 6px 0 !important;
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px; /* تصغير الخط قليلاً */
+        font-size: 13px;
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
-    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
-    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important; /* تقليل حشو النماذج */
+        padding: 15px !important;
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
+        height: 40px !important;
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -802,7 +761,6 @@
         padding: 0 10px !important;
     }
 
-    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -810,16 +768,15 @@
         padding: 0 15px !important;
     }
     .table-wrapper { background: transparent !important; border: none !important; box-shadow: none !important; }
-    /* إضافة min-width: 0 لمنع الخروج عن الشاشة */
     table { display: block !important; width: 100% !important; min-width: 0 !important; }
     thead { display: none !important; }
     tbody, th, td, tr { display: block !important; width: 100% !important; }
 
     tr {
         background: #fff;
-        margin-bottom: 10px; /* تقليل المسافة بين الكروت */
+        margin-bottom: 10px;
         border-radius: 12px;
-        padding: 12px; /* تقليل الحشو الداخلي للكارت */
+        padding: 12px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #f1f5f9;
         position: relative;
@@ -829,31 +786,29 @@
         display: flex !important;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0 !important; /* تقليل ارتفاع السطر داخل الكارت */
+        padding: 6px 0 !important;
         border-bottom: 1px dashed #f1f5f9;
         text-align: right;
-        font-size: 13px; /* تصغير الخط قليلاً */
+        font-size: 13px;
         color: #334155;
     }
     
     td:last-child { border-bottom: none !important; padding-top: 10px !important; justify-content: flex-end; gap: 5px; }
     
-    /* تحسين الصور داخل الكروت */
     td img { width: 40px !important; height: 40px !important; border-radius: 8px !important; }
 
-    /* 6. تحسين النماذج (Inputs) لتناسب الشاشة الصغيرة */
     .card {
         border-radius: 16px !important;
         border: none !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.02) !important;
-        padding: 15px !important; /* تقليل حشو النماذج */
+        padding: 15px !important;
         margin-bottom: 15px !important;
     }
     
     .form-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; }
     
     input, select, textarea {
-        height: 40px !important; /* تقليل الارتفاع من 50 إلى 40 */
+        height: 40px !important;
         background: #f8fafc !important;
         border: 1px solid #e2e8f0 !important;
         border-radius: 8px !important;
@@ -861,7 +816,6 @@
         padding: 0 10px !important;
     }
 
-    /* تصغير الأزرار لتكون أنيقة */
     .btn { 
         height: 40px !important; 
         border-radius: 8px !important; 
@@ -869,26 +823,20 @@
         padding: 0 15px !important;
     }
 
-    /* 7. إخفاء العناصر غير الضرورية */
-    /* --- بداية كود إصلاح الفواتير السابقة --- */
 
-    /* إخفاء زر المعاينة فقط (بدون إخفاء الـ overlay) */
     #preview-link { display: none !important; }
 
-    /* إجبار نافذة الفواتير على الظهور فوق القائمة السفلية */
     #recent-orders-modal {
-        z-index: 999999 !important; /* رقم أعلى من القائمة السفلية */
-        background: rgba(0,0,0,0.85) !important; /* تعتيم الخلفية */
+        z-index: 999999 !important;
+        background: rgba(0,0,0,0.85) !important;
     }
 
-    /* عندما تعمل النافذة، اجعلها في منتصف الشاشة */
     #recent-orders-modal[style*="block"] {
         display: flex !important;
         align-items: center;
         justify-content: center;
     }
 
-    /* ضبط حجم كارت الفاتورة نفسه */
     #recent-orders-modal .card {
         width: 90% !important;
         max-width: 90% !important;
@@ -896,14 +844,11 @@
         max-height: 80vh !important;
     }
 
-    /* --- نهاية كود الإصلاح --- */
-    /* التأكد من أن المودال يظهر فوق كل العناصر عند الفتح */
     #recent-orders-modal.overlay { 
         display: none; 
-        z-index: 99999 !important; /* رقم عالي جداً ليظهر فوق القوائم */
+        z-index: 99999 !important;
     }
 
-    /* 8. إصلاحات الصفحات */
     #orders-grid { grid-template-columns: 1fr !important; }
     .phone-frame { width: 100% !important; height: 550px !important; border-width: 4px !important; }
 }
@@ -911,14 +856,14 @@
         --primary: #4338ca;
         --primary-light: #e0e7ff;
         --secondary: #64748b;
-        --bg: #f8fafc; /* لون خلفية أفتح قليلاً */
+        --bg: #f8fafc;
         --surface: #ffffff;
         --border-color: #e2e8f0;
         --text-main: #1e293b;
         --success: #10b981;
         --danger: #ef4444;
         --warning: #f59e0b;
-        --radius: 16px; /* توحيد الانحناءات */
+        --radius: 16px;
         --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
       }
 
@@ -946,7 +891,6 @@
         transition: background 0.3s, color 0.3s;
       }
 
-      /* === Animations === */
       @keyframes fadeInScale {
         0% { opacity: 0; transform: scale(0.98) translateY(10px); }
         100% { opacity: 1; transform: scale(1) translateY(0); }
@@ -961,7 +905,6 @@
         animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
-      /* === Sidebar & Nav === */
       .sidebar {
         width: 280px;
         background: var(--surface);
@@ -969,12 +912,11 @@
         border-left: 1px solid var(--border-color);
         display: flex;
         flex-direction: column;
-        padding: 15px 10px; /* تقليل الحشو الداخلي لتوفير مساحة */
+        padding: 15px 10px;
         z-index: 1001;
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-y: auto; /* [هام] السماح بالسكرول إذا كانت العناصر كثيرة */
+        overflow-y: auto;
       }
-      /* تحسين شكل السكرول بار للقائمة */
       .sidebar::-webkit-scrollbar { width: 4px; }
       .sidebar::-webkit-scrollbar-track { background: transparent; }
       .sidebar::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
@@ -991,8 +933,8 @@
       }
 
       .nav-item {
-        padding: 10px 14px; /* تصغير حجم الزر */
-        margin-bottom: 4px; /* تقليل المسافة بين الأزرار */
+        padding: 10px 14px;
+        margin-bottom: 4px;
         cursor: pointer;
         border-radius: 10px;
         color: var(--secondary);
@@ -1001,7 +943,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        font-size: 14px; /* تصغير الخط درجة واحدة */
+        font-size: 14px;
       }
 
       .nav-item:hover {
@@ -1017,10 +959,9 @@
         transform: translateX(-5px);
       }
 
-      /* === Main Content === */
       .main-content {
         flex: 1;
-        padding: 30px; /* Default desktop padding */
+        padding: 30px;
         overflow-y: auto;
         width: 100%;
         scroll-behavior: smooth;
@@ -1039,7 +980,6 @@
         color: var(--text-main);
       }
 
-      /* === Cards & Inputs === */
       .card {
         background: var(--surface);
         border-radius: var(--radius);
@@ -1084,7 +1024,6 @@
         transform: translateY(-2px);
       }
 
-      /* === Buttons === */
       .btn {
         padding: 14px 24px;
         border: none;
@@ -1128,11 +1067,10 @@
         font-weight: 600;
         transition: 0.2s;
         width: 100%;
-        height: 50px; /* Fixed height for alignment */
+        height: 50px;
       }
       .custom-file-upload:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 
-      /* === Tables === */
       .table-wrapper {
         overflow-x: auto;
         background: var(--surface);
@@ -1144,7 +1082,6 @@
       th { background: var(--bg); text-align: right; padding: 18px; color: var(--secondary); font-weight: 700; }
       td { padding: 18px; border-bottom: 1px solid var(--border-color); color: var(--text-main); }
       
-      /* === Mobile Specific Styles === */
       .mobile-header, .mobile-bottom-nav, .overlay { display: none; }
 
       @media (max-width: 768px) {
@@ -1165,10 +1102,9 @@
         .overlay.visible { display: block; opacity: 1; }
 
         .main-content {
-            padding: 80px 15px 100px 15px !important; /* مساحة للهيدر والفوتر */
+            padding: 80px 15px 100px 15px !important;
         }
 
-        /* Mobile Header */
         .mobile-header {
             display: flex; justify-content: space-between; align-items: center;
             position: fixed; top: 0; left: 0; width: 100%; height: 65px;
@@ -1179,11 +1115,10 @@
         }
         body.dark-mode .mobile-header { background: rgba(30, 41, 59, 0.95); }
 
-        /* Mobile Bottom Nav */
         .mobile-bottom-nav {
             display: flex; position: fixed; bottom: 0; left: 0; width: 100%;
             background: var(--surface); border-top: 1px solid var(--border-color);
-            padding: 10px 0 25px 0; /* Extra padding for iPhone home indicator */
+            padding: 10px 0 25px 0;
             z-index: 900; justify-content: space-around;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
         }
@@ -1196,7 +1131,6 @@
         .nav-icon.active { color: var(--primary); font-weight: bold; background: var(--primary-light); }
         .nav-icon.active i { transform: translateY(-2px); }
 
-        /* Transform Tables to Cards on Mobile */
         .table-wrapper { background: transparent; border: none; box-shadow: none; overflow: visible; }
         table, thead, tbody, th, td, tr { display: block; }
         thead { display: none; }
@@ -1220,22 +1154,18 @@
         }
         td:last-child { border-bottom: none; padding-top: 15px; justify-content: flex-end; gap: 8px; }
         
-        /* Mobile Input & Form Adjustments */
         .form-grid { grid-template-columns: 1fr; gap: 15px; }
-        input, select, textarea { height: 48px; font-size: 16px; /* Prevent zoom on iOS */ }
+        input, select, textarea { height: 48px; font-size: 16px; }
         .btn { height: 48px; width: 100%; margin-top: 5px; }
         
-        /* Specific Fixes */
-        .btn-preview { display: none; } /* Hide preview button on mobile header */
+        .btn-preview { display: none; }
         .phone-frame { width: 100% !important; height: 500px !important; }
         #live-preview { border-radius: 20px; }
       }
 
-      /* Utilities */
       .hidden { display: none !important; }
       .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
       .img-preview { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-color); display:none; }
-      /* === تحسين أزرار اختيار التخطيط === */
       .layout-options-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -1258,7 +1188,7 @@
         color: var(--secondary);
         font-size: 13px;
         font-weight: 700;
-        height: 100px; /* ارتفاع موحد */
+        height: 100px;
       }
 
       .btn-layout i {
@@ -1286,11 +1216,10 @@
         transform: scale(1.1);
       }
 
-      /* === تحسين واجهة التصميم الجديدة === */
       .design-container {
         display: flex;
         gap: 25px;
-        height: calc(100vh - 120px); /* تحسين الارتفاع */
+        height: calc(100vh - 120px);
         overflow: hidden;
         min-height: 500px;
       }
@@ -1300,10 +1229,9 @@
         display: flex;
         flex-direction: column;
         height: 100%;
-        overflow: hidden; /* نلغي السكرول من هنا */
+        overflow: hidden;
         position: relative;
       }
-      /* كلاس جديد لمنطقة المحتوى عشان تعمل سكرول لوحدها */
       .design-scroll-area {
         flex: 1;
         overflow-y: auto;
@@ -1325,7 +1253,7 @@
         background: var(--bg); 
         border-radius: 20px;
         position: relative;
-        overflow-y: auto; /* السماح بالسكرول لرؤية الهاتف كاملاً */
+        overflow-y: auto;
       }
 
       .design-section {
@@ -1350,7 +1278,6 @@
         padding-bottom: 10px;
       }
 
-      /* Toggle Switch Design */
       .toggle-switch {
         position: relative;
         display: inline-block;
@@ -1378,7 +1305,6 @@
       input:checked + .slider { background-color: var(--primary); }
       input:checked + .slider:before { transform: translateX(20px); }
 
-      /* Color Input Wrapper */
       .color-wrapper {
         display: flex;
         align-items: center;
@@ -1402,17 +1328,16 @@
         .design-preview-pane { height: 600px; align-items: center; margin-top: 20px; }
       }
 
-      /* === تصميم الهاتف (Phone Frame) === */
       .phone-frame {
         width: 320px;
         height: 650px;
         background: #000;
         border-radius: 45px;
         box-shadow: 
-            0 0 0 9px #334155,   /* إطار رمادي خارجي */
-            0 0 0 11px #000,     /* خط أسود رفيع */
-            0 25px 50px -12px rgba(0, 0, 0, 0.5); /* ظل للكارت */
-        border: 6px solid #000;  /* حواف الشاشة السوداء */
+            0 0 0 9px #334155,
+            0 0 0 11px #000,
+            0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        border: 6px solid #000;
         overflow: hidden;
         position: relative;
         z-index: 10;
@@ -1420,7 +1345,6 @@
         transform-origin: top center;
       }
 
-      /* النوتش (Notch) العلوي */
       .phone-frame::before {
         content: '';
         position: absolute;
@@ -1435,7 +1359,6 @@
         z-index: 20;
       }
 
-      /* الشاشة الداخلية */
       iframe#live-preview {
         width: 100%;
         height: 100%;
@@ -1445,7 +1368,6 @@
         display: block;
       }
 
-      /* تصغير الهاتف قليلاً للشاشات المتوسطة */
       @media (max-width: 1300px) {
         .phone-frame {
             transform: scale(0.9);
@@ -1453,14 +1375,13 @@
         }
       }
 
-      /* === تحسين شكل الموبايل (Phone Mockup) === */
       .phone-mockup-wrapper {
         flex: 1;
         min-width: 350px;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: #1e293b; /* خلفية داكنة لإبراز الهاتف */
+        background: #1e293b;
         border-radius: 30px;
         padding: 40px 20px;
         box-shadow: inset 0 0 50px rgba(0,0,0,0.3);
@@ -1469,22 +1390,21 @@
       }
 
       .phone-frame {
-        width: 340px;          /* عرض ايفون قياسي */
-        height: 700px;         /* ارتفاع ايفون قياسي */
+        width: 340px;
+        height: 700px;
         background: #000;
-        border-radius: 50px;   /* حواف دائرية كبيرة */
+        border-radius: 50px;
         box-shadow: 
-            0 0 0 12px #2d3748, /* الإطار الخارجي الرمادي */
-            0 0 0 14px #000,    /* خط أسود رفيع */
-            0 25px 50px -12px rgba(0, 0, 0, 0.6); /* ظل قوي */
-        border: 8px solid #000; /* الحواف السوداء للشاشة */
+            0 0 0 12px #2d3748,
+            0 0 0 14px #000,
+            0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        border: 8px solid #000;
         overflow: hidden;
         position: relative;
         z-index: 10;
         transition: transform 0.3s;
       }
 
-      /* النوتش (Notch) العلوي */
       .phone-frame::before {
         content: '';
         position: absolute;
@@ -1504,22 +1424,20 @@
         height: 100%;
         border: none;
         background: white;
-        border-radius: 40px; /* تدوير زوايا الـ iframe */
+        border-radius: 40px;
         display: block;
       }
 
-      /* تصغير الموبايل للشاشات المتوسطة */
       @media (max-width: 1200px) {
         .phone-frame {
             transform: scale(0.9);
         }
       }
 
-      /* === POS System Styles === */
       .pos-layout {
         display: flex;
         gap: 20px;
-        height: calc(100vh - 100px); /* ارتفاع ملء الشاشة ناقص الهيدر */
+        height: calc(100vh - 100px);
         overflow: hidden;
       }
 
@@ -1541,7 +1459,6 @@
         height: 100%;
       }
 
-      /* Category Cards in POS */
       .pos-cat-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -1579,7 +1496,6 @@
         margin-bottom: 10px;
       }
 
-      /* Product Cards in POS */
       .pos-prod-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -1618,7 +1534,6 @@
         font-size: 15px;
       }
 
-      /* Cart Items */
       .pos-cart-items {
         flex: 1;
         overflow-y: auto;
@@ -1636,7 +1551,6 @@
         margin-bottom: 8px;
       }
 
-      /* Mobile Adjustments */
       @media (max-width: 900px) {
         .pos-layout {
           flex-direction: column;
@@ -1646,11 +1560,10 @@
         .pos-cart-area {
           min-width: 100%;
           height: auto;
-          order: -1; /* السلة فوق في الموبايل أو تحت حسب رغبتك */
+          order: -1;
           margin-bottom: 20px;
         }
       }
-      /* تنسيق العنصر أثناء السحب */
 .sortable-ghost {
     opacity: 0.4;
     background: var(--primary-light) !important;
@@ -1664,7 +1577,6 @@
     transform: scale(1.02);
 }
 
-/* === إصلاح لون الخلفية عند الملء التلقائي للمتصفح === */
       input:-webkit-autofill,
       input:-webkit-autofill:hover, 
       input:-webkit-autofill:focus, 
@@ -2104,7 +2016,6 @@
                 box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
             }
             
-            /* Modern Tabs */
             .cat-tabs { display: flex; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
             .cat-tab-btn {
                 padding: 10px 20px;
@@ -2210,7 +2121,6 @@
 
         <div id="view-products" class="hidden">
             <style>
-                /* --- Luxury & Practical Product Styles --- */
                 .prod-layout-pro {
                     display: flex;
                     gap: 25px;
@@ -2219,7 +2129,6 @@
                     font-family: 'Tajawal', sans-serif;
                 }
 
-                /* القائمة الجانبية */
                 .prod-list-container {
                     flex: 1.3;
                     display: flex;
@@ -2234,7 +2143,6 @@
                     padding-bottom: 80px;
                 }
 
-                /* كارت المنتج الفخم */
                 .prod-card-item {
                     background: var(--surface);
                     border-radius: 20px;
@@ -2271,7 +2179,6 @@
                     margin-left: 15px;
                 }
 
-                /* لوحة التعديل الفخمة */
                 .prod-editor-panel {
                     flex: 1;
                     background: var(--surface);
@@ -2299,7 +2206,6 @@
                     flex: 1;
                 }
 
-                /* حقول الإدخال العصرية */
                 .input-group-modern { margin-bottom: 20px; }
                 .input-group-modern label {
                     font-size: 13px;
@@ -2330,7 +2236,6 @@
                     outline: none;
                 }
 
-                /* زر رفع الصورة */
                 .upload-box-modern {
                     border: 2px dashed #cbd5e1;
                     border-radius: 20px;
@@ -2346,7 +2251,6 @@
                     transform: scale(0.99);
                 }
 
-                /* أزرار التحكم الصغيرة في الكارت */
                 .action-btn-mini {
                     width: 35px; height: 35px;
                     border-radius: 12px;
@@ -2365,7 +2269,6 @@
                 }
                 .action-btn-mini.danger:hover { background: var(--danger); }
 
-                /* مفتاح التوفر Switch */
                 .switch-status {
                     position: relative;
                     display: inline-block;
@@ -2397,7 +2300,6 @@
                     .prod-list-container, .prod-editor-panel { width: 100%; height: auto; overflow: visible; }
                     .prod-list-scroll { height: auto; max-height: 600px; }
                 }
-          /* --- تصميم نظام الجملة الاحترافي (Bulk System) - نسخة مريحة مع تبويبات --- */
 .bulk-toolbar {
   display: flex; gap: 15px; margin-bottom: 25px; background: var(--surface);
   padding: 20px; border-radius: 16px; box-shadow: var(--shadow);
@@ -2411,7 +2313,6 @@
 }
 .bulk-row-pro:hover { border-color: var(--primary); box-shadow: 0 8px 25px rgba(0,0,0,0.06); }
 
-/* المنطقة اليسرى (الصور) */
 .bulk-img-upload {
   width: 90px; height: 90px; flex-shrink: 0;
   border: 2px dashed var(--border-color); border-radius: 14px;
@@ -2421,10 +2322,9 @@
 .bulk-img-upload:hover { border-color: var(--primary); background: var(--primary-light); }
 .bulk-img-preview { width: 100%; height: 100%; object-fit: cover; display: none; }
 
-/* الشبكة الرئيسية */
 .bulk-inputs-grid {
     flex: 1; display: grid;
-    grid-template-columns: 1.2fr 1.5fr 1.3fr; /* تقسيم المساحة: الاسم - الوصف - السعر */
+    grid-template-columns: 1.2fr 1.5fr 1.3fr;
     gap: 15px;
 }
 .bulk-input-styled {
@@ -2434,7 +2334,6 @@
 .bulk-input-styled:focus { border-color: var(--primary); background: #fff; }
 .bulk-label-sm { font-size: 11px; font-weight: 700; color: var(--secondary); margin-bottom: 5px; display: block; }
 
-/* --- تصميم تبويبات السعر الجديد --- */
 .price-box {
     background: #f8fafc; padding: 8px; border-radius: 12px; 
     border: 1px solid #e2e8f0; height: 100%; display: flex; flex-direction: column;
@@ -2451,14 +2350,13 @@
 }
 .p-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
-/* أزرار التحكم */
 .bulk-actions { display: flex; flex-direction: column; gap: 8px; justify-content: center; height: 100%; padding-top: 10px; }
 .action-icon-btn { width: 35px; height: 35px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; font-size: 14px; }
 .btn-dup { background: #eff6ff; color: var(--primary); }
 .btn-del { background: #fef2f2; color: var(--danger); }
 
 @media (max-width: 992px) {
-  .bulk-inputs-grid { grid-template-columns: 1fr 1fr; } /* عمودين في التابلت */
+  .bulk-inputs-grid { grid-template-columns: 1fr 1fr; }
   .price-box { grid-column: span 2; }
 }
 @media (max-width: 600px) {
@@ -2938,9 +2836,8 @@
         if(yearSel && monthSel) {
             const d = new Date();
             const currentYear = d.getFullYear();
-            const currentMonth = d.getMonth() + 1; // 1-12
+            const currentMonth = d.getMonth() + 1;
 
-            // تعبئة السنوات (سنتين قبل وسنتين بعد)
             for(let i = currentYear - 2; i <= currentYear + 2; i++){
                 const opt = document.createElement("option");
                 opt.value = i;
@@ -2949,11 +2846,9 @@
                 yearSel.appendChild(opt);
             }
 
-            // تعبئة الشهور
             const months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
             months.forEach((m, index) => {
                 const opt = document.createElement("option");
-                // القيمة تكون 01, 02...
                 opt.value = String(index + 1).padStart(2, '0');
                 opt.text = m;
                 if((index + 1) === currentMonth) opt.selected = true;
@@ -3105,28 +3000,22 @@
     const sel = document.getElementById("acc-pay-month");
     if(sel) {
         const d = new Date();
-        const currentYear = d.getFullYear(); // السنة الحالية
-        const currentMonthIdx = d.getMonth(); // الشهر الحالي (0-11)
+        const currentYear = d.getFullYear();
+        const currentMonthIdx = d.getMonth();
 
-        // مصفوفة الشهور بالعربي
         const months = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
         
-        // عرض شهور السنة الحالية فقط (من يناير إلى ديسمبر)
         for (let i = 0; i < 12; i++) { 
           
-          // القيمة اللي هتروح للسيرفر (سنة-شهر)
-          // بنزود 1 لأن i تبدأ من 0
           const monthNum = String(i + 1).padStart(2, '0');
           const val = `${currentYear}-${monthNum}`; 
           
-          // النص اللي هيظهر ليك (عربي)
           const txt = `${months[i]} ${currentYear}`;
           
           const opt = document.createElement("option");
           opt.value = val;
           opt.text = txt;
           
-          // تحديد الشهر الحالي تلقائياً
           if (i === currentMonthIdx) opt.selected = true;
           
           sel.appendChild(opt);
@@ -3901,7 +3790,7 @@
       let stockItemsData = [];
       let currentIngredients = [];
       let editingProductId = null;
-      let editingAccEmpId = null; // متغير لتخزين هوية الموظف المراد تعديله
+      let editingAccEmpId = null;
       let currentUserRole = null;
       let serverTimeOffset = 0;
 
@@ -3922,7 +3811,6 @@
             serverTimeOffset = serverTime - localTime;
           }
 
-          // === بداية الإصلاح ===
           const text = await res.text();
           let result;
           try {
@@ -3931,7 +3819,6 @@
             console.error("Server Error (initDashboard):", text);
             return;
           }
-          // === نهاية الإصلاح ===
 
           if (result.status === "success") {
             const data = result.data;
@@ -3941,11 +3828,8 @@
             window.offersData = Array.isArray(data.restaurant.offers) ? data.restaurant.offers : [];
             if (typeof window.ofrRender === "function") window.ofrRender();
 
-            // إعدادات المتجر
             document.getElementById("set-orderMode").value = "view_only";
-            // روابط التواصل والتقييم
             renderSocialLinksEditor(data.restaurant.socialLinks || {});
-            // تهيئة نظام الحجز
             initReservationUI(data);
             document.getElementById("set-taxRate").value = data.restaurant.taxRate || 0;
             document.getElementById("set-serviceRate").value = data.restaurant.serviceRate || 0;
@@ -3953,14 +3837,12 @@
             document.getElementById("set-taxNoteColor").value = data.restaurant.taxNoteColor || "#888888";
             document.getElementById("set-useTableNumbers").checked = data.restaurant.useTableNumbers === true;
             document.getElementById("set-enableCoupons").checked = data.restaurant.enableCoupons === true;
-            // تحميل إعدادات المحاسبة
             if(data.restaurant.accountingSettings) {
                 document.getElementById("acc-set-overtime").value = data.restaurant.accountingSettings.overtimeRate || 0;
                 document.getElementById("acc-set-late").value = data.restaurant.accountingSettings.latePenalty || 0;
                 document.getElementById("acc-set-absence").value = data.restaurant.accountingSettings.absencePenalty || 1;
             }
             
-            // إعداد طباعة الرقم
             const localPrintSetting = localStorage.getItem("localPrintOrderNum");
             let shouldPrintNum = localPrintSetting !== null ? (localPrintSetting === "true") : (data.restaurant.printOrderNumber !== false);
             document.getElementById("set-printOrderNum").checked = shouldPrintNum;
@@ -3970,7 +3852,6 @@
               document.getElementById("set-whatsapp").value = data.restaurant.contactInfo.whatsapp || "";
             }
 
-            // 🟢 الأقسام المسموح للمالك برؤيتها (يحددها السوبر أدمن) - null/فارغة = كل الأقسام مسموحة
             window.ownerAllowedSections = Array.isArray(data.allowedSections) && data.allowedSections.length > 0
               ? data.allowedSections
               : null;
@@ -3978,22 +3859,17 @@
             applyPermissions(data.userRole);
             currentUserRole = data.userRole;
 
-            // تم نقل إعدادات الويتر إلى دالة applyPermissions لتوحيد النظام
 
             if (data.shiftStart) sessionStorage.setItem("shiftStart", data.shiftStart);
             if (data.shiftEnd) sessionStorage.setItem("shiftEnd", data.shiftEnd);
 
-            // === تفعيل الإشعارات الحية للحجوزات ===
             const socket = io();
             socket.emit("join-restaurant", data.restaurant._id);
 
-            // 1. عند وصول طلب حجز جديد
             socket.on("new_reservation_request", (payload) => {
-                // تشغيل صوت تنبيه
                 const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); 
                 audio.play().catch(e => console.log('Audio play failed'));
                 
-                // إظهار رسالة منبثقة
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
@@ -4003,20 +3879,17 @@
                     timer: 5000
                 });
 
-                // إذا كان الأونر فاتح صفحة الحجوزات، نحدث الجدول فوراً
                 if(!document.getElementById('view-reservations').classList.contains('hidden')) {
                     loadReservations();
                 }
             });
 
-            // 2. تحديث عدادات المقاعد في صفحة الإعدادات
             socket.on("seats_updated", (payload) => {
                  if(document.getElementById('res-booked-display')) {
                      updateReservationStats(payload.total, payload.booked);
                  }
             });
 
-            // 3. عند وصول تقييم جديد من عميل
             socket.on("new_rating", (payload) => {
                 const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
                 audio.play().catch(e => console.log('Audio play failed'));
@@ -4034,20 +3907,15 @@
                     loadRatings();
                 }
             });
-            // =======================================
 
-            // تشغيل تحذير الفترة التجريبية إذا وجد
             if (data.restaurant.owner && data.restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
-                // نصنع كائن تحذير وهمي بناء على البيانات
                 const trialWarning = { message: "أنت تستخدم حساب تجريبي. ستفقد البيانات بعد انتهاء الفترة." };
                 checkTrialWarning(trialWarning);
             }
-            // لو الباك اند بيبعت warning جاهز
             if (data.warning && typeof checkTrialWarning === 'function') {
                  checkTrialWarning(data.warning);
             }
 
-            // عرض اسم المستخدم
             const roleNames = { owner: "المالك", cashier: "الكاشير", kitchen: "المطبخ", waiter: "الويتر" };
             const roleAr = roleNames[currentUserRole] || currentUserRole;
             const userName = sessionStorage.getItem("currentUserName") || "مستخدم";
@@ -4065,7 +3933,6 @@
               checkShiftStatus(data.userRole);
             }
             
-            // تحميل المنتجات للكاشير والأونر
             if (data.userRole === "owner" || data.userRole === "cashier" || data.userRole === "waiter") {
               loadCategories();
               loadProducts();
@@ -4075,7 +3942,6 @@
               initDesignStudio(data.restaurant);
               initStorePageStudio(data.restaurant);
               
-              // 🟢 إصلاح منطق عرض المخازن (يعتمد الآن على القيمة القادمة من السيرفر + الأقسام المسموحة من السوبر أدمن)
               const isStockEnabled = data.hasStock && isSectionAllowed('nav-stock');
               const isRecipesEnabled = data.hasStock && isSectionAllowed('nav-recipes');
               const isAccountingEnabled = data.hasAccounting && isSectionAllowed('nav-accounting');
@@ -4105,12 +3971,10 @@
               if (isStockEnabled || isRecipesEnabled) loadStockItems();
             }
 
-            // توجيه المستخدم لآخر صفحة كان فيها
             const lastView = localStorage.getItem("lastActiveView");
             if (data.userRole === "kitchen") switchView("orders");
             else if (data.userRole === "waiter") {
                 switchView("manual-pos");
-                // إخفاء تبويب الطلبات الحية للويتر
                 if(document.getElementById("nav-orders")) {
                     document.getElementById("nav-orders").classList.add("hidden");
                 }
@@ -4124,7 +3988,6 @@
             }
 
           } else {
-             // Handle Errors
              if (res.status === 401) {
               sessionStorage.removeItem("ownerToken");
               window.location.href = "/login";
@@ -4156,7 +4019,6 @@
             setTimeout(() => { overlay.style.display = "none"; }, 300);
         } else {
             overlay.style.display = "block";
-            // Timeout to allow display:block to apply before opacity transition
             setTimeout(() => { 
                 sidebar.classList.add("active");
                 overlay.classList.add("visible");
@@ -4178,7 +4040,6 @@
         }
       }
 
-// --- Reservation Logic ---
 async function loadReservations() {
     const list = document.getElementById("res-requests-list");
     if(!list) return;
@@ -4248,9 +4109,7 @@ async function updateResStatus(id, status) {
         if(data.status === 'success') {
             Swal.fire({toast:true, icon:'success', title:'تم التحديث بنجاح'});
             loadReservations();
-            // تحديث العداد في صفحة الإعدادات لو مفتوحة
             const rId = document.getElementById("restaurant-id").value;
-            // يمكن هنا إعادة طلب بيانات المطعم لتحديث العدادات
         } else {
             Swal.fire('خطأ', data.message, 'error');
         }
@@ -4259,7 +4118,6 @@ async function updateResStatus(id, status) {
     }
 }
 
-// --- Ratings Logic ---
 function renderStarsHtml(stars) {
   const n = Math.round(Number(stars) || 0);
   return '<i class="fas fa-star"></i>'.repeat(n) + '<i class="far fa-star"></i>'.repeat(Math.max(0, 5 - n));
@@ -4353,51 +4211,40 @@ function switchView(viewName) {
     if(viewName === 'ratings') setTimeout(loadRatings, 100);
     if(viewName === 'offers' && typeof window.ofrRender === 'function') setTimeout(window.ofrRender, 50);
     if(viewName === 'store-page') setTimeout(storePageUpdatePreview, 300);
-        Swal.close(); // إغلاق أي توست أو تنبيه مفتوح فوراً
-        // حفظ الصفحة الحالية عشان لما تعمل ريفريش ترجع لها
+        Swal.close();
         localStorage.setItem("lastActiveView", viewName);
 
-        // 1. Scroll to top automatically
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        // 2. Hide all views and remove active states
-        // تمت إضافة "recipes" و "design" للقائمة لإصلاح مشكلة عدم إغلاق التصميم
-// ✅ تمت إضافة my-orders
 const allViews = ["categories", "products", "recipes", "bulk", "orders", "history", "stock", "settings", "staff", "manual-pos", "design", "store-page", "coupons", "accounting", "reservations", "ratings", "my-orders", "offers"];
         
         allViews.forEach((v) => {
             const el = document.getElementById(`view-${v}`);
             if (el) {
                 el.classList.add("hidden");
-                el.classList.remove("view-animate"); // Reset animation
+                el.classList.remove("view-animate");
             }
 
-            // Desktop Sidebar
             const nav = document.getElementById(`nav-${v}`);
             if (nav) nav.classList.remove("active");
             
-            // Mobile Bottom Nav
             const mobNav = document.getElementById(`mob-nav-${v}`);
             if (mobNav) mobNav.classList.remove("active");
         });
 
-        // 3. Show Target View with Animation
         const targetEl = document.getElementById(`view-${viewName}`);
         if (targetEl) {
             targetEl.classList.remove("hidden");
-            // Trigger reflow to restart animation
             void targetEl.offsetWidth; 
             targetEl.classList.add("view-animate");
         }
 
-        // 4. Update Active Buttons
         const targetNav = document.getElementById(`nav-${viewName}`);
         if (targetNav) targetNav.classList.add("active");
 
         const targetMobNav = document.getElementById(`mob-nav-${viewName}`);
         if (targetMobNav) targetMobNav.classList.add("active");
 
-        // 5. Close Mobile Sidebar if Open
         if (window.innerWidth <= 768) {
             const sidebar = document.getElementById("sidebar");
             const overlay = document.querySelector(".overlay");
@@ -4410,7 +4257,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             }
         }
 
-        // 6. View Specific Logic (Load Data)
         if (viewName === "orders") {
             const badge = document.getElementById("live-badge");
             if (badge) { badge.innerText = "0"; badge.classList.add("hidden"); }
@@ -4422,7 +4268,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
 
         if (viewName === "bulk") {
-            // تحميل الأقسام أولاً إذا لم تكن موجودة
             if (categoriesData.length === 0) {
                 loadCategories().then(() => {
                      const bulkContainer = document.getElementById("bulk-container");
@@ -4468,7 +4313,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         location.reload();
       }
 
-      // --- Reservation System Logic ---
       function initReservationUI(data) {
           const settings = data.restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
           
@@ -4477,7 +4321,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           
           updateReservationStats(settings.totalSeats, settings.bookedSeats);
 
-          // إعداد الرابط
           const link = `${window.location.origin}/reserve/${data.restaurant.slug}`;
           document.getElementById('res-link-input').value = link;
           document.getElementById('res-link-btn').href = link;
@@ -4548,7 +4391,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           Swal.fire({ toast: true, icon: 'success', title: 'تم نسخ الرابط' });
       }
 
-      // --- دوال المحاسبة الآلية ---
 
       async function saveAccSettings() {
           const rId = document.getElementById("restaurant-id").value;
@@ -4568,17 +4410,14 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           } catch(e) { console.error(e); }
       }
 
-      // 🟢 دالة التحديث الفوري (Excel-like)
       async function updatePayrollRow(payrollId, inputElement, field) {
           const row = document.getElementById(`pay-row-${payrollId}`);
-          // محاولة العثور على الأيقونة، وإن لم توجد (بسبب التحديث السريع) نحاول جلبها مرة أخرى
           let statusIcon = document.getElementById(`status-${payrollId}`);
           
           const newVal = Number(inputElement.value);
           
           if(newVal < 0) { inputElement.value = 0; return; }
 
-          // تغيير الحالة لـ "جاري الحفظ" (فقط إذا كانت الأيقونة موجودة)
           if (statusIcon) {
               statusIcon.className = "fas fa-spinner fa-spin";
               statusIcon.style.color = "var(--primary)";
@@ -4598,7 +4437,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
               const result = await res.json();
               
               if(result.status === "success") {
-                  // عند النجاح نعيد رسم الخلية بالكامل لضمان وجود الـ ID الصحيح للأيقونة
                   const netCell = document.getElementById(`net-${payrollId}`);
                   if(netCell) {
                       netCell.innerHTML = `${result.data.totalSalary} ج.م <i id="status-${payrollId}" class="fas fa-check-circle" style="margin-right:5px; font-size:12px; color:var(--success);"></i>`;
@@ -4616,9 +4454,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           }
       }
 
-      // ==========================================
-      // روابط التواصل والتقييم (Social Links)
-      // ==========================================
       const SOCIAL_LINKS_CONFIG = [
         { key: "instagram", label: "إنستجرام", icon: "fab fa-instagram", placeholder: "https://instagram.com/your_page" },
         { key: "whatsapp", label: "واتساب", icon: "fab fa-whatsapp", placeholder: "https://wa.me/2010xxxxxxxx" },
@@ -4649,9 +4484,8 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             </div>`;
         }).join("");
 
-        // صف التقييم منفصل: مفيش رابط خارجي يتكتب، ده رابط داخلي في السيستم بيتحط تلقائي
         const ratingCfg = socialLinks?.rating || {};
-        const ratingVisible = ratingCfg.visible !== false; // ظاهر افتراضياً
+        const ratingVisible = ratingCfg.visible !== false;
         const ratingUrl = `${window.location.origin}/rate/${window.currentRestaurantSlug || ""}`;
         const ratingRow = document.createElement("div");
         ratingRow.style.cssText = "display:flex; align-items:center; gap:10px; background:var(--bg); border:1px solid var(--border-color); border-radius:10px; padding:12px; margin-bottom:10px;";
@@ -4692,9 +4526,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         return result;
       }
 
-      // ==========================================
-      // تثبيت لوحة التحكم كتطبيق (PWA)
-      // ==========================================
       let deferredInstallPrompt = null;
 
       window.addEventListener("beforeinstallprompt", (e) => {
@@ -4724,9 +4555,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         document.getElementById("install-app-box").style.display = "none";
       }
 
-      // ==========================================
-      // تفعيل إشعارات التقييم (Web Push)
-      // ==========================================
       function urlBase64ToUint8Array(base64String) {
         const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
         const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -4790,9 +4618,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         ).checked;
         const enableCoupons =
           document.getElementById("set-enableCoupons").checked;
-        // قراءة قيمة طباعة الرقم
         const printOrderNum = document.getElementById("set-printOrderNum").checked;
-        // تحديث الحقل المخفي وتخزين القيمة محلياً لضمان عدم ضياعها
         document.getElementById("setting-print-num").value = printOrderNum;
         localStorage.setItem("localPrintOrderNum", printOrderNum);
 
@@ -4810,7 +4636,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           taxNoteColor: taxNoteColor,
           useTableNumbers: useTables,
           enableCoupons: enableCoupons,
-          printOrderNumber: printOrderNum, // إضافة الإعداد الجديد للباك اند
+          printOrderNumber: printOrderNum,
           contactInfo: {
             whatsapp: whatsapp,
           },
@@ -4849,8 +4675,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
       }
 
-      // تبديل التبويبات في الأقسام
-      // تحديث دالة التبويبات لتناسب التصميم الجديد
       function toggleCatTab(mode) {
           const tabSingle = document.getElementById('tab-cat-single');
           const tabBulk = document.getElementById('tab-cat-bulk');
@@ -4870,12 +4694,11 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           }
       }
 
-      // دالة للانتقال للمنتجات والبحث باسم القسم
       function showCategoryProducts(catName) {
-          switchView('products'); // تحويل للصفحة
+          switchView('products');
           const searchInput = document.getElementById('searchInput');
-          searchInput.value = catName; // وضع اسم القسم في البحث
-          searchTable(); // تشغيل الفلترة
+          searchInput.value = catName;
+          searchTable();
       }
 
       async function loadCategories() {
@@ -4895,7 +4718,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             updateCategoryDropdowns();
             grid.innerHTML = "";
 
-            // تحديث الإحصائيات
             if (result.data.stats) {
                 if(document.getElementById("stat-total-cats")) document.getElementById("stat-total-cats").innerText = result.data.stats.totalCats;
                 if(document.getElementById("stat-total-prods")) document.getElementById("stat-total-prods").innerText = result.data.stats.totalProds;
@@ -4907,19 +4729,16 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             }
 
             categoriesData.forEach((cat) => {
-              // 1. إخفاء الصورة تماماً لو مش موجودة
               const imgHtml = cat.image 
                   ? `<div style="flex-shrink: 0;">
                        <img src="${cat.image}" style="width: 60px; height: 60px; border-radius: 12px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                      </div>`
-                  : ``; // هنا خلينا المتغير فاضي لو مفيش صورة
+                  : ``;
 
-              // 2. تنسيق العداد
               const countBadge = cat.productCount > 0 
                   ? `<span style="font-size:12px; background:var(--bg); color:var(--text-main); padding:2px 10px; border-radius:20px; font-weight:bold; border: 1px solid var(--border-color);"><i class="fas fa-box-open" style="color:var(--primary)"></i> ${cat.productCount}</span>` 
                   : `<span style="font-size:12px; background:#f8fafc; color:#94a3b8; padding:2px 10px; border-radius:20px; border: 1px solid #e2e8f0;">فارغ</span>`;
 
-              // 3. الهيكل
               grid.innerHTML += `
                 <div class="cat-card-pro" id="cat-card-${cat._id}" data-id="${cat._id}" 
                      style="
@@ -4970,7 +4789,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
               `;
             });
 
-            // تفعيل السحب والإفلات
             new Sortable(grid, {
                 animation: 150,
                 handle: '.cat-card-pro',
@@ -4984,7 +4802,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
       }
 
-      // دالة البحث في الأقسام (جديدة)
       function searchCategory() {
         let input = document.getElementById("searchCatInput").value.toLowerCase();
         let cards = document.querySelectorAll(".cat-card-pro");
@@ -5013,7 +4830,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           }
       }
 
-      // ✅ إصلاح: دالة ترتيب المنتجات المفقودة
       async function updateProductOrder() {
           const rows = document.querySelectorAll('#products-list tr');
           const order = Array.from(rows).map((row, index) => ({
@@ -5053,7 +4869,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
               if(data.status === 'success') {
                   document.getElementById('bulk-cat-names').value = "";
                   loadCategories();
-                  toggleCatTab('single'); // الرجوع للوضع العادي
+                  toggleCatTab('single');
                   Swal.fire({ toast: true, icon: "success", title: `تمت إضافة ${data.count} أقسام` });
               }
           } catch(e) {
@@ -5118,7 +4934,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
       }
       async function deleteCategory(id) {
-        // البحث عن اسم القسم من القائمة المحملة
         const catObj = categoriesData.find(c => c._id === id);
         const catName = catObj ? catObj.name : null;
 
@@ -5139,7 +4954,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             Swal.fire({title: 'جاري حذف المنتجات والقسم...', didOpen: () => Swal.showLoading()});
             const rId = document.getElementById("restaurant-id").value;
 
-            // 1. حذف المنتجات المرتبطة (لو عرفنا اسم القسم)
             if (catName) {
                 const prodRes = await fetch(`/api/v1/products/restaurant/${rId}`, { headers: { Authorization: `Bearer ${token}` } });
                 const prodData = await prodRes.json();
@@ -5155,7 +4969,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
                 }
             }
 
-            // 2. حذف القسم نفسه
             const res = await fetch(`/api/v1/categories/${id}`, {
               method: "DELETE",
               headers: { Authorization: `Bearer ${token}` },
@@ -5169,7 +4982,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             if (res.ok) {
               Swal.fire({ toast: true, icon: "success", title: "تم حذف القسم ومنتجاته", timer: 1500, showConfirmButton: false });
               loadCategories();
-              loadProducts(); // تحديث قائمة المنتجات لإخفاء المحذوف
+              loadProducts();
             } else {
               Swal.fire("خطأ", "فشل الحذف", "error");
             }
@@ -5181,8 +4994,8 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
       }
       async function saveCategory() {
         const id = document.getElementById("edit-cat-id").value;
-        const name = document.getElementById("c-name").value; // الاسم الجديد
-        const oldName = document.getElementById("c-old-name").value; // الاسم القديم
+        const name = document.getElementById("c-name").value;
+        const oldName = document.getElementById("c-old-name").value;
         const imageFile = document.getElementById("c-image").files[0];
         const rId = document.getElementById("restaurant-id").value;
 
@@ -5204,7 +5017,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
 
         Swal.showLoading();
         try {
-          // 1. حفظ القسم أولاً
           const res = await fetch(url, {
             method: method,
             headers: { Authorization: `Bearer ${token}` },
@@ -5212,22 +5024,18 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           });
           const data = await res.json();
 
-          // 2. تحديث المنتجات المرتبطة (لو كان تعديل والاسم اتغير)
           if (data.status === "success" && id && oldName && oldName !== name) {
              Swal.fire({title: 'جاري تحديث المنتجات...', didOpen: () => Swal.showLoading()});
              
-             // جلب كل المنتجات عشان نعدلهم
              const prodRes = await fetch(`/api/v1/products/restaurant/${rId}`, { headers: { Authorization: `Bearer ${token}` } });
              const prodData = await prodRes.json();
              
              if(prodData.status === 'success') {
                  const productsToUpdate = prodData.data.products.filter(p => p.category === oldName);
                  
-                 // تحديث كل منتج
                  const updates = productsToUpdate.map(p => {
                      const pData = new FormData();
-                     pData.append("category", name); // الاسم الجديد
-                     // لازم نبعت الاسم تاني عشان الـ Validation في السيرفر
+                     pData.append("category", name);
                      pData.append("name", JSON.stringify(p.name)); 
                      return fetch(`/api/v1/products/${p._id}`, {
                          method: 'PATCH',
@@ -5245,13 +5053,12 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           if (data.status === "success") {
             resetCategoryForm();
             loadCategories();
-            // تحديث المنتجات في الخلفية عشان الاسم الجديد يظهر
             loadProducts(); 
             Swal.fire({
               toast: true,
               icon: "success",
               title: id ? "تم التعديل وتحديث المنتجات" : "تمت الإضافة",
-              timer: 1500, // يختفي بعد ثانية ونصف
+              timer: 1500,
               showConfirmButton: false
             });
           } else {
@@ -5265,7 +5072,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
       function editCategory(id, name, image) {
         document.getElementById("edit-cat-id").value = id;
         document.getElementById("c-name").value = name;
-        document.getElementById("c-old-name").value = name; // حفظ الاسم القديم للمقارنة
+        document.getElementById("c-old-name").value = name;
         document.getElementById("cat-form-title").innerText =
           "تعديل القسم: " + name;
         document.getElementById("btn-save-cat").innerHTML =
@@ -5282,7 +5089,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
        } else {
       document.getElementById("c-preview").style.display = "none";
     }
-    // ✅ إصلاح: الذهاب لمكان التعديل مباشرة
     document.getElementById('card-cat-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
@@ -5302,16 +5108,16 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
 
      function searchTable() {
         let input = document.getElementById("searchInput").value.toLowerCase();
-        let cards = document.querySelectorAll(".prod-card-item"); // لاحظ هنا بنبحث في الكروت
+        let cards = document.querySelectorAll(".prod-card-item");
         
         cards.forEach((card) => {
           let text = card.innerText.toLowerCase();
-          card.style.display = text.includes(input) ? "flex" : "none"; // flex عشان نحافظ على التصميم
+          card.style.display = text.includes(input) ? "flex" : "none";
         });
       }
 
       async function loadProducts() {
-        window.allProductsGlobal = []; // تهيئة المتغير فوراً لمنع الأخطاء
+        window.allProductsGlobal = [];
         const rId = document.getElementById("restaurant-id").value;
         const container = document.getElementById("products-list-container");
 
@@ -5348,10 +5154,8 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
               const imgUrl = p.image || "https://placehold.co/100x100/f1f5f9/94a3b8?text=No+Img";
               const pData = encodeURIComponent(JSON.stringify(p));
               
-              // حالة التوفر (مفتاح سويتش)
               const checkedAttr = p.isAvailable ? 'checked' : '';
               
-              // عرض السعر
               let priceDisplay = p.sizes && p.sizes.length > 0 
                   ? `<span style="font-size:11px; background:var(--bg); padding:4px 10px; border-radius:20px; font-weight:bold;">متعدد</span>` 
                   : `<span style="font-weight:800; color:var(--primary); font-size:15px;">${p.price} <small>ج.م</small></span>`;
@@ -5513,19 +5317,15 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
       }
 
-      // دالة النسخ الجديدة
       function duplicateProd(dataEncoded) {
           const p = JSON.parse(decodeURIComponent(dataEncoded));
-          // ملء النموذج ببيانات المنتج القديم
           document.getElementById("p-name").value = p.name.ar + " (نسخة)";
           document.getElementById("p-cat").value = p.category;
           document.getElementById("p-desc").value = p.description ? p.description.ar : "";
           
-          // تفريغ الصورة لأننا لا نستطيع نسخ الملف
           document.getElementById("p-preview").style.display = "none";
           document.getElementById("p-image").value = ""; 
 
-          // نسخ الأسعار
           if (p.sizes && p.sizes.length > 0) {
               document.querySelector('input[name="pricingMode"][value="multi"]').checked = true;
               document.getElementById("sizes-list").innerHTML = "";
@@ -5537,14 +5337,12 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           }
           togglePricingMode();
 
-          // تغيير العنوان وتجهيز النموذج للحفظ كمنتج جديد
           document.getElementById("form-mode-title").innerText = "نسخ منتج: " + p.name.ar;
           document.getElementById("btn-add-prod").classList.remove("hidden");
           document.getElementById("btn-update-prod").classList.add("hidden");
           document.getElementById("btn-cancel").classList.remove("hidden");
-          editingProductId = null; // تأكيد أنه منتج جديد
+          editingProductId = null;
 
-          // تمرير سلس للنموذج
           document.getElementById('card-prod-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
           Swal.fire({
               toast: true,
@@ -5579,7 +5377,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         formData.append("category", cat);
         formData.append("name", JSON.stringify({ ar: name, en: name }));
         formData.append("description", JSON.stringify({ ar: desc, en: "" }));
-        // إضافة المقادير للـ FormData
         if(currentIngredients.length > 0) {
             formData.append("ingredients", JSON.stringify(currentIngredients));
         }
@@ -5637,14 +5434,13 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           const data = await res.json();
 
           if (data.status === "success") {
-            // Swal.close(); // شيلنا دي عشان التوست الجديد يظهر مكان القديم علطول
             loadProducts();
             resetProductForm();
             Swal.fire({
               toast: true,
               icon: "success",
               title: "تم الحفظ بنجاح",
-              timer: 1500, // يختفي بعد ثانية ونصف
+              timer: 1500,
               showConfirmButton: false
             });
           } else {
@@ -5659,14 +5455,11 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         const p = JSON.parse(decodeURIComponent(dataEncoded));
         editingProductId = p._id;
 
-        // 1. إزالة التمييز عن كل الكروت
         document.querySelectorAll('.prod-card-item').forEach(c => c.classList.remove('active-edit'));
         
-        // 2. تمييز الكارت الحالي
         const activeCard = document.getElementById(`prod-card-${p._id}`);
         if(activeCard) activeCard.classList.add('active-edit');
 
-        // ملء البيانات في الفورم (نفس الكود القديم)
         document.getElementById("p-name").value = p.name.ar;
         document.getElementById("p-cat").value = p.category;
         document.getElementById("p-desc").value = p.description ? p.description.ar : "";
@@ -5675,7 +5468,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           document.getElementById("p-preview").src = p.image;
           document.getElementById("p-preview").style.display = "block";
         } else {
-          document.getElementById("p-preview").src = ""; // تفريغ الصورة
+          document.getElementById("p-preview").src = "";
           document.getElementById("p-preview").style.display = "none";
         }
 
@@ -5698,7 +5491,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         document.getElementById("btn-update-prod").classList.remove("hidden");
         document.getElementById("btn-cancel").classList.remove("hidden");
 
-        // تحميل المقادير
         currentIngredients = p.ingredients || [];
         renderIngredientsList();
       }
@@ -5722,16 +5514,13 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         renderIngredientsList();
       }
 
-      // دالة تغيير حالة التوفر (إصلاح شامل)
       async function toggleProd(id) {
-        // 1. نجيب المنتج من القائمة المحملة عشان نعرف حالته
         const product = window.allProductsGlobal.find(p => p._id === id);
         if (!product) return;
 
-        const newStatus = !product.isAvailable; // عكس الحالة الحالية
+        const newStatus = !product.isAvailable;
 
         try {
-            // 2. إرسال التحديث للرابط الصحيح
             const res = await fetch(`/api/v1/products/${id}`, {
                 method: 'PATCH',
                 headers: { 
@@ -5742,23 +5531,19 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             });
 
             if (res.ok) {
-                // 3. تحديث البيانات عندنا عشان ميبقاش فيه تعارض
                 product.isAvailable = newStatus;
                 
-                // تحديث شكل الكارت فوراً (تغميق اللون وتغيير الأيقونة)
                 const card = document.getElementById(`prod-card-${id}`);
                 if(card) {
                     card.style.opacity = newStatus ? '1' : '0.6';
                     const iconBtn = card.querySelector('.fa-eye, .fa-eye-slash');
                     if(iconBtn) {
                         iconBtn.className = newStatus ? 'fas fa-eye' : 'fas fa-eye-slash';
-                        // تغيير لون الأيقونة
                         iconBtn.parentElement.style.color = newStatus ? 'var(--success)' : 'var(--secondary)';
                         iconBtn.parentElement.style.borderColor = newStatus ? 'var(--success)' : 'var(--secondary)';
                     }
                 }
 
-                // رسالة تأكيد سريعة
                 Swal.fire({
                     toast: true,
                     icon: 'success',
@@ -5794,7 +5579,6 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
       }
 
-      // 1. دالة الفلترة (بحث داخل الصفوف)
 function filterBulkRows() {
     const term = document.getElementById('bulk-search-filter').value.toLowerCase();
     document.querySelectorAll('.bulk-row-pro').forEach(row => {
@@ -5807,7 +5591,6 @@ function filterBulkRows() {
     });
 }
 
-// 1. الدالة المفقودة (إصلاح الخطأ)
 function removeBulkRow(rowId) {
     const row = document.getElementById(`row-${rowId}`);
     if(row) {
@@ -5817,48 +5600,37 @@ function removeBulkRow(rowId) {
     }
 }
 
-// 2. دالة الرسم بالتصميم الواسع المريح
-// دالة التبديل بين التبويبات (سعر موحد / أحجام) - نسخة مصححة
 function switchPriceTab(rowId, mode, tabElement) {
-    // 1. تحديث شكل التبويبات
     const parent = tabElement.parentElement;
     parent.querySelectorAll('.p-tab').forEach(el => el.classList.remove('active'));
     tabElement.classList.add('active');
 
-    // 2. إظهار المحتوى المناسب
     const singleContainer = document.getElementById(`single-inputs-${rowId}`);
     const multiContainer = document.getElementById(`multi-inputs-${rowId}`);
     
     if (mode === 'single') {
-        // إظهار السعر الموحد
         singleContainer.classList.remove('hidden');
         singleContainer.style.display = 'flex';
         
-        // إخفاء الأحجام
         multiContainer.classList.add('hidden');
         multiContainer.style.display = 'none';
     } else {
-        // إخفاء السعر الموحد
         singleContainer.classList.add('hidden');
         singleContainer.style.display = 'none';
         
-        // إظهار الأحجام (إصلاح المشكلة هنا بإزالة كلاس hidden)
         multiContainer.classList.remove('hidden');
         multiContainer.style.display = 'block';
         
-        // إضافة صف تلقائي إذا كانت القائمة فارغة
         const sizesContainer = document.getElementById(`sizes-container-${rowId}`);
         if (sizesContainer && sizesContainer.children.length === 0) {
             addBulkSizeRow(rowId);
         }
     }
 
-    // 3. تحديث الراديو المخفي (لضمان عمل الحفظ بشكل صحيح)
     const radio = document.querySelector(`input[name="mode-${rowId}"][value="${mode}"]`);
     if(radio) radio.checked = true;
 }
 
-// دالة الرسم المحدثة (بنظام التبويبات)
 function addBulkRows(count = 1) {
     const container = document.getElementById("bulk-container");
     
@@ -5936,9 +5708,6 @@ function addBulkRows(count = 1) {
         container.insertAdjacentHTML("beforeend", html);
     }
 }
-// ==========================================
-// 3. دوال إدارة الأحجام (المفقودة)
-// ==========================================
 
 function addBulkSizeRow(rowId) {
     const container = document.getElementById(`sizes-container-${rowId}`);
@@ -5957,13 +5726,11 @@ function addBulkSizeRow(rowId) {
     container.insertAdjacentHTML('beforeend', html);
 }
 
-// حذف صف حجم محدد
 function removeSizeRow(sizeId) {
     const el = document.getElementById(`size-${sizeId}`);
     if (el) el.remove();
 }
 
-// 3. دالة معالجة الصورة
 function handleBulkImage(id, input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -5976,20 +5743,17 @@ function handleBulkImage(id, input) {
     }
 }
 
-// 4. دالة تكرار الصف (نسخ البيانات)
 function duplicateBulkRow(originalId) {
     const originalRow = document.getElementById(`row-${originalId}`);
-    addBulkRows(1); // إضافة صف جديد
+    addBulkRows(1);
     
     const container = document.getElementById("bulk-container");
     const newRow = container.lastElementChild;
     
-    // نسخ القيم
     newRow.querySelector('.b-name').value = originalRow.querySelector('.b-name').value;
     newRow.querySelector('.b-cat').value = originalRow.querySelector('.b-cat').value;
     newRow.querySelector('.b-desc').value = originalRow.querySelector('.b-desc').value;
     
-    // نسخ السعر
     const mode = originalRow.querySelector(`input[name="mode-${originalId}"]:checked`).value;
     const newId = newRow.id.replace('row-', '');
     
@@ -5998,14 +5762,12 @@ function duplicateBulkRow(originalId) {
         newRow.querySelector('.b-old-price').value = originalRow.querySelector('.b-old-price').value;
     }
     
-    // تأثير بصري للنسخ
     newRow.style.borderColor = "var(--primary)";
     setTimeout(() => newRow.style.borderColor = "var(--border-color)", 500);
 }
 
-// 5. تحديث دالة الحفظ (لتعمل مع الكلاس الجديد)
 async function submitBulkAll() {
-    const rows = document.querySelectorAll(".bulk-row-pro"); // تم تحديث الكلاس هنا
+    const rows = document.querySelectorAll(".bulk-row-pro");
     const rId = document.getElementById("restaurant-id").value;
     let promises = [];
     let validCount = 0;
@@ -6030,7 +5792,6 @@ async function submitBulkAll() {
             finalPrice = parseFloat(priceVal);
             finalOldPrice = parseFloat(row.querySelector(".b-old-price").value) || 0;
         } else {
-            // منطق الأحجام (نفس السابق)
             const sizeRows = row.querySelectorAll(".b-size-row");
             if (sizeRows.length === 0) continue;
             let hasValid = false;
@@ -6073,14 +5834,13 @@ async function submitBulkAll() {
         Swal.close();
         Swal.fire({ toast: true, icon: "success", title: `تم رفع ${validCount} منتجات` });
         document.getElementById("bulk-container").innerHTML = "";
-        addBulkRows(1); // إعادة تعيين
+        addBulkRows(1);
         loadProducts();
     } catch (e) {
         Swal.fire("خطأ", "حدث خطأ أثناء الرفع", "error");
     }
 }
 
-// اجعل addBulkRow القديمة تستدعي الجديدة لضمان عدم حدوث أخطاء
 window.addBulkRow = function() { addBulkRows(1); };
 
       const themesLibrary = [
@@ -6270,7 +6030,6 @@ window.addBulkRow = function() { addBulkRows(1); };
           animationClass: "theme-cyber-glow",
           resNameColor: "#00ff9d"
         },
-        // --- New 10 Luxury Themes ---
         {
           id: "cosmic_nebula",
           name: "سديم كوني (Cosmic)",
@@ -6405,7 +6164,6 @@ window.addBulkRow = function() { addBulkRows(1); };
 
       function renderAnimatedThemes() {
         const container = document.getElementById("animated-theme-library");
-        // التصحيح: تعريف animatedThemesLibrary عن طريق تصفية القائمة الرئيسية
         const animatedThemesLibrary = themesLibrary.filter(t => t.animationClass);
 
         if (container) {
@@ -6426,7 +6184,6 @@ window.addBulkRow = function() { addBulkRows(1); };
       }
 
       function applyAnimatedTheme(t) {
-        // تطبيق الإعدادات الأساسية
         setUiParam('primaryColor', t.primary);
         setUiParam('bgType', t.type);
         setUiParam('bgValue', t.bg);
@@ -6435,13 +6192,10 @@ window.addBulkRow = function() { addBulkRows(1); };
         setUiParam('cardStyle', t.style);
         setUiParam('layoutType', t.layout);
         
-        // تطبيق إعدادات النصوص
         setUiParam('resNameColor', t.resNameColor);
         
-        // تطبيق كلاس الأنيميشن
         setUiParam('animationTheme', t.animationClass);
         
-        // تحديث المدخلات في الواجهة
         document.getElementById("ui-primaryColor").value = t.primary;
         document.getElementById("ui-fontFamily").value = t.font;
         document.getElementById("ui-cardRadius").value = t.radius;
@@ -6473,7 +6227,6 @@ window.addBulkRow = function() { addBulkRows(1); };
         heroOverlay: 30,
         heroHeight: 200,
         
-        // إعدادات النصوص الجديدة
         showResName: true,
         customResName: "",
         resNameColor: "#b78728",
@@ -6486,8 +6239,8 @@ window.addBulkRow = function() { addBulkRows(1); };
         searchPlaceholder: "",
         
         headerTextAlignment: "center",
-        resNamePosition: "inside", // 🟢 جديد: مكان الاسم
-        animationTheme: "" // للثيمات المتحركة
+        resNamePosition: "inside",
+        animationTheme: ""
       };
 
       function initDesignStudio(restaurantData) {
@@ -6520,21 +6273,18 @@ window.addBulkRow = function() { addBulkRows(1); };
             currentDesign.heroHeight || 200;
 
         document.getElementById("ui-primaryColor").value = currentDesign.primaryColor;
-        // ✅ تحميل لون عناوين الأقسام
         const secColor = currentDesign.secTitleColor || "#2d2d2d";
         const secColorInput = document.getElementById("ui-secTitleColor");
         const secColorPreview = document.getElementById("color-preview-secTitle");
         
         if (secColorInput) secColorInput.value = secColor;
         if (secColorPreview) secColorPreview.style.backgroundColor = secColor;
-        // ✅ تحميل لون اسم المنتج
         const pTitleColor = currentDesign.prodTitleColor || "#2d2d2d";
         const pTitleInput = document.getElementById("ui-prodTitleColor");
         const pTitlePreview = document.getElementById("color-preview-prodTitle");
         if (pTitleInput) pTitleInput.value = pTitleColor;
         if (pTitlePreview) pTitlePreview.style.backgroundColor = pTitleColor;
 
-        // ✅ تحميل لون السعر
         const pPriceColor = currentDesign.prodPriceColor || "#b78728";
         const pPriceInput = document.getElementById("ui-prodPriceColor");
         const pPricePreview = document.getElementById("color-preview-prodPrice");
@@ -6543,7 +6293,6 @@ window.addBulkRow = function() { addBulkRows(1); };
         document.getElementById("ui-bgType").value = currentDesign.bgType;
         document.getElementById("ui-cardStyle").value = currentDesign.cardStyle;
 
-        // تحميل إعدادات النصوص الجديدة
         document.getElementById("ui-showResName").checked = currentDesign.showResName !== false;
         document.getElementById("ui-customResName").value = currentDesign.customResName || "";
         document.getElementById("ui-resNameColor").value = currentDesign.resNameColor || "#b78728";
@@ -6557,22 +6306,17 @@ window.addBulkRow = function() { addBulkRows(1); };
         
         document.getElementById("ui-headerAlign").value = currentDesign.headerTextAlignment || "center";
         
-        // 🟢 جديد: تحميل قيمة مكان الاسم
         const resNamePos = document.getElementById("ui-resNamePosition");
-        // التأكد من أن القيمة موجودة، وإلا نعود للوضع الافتراضي
         if(resNamePos) {
              resNamePos.value = currentDesign.resNamePosition || "inside";
-             // تحديث العرض المباشر يدوياً للتأكد
              setUiParam('resNamePosition', resNamePos.value); 
         }
         
-        renderAnimatedThemes(); // رسم الثيمات المتحركة
+        renderAnimatedThemes();
         document.getElementById("ui-cardRadius").value =
           currentDesign.cardRadius;
         document.getElementById("ui-fontFamily").value =
           currentDesign.fontFamily;
-          // تحميل إعدادات الخلفية
-        // تحميل إعدادات الخلفية
     currentDesign.bgSize = currentDesign.bgSize || "cover";
     currentDesign.bgRepeat = currentDesign.bgRepeat || "no-repeat";
     currentDesign.bgAttachment = currentDesign.bgAttachment || "fixed";
@@ -6584,7 +6328,6 @@ window.addBulkRow = function() { addBulkRows(1); };
     document.getElementById("ui-bgAttachment").value = currentDesign.bgAttachment;
     document.getElementById("ui-bgPosition").value = currentDesign.bgPosition;
     
-    // تحميل قيمة التعتيم (إذا كان الشريط موجوداً)
     const overlayInput = document.getElementById("ui-bgOverlay");
     if(overlayInput) {
         overlayInput.value = currentDesign.bgOverlay;
@@ -6597,7 +6340,6 @@ window.addBulkRow = function() { addBulkRows(1); };
           const bgColorInput = document.getElementById("ui-bgColor");
           if (bgColorInput) bgColorInput.value = currentDesign.bgValue;
         } else {
-           // لا يمكن تعيين قيمة لحقل الملفات برمجياً، وبدلاً من ذلك نعرض الصورة في المعاينة
            const bgPreview = document.getElementById("bg-preview");
            if (bgPreview && currentDesign.bgValue) {
                bgPreview.src = currentDesign.bgValue;
@@ -6711,9 +6453,6 @@ window.addBulkRow = function() { addBulkRows(1); };
         }
       }
 
-      // ==========================================
-      // صفحة المتجر (Store Link Page)
-      // ==========================================
       let storeLinksData = [];
       let storeLogoNewFile = null;
       let storeLogoCurrentUrl = "";
@@ -6767,14 +6506,12 @@ window.addBulkRow = function() { addBulkRows(1); };
         previewFrame.onload = () => storePageUpdatePreview();
       }
 
-      // ✅ توليد QR لصفحة المتجر
       function renderStorePageQR(link) {
         const canvas = document.getElementById("sp-qr-canvas");
         if (!canvas || typeof QRious === "undefined") return;
         new QRious({ element: canvas, value: link, size: 300, background: "#fff", foreground: "#000", level: "H" });
       }
 
-      // ✅ تحميل QR بصيغة PNG مع اسم المتجر تحته (جاهز للطباعة)
       function downloadStorePageQR() {
         const qrCanvas = document.getElementById("sp-qr-canvas");
         if (!qrCanvas || typeof QRious === "undefined") return;
@@ -6784,7 +6521,6 @@ window.addBulkRow = function() { addBulkRows(1); };
         const padding = 40;
         const labelHeight = storeName ? 70 : 0;
 
-        // نعيد توليد QR بدقة عالية على كانفاس مؤقت
         const hiResQR = document.createElement("canvas");
         new QRious({ element: hiResQR, value: document.getElementById("sp-link-input").value, size: qrSize, background: "#fff", foreground: "#000", level: "H" });
 
@@ -6793,14 +6529,11 @@ window.addBulkRow = function() { addBulkRows(1); };
         finalCanvas.height = qrSize + padding * 2 + labelHeight;
         const ctx = finalCanvas.getContext("2d");
 
-        // خلفية بيضاء
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-        // رسم الـ QR
         ctx.drawImage(hiResQR, padding, padding, qrSize, qrSize);
 
-        // اسم المتجر تحت الـ QR
         if (storeName) {
           ctx.fillStyle = "#111111";
           ctx.font = "bold 32px Tahoma, Arial, sans-serif";
@@ -6871,7 +6604,7 @@ window.addBulkRow = function() { addBulkRows(1); };
       function updateStoreLink(idx, key, value) {
         if (!storeLinksData[idx]) return;
         storeLinksData[idx][key] = value;
-        if (key === "color" || key === "enabled") { /* لا داعي لإعادة الرسم الكامل */ }
+        if (key === "color" || key === "enabled") { }
         storePageUpdatePreview();
       }
 
@@ -7074,7 +6807,6 @@ window.addBulkRow = function() { addBulkRows(1); };
       window.loadOrders = async function () {
         const rId = document.getElementById("restaurant-id").value;
 
-        // 1. إصلاح: لو الـ ID مش موجود (لسه مالحقش يحمل)، نوقف الدالة فوراً عشان مايحصلش خطأ
         if (!rId) return;
 
         const badge = document.getElementById("live-badge");
@@ -7086,7 +6818,6 @@ window.addBulkRow = function() { addBulkRows(1); };
         const container = document.getElementById("orders-grid");
         if (!container) return;
 
-        // إظهار التحميل فقط لو الكونتينر فاضي
         if(container.innerHTML.trim() === "") {
             container.innerHTML = '<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>';
         }
@@ -7096,11 +6827,9 @@ window.addBulkRow = function() { addBulkRows(1); };
             headers: { Authorization: `Bearer ${token}` },
           });
 
-          // 2. إصلاح نهائي: التأكد إن الرد JSON مش HTML قبل ما نفكه
           const contentType = res.headers.get("content-type");
           if (!res.ok || !contentType || !contentType.includes("application/json")) {
              console.warn("Server returned HTML/Error instead of JSON");
-             // ممكن نوقف هنا أو نمسح اللودينج بس عشان مايضربش ايرور
              return; 
           }
 
@@ -7123,7 +6852,6 @@ window.addBulkRow = function() { addBulkRows(1); };
         }
       };
 
-      // --- استقبال تنبيه الإلغاء (تشغيل الصوت والرسالة) ---
     if(typeof socket !== 'undefined' && !socket.hasListeners("order_cancelled_alert")) {
         socket.on("order_cancelled_alert", (order) => {
             const audio = document.getElementById("order-sound");
@@ -7142,7 +6870,6 @@ window.addBulkRow = function() { addBulkRows(1); };
             });
             if(typeof loadOrders === 'function') loadOrders();
         });
-        // وضع علامة لمنع تكرار المستمع
         socket.hasListeners = (ev) => true; 
     }
 
@@ -7325,7 +7052,7 @@ window.createOrderCardHTML = function (order) {
 
         try {
             socket = io({
-              transports: ["websocket", "polling"], // إضافة polling كخيار احتياطي
+              transports: ["websocket", "polling"],
               upgrade: true,
               reconnection: true,
               reconnectionAttempts: 5
@@ -7354,7 +7081,6 @@ window.createOrderCardHTML = function (order) {
           }
         });
         socket.on("seats_updated", (data) => {
-            // data = { total, booked, available }
             if(document.getElementById('res-booked-display')) {
                 updateReservationStats(data.total, data.booked);
             }
@@ -7409,16 +7135,13 @@ window.createOrderCardHTML = function (order) {
       };
 
      function startShiftMonitor() {
-        // التأكد من وجود المواعيد
         const startStr = sessionStorage.getItem("shiftStart");
         const endStr = sessionStorage.getItem("shiftEnd");
         
         if (!startStr || !endStr) return;
 
-        // تشغيل الفحص فوراً
         checkTime(startStr, endStr);
 
-        // تشغيل الفحص كل دقيقة
         setInterval(() => {
           if (typeof currentUserRole !== 'undefined' && currentUserRole !== 'owner') {
             checkTime(startStr, endStr);
@@ -7442,12 +7165,9 @@ window.createOrderCardHTML = function (order) {
 
         let isWorking = false;
 
-        // التعامل مع الشيفت اللي بيعدي نص الليل (مثلاً من 8 مساءً لـ 2 صباحاً)
         if (endMins < startMins) {
-            // يعتبر شغال لو الوقت أكبر من البداية (بالليل) أو أصغر من النهاية (الفجر)
             if (currentMins >= startMins || currentMins < endMins) isWorking = true;
         } else {
-            // شيفت نهاري عادي
             if (currentMins >= startMins && currentMins < endMins) isWorking = true;
         }
 
@@ -7462,14 +7182,11 @@ window.createOrderCardHTML = function (order) {
             }).then(() => {
                 logout();
             });
-            return; // توقف هنا
+            return;
         }
 
-        // --- منطق التنبيه قبل الانتهاء بـ 10 دقائق ---
-        // نحسب الوقت المتبقي فقط لغرض التنبيه
         let remaining = 0;
         if (endMins < startMins) { 
-             // لو شيفت ليلي
              let tempCurrent = currentMins < startMins ? currentMins + 1440 : currentMins;
              let tempEnd = endMins + 1440;
              remaining = tempEnd - tempCurrent;
@@ -7503,27 +7220,19 @@ window.createOrderCardHTML = function (order) {
         const table = document.getElementById(tableId);
         if (!table) return;
 
-        // 1. استخراج البيانات من الجدول
         const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
 
-        // 2. إنشاء اسم الملف بالتاريخ الحالي
         const date = new Date().toLocaleDateString('ar-EG').replace(/\//g, "-");
         const fullName = `${filename}_${date}.xlsx`;
 
-        // 3. تحميل الملف
         XLSX.writeFile(wb, fullName);
       }
 
-      /* ==========================================
-          🚀 POS System Logic (نظام الكاشير الجديد)
-          ========================================== */
       let posCart = [];
       
       async function initPosSystem() {
-          // تحميل الأقسام إذا لم تكن موجودة
           if (categoriesData.length === 0) await loadCategories();
           
-          // تحميل المنتجات إذا لم تكن موجودة
           if (!window.allProductsGlobal || window.allProductsGlobal.length === 0) {
               await loadProducts(); 
           }
@@ -7543,7 +7252,7 @@ window.createOrderCardHTML = function (order) {
           container.classList.remove('hidden');
           prodContainer.classList.add('hidden');
           backBtn.classList.add('hidden');
-          if(searchInput) searchInput.value = ''; // تصفير البحث
+          if(searchInput) searchInput.value = '';
           breadcrumbs.innerHTML = '<span style="color:var(--text-main)"><i class="fas fa-layer-group"></i> الأقسام</span>';
 
           categoriesData.forEach(cat => {
@@ -7575,8 +7284,7 @@ window.createOrderCardHTML = function (order) {
               <span style="color:var(--primary); font-weight:bold">${catName}</span>
           `;
 
-          // تصفية المنتجات حسب القسم وتوفرها
-          if (!window.allProductsGlobal) window.allProductsGlobal = []; // سطر حماية لمنع الخطأ// تصفية المنتجات حسب القسم وتوفرها
+          if (!window.allProductsGlobal) window.allProductsGlobal = [];
           const productsList = window.allProductsGlobal || [];
           const products = productsList.filter(p => p.category === catName && p.isAvailable);
           renderPosProductsGrid(products);
@@ -7592,7 +7300,6 @@ window.createOrderCardHTML = function (order) {
           }
 
           products.forEach(p => {
-              // تم الإصلاح: استخدام قيمة فارغة لتجنب طلب رابط خارجي
 const img = p.image || ''; 
 const imgHTML = img 
     ? `<img src="${img}" class="pos-prod-img">` 
@@ -7640,7 +7347,6 @@ const imgHTML = img
       async function clickPosProduct(pData) {
           const product = JSON.parse(decodeURIComponent(pData));
 
-          // التحقق من تعدد الأحجام
           if (product.sizes && product.sizes.length > 0) {
               const inputOptions = {};
               product.sizes.forEach((s, index) => {
@@ -7724,7 +7430,6 @@ const imgHTML = img
               });
           }
 
-          // الحسابات
           const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
           const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
           
@@ -7757,7 +7462,6 @@ async function submitPosOrder() {
         const manualOrderNum = document.getElementById("pos-manual-order-num").value;
         const rId = document.getElementById("restaurant-id").value;
 
-        // تجهيز بيانات الطلب
         const payload = {
             restaurantId: rId,
             items: posCart,
@@ -7779,7 +7483,6 @@ async function submitPosOrder() {
             const data = await res.json();
 
             if (data.status === "success") {
-                // تصفير السلة والمدخلات
                 posCart = [];
                 if(typeof renderPosCart === 'function') renderPosCart();
                 document.getElementById("pos-table-num").value = "";
@@ -7792,13 +7495,11 @@ async function submitPosOrder() {
                     showConfirmButton: false 
                 });
                 
-                // --- التوجيه حسب الصلاحية ---
                 if (currentUserRole === 'waiter') {
-                    switchView('my-orders'); // الويتر يروح لطلباتي المرسلة
+                    switchView('my-orders');
                 } else if (currentUserRole === 'cashier') {
-                    switchView('orders');    // الكاشير يروح للطلبات الحية
+                    switchView('orders');
                 }
-                // ---------------------------
 
             } else {
                 Swal.fire("خطأ", data.message || "فشل إرسال الطلب", "error");
@@ -7822,7 +7523,6 @@ async function submitPosOrder() {
           window.initSocket(rId);
         }
 
-        // تحميل الطلبات فقط إذا لم يكن ويتر، أو إذا كانت الصفحة مفتوحة بالفعل لغير الويتر
         if (
           !document.getElementById("view-orders").classList.contains("hidden") &&
           currentUserRole !== 'waiter'
@@ -7836,13 +7536,11 @@ async function submitPosOrder() {
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", () => {
             startApp();
-            // إجبار القائمة على الإغلاق عند الفتح
             document.getElementById('sidebar').classList.remove('active');
             document.querySelector('.overlay').style.display = 'none';
         });
       } else {
         startApp();
-        // إجبار القائمة على الإغلاق عند الفتح
         document.getElementById('sidebar').classList.remove('active');
         document.querySelector('.overlay').style.display = 'none';
       }
@@ -7984,8 +7682,6 @@ async function submitPosOrder() {
         }
       };
 
-      // 🟢 يتحقق هل قسم معيّن مسموح للمالك حسب اختيار السوبر أدمن
-      // عدم وجود قيد (null) = كل الأقسام متاحة (توافق مع الحسابات القديمة)
       function isSectionAllowed(navId) {
         const list = window.ownerAllowedSections;
         if (!Array.isArray(list) || list.length === 0) return true;
@@ -7993,69 +7689,53 @@ async function submitPosOrder() {
       }
 
       function applyPermissions(role) {
-        // 1. قائمة بكل العناصر (ديسكتوب + موبايل) لإخفائها أولاً
         const allNavs = [
-          // Desktop Sidebar IDs
           "nav-categories", "nav-products", "nav-bulk", "nav-history",
           "nav-design", "nav-store-page", "nav-settings", "nav-staff", "nav-orders",
           "nav-manual-pos", "nav-my-orders", "nav-coupons", "nav-reservations", "nav-ratings", "nav-offers",
           
-          // Mobile Bottom Nav IDs
           "mob-nav-orders", "mob-nav-manual-pos", "mob-nav-my-orders",
           "mob-nav-products", "mob-nav-categories", "mob-nav-settings", "mob-nav-stock"
         ];
 
-        // 2. تحديد الصلاحيات لكل دور
         const permissions = {
           owner: [
-            // Desktop
             "nav-categories", "nav-products", "nav-bulk", "nav-history",
             "nav-design", "nav-store-page", "nav-settings", "nav-orders", "nav-staff",
             "nav-coupons", "nav-reservations", "nav-ratings", "nav-offers", "nav-manual-pos",
-            // Mobile
             "mob-nav-orders", "mob-nav-products", "mob-nav-categories", "mob-nav-settings"
           ],
           cashier: [
-            // Desktop
             "nav-orders", "nav-history", "nav-manual-pos",
-            // Mobile
             "mob-nav-orders"
           ],
           kitchen: [
-            // Desktop
             "nav-orders",
-            // Mobile
             "mob-nav-orders"
           ],
           waiter: [
-            // Desktop
             "nav-manual-pos", "nav-my-orders",
-            // Mobile
             "mob-nav-manual-pos", "mob-nav-my-orders"
           ]
         };
 
         let allowed = permissions[role] || [];
 
-        // 🟢 لو الدور "مالك"، صفّي القائمة حسب الأقسام التي حددها السوبر أدمن
         if (role === "owner") {
           const normalize = (id) => id.startsWith("mob-nav-") ? id.replace("mob-nav-", "nav-") : id;
           allowed = allowed.filter((id) => isSectionAllowed(normalize(id)));
         }
 
-        // 3. إخفاء الكل أولاً
         allNavs.forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.classList.add("hidden");
         });
 
-        // 4. إظهار المسموح به فقط
         allowed.forEach((id) => {
           const el = document.getElementById(id);
           if (el) el.classList.remove("hidden");
         });
 
-        // منطق إضافي خاص
         if (role === "owner") loadStaff();
 
         const recentBtn = document.getElementById("btn-recent-orders");
@@ -8077,7 +7757,6 @@ async function submitPosOrder() {
           const list = document.getElementById("staff-list");
           list.innerHTML = "";
           data.data.staff.forEach((u) => {
-            // ✅ تصحيح عرض الأدوار ليشمل الويتر
             let roleBadge = '';
             if (u.role === 'cashier') {
                 roleBadge = '<span class="badge" style="background:#dbeafe; color:#1e40af">كاشير</span>';
@@ -8094,7 +7773,6 @@ async function submitPosOrder() {
                 ? `<div style="font-size:11px; color:var(--secondary); margin-top:5px;"><i class="far fa-clock"></i> ${u.shiftStart} - ${u.shiftEnd}</div>`
                 : "";
 
-            // تشفير البيانات لإرسالها لدالة التعديل
             const staffData = encodeURIComponent(JSON.stringify(u));
 
             list.innerHTML += `
@@ -8143,7 +7821,6 @@ async function submitPosOrder() {
         if (!name || !email)
           return Swal.fire("تنبيه", "أكمل البيانات الأساسية", "warning");
 
-        // الباسورد مطلوب فقط في حالة الإضافة الجديدة
         if (!editingStaffId && !password)
            return Swal.fire("تنبيه", "كلمة المرور مطلوبة للموظف الجديد", "warning");
 
@@ -8151,7 +7828,6 @@ async function submitPosOrder() {
             name, email, role, restaurantId: rId,
             shiftStart, shiftEnd, restDays
         };
-        // إرسال الباسورد فقط إذا تم كتابته (لتجنب تغييره لفارغ)
         if(password) bodyData.password = password;
 
         try {
@@ -8190,30 +7866,26 @@ async function submitPosOrder() {
           const u = JSON.parse(decodeURIComponent(staffDataEncoded));
           editingStaffId = u._id;
 
-          // تعبئة البيانات في الفورم
           document.getElementById("staff-name").value = u.name;
           document.getElementById("staff-email").value = u.email;
-          document.getElementById("staff-password").value = ""; // تفريغ الباسورد
+          document.getElementById("staff-password").value = "";
           document.getElementById("staff-role").value = u.role;
           document.getElementById("staff-start").value = u.shiftStart || "09:00";
           document.getElementById("staff-end").value = u.shiftEnd || "17:00";
 
-          // تحديد أيام الإجازة
           const checkboxes = document.querySelectorAll("#rest-days-container input");
-          checkboxes.forEach(cb => cb.checked = false); // تصفير أولاً
+          checkboxes.forEach(cb => cb.checked = false);
           if (u.restDays) {
               checkboxes.forEach(cb => {
                   if (u.restDays.includes(parseInt(cb.value))) cb.checked = true;
               });
           }
 
-          // تغيير شكل الزر
           const btn = document.querySelector("#view-staff .btn-primary");
           btn.innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
           btn.style.backgroundColor = "var(--warning)";
           btn.style.borderColor = "var(--warning)";
 
-          // إضافة زر إلغاء إذا لم يكن موجوداً
           if (!document.getElementById("btn-cancel-staff")) {
               const cancelBtn = document.createElement("button");
               cancelBtn.id = "btn-cancel-staff";
@@ -8277,7 +7949,6 @@ async function submitPosOrder() {
           ? order.orderNum
           : String(order._id).slice(-4);
         
-        // قراءة الإعداد من الحقل المخفي
         const showOrderNum = document.getElementById("setting-print-num").value === "true";
         const orderNumHTML = showOrderNum ? `<div style="font-size:12px">أوردر #${orderNumDisplay}</div>` : '';
 
@@ -8408,7 +8079,7 @@ async function submitPosOrder() {
     <script>
       window.showRecentOrders = async function () {
         const rId = document.getElementById("restaurant-id").value;
-        if (!rId) return; // 🛑 Safety Check
+        if (!rId) return;
 
         const modal = document.getElementById("recent-orders-modal");
         const container = document.getElementById("recent-orders-list");
@@ -8470,8 +8141,6 @@ async function submitPosOrder() {
           document.getElementById("mode-single").classList.add("hidden");
           document.getElementById("mode-multi").classList.remove("hidden");
           
-          // إصلاح: التحقق من عدد صفوف الأحجام الموجودة فعلياً
-          // إذا لم يكن هناك أي صف (صفر)، نقوم بإضافة صف جديد تلقائياً
           if (sizesList.querySelectorAll('.size-row').length === 0) {
             addSizeRow();
           }
@@ -8482,7 +8151,6 @@ async function submitPosOrder() {
         const id = Date.now();
         const oldValDisplay = oldPrice && oldPrice > 0 ? oldPrice : "";
 
-        // تصميم كارت أنيق لكل حجم
         const html = `
             <div class="size-row" id="size-${id}" style="
                 background: #fff; 
@@ -8570,7 +8238,6 @@ async function submitPosOrder() {
       async function createCoupon() {
     const rId = document.getElementById("restaurant-id").value;
     
-    // دالة مساعدة لجلب القيمة بأمان دون التسبب في خطأ إذا كان العنصر غير موجود
     const getVal = (id) => {
         const el = document.getElementById(id);
         return el ? el.value : "";
@@ -8604,7 +8271,6 @@ async function submitPosOrder() {
                 icon: "success",
                 title: "تم إنشاء الكوبون",
             });
-            // تفريغ الحقول
             if(document.getElementById("coup-code")) document.getElementById("coup-code").value = "";
             if(document.getElementById("coup-value")) document.getElementById("coup-value").value = "";
             loadCoupons();
@@ -8784,7 +8450,6 @@ async function submitPosOrder() {
       }
 
       
-      // --- Accounting Logic ---
 function showAccTab(tab) {
     document.getElementById('acc-tab-employees').classList.add('hidden');
     document.getElementById('acc-tab-attendance').classList.add('hidden');
@@ -8815,7 +8480,6 @@ async function addEmployee() {
         let url = '/api/v1/accounting/employees';
         let method = 'POST';
 
-        // لو بنعدل موظف، نغير الرابط والطريقة
         if (editingAccEmpId) {
             url = `/api/v1/accounting/employees/${editingAccEmpId}`;
             method = 'PATCH';
@@ -8830,11 +8494,10 @@ async function addEmployee() {
         Swal.fire('تم', editingAccEmpId ? 'تم تعديل البيانات' : 'تم إضافة الموظف', 'success');
         
         loadEmployees();
-        resetAccEmpForm(); // تفريغ الفورم
+        resetAccEmpForm();
     } catch(e) { console.error(e); }
 }
 
-// دالة مساعدة لتجهيز الفورم للتعديل
 function editAccEmployee(empDataEncoded) {
     const emp = JSON.parse(decodeURIComponent(empDataEncoded));
     editingAccEmpId = emp._id;
@@ -8847,18 +8510,15 @@ function editAccEmployee(empDataEncoded) {
     document.getElementById('acc-emp-start').value = emp.shiftStart || "09:00";
     document.getElementById('acc-emp-end').value = emp.shiftEnd || "18:00";
 
-    // تغيير نص الزر
     const btn = document.querySelector('#acc-tab-employees .btn-success');
     if(btn) {
         btn.innerText = 'حفظ التعديلات';
         btn.style.background = 'var(--warning)';
     }
     
-    // سكرول للفورم
     document.getElementById('acc-tab-employees').scrollIntoView({ behavior: 'smooth' });
 }
 
-// دالة لتفريغ الفورم
 function resetAccEmpForm() {
     editingAccEmpId = null;
     document.getElementById('acc-emp-name').value = '';
@@ -8868,7 +8528,7 @@ function resetAccEmpForm() {
     const btn = document.querySelector('#acc-tab-employees .btn-success');
     if(btn) {
         btn.innerText = 'حفظ البيانات';
-        btn.style.background = ''; // رجوع للون الأصلي
+        btn.style.background = '';
     }
 }
 
@@ -8878,9 +8538,8 @@ async function loadEmployees() {
         const res = await fetch('/api/v1/accounting/employees', { headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
         
-        // ✅ إصلاح: التحقق من نجاح الطلب ووجود البيانات
         if (data.status === 'success' && Array.isArray(data.data)) {
-            window.employeesData = data.data; // Store globally
+            window.employeesData = data.data;
             const tbody = document.getElementById('acc-emp-list');
             if (!tbody) return;
             
@@ -8934,7 +8593,6 @@ async function loadAttendance() {
     const dataAtt = await resAtt.json();
     const logs = dataAtt.data;
 
-    // جلب الموظفين لعمل جدول كامل
     const resEmp = await fetch('/api/v1/accounting/employees', { headers: { Authorization: `Bearer ${token}` } });
     const dataEmp = await resEmp.json();
     
@@ -8945,7 +8603,6 @@ async function loadAttendance() {
         const log = logs.find(l => l.employee && l.employee._id === emp._id);
         const checkInBtn = log ? (new Date(log.checkIn).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})) : `<button onclick="markAttendance('${emp._id}', 'checkIn')" class="btn btn-success" style="padding:5px 10px; font-size:12px;">تسجيل حضور</button>`;
         
-        // تعديل: زر الانصراف باللون الأحمر
         const checkOutBtn = log ? (log.checkOut ? new Date(log.checkOut).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : `<button onclick="markAttendance('${emp._id}', 'checkOut')" class="btn btn-outline" style="padding:5px 10px; font-size:12px; color:white; background:var(--danger); border-color:var(--danger);">انصراف</button>`) : '-';
         
         tbody.innerHTML += `
@@ -9006,7 +8663,6 @@ async function generatePayroll() {
         });
     } catch(e) { Swal.fire('خطأ', 'فشل الحساب', 'error'); }
 }
-      // --- 📦 دوال نظام المخازن (المبسطة) ---
 
 async function loadStockItems() {
     const rId = document.getElementById("restaurant-id").value;
@@ -9021,7 +8677,6 @@ async function loadStockItems() {
         if(data.status === 'success') {
             stockItemsData = data.data.items;
             
-            // === [New] تحديث عداد النواقص في القائمة الجانبية ===
             let lowStockCount = 0;
             if(stockItemsData) {
                 stockItemsData.forEach(item => {
@@ -9037,7 +8692,6 @@ async function loadStockItems() {
                     badge.style.display = 'none';
                 }
             }
-            // ====================================================
 
             renderStockTable();
             renderStockDropdown();
@@ -9057,7 +8711,6 @@ function renderStockTable() {
     }
 
     stockItemsData.forEach(item => {
-        // تنبيه لو الكمية قليلة
         const isLow = item.quantity <= item.alertLevel;
         const qtyStyle = isLow ? 'color:red; font-weight:bold; background:#fee2e2; padding:2px 8px; border-radius:4px;' : 'font-weight:bold; color:green;';
         const alertIcon = isLow ? '<i class="fas fa-exclamation-circle" style="color:red" title="كمية منخفضة"></i>' : '';
@@ -9086,7 +8739,6 @@ function renderStockTable() {
 }
 
 function renderStockDropdown() {
-    // تحديث القوائم المنسدلة في صفحة المنتجات وصفحة المقادير
     const selectors = ['stock-select', 'recipe-stock-select'];
     
     selectors.forEach(selId => {
@@ -9100,7 +8752,6 @@ function renderStockDropdown() {
     });
 }
 
-// إضافة خامة جديدة
 async function openStockModal() {
     const { value: formValues } = await Swal.fire({
         title: '📝 إضافة خامة جديدة',
@@ -9151,7 +8802,6 @@ async function openStockModal() {
     }
 }
 
-// تحديث الكمية (جرد)
 async function adjustStock(id, name) {
     const { value: adjustment } = await Swal.fire({
         title: `جرد: ${name}`,
@@ -9170,7 +8820,6 @@ async function adjustStock(id, name) {
     });
 
     if (adjustment) {
-        // لو الرقم موجب يبقى شراء، لو سالب يبقى عجز/جرد
         const type = Number(adjustment) > 0 ? 'restock' : 'adjustment';
         try {
             await fetch(`/api/v1/stock/${id}/adjust`, {
@@ -9184,7 +8833,6 @@ async function adjustStock(id, name) {
     }
 }
 
-// حذف خامة (الدالة التي كانت ناقصة)
 async function deleteStockItem(id) {
     const result = await Swal.fire({
         title: 'حذف الخامة؟',
@@ -9213,7 +8861,6 @@ async function deleteStockItem(id) {
 }
 
 async function loadStockLogs() {
-    // ✅ إصلاح: تنظيف الـ ID من أي زوائد مثل :1
     let rId = document.getElementById("restaurant-id").value;
     if (rId) rId = rId.split(':')[0].trim(); 
 
@@ -9265,24 +8912,19 @@ async function loadStockLogs() {
     }
 }
 
-// --- 🍲 دوال ربط المقادير (لصفحة المنتجات القديمة فقط) ---
-// ملاحظة: تم تطوير صفحة "إدارة المقادير" المنفصلة لتكون أسهل، هذه الدوال هنا فقط لدعم صفحة "إضافة منتج" التقليدية.
 
 function addIngredientRow(stockItem = null, qty = null) {
     const select = document.getElementById('stock-select');
     const qtyInput = document.getElementById('stock-qty');
     
-    // الحصول على البيانات سواء من البراميتر أو من الـ input
     let id, name, unit, amount;
 
     if (stockItem) {
-        // حالة التحميل عند التعديل
         id = stockItem.stockItem._id || stockItem.stockItem; 
         name = stockItem.stockItem.name || 'خامة';
         unit = stockItem.stockItem.unit || '';
         amount = stockItem.quantity;
     } else {
-        // حالة الإضافة اليدوية
         id = select.value;
         const selectedOpt = select.options[select.selectedIndex];
         name = selectedOpt.getAttribute('data-name');
@@ -9295,7 +8937,6 @@ function addIngredientRow(stockItem = null, qty = null) {
     currentIngredients.push({ stockItem: id, quantity: Number(amount) });
     renderIngredientsList();
     
-    // تفريغ الحقول
     qtyInput.value = '';
     select.value = '';
 }
@@ -9310,7 +8951,6 @@ function renderIngredientsList() {
     }
 
     currentIngredients.forEach((ing, index) => {
-        // محاولة العثور على الاسم من القائمة المحملة
         let stockObj = stockItemsData.find(s => s._id === ing.stockItem || s._id === ing.stockItem._id);
         
         let displayName = stockObj ? stockObj.name : 'خامة';
@@ -9351,19 +8991,16 @@ function removeIngredient(index) {
     currentIngredients.splice(index, 1);
     renderIngredientsList();
 }
-// === Recipe Manager Logic ===
       let activeRecipeProduct = null;
       let activeIngredients = [];
 
-      // تشغيل القسم عند الفتح
       function initRecipesView() {
           loadStockItems().then(() => {
-              renderRecipeStockSelect(); // ملء قائمة الخامات
+              renderRecipeStockSelect();
           });
-          loadRecipeProducts(); // ملء قائمة المنتجات
+          loadRecipeProducts();
       }
 
-      // 1. تحميل المنتجات وعرضها في القائمة الجانبية
       async function loadRecipeProducts() {
           const rId = document.getElementById("restaurant-id").value;
           const container = document.getElementById("recipe-products-list");
@@ -9376,7 +9013,7 @@ function removeIngredient(index) {
               const data = await res.json();
               
               if (data.status === "success") {
-                  window.allRecipeProducts = data.data.products; // حفظ المنتجات للبحث
+                  window.allRecipeProducts = data.data.products;
                   renderRecipeProductList(window.allRecipeProducts);
               }
           } catch (e) {
@@ -9412,7 +9049,6 @@ function removeIngredient(index) {
               `;
               
               div.onclick = () => {
-                  // تظليل العنصر المختار
                   document.querySelectorAll("#recipe-products-list > div").forEach(d => d.style.borderColor = "transparent");
                   div.style.borderColor = "var(--primary)";
                   div.style.background = "var(--primary-light)";
@@ -9422,17 +9058,15 @@ function removeIngredient(index) {
           });
       }
 
-      // بحث في المنتجات
       function filterRecipeProducts() {
           const term = document.getElementById("recipe-search").value.toLowerCase();
           const filtered = window.allRecipeProducts.filter(p => p.name.ar.toLowerCase().includes(term));
           renderRecipeProductList(filtered);
       }
 
-      // 2. فتح المحرر لمنتج معين
       function openRecipeEditor(product) {
           activeRecipeProduct = product;
-          activeIngredients = product.ingredients ? [...product.ingredients] : []; // نسخ المقادير الحالية
+          activeIngredients = product.ingredients ? [...product.ingredients] : [];
 
           document.getElementById("recipe-editor-empty").classList.add("hidden");
           document.getElementById("recipe-editor-content").classList.remove("hidden");
@@ -9441,26 +9075,22 @@ function removeIngredient(index) {
           renderActiveIngredientsTable();
       }
 
-      // 3. ملء قائمة الخامات (Dropdown)
       function renderRecipeStockSelect() {
           const select = document.getElementById("recipe-stock-select");
           select.innerHTML = '<option value="">-- اختر الخامة --</option>';
           
-          // stockItemsData يجب أن تكون محملة من دالة loadStockItems الموجودة مسبقاً
           if(typeof stockItemsData !== 'undefined') {
               stockItemsData.forEach(item => {
                   select.innerHTML += `<option value="${item._id}" data-unit="${item.unit}" data-name="${item.name}">${item.name} (${item.unit})</option>`;
               });
           }
 
-          // تحديث هند الوحدة عند الاختيار
           select.onchange = function() {
               const unit = this.options[this.selectedIndex].getAttribute("data-unit");
               document.getElementById("recipe-unit-hint").innerText = unit ? `الوحدة المستخدمة: ${unit}` : "";
           };
       }
 
-      // 4. إضافة مكون للقائمة المؤقتة
       function addIngredientToActive() {
           const select = document.getElementById("recipe-stock-select");
           const qtyInput = document.getElementById("recipe-stock-qty");
@@ -9472,12 +9102,10 @@ function removeIngredient(index) {
 
           if(!stockId || !qty || qty <= 0) return Swal.fire("تنبيه", "اختر الخامة والكمية الصحيحة", "warning");
 
-          // التحقق من التكرار (مع تجاهل العناصر التالفة)
           const existing = activeIngredients.find(i => i.stockItem && (i.stockItem._id || i.stockItem) === stockId);
           if(existing) {
-              existing.quantity = qty; // تحديث الكمية لو موجود
+              existing.quantity = qty;
           } else {
-              // إضافة هيكل يشبه المرتجع من الداتابيز للعرض
               activeIngredients.push({
                   stockItem: { _id: stockId, name: name, unit: unit }, 
                   quantity: qty
@@ -9490,13 +9118,11 @@ function removeIngredient(index) {
           document.getElementById("recipe-unit-hint").innerText = "";
       }
 
-      // 5. رسم جدول المكونات
       function renderActiveIngredientsTable() {
           const tbody = document.getElementById("recipe-active-list");
           tbody.innerHTML = "";
 
           activeIngredients.forEach((ing, index) => {
-              // [Fix] إذا كانت الخامة محذوفة (null)
               if (!ing.stockItem) {
                   tbody.innerHTML += `
                       <tr style="background:#fff1f2;">
@@ -9510,14 +9136,12 @@ function removeIngredient(index) {
                           </td>
                       </tr>
                   `;
-                  return; // تخطي هذا الصف
+                  return;
               }
 
-              // التعامل مع البيانات سواء كانت populated أو مجرد ID (للعرض الفوري)
               let name = ing.stockItem.name || "خامة";
               let unit = ing.stockItem.unit || "-";
               
-              // محاولة إيجاد الاسم من القائمة المحملة لو كان مجرد ID
               if(!ing.stockItem.name && typeof stockItemsData !== 'undefined') {
                   const s = stockItemsData.find(x => x._id === ing.stockItem);
                   if(s) { name = s.name; unit = s.unit; }
@@ -9541,14 +9165,11 @@ function removeIngredient(index) {
               tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:gray;">لم يتم إضافة مقادير بعد</td></tr>';
           }
 
-          // === [New] حساب التكلفة الإجمالية للمقادير ===
           let totalCost = 0;
           activeIngredients.forEach(ing => {
               if(ing.stockItem) {
-                  // محاولة العثور على السعر من القائمة المحملة (لأن الـ object الحالي قد لا يحتوي على السعر)
                   let cost = ing.stockItem.costPerUnit || 0;
                   
-                  // لو السعر 0 (ربما لم يتم عمل populate)، نبحث في القائمة الرئيسية stockItemsData
                   if(!cost && typeof stockItemsData !== 'undefined') {
                       const originalItem = stockItemsData.find(x => x._id === (ing.stockItem._id || ing.stockItem));
                       if(originalItem) cost = originalItem.costPerUnit;
@@ -9558,7 +9179,6 @@ function removeIngredient(index) {
           });
           const costDisplay = document.getElementById('recipe-cost-display');
           if(costDisplay) costDisplay.innerText = `التكلفة: ${totalCost.toFixed(2)} ج.م`;
-          // =============================================
       }
 
       function removeActiveIngredient(index) {
@@ -9566,28 +9186,20 @@ function removeIngredient(index) {
           renderActiveIngredientsTable();
       }
 
-      // 6. حفظ التغييرات في السيرفر
       async function saveActiveRecipe() {
           if(!activeRecipeProduct) return;
 
-          // تحضير البيانات بالشكل الذي يقبله الباك اند (ID والكمية فقط)
-          // [Fix] تصفية العناصر التالفة (null) قبل المعالجة لتجنب توقف النظام
           const cleanIngredients = activeIngredients
-              .filter(i => i.stockItem) // نأخذ فقط العناصر السليمة
+              .filter(i => i.stockItem)
               .map(i => ({
                   stockItem: i.stockItem._id || i.stockItem, 
                   quantity: i.quantity
               }));
 
-          // بناء FormData كما في دالة saveProduct القديمة
           const formData = new FormData();
-          // نحتاج نرسل فقط المقادير، لكن الـ Controller الحالي يتوقع باقي البيانات أو يتجاهلها.
-          // بفضل التعديل السابق في productController، سيبحث عن ingredients ويحدثها.
           
           formData.append("ingredients", JSON.stringify(cleanIngredients));
           
-          // ملاحظة: الـ controller قد يحتاج لحقول أخرى إلزامية مثل الاسم والقسم، 
-          // لذا سنرسل البيانات القديمة كما هي لتجنب مشاكل الـ Validation
           formData.append("name", JSON.stringify(activeRecipeProduct.name));
           formData.append("category", activeRecipeProduct.category);
           formData.append("restaurantId", document.getElementById("restaurant-id").value);
@@ -9606,12 +9218,11 @@ function removeIngredient(index) {
               if (data.status === "success") {
                   Swal.fire({ toast: true, icon: "success", title: "تم حفظ المقادير بنجاح" });
                   
-                  // تحديث المنتج في القائمة المحلية
                   const updatedProd = data.data.product;
                   const idx = window.allRecipeProducts.findIndex(p => p._id === updatedProd._id);
                   if(idx !== -1) window.allRecipeProducts[idx] = updatedProd;
                   
-                  renderRecipeProductList(window.allRecipeProducts); // إعادة رسم القائمة لتحديث الأيقونة
+                  renderRecipeProductList(window.allRecipeProducts);
               } else {
                   Swal.fire("خطأ", data.message, "error");
               }
@@ -9682,14 +9293,12 @@ function removeIngredient(index) {
         let manualCart = [];
 
         function openManualOrderModal() {
-           // تصفير وضع التعديل (رجوع للوضع الافتراضي)
            editingOrderId = null;
            const modalTitle = document.querySelector('#manual-order-modal h3');
            if(modalTitle) modalTitle.innerHTML = '<i class="fas fa-cash-register"></i> إنشاء طلب يدوي';
            const saveBtn = document.querySelector('#manual-order-modal .btn-success');
            if(saveBtn) saveBtn.innerHTML = '<i class="fas fa-check"></i> تأكيد وإنشاء الطلب';
 
-           // التأكد من تحميل المنتجات أولاً
            if (!window.allProductsGlobal || window.allProductsGlobal.length === 0) {
                 loadProducts().then(() => {
                     document.getElementById('manual-order-modal').style.display = 'block';
@@ -9723,7 +9332,6 @@ function removeIngredient(index) {
                 filtered.forEach(p => {
                     const price = p.sizes && p.sizes.length > 0 ? p.sizes[0].price : p.price;
                     const name = p.name.ar;
-                    // تمرير البيانات كـ String
                     const pData = encodeURIComponent(JSON.stringify(p));
                     
                     const div = document.createElement('div');
@@ -9747,8 +9355,6 @@ function removeIngredient(index) {
             let finalPrice = product.price;
             let finalName = product.name.ar;
 
-            // لو فيه أحجام، ناخد أول حجم تلقائي (للسهولة) أو ممكن نعمل مودال تاني للأحجام
-            // هنا هناخد السعر الافتراضي أو سعر أول حجم
             if (product.sizes && product.sizes.length > 0) {
                 finalPrice = product.sizes[0].price;
                 finalName += ` (${product.sizes[0].name})`;
@@ -9791,7 +9397,6 @@ function removeIngredient(index) {
                 `;
             });
 
-            // الحسابات
             const taxRate = parseFloat(document.getElementById('set-taxRate').value) || 0;
             const serviceRate = parseFloat(document.getElementById('set-serviceRate').value) || 0;
 
@@ -9819,18 +9424,16 @@ function removeIngredient(index) {
     if (manualCart.length === 0) return Swal.fire('تنبيه', 'السلة فارغة', 'warning');
     
     const tableNumVal = document.getElementById('manual-table').value;
-    // لو الويتر سابها فاضية وهو بيعدل، نحافظ على القيمة القديمة أو نعتبرها تيك أواي
     const tableNum = tableNumVal || 'تيك أواي';
     const rId = document.getElementById('restaurant-id').value;
 
     const subTotal = parseFloat(document.getElementById('manual-subtotal').innerText);
-    const taxAmount = 0; // تبسيط (ممكن تأخد القيم من الإعدادات لو عايز)
+    const taxAmount = 0;
     const serviceAmount = 0;
     const finalTotal = parseFloat(document.getElementById('manual-final').innerText);
 
-    // تجهيز الأصناف
     const items = manualCart.map(i => ({ 
-        productId: i.id, // مهم عشان الـ Stock
+        productId: i.id,
         name: i.name, 
         qty: i.qty, 
         price: i.price 
@@ -9851,11 +9454,9 @@ function removeIngredient(index) {
             totalPrice: finalTotal
         };
 
-        // لو بنعدل طلب موجود
         if (editingOrderId) {
             url = `/api/v1/orders/${editingOrderId}`;
             method = 'PUT';
-            // في التعديل بنبعت البيانات الجديدة بس
             body = {
                 items: items,
                 subTotal: subTotal,
@@ -9880,15 +9481,12 @@ function removeIngredient(index) {
              Swal.fire({ icon: 'success', title: editingOrderId ? 'تم تعديل الطلب' : 'تم إنشاء الطلب', timer: 1500, showConfirmButton: false });
              closeManualOrderModal();
              
-             // لو ويتر، حدث جدول طلباته
              if (currentUserRole === 'waiter') {
                  loadMyWaiterOrders();
              } else {
-                 // لو كاشير أو أونر، حدث صفحة الطلبات الحية
                  if(typeof loadOrders === 'function') loadOrders();
              }
              
-             // تصفير المتغير
              editingOrderId = null;
         } else {
              Swal.fire('خطأ', data.message, 'error');
@@ -9900,23 +9498,18 @@ function removeIngredient(index) {
     }
 }
         function applyUserPermissions(user) {
-        const stockSidebar = document.getElementById('nav-stock'); // تأكد أن لديك ID للزر في السايد بار
+        const stockSidebar = document.getElementById('nav-stock');
         const stockMobile = document.getElementById('mob-nav-stock');
 
-        // الوضع الافتراضي: إخفاء العناصر
         if (stockSidebar) stockSidebar.style.display = 'none';
         if (stockMobile) stockMobile.style.display = 'none';
 
-        // إذا كانت الميزة مفعلة، قم بإظهارها
         if (user.hasStock === true) {
-            if (stockSidebar) stockSidebar.style.display = 'flex'; // أو block حسب تصميمك
+            if (stockSidebar) stockSidebar.style.display = 'flex';
             if (stockMobile) stockMobile.style.display = 'flex';
         }
     }
 
-    // مثال: أين تضع هذه الدالة؟
-    // استدعِ هذه الدالة فور الحصول على بيانات المستخدم من السيرفر
-    // مثلاً داخل getMyRestaurant() أو checkAuth()
     
     async function initPage() {
         try {
@@ -9929,22 +9522,17 @@ function removeIngredient(index) {
                 const restaurant = result.data.restaurant;
                 const userRole = result.data.userRole;
                 
-                // التحقق من تفعيل ميزة المخازن للمالك أو المطعم
                 const isStockEnabled = restaurant.owner.hasStock || restaurant.hasStock;
 
                 if (isStockEnabled && userRole === 'owner') {
-                    // إظهار في القائمة الجانبية (Sidebar)
                     if (document.getElementById('nav-stock')) document.getElementById('nav-stock').classList.remove('hidden');
                     if (document.getElementById('nav-recipes')) document.getElementById('nav-recipes').classList.remove('hidden');
                     
-                    // إظهار في القائمة السفلية للموبايل (Mobile Nav)
                     const stockMobile = document.getElementById('mob-nav-stock');
                     if (stockMobile) stockMobile.classList.remove('hidden');
                     
-                    // إظهار قسم المقادير في صفحة المنتجات
                     if (document.getElementById('ingredients-section')) document.getElementById('ingredients-section').classList.remove('hidden');
                 } else {
-                    // التأكد من إخفائها تماماً إذا لم تكن مفعلة
                     if (document.getElementById('nav-stock')) document.getElementById('nav-stock').classList.add('hidden');
                     if (document.getElementById('nav-recipes')) document.getElementById('nav-recipes').classList.add('hidden');
                     if (document.getElementById('mob-nav-stock')) document.getElementById('mob-nav-stock').classList.add('hidden');
@@ -9976,16 +9564,13 @@ function removeIngredient(index) {
               } catch(e) { console.error(e); }
           }
       }
-      // --- دالة تغيير حالة التوفر (إصلاح خطأ 404) ---
       async function toggleProd(id) {
-        // 1. نجيب المنتج من القائمة اللي حملناها عشان نعرف حالته الحالية
         const product = window.allProductsGlobal.find(p => p._id === id);
         if (!product) return;
 
-        const newStatus = !product.isAvailable; // عكس الحالة الحالية
+        const newStatus = !product.isAvailable;
 
         try {
-            // استخدام رابط التعديل القياسي بدلاً من toggle
             const res = await fetch(`/api/v1/products/${id}`, {
                 method: 'PATCH',
                 headers: { 
@@ -9996,20 +9581,16 @@ function removeIngredient(index) {
             });
 
             if (res.ok) {
-                // تحديث سريع في المتصفح
                 product.isAvailable = newStatus;
                 
-                // تحديث الشكل فقط للكارت ده (بدون إعادة تحميل الصفحة كلها)
                 const card = document.getElementById(`prod-card-${id}`);
                 if(card) {
                     card.style.opacity = newStatus ? '1' : '0.6';
                     const icon = card.querySelector('.fa-eye, .fa-eye-slash');
                     if(icon) {
                         icon.className = newStatus ? 'fas fa-eye' : 'fas fa-eye-slash';
-                        // تم إصلاح اللون ليكون أخضر عند التفعيل
                         icon.style.color = newStatus ? 'var(--success)' : 'var(--secondary)';
                         
-                        // تم نقل هذا السطر للداخل لمنع الخطأ
                         if(newStatus && icon.classList.contains('text-danger')) {
                             icon.classList.replace('text-danger', 'text-success');
                         }
@@ -10032,7 +9613,6 @@ function removeIngredient(index) {
         }
       }
 
-      // --- دالة حذف المنتج ---
       async function deleteProd(id) {
         const result = await Swal.fire({
             title: 'حذف المنتج؟',
@@ -10052,7 +9632,6 @@ function removeIngredient(index) {
                 });
 
                 if (res.ok) {
-                    // حذف الكارت من الشاشة فوراً بحركة ناعمة
                     const card = document.getElementById(`prod-card-${id}`);
                     if(card) {
                         card.style.transform = 'translateX(100px)';
@@ -10060,7 +9639,6 @@ function removeIngredient(index) {
                         setTimeout(() => card.remove(), 300);
                     }
                     
-                    // تحديث المصفوفة العالمية
                     window.allProductsGlobal = window.allProductsGlobal.filter(p => p._id !== id);
 
                     Swal.fire({
@@ -10078,21 +9656,16 @@ function removeIngredient(index) {
             }
         }
       }
-      // --- New Accounting & Finance System Logic ---
 
-// 1. Navigation & Stats
 function showAccTab(tabName) {
-    // Hide all contents
     ['dashboard', 'expenses', 'employees', 'attendance', 'payroll'].forEach(t => {
         document.getElementById(`acc-tab-${t}`).classList.add('hidden');
         document.getElementById(`btn-tab-${t}`).classList.remove('active');
     });
 
-    // Show selected
     document.getElementById(`acc-tab-${tabName}`).classList.remove('hidden');
     document.getElementById(`btn-tab-${tabName}`).classList.add('active');
 
-    // Load data based on tab
     if (tabName === 'dashboard') loadAccStats();
     if (tabName === 'expenses') loadExpenses();
     if (tabName === 'employees') loadEmployees();
@@ -10103,18 +9676,15 @@ function showAccTab(tabName) {
 }
 
 async function loadAccStats() {
-    // 1. تحديد السنة والشهر من القائمتين ودمجهما
     const yearInput = document.getElementById('acc-stats-year');
     const monthInput = document.getElementById('acc-stats-month');
     
     let year = yearInput ? yearInput.value : new Date().getFullYear();
     let month = monthInput ? monthInput.value : String(new Date().getMonth() + 1).padStart(2, '0');
 
-    // تكوين الصيغة YYYY-MM
     let selectedMonth = `${year}-${month}`;
 
     try {
-        // إرسال الشهر للسيرفر
         const res = await fetch(`/api/v1/accounting/stats?month=${selectedMonth}`, { headers: { Authorization: `Bearer ${token}` } });
         
         const contentType = res.headers.get("content-type");
@@ -10127,9 +9697,7 @@ async function loadAccStats() {
         if(data.status === 'success') {
             const d = data.data;
             
-            // تحديث الواجهة بالأرقام
             document.getElementById('acc-stat-sales').innerText = (d.totalSales || 0).toLocaleString() + ' ج.م';
-            // نجمع المصروفات والرواتب للعرض
             const totalExp = (d.totalExpenses || 0) + (d.totalSalaries || 0);
             document.getElementById('acc-stat-expenses').innerText = totalExp.toLocaleString() + ' ج.م';
             
@@ -10137,16 +9705,13 @@ async function loadAccStats() {
             const profitEl = document.getElementById('acc-stat-profit');
             profitEl.innerText = profit.toLocaleString() + ' ج.م';
             
-            // تلوين الربح والخسارة
             profitEl.style.color = profit >= 0 ? 'var(--success)' : 'var(--danger)';
-            // تخزين البيانات مؤقتاً لاستخدامها في الطباعة دون طلب السيرفر مرة أخرى
             window.currentStatsData = d; 
             window.currentStatsMonth = selectedMonth;
         }
     } catch(e) { console.error("Stats Error:", e); }
 }
 
-// دالة جديدة لتوليد تقرير PDF احترافي
 function downloadFinancialReportPDF() {
     if (!window.currentStatsData) {
         Swal.fire('تنبيه', 'يرجى انتظار تحميل البيانات أولاً', 'info');
@@ -10162,7 +9727,6 @@ function downloadFinancialReportPDF() {
     const restName = document.getElementById("page-title").innerText.split("\n")[0] || "المطعم";
     const totalExp = (d.totalExpenses || 0) + (d.totalSalaries || 0);
 
-    // تصميم التقرير
     const element = document.createElement('div');
     element.innerHTML = `
       <div style="padding:30px; font-family:'Tajawal', sans-serif; direction:rtl; border:2px solid #4338ca;">
@@ -10227,7 +9791,6 @@ function downloadFinancialReportPDF() {
     html2pdf().set(opt).from(element).save();
 }
 
-// 2. Expenses Functions
 async function openExpenseModal() {
     const { value: formValues } = await Swal.fire({
         title: 'تسجيل مصروف جديد',
@@ -10266,7 +9829,7 @@ async function openExpenseModal() {
             });
             Swal.fire({ toast: true, icon: 'success', title: 'تم تسجيل المصروف' });
             loadExpenses();
-            loadAccStats(); // Update Dashboard
+            loadAccStats();
         } catch(e) { Swal.fire('خطأ', 'فشل الحفظ', 'error'); }
     }
 }
@@ -10280,7 +9843,6 @@ async function loadExpenses() {
         if (!tbody) return;
         tbody.innerHTML = '';
         
-        // ✅ إصلاح: التأكد من وجود البيانات قبل استخدامها
         if (data.status === 'success' && Array.isArray(data.data)) {
             if(data.data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">لا توجد مصروفات مسجلة</td></tr>';
@@ -10315,7 +9877,6 @@ async function deleteExpense(id) {
     }
 }
 
-// 3. Employees & Loans
 
 async function giveAdvance(id, name) {
     const { value: amount } = await Swal.fire({
@@ -10339,17 +9900,11 @@ async function giveAdvance(id, name) {
             
             Swal.fire({ toast: true, icon: 'success', title: 'تم تسجيل السلفة بنجاح' });
             
-            // تحديث البيانات فوراً بدون ريفريش كامل للصفحة
             await loadEmployees(); 
             
         } catch(e) { Swal.fire('خطأ', 'فشل العملية', 'error'); }
     }
 }
-// 4. Payroll Logic (Enhanced)
-// دالة عرض مسودة الرواتب (المعاينة)
-// دالة ذكية: تجلب المحفوظ أولاً، وإن لم تجد تحسب الجديد
-// 🟢 الدالة المطورة: تحضير وعرض جدول الرواتب (ذكي: جلب القديم أو حساب جديد)
-// 🟢 الدالة المطورة: تحضير وعرض جدول الرواتب (ذكي: جلب القديم أو حساب جديد)
       async function preparePayrollUI() {
           const month = document.getElementById("acc-pay-month").value;
           const rId = document.getElementById("restaurant-id").value;
@@ -10361,8 +9916,6 @@ async function giveAdvance(id, name) {
               let payrollData = [];
               let isMonthApproved = false;
 
-              // 1. المحاولة الأولى: جلب بيانات محفوظة من قاعدة البيانات (GET)
-              // هذا يضمن أن التعديلات اليدوية التي حفظتها لا تضيع
               const getRes = await fetch(`/api/v1/accounting/payroll?month=${month}&restaurantId=${rId}`, {
                   headers: { Authorization: `Bearer ${token}` }
               });
@@ -10373,7 +9926,6 @@ async function giveAdvance(id, name) {
                   isMonthApproved = payrollData[0].status === 'Approved';
                   Swal.close();
               } else {
-                  // 2. إذا لم نجد بيانات محفوظة، نقوم بحساب المسودة لأول مرة (POST)
                   const genRes = await fetch("/api/v1/accounting/generate-payroll", {
                       method: "POST",
                       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -10389,7 +9941,6 @@ async function giveAdvance(id, name) {
                   }
               }
 
-              // رسم الجدول
               const tbody = document.getElementById("acc-pay-list");
               tbody.innerHTML = "";
               
@@ -10400,7 +9951,6 @@ async function giveAdvance(id, name) {
               }
 
               payrollData.forEach(p => {
-                // إصلاح الخطأ: التحقق من وجود الموظف أولاً
                   const empName = p.employee ? p.employee.name : 'موظف محذوف';
                   const empJob = p.employee ? (p.employee.jobTitle || 'موظف') : '--';
 
@@ -10463,7 +10013,6 @@ async function giveAdvance(id, name) {
               
               document.getElementById("payroll-preview-area").classList.remove("hidden");
               
-              // التحكم في زر الاعتماد
               const approveBtn = document.querySelector("#payroll-preview-area .btn-success");
               const existingMsg = document.getElementById('approved-msg');
               if(existingMsg) existingMsg.remove();
@@ -10494,11 +10043,9 @@ async function giveAdvance(id, name) {
           const deduct = parseFloat(row.querySelector('.p-deduct').value) || 0;
           const loan = parseFloat(row.querySelector('.p-loan').value) || 0;
 
-          // المعادلة: (أساسي + إضافي + مكافآت) - (خصومات + سلف)
           let net = (base + ot + bonus) - (deduct + loan);
           if(net < 0) net = 0;
 
-          // تحديث العرض فوراً مع الحفاظ على معرف الأيقونة لكي تجدها دالة الحفظ
           document.getElementById(`net-${id}`).innerHTML = `${net} ج.م <i id="status-${id}" class="fas fa-pen" style="margin-right:5px; font-size:12px; color:#aaa;" title="تم التعديل"></i>`;
       }
 
@@ -10506,7 +10053,6 @@ function calculateClientSideTotal() {
     document.querySelectorAll('.payroll-row').forEach(row => {
         const base = parseFloat(row.getAttribute('data-base')) || 0;
         
-        // استخراج قيمة الإضافي المحسوبة (من النص الموجود في الخلية)
         const otText = row.children[2].querySelector('div:last-child').innerText.replace('+', '');
         const otVal = parseFloat(otText) || 0;
 
@@ -10519,18 +10065,12 @@ function calculateClientSideTotal() {
     });
 }
 function calculatePreviewTotals() {
-    // This is a simplified frontend preview. Real calc happens on backend.
-    // Here we just update the UI for UX purposes.
     document.querySelectorAll('.payroll-row').forEach(row => {
-        // Simple logic: Base + Bonus - Deduct - Loan (Approx)
-        // Note: Real overtime calculation requires backend attendance data.
-        // We will just show "Calculating..." or user input effect.
         const netCell = row.querySelector('.p-net');
-        netCell.innerText = "سيتم الحساب"; // Placeholder until generated
+        netCell.innerText = "سيتم الحساب";
     });
 }
 
-// ✅ دالة اعتماد الرواتب الجديدة (تخصم المصروفات والسلف)
       async function confirmPayrollGeneration() {
           const month = document.getElementById("acc-pay-month").value;
           const rId = document.getElementById("restaurant-id").value;
@@ -10556,7 +10096,7 @@ function calculatePreviewTotals() {
                   
                   if (data.status === "success") {
                       Swal.fire("تم بنجاح", data.message, "success");
-                      preparePayrollUI(); // تحديث الجدول
+                      preparePayrollUI();
                   } else {
                       Swal.fire("خطأ", data.message, "error");
                   }
@@ -10567,14 +10107,9 @@ function calculatePreviewTotals() {
           }
       }
 
-      // ✅ دالة تحميل PDF لقسيمة الراتب (بدلاً من العرض فقط)
- // ✅ دالة تحميل PDF لقسيمة الراتب (تم التصحيح لتوافق البيانات الجديدة)
-// ✅ دالة تحميل PDF لقسيمة الراتب (تم إصلاح ظهور الأرقام)
-// ✅ دالة تحميل PDF لقسيمة الراتب (تم استبدال الجدول بـ Flexbox لضمان ظهور الأرقام)
       function downloadPayslipPDF(pDataEncoded) {
           const p = JSON.parse(decodeURIComponent(pDataEncoded));
           
-          // 1. استخراج القيم
           const name = p.name || p.employee?.name || 'موظف';
           const job = p.job || p.employee?.jobTitle || 'موظف';
           const monthVal = p.month || (document.getElementById('acc-pay-month') ? document.getElementById('acc-pay-month').value : '-');
@@ -10589,7 +10124,6 @@ function calculatePreviewTotals() {
           const restName = document.getElementById("page-title").innerText.split("\n")[0] || "Smart Menu";
           const date = new Date().toLocaleDateString('ar-EG');
 
-          // 2. تصميم القسيمة (باستخدام Flexbox بدلاً من Table للأرقام)
           const element = document.createElement('div');
           element.innerHTML = `
             <div style="padding:25px; font-family:'Tajawal', sans-serif; direction:rtl; border:2px solid #333; max-width:550px; margin:auto; background:white; color:#000;">
@@ -10672,7 +10206,6 @@ function calculatePreviewTotals() {
             jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
           };
 
-          // التحميل المباشر
           html2pdf().set(opt).from(element).save();
       }
 
@@ -10682,7 +10215,6 @@ function calculatePreviewTotals() {
           Swal.fire({title: 'جاري إعداد التقرير...', didOpen: ()=> Swal.showLoading()});
           
           try {
-              // جلب كل الرواتب الخاصة بالموظف
               const res = await fetch(`/api/v1/accounting/payroll?restaurantId=${rId}&employeeId=${empId}`, {
                   headers: { Authorization: `Bearer ${token}` }
               });
@@ -10691,7 +10223,6 @@ function calculatePreviewTotals() {
               if(result.status === 'success') {
                   const history = result.data;
                   
-                  // بناء محتوى التقرير
                   let rowsHtml = '';
                   let totalPaid = 0;
                   
@@ -10768,8 +10299,7 @@ function calculatePreviewTotals() {
           if (amount) {
               const rId = document.getElementById("restaurant-id").value;
               try {
-                  // نسجلها كمصروف من نوع 'salary_advance'
-                  const res = await fetch("/api/v1/accounting/expenses", { // تأكد أن لديك مسار للمصروفات، سنستخدم المسار العام
+                  const res = await fetch("/api/v1/accounting/expenses", {
                       method: "POST",
                       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                       body: JSON.stringify({
@@ -10777,14 +10307,13 @@ function calculatePreviewTotals() {
                           title: `سلفة موظف: ${empName}`,
                           amount: amount,
                           category: 'salary_advance',
-                          employee: empId, // نربطها بالموظف
+                          employee: empId,
                           description: 'سلفة تخصم من الراتب تلقائياً'
                       })
                   });
                   
                   if(res.ok) {
                       Swal.fire('تم!', 'تم تسجيل السلفة وسيتم خصمها من الراتب القادم تلقائياً.', 'success');
-                      // تحديث الجداول إذا لزم الأمر
                   } else {
                       Swal.fire('خطأ', 'حدث مشكلة أثناء التسجيل', 'error');
                   }
@@ -10792,7 +10321,6 @@ function calculatePreviewTotals() {
           }
       }
 
-      // دالة مساعدة لتحميل الموظفين مع زر السلفة (استبدل دالة العرض القديمة إذا كانت موجودة أو استخدم هذه)
       function renderEmployeesWithActions(employees) {
           const tbody = document.getElementById("acc-emp-list");
           tbody.innerHTML = "";
@@ -11024,7 +10552,6 @@ function calculatePreviewTotals() {
           var ps = (window.allProductsGlobal || []).filter(function (p) { return !q || ((p.name && p.name.ar) || "").toLowerCase().indexOf(q) > -1; });
           $("ofr-prods").innerHTML = ps.map(function (p) { return '<div class="ofr-chip ' + (selProds.indexOf(p._id) > -1 ? "on" : "") + '" data-id="' + esc(p._id) + '" onclick="ofrProd(this)">' + esc(p.name && p.name.ar) + '</div>'; }).join("") || '<span style="color:#94a3b8;font-size:13px">لا توجد منتجات</span>';
         };
-        // ---------- صور خلفية الجزء الأبيض ----------
         function bgUrl(u) { return String(u || "").replace(/["'()\\\s<>]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); }); }
         var FONTS = { "Tajawal":1, "Cairo":1, "Almarai":1, "Amiri":1, "Zain":1, "Changa":1, "El Messiri":1, "Reem Kufi":1, "Readex Pro":1, "IBM Plex Sans Arabic":1, "Noto Kufi Arabic":1, "Markazi Text":1, "Mada":1, "Harmattan":1, "Lemonada":1, "Rubik":1, "Baloo Bhaijaan 2":1, "Aref Ruqaa":1, "Lalezar":0, "Katibeh":0 };
         var TS_KEYS = [["badge","الشارة (النسبة)"],["title","العنوان"],["message","الرسالة"],["chips","شارات النطاق"],["timerLabel","نص العداد"],["timer","أرقام العداد"],["button","الزرار"]];
@@ -11293,15 +10820,10 @@ function calculatePreviewTotals() {
     `;
 
     document.body.appendChild(warningDiv);
-    // رفع المحتوى قليلاً لكي لا يغطيه الشريط
     document.body.style.paddingBottom = "80px";
   }
 
-  // دمج هذه الوظيفة مع الفيتش الموجود في صفحاتك
-  // مثال: عند جلب بيانات المطعم، إذا وجدت data.warning استدعِ هذه الدالة
-  // if (data.warning) checkTrialWarning(data.warning);
 
-  // --- دالة طباعة قسيمة الراتب (Payslip) ---
       window.printPayslip = function(dataEncoded) {
           const p = JSON.parse(decodeURIComponent(dataEncoded));
           const restName = document.getElementById("page-title").innerText.split("\n")[0] || "Smart Menu";
@@ -11377,8 +10899,6 @@ function calculatePreviewTotals() {
       };
      async function loadReservations() {
     const tbody = document.getElementById("res-requests-list");
-    // لا نمسح المحتوى إذا كان هناك تحديث بسيط، ولكن هنا سنعيد البناء
-    // يمكن وضع loading spinner فقط إذا كان الجدول فارغاً
     if(tbody.children.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center">جاري التحميل...</td></tr>';
     }
@@ -11409,16 +10929,14 @@ function calculatePreviewTotals() {
                 `;
             } else if (r.status === 'approved') {
                 statusBadge = '<span class="badge" style="background:#dcfce7; color:#166534">مقبول</span>';
-                // زر رفض (للإلغاء) وزر حذف
                 actions = `
                     <div style="display:flex; gap:5px;">
                         <button class="btn btn-outline" title="إلغاء الحجز" style="padding:5px 10px; font-size:12px; color:orange; border-color:orange;" onclick="resAction('${r._id}', 'rejected')"><i class="fas fa-undo"></i></button>
                         <button class="btn btn-outline" title="حذف السجل" style="padding:5px 10px; font-size:12px; color:red; border-color:red;" onclick="deleteReservation('${r._id}')"><i class="fas fa-trash"></i></button>
                     </div>
                 `;
-            } else { // rejected
+            } else {
                 statusBadge = '<span class="badge" style="background:#fee2e2; color:#991b1b">مرفوض</span>';
-                // زر قبول (لإعادة التفعيل) وزر حذف
                 actions = `
                     <div style="display:flex; gap:5px;">
                         <button class="btn btn-outline" title="إعادة قبول" style="padding:5px 10px; font-size:12px; color:green; border-color:green;" onclick="resAction('${r._id}', 'approved')"><i class="fas fa-redo"></i></button>
@@ -11463,10 +10981,7 @@ async function resAction(id, status) {
     }
 }
 
-// استقبال تنبيه الحجز الجديد
-// استقبال تحديثات الحجز اللحظية
 if(typeof socket !== 'undefined') {
-    // 1. طلب حجز جديد
     socket.on("new_reservation_request", (res) => {
         Swal.fire({
             toast: true, position: 'top-end', icon: 'info', 
@@ -11475,21 +10990,17 @@ if(typeof socket !== 'undefined') {
             showConfirmButton: false, timer: 5000
         });
         
-        // تحديث الجدول إذا كانت الصفحة مفتوحة
         if(!document.getElementById('view-reservations').classList.contains('hidden')) {
             loadReservations();
         }
     });
 
-    // 2. تحديث حالة حجز (قبول/رفض)
     socket.on("reservation_updated", (res) => {
-        // تحديث الجدول فقط دون إشعار مزعج
         if(!document.getElementById('view-reservations').classList.contains('hidden')) {
             loadReservations();
         }
     });
 
-    // 3. حذف حجز
     socket.on("reservation_deleted", (id) => {
         const row = document.getElementById(`res-row-${id}`);
         if(row) {
@@ -11498,7 +11009,6 @@ if(typeof socket !== 'undefined') {
         }
     });
     
-    // 4. تحديث عدادات المقاعد في صفحة الإعدادات
     socket.on("seats_updated", (data) => {
          if(document.getElementById('res-booked-display')) {
              updateReservationStats(data.total, data.booked);
@@ -11524,7 +11034,6 @@ async function deleteReservation(id) {
             });
             
             if(res.ok) {
-                // الحذف من الواجهة سيتم تلقائياً عبر السوكت، لكن للاحتياط:
                 const row = document.getElementById(`res-row-${id}`);
                 if(row) row.remove();
                 Swal.fire({ toast: true, icon: 'success', title: 'تم الحذف' });
@@ -11537,10 +11046,8 @@ async function deleteReservation(id) {
     }
 }
 
-// ✅ دالة جلب طلبات الويتر الخاصة (بتصميم جدول)
       async function loadMyWaiterOrders() {
           const container = document.getElementById("my-orders-grid");
-          // تغيير نمط العرض من شبكة (grid) إلى بلوك عادي عشان الجدول ياخد راحته
           container.style.display = "block"; 
           container.innerHTML = '<div class="loading"><i class="fas fa-circle-notch fa-spin"></i> جاري التحميل...</div>';
 
@@ -11557,7 +11064,6 @@ async function deleteReservation(id) {
                   return;
               }
 
-              // بناء الجدول
               let tableHtml = `
                 <div class="table-wrapper">
                   <table>
@@ -11585,7 +11091,6 @@ async function deleteReservation(id) {
                   const st = statusColors[order.status] || statusColors['pending'];
                   const badge = `<span class="badge" style="background:${st.bg}; color:${st.color}">${st.text}</span>`;
                   
-                  // أزرار التعديل والإلغاء تظهر فقط لو الطلب في حالة "انتظار" (Pending)
                   let actionBtns = '-';
                   if(order.status === 'pending') {
                       const orderData = encodeURIComponent(JSON.stringify(order));
@@ -11624,7 +11129,6 @@ async function deleteReservation(id) {
           }
       }
 
-      // دوال مساعدة للويتر
       async function cancelMyOrder(id) {
           const result = await Swal.fire({
               title: 'إلغاء الطلب؟',
@@ -11656,26 +11160,21 @@ async function deleteReservation(id) {
           }
       }
 
-      // متغير لتخزين ID الطلب الجاري تعديله
       let editingOrderId = null; 
 
       function editMyOrder(orderDataEncoded) {
           const order = JSON.parse(decodeURIComponent(orderDataEncoded));
           
-          // 1. فتح نافذة الأوردر اليدوي
           openManualOrderModal();
           
-          // 2. تعيين وضع التعديل
           editingOrderId = order._id;
           document.querySelector('#manual-order-modal h3').innerHTML = `<i class="fas fa-edit"></i> تعديل الطلب #${order.orderNum}`;
           document.querySelector('#manual-order-modal .btn-success').innerHTML = `<i class="fas fa-save"></i> حفظ التعديلات`;
 
-          // 3. ملء البيانات
           document.getElementById('manual-table').value = order.tableNumber === 0 ? 'تيك أواي' : order.tableNumber;
           
-          // 4. ملء السلة
           manualCart = order.items.map(item => ({
-              id: item.productId, // نحتاج ID المنتج الأصلي لو موجود
+              id: item.productId,
               name: item.name,
               price: item.price,
               qty: item.qty

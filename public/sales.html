@@ -9,10 +9,9 @@
     
     <style>
         :root {
-            /* Palette: Deep Luxury Space */
             --bg-dark: #0f1115;
             --bg-panel: rgba(30, 35, 45, 0.7);
-            --primary: #d4af37; /* Royal Gold */
+            --primary: #d4af37;
             --primary-glow: rgba(212, 175, 55, 0.4);
             --text-main: #ffffff;
             --text-muted: #9ca3af;
@@ -48,13 +47,11 @@
             overflow: hidden;
         }
 
-        /* --- Scrollbar --- */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        /* --- Layout --- */
         .app-container {
             display: flex;
             width: 100%;
@@ -63,7 +60,6 @@
             gap: 25px;
         }
 
-        /* --- Sidebar (The Floating Dock) --- */
         .sidebar {
             width: 260px;
             background: var(--bg-panel);
@@ -81,7 +77,6 @@
             overflow: hidden;
         }
 
-        /* Shine effect on sidebar */
         .sidebar::before {
             content: '';
             position: absolute;
@@ -143,7 +138,6 @@
             transition: var(--transition);
         }
 
-        /* Menu Item Hover Effect */
         .menu-item:hover {
             color: #fff;
             background: rgba(255,255,255,0.03);
@@ -171,7 +165,6 @@
             box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
         }
 
-        /* --- Main Content --- */
         .main-content {
             flex: 1;
             display: flex;
@@ -181,7 +174,6 @@
             position: relative;
         }
 
-        /* --- Header --- */
         .header {
             display: flex;
             justify-content: space-between;
@@ -225,7 +217,6 @@
             backdrop-filter: blur(5px);
         }
 
-        /* --- Stats Cards (The Floating Glass Blocks) --- */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -253,7 +244,6 @@
             box-shadow: 0 15px 40px rgba(0,0,0,0.4);
         }
 
-        /* Decorative glowing orb behind stat card */
         .stat-card::after {
             content: '';
             position: absolute;
@@ -309,14 +299,12 @@
             z-index: 2;
         }
 
-        /* Specific Card Colors */
         .stat-card:nth-child(1) .stat-icon { color: #60a5fa; box-shadow: 0 0 15px rgba(96, 165, 250, 0.2); }
         .stat-card:nth-child(2) .stat-icon { color: #34d399; box-shadow: 0 0 15px rgba(52, 211, 153, 0.2); }
         .stat-card:nth-child(2) .stat-value { color: #34d399; text-shadow: 0 0 20px rgba(52, 211, 153, 0.3); }
         .stat-card:nth-child(3) .stat-icon { color: #fbbf24; box-shadow: 0 0 15px rgba(251, 191, 36, 0.2); }
         .stat-card:nth-child(3) .stat-value { color: #fbbf24; }
 
-        /* --- Content Sections --- */
         .content-card {
             background: transparent;
             display: none;
@@ -354,7 +342,6 @@
             font-size: 18px;
         }
 
-        /* --- Search Box --- */
         .search-box {
             position: relative;
             width: 350px;
@@ -385,7 +372,6 @@
         }
         .search-box input:focus + i { color: var(--primary); }
 
-        /* --- Table Styling (The Floating Rows) --- */
         .table-wrapper {
             margin-top: 10px;
         }
@@ -474,7 +460,6 @@
         }
         .action-btn:hover { background: #ef4444; color: white; box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
 
-        /* --- Forms --- */
         .form-container {
             background: var(--bg-panel);
             backdrop-filter: blur(20px);
@@ -560,7 +545,6 @@
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.05);
         }
 
-        /* --- Contact Admin Cards --- */
         .admin-card {
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--glass-border);
@@ -581,7 +565,6 @@
         .c-call { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
         .c-call:hover { background: #3b82f6; color: #fff; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4); }
 
-        /* --- Mobile Responsive --- */
         @media (max-width: 900px) {
             .app-container { flex-direction: column; padding: 10px; padding-bottom: 90px; }
             
@@ -620,7 +603,6 @@
             .search-box { width: 100%; }
             .form-container { padding: 25px; }
             
-            /* Mobile Table Cards */
             table, thead, tbody, th, td, tr { display: block; }
             thead { display: none; }
             tbody tr {
@@ -921,12 +903,10 @@
                 c.classList.remove('active');
             });
 
-            // Re-trigger animation
             const el = document.getElementById(id);
             el.style.display = 'block';
             setTimeout(() => el.classList.add('active'), 10);
             
-            // Handle Menu Active State
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
             const items = document.querySelectorAll('.menu-item');
             if(id === 'dashboard') items[0].classList.add('active');

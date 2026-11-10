@@ -67,7 +67,6 @@
     </div>
 
     <script>
-        // الحصول على slug من الرابط
         const pathParts = window.location.pathname.split('/');
         const slug = pathParts[pathParts.length - 1];
         let currentAvailable = 0;
@@ -87,43 +86,30 @@
                     document.getElementById('rest-name').innerText = data.data.restaurantName;
                     updateUI(data.data.available);
                     
-                    // الاتصال بالسوكت للتحديث اللحظي
-                    // نحتاج معرفة ID المطعم للاشتراك في الغرفة، لكن السوكت يعتمد على slug هنا صعب، 
-                    // لذا الأفضل أن الـ API يرجع ID المطعم أيضاً أو نعتمد على أن السيرفر يرسل للغرفة
-                    // هنا سنقوم بعمل poll بسيط أو الاعتماد على أن الخادم يرسل تحديث عام
                     
-                    // الحل الأمثل: الاتصال بالسوكت
                     socket = io();
-                    // نحن بحاجة للانضمام لغرفة المطعم. في الكود الأصلي الانضمام يتم بـ ID.
-                    // سنقوم بعمل fetch للحصول على ID المطعم أولاً
                     const restInfo = await fetch(`/api/v1/restaurants/${slug}`);
                     const restData = await restInfo.json();
                     if(restData.status === 'success') {
                         const rId = restData.data.restaurant._id;
                         socket.emit("join-restaurant", rId);
                         
-                        // استقبال التحديث اللحظي
 socket.on("seats_updated", (data) => {
-    console.log("بيانات السوكت الواصلة:", data); // للتأكد من شكل البيانات في الـ Console
+    console.log("بيانات السوكت الواصلة:", data);
 
     let newAvailable;
 
-    // 1. احتمال أن السيرفر يرسل الرقم جاهزاً باسم available
     if (data.available !== undefined) {
         newAvailable = data.available;
     } 
-    // 2. احتمال أن السيرفر يرسل الإجمالي والمحجوز ونحتاج لطرحهم
     else if (data.total !== undefined && data.booked !== undefined) {
         newAvailable = data.total - data.booked;
     }
-    // 3. احتمال أن السيرفر يرسل الكائن داخل خاصية اسمها data (بعض هيكليات الـ API)
     else if (data.data && data.data.available !== undefined) {
         newAvailable = data.data.available;
     }
 
-    // إذا تم حساب الرقم بنجاح، وتأكدنا أن التحديث يخص نفس المطعم
     if (newAvailable !== undefined) {
-        // إذا كان التحديث يحتوي على slug نتأكد منه، أو نحدث مباشرة
         if (!data.slug || window.location.pathname.includes(data.slug)) {
             updateUI(newAvailable);
         }
@@ -187,7 +173,6 @@ socket.on("seats_updated", (data) => {
                     if(data.data && data.data.available) {
         updateUI(data.data.available);
     } else {
-        // تحديث يدوي مؤقت (نطرح العدد المحجوز من العدد الحالي)
         updateUI(currentAvailable - seats);
     }
                     document.getElementById('res-name').value = '';

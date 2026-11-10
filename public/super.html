@@ -12,8 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="/socket.io/socket.io.js"></script> 
     <script>
-        // --- FIX ADDED HERE ---
-        // This ID must match the one defined in server.js
         const SUPER_ADMIN_ID = "000000000000000000000000"; 
 
         const superToken = localStorage.getItem('superAdminToken');
@@ -24,10 +22,9 @@
 
     <style>
         :root {
-            /* Palette: Deep Luxury Space */
             --bg-dark: #0f1115;
             --bg-panel: rgba(30, 35, 45, 0.7);
-            --primary: #d4af37; /* Royal Gold */
+            --primary: #d4af37;
             --primary-glow: rgba(212, 175, 55, 0.4);
             --text-main: #ffffff;
             --text-muted: #9ca3af;
@@ -62,13 +59,11 @@
             overflow: hidden;
         }
 
-        /* --- Scrollbar --- */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        /* --- Sidebar --- */
         .sidebar {
             width: 280px;
             background: var(--bg-panel);
@@ -133,7 +128,6 @@
             text-shadow: 0 0 15px var(--primary);
         }
 
-        /* --- Main Content --- */
         .main {
             flex: 1;
             padding: 30px 40px;
@@ -161,7 +155,6 @@
             opacity: 0.8;
         }
 
-        /* --- Cards --- */
         .content-card {
             background: linear-gradient(160deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
             backdrop-filter: blur(20px);
@@ -176,7 +169,6 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- Forms --- */
         .form-group { margin-bottom: 20px; }
         .label { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
         
@@ -205,7 +197,6 @@
             cursor: pointer;
         }
 
-        /* --- Buttons --- */
         .btn-primary {
             width: 100%;
             padding: 16px;
@@ -225,7 +216,6 @@
             color: #fff;
         }
 
-        /* --- Tables --- */
         table { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
         
         th {
@@ -262,7 +252,6 @@
         td:first-child { border-right: 1px solid var(--glass-border); border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
         td:last-child { border-left: 1px solid var(--glass-border); border-top-left-radius: 16px; border-bottom-left-radius: 16px; }
 
-        /* --- Action Buttons --- */
         .action-btn { border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; margin-left: 5px; color: white; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .btn-edit { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); } 
         .btn-edit:hover { background: #fbbf24; color: #000; }
@@ -273,7 +262,6 @@
         .btn-login-as { background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); } 
         .btn-login-as:hover { background: #818cf8; color: #fff; }
 
-        /* --- Modals & Utilities --- */
         .login-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 2000; display: flex; align-items: center; justify-content: center; }
         .login-box { 
             background: var(--bg-dark); 
@@ -298,7 +286,6 @@
             border: 1px solid rgba(212, 175, 55, 0.2);
         }
 
-        /* --- SweetAlert Customization for Dark Theme --- */
         div:where(.swal2-container) div:where(.swal2-popup) {
             background: #1a1d24 !important;
             border: 1px solid var(--glass-border);
@@ -317,7 +304,6 @@
         div:where(.swal2-container) div:where(.swal2-html-container) { color: #ccc !important; }
 
 
-        /* --- Site (Landing page) manager --- */
         .site-row { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
         .site-row input { margin:0; }
         .site-row .rm { flex:0 0 44px; height:44px; border-radius:12px; border:1px solid var(--glass-border); background:rgba(239,68,68,0.12); color:var(--danger); cursor:pointer; font-size:15px; }
@@ -347,7 +333,6 @@
             .sidebar .nav-btn { flex-shrink:0; }
         }
 
-        /* --- Responsive --- */
         @media (max-width: 768px) {
             body { flex-direction: column; height: auto; overflow: auto; padding-bottom: 80px; }
             .sidebar { 
@@ -768,33 +753,28 @@
     <script>
        let token = localStorage.getItem('superAdminToken') || '';
         const socket = io();
-        let hasUnsavedChanges = false; // متغير لتتبع هل هناك بيانات معلقة لم تحفظ
+        let hasUnsavedChanges = false;
 
-        // تفعيل رسالة تحذير المتصفح القياسية عند محاولة الخروج وفي بيانات مكتوبة
         window.addEventListener('beforeunload', (e) => {
             if (hasUnsavedChanges) {
                 e.preventDefault();
-                e.returnValue = ''; // هذا السطر ضروري لتشغيل التحذير في كروم وإيدج
+                e.returnValue = '';
             }
         });
 
         document.addEventListener('DOMContentLoaded', () => {
             if (token) {
-                // 1. تنظيف شامل وفوري: مسح أي نصوص في كل الحقول (شاملة صفحة المالك والمطعم)
                 document.querySelectorAll('input:not([type="button"]):not([type="submit"]), textarea, select').forEach(el => {
                     if(el.type === 'checkbox' || el.type === 'radio') el.checked = false;
                     else el.value = '';
                     
-                    // مراقبة الحقل: بمجرد الكتابة فيه، نعتبر أن هناك تغييرات غير محفوظة
                     el.addEventListener('input', () => { hasUnsavedChanges = true; });
                     el.addEventListener('change', () => { hasUnsavedChanges = true; });
                 });
 
-                // 2. الذاكرة الذكية: فتح آخر تبويب كنت واقفاً عليه
                 const lastTab = localStorage.getItem('activeTab') || 'owners';
                 switchTab(lastTab);
 
-                // 3. تحميل البيانات الخلفية
                 loadRequests();
                 checkPushSubscription();
             } else {
@@ -979,8 +959,6 @@
             Toast.fire({ icon: 'success', title: 'تم نسخ البيانات' });
         }
 
-        // 🟢 قائمة موحّدة بكل الأقسام التي يمكن للسوبر أدمن التحكم في ظهورها لدى المالك
-        // (المعرّفات هنا تطابق أرقام IDs الخاصة بعناصر الـ sidebar في admin.html)
         const OWNER_SECTIONS = [
             { id: 'nav-categories',    label: 'الأقسام (التصنيفات)' },
             { id: 'nav-products',      label: 'المنتجات' },
@@ -1001,7 +979,6 @@
             { id: 'nav-ratings',       label: 'التقييمات' }
         ];
 
-        // يبني HTML لشبكة الاختيارات. allowedList = null/undefined/[] تعني "الكل متاح" (توافق مع الحسابات القديمة)
         function buildSectionsCheckboxes(prefix, allowedList) {
             const hasRestriction = Array.isArray(allowedList) && allowedList.length > 0;
             return OWNER_SECTIONS.map(s => {
@@ -1027,7 +1004,6 @@
             });
         }
 
-        // تعبئة شبكة الأقسام في فورم "إضافة مالك جديد" (كل الأقسام مفعّلة افتراضياً)
         document.getElementById('sec-grid').innerHTML = buildSectionsCheckboxes('sec', null);
 
         async function createOwner() {
@@ -1052,7 +1028,7 @@
                 Swal.close();
 
                 if(data.status === 'success') {
-                    hasUnsavedChanges = false; // تم الحفظ، الغِ التحذير
+                    hasUnsavedChanges = false;
                     Swal.fire('تم بنجاح', 'تم إنشاء حساب المالك', 'success');
                     document.getElementById('u-name').value = '';
                     document.getElementById('u-email').value = '';
@@ -1060,7 +1036,7 @@
                     document.getElementById('u-date').value = '';
                     document.getElementById('u-pass').value = '';
                     document.getElementById('u-pass-conf').value = '';
-                    toggleAllSections('sec', true); // إعادة كل الأقسام لحالتها الافتراضية (مفعّلة) للمالك القادم
+                    toggleAllSections('sec', true);
                     loadOwnersList(); 
                 } else {
                     Swal.fire('فشلت العملية', data.message || 'تأكد من البيانات', 'error');
@@ -1081,19 +1057,17 @@
                     tbody.innerHTML = '';
 
                     data.data.users.forEach(u => {
-                        if(u.role === 'admin' && u._id === SUPER_ADMIN_ID) return; // إخفاء السوبر أدمن نفسه فقط
+                        if(u.role === 'admin' && u._id === SUPER_ADMIN_ID) return;
 
                         const isActive = u.active !== false; 
                         const statusIcon = isActive ? 'fa-user-check' : 'fa-user-slash';
                         const statusColor = isActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
                         
-                        // تعيين لون وشكل الـ Badge بناءً على الرتبة
                         let roleBadge = '';
                         if(u.role === 'owner') roleBadge = '<span style="background:rgba(212, 175, 55, 0.15); color:var(--primary); padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold; border:1px solid rgba(212, 175, 55, 0.3);">مالك مطعم</span>';
                         else if(u.role === 'sales') roleBadge = '<span style="background:rgba(99, 102, 241, 0.15); color:#818cf8; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:bold; border:1px solid rgba(99, 102, 241, 0.3);">وكيل مبيعات</span>';
                         else roleBadge = `<span style="background:rgba(255,255,255,0.1); color:#fff; padding:2px 8px; border-radius:6px; font-size:11px;">${u.role}</span>`;
 
-                        // إضافة شارة "تجريبي" إذا كان الحساب Trial
                         let trialBadge = '';
                         if (u.isTrial) {
                             trialBadge = '<span style="background:rgba(245, 158, 11, 0.2); color:#fbbf24; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:bold; border:1px solid rgba(245, 158, 11, 0.3); margin-right:5px;">تجريبي ⏳</span>';
@@ -1102,7 +1076,6 @@
                         const expiryDate = u.subscriptionExpires ? u.subscriptionExpires.split('T')[0] : '';
                         const pLimit = u.productLimit || 75;
 
-                        // تحديد وجهة زر "الدخول كـ" بناءً على الرتبة
                         const loginTarget = u.role === 'sales' ? '/sales-dashboard' : '/owner';
 
                         tbody.innerHTML += `
@@ -1228,7 +1201,7 @@
         }
 
         function switchTab(tab) {
-            localStorage.setItem('activeTab', tab); // حفظ مكانك الحالي لاستعادته عند الريفريش
+            localStorage.setItem('activeTab', tab);
             const allTabs = ['owners', 'restaurants', 'ai-upload', 'requests', 'sales-stats', 'sales-agents', 'site'];
 
             allTabs.forEach(t => {
@@ -1352,7 +1325,7 @@
                         productLimit: document.getElementById('swal-limit').value,
                         subscriptionExpires: document.getElementById('swal-expiry').value,
                         hasStock: document.getElementById('swal-stock').checked,
-                        hasAccounting: document.getElementById('swal-accounting').checked, // ✅ تم الإضافة
+                        hasAccounting: document.getElementById('swal-accounting').checked,
                         isTrial: document.getElementById('swal-trial-status').value === 'true'
                     };
                     if (isOwnerRole) {
@@ -1390,7 +1363,6 @@
 
        async function generateQRPopup(ownerName, slug) {
             let finalSlug = slug;
-            // إذا لم يتم تمرير الرابط، نطلبه من الأدمن
             if (!finalSlug) {
                 const { value: inputSlug } = await Swal.fire({
                     title: '<span style="color:var(--primary)">إنشاء QR Code</span>',
@@ -1446,7 +1418,7 @@
                 },
                 preConfirm: () => {
                     downloadCustomQR(finalSlug);
-                    return false; // لمنع إغلاق النافذة فوراً
+                    return false;
                 }
             });
         }
@@ -1523,7 +1495,6 @@
 
         async function loginAsAny(userId, targetPath) {
             try {
-                // إظهار مؤشر التحميل
                 Swal.fire({ 
                     title: 'جاري التحويل...', 
                     html: 'يتم الآن تحضير جلسة الدخول الجديدة',
@@ -1539,7 +1510,6 @@
                     }
                 });
                 
-                // التأكد من استجابة الشبكة قبل محاولة قراءة الـ JSON
                 if (!res.ok) {
                     const errorData = await res.json();
                     throw new Error(errorData.message || 'فشل السيرفر في معالجة الطلب');
@@ -1549,13 +1519,10 @@
                 Swal.close();
                 
                 if(data.status === 'success') {
-                    // تخزين التوكن بناءً على المسار المستهدف
                     if(targetPath.includes('sales')) {
                         localStorage.setItem('salesToken', data.token);
-                        // فتح لوحة تحكم السيلز في نافذة جديدة
                         window.open(targetPath, '_blank');
                     } else {
-                        // فتح لوحة تحكم المالك في نافذة جديدة باستخدام الباراميتر t
                         window.open(`${targetPath}?t=${data.token}`, '_blank');
                     }
                 }
@@ -1594,7 +1561,7 @@
                 Swal.close();
 
                 if(data.status === 'success') {
-                    hasUnsavedChanges = false; // تم الحفظ، الغِ التحذير
+                    hasUnsavedChanges = false;
                     Swal.fire({
                         icon: 'success', 
                         title: 'تم إنشاء المطعم بنجاح', 
@@ -2275,9 +2242,6 @@
         }
 
 
-        // =====================================================
-        // 🌐 إدارة الصفحة الرئيسية: الشركاء + روابط التواصل
-        // =====================================================
         let sitePartners = [];
         let siteRestaurants = [];
         const siteRestOptions = (selected) => '<option value="">— بدون ربط —</option>' +
@@ -2287,7 +2251,7 @@
                 const res = await fetch('/api/v1/site/restaurants', { headers: siteAuth() });
                 const json = await res.json();
                 if (res.ok && Array.isArray(json.data)) siteRestaurants = json.data;
-            } catch (_) { /* القائمة اختيارية: لو فشلت الباقي يشتغل */ }
+            } catch (_) { }
             const sel = document.getElementById('site-new-restaurant');
             if (sel) sel.innerHTML = siteRestOptions(sel.value);
         }

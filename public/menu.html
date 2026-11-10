@@ -21,8 +21,8 @@
       :root {
         --primary: #b78728;
         --sec-title-color: #2d2d2d;
-        --prod-title-color: #2d2d2d; /* ✅ لون اسم المنتج الافتراضي */
-        --prod-price-color: #b78728; /* ✅ لون السعر الافتراضي */
+        --prod-title-color: #2d2d2d;
+        --prod-price-color: #b78728;
         --bg-color: #f9f9f9;
         --card-bg: #ffffff;
         --text-main: #2d2d2d;
@@ -291,7 +291,7 @@
       .prod-price {
         font-size: 16px;
         font-weight: 800;
-        color: var(--prod-price-color); /* تم الربط بمتغير التحكم */
+        color: var(--prod-price-color);
       }
 
       .add-btn {
@@ -622,8 +622,8 @@
       :root {
         --primary: #b78728;
         --sec-title-color: #2d2d2d;
-        --prod-title-color: #2d2d2d; /* ✅ لون اسم المنتج الافتراضي */
-        --prod-price-color: #b78728; /* ✅ لون السعر الافتراضي */
+        --prod-title-color: #2d2d2d;
+        --prod-price-color: #b78728;
         --bg-color: #f9f9f9;
         --card-bg: #ffffff;
         --text-main: #2d2d2d;
@@ -670,7 +670,7 @@
         width: 100%;
         height: 100%;
         background: var(--bg-color);
-        opacity: var(--bg-overlay-opacity, 0.9); /* استخدام المتغير الجديد */
+        opacity: var(--bg-overlay-opacity, 0.9);
         z-index: -1;
       }
 
@@ -846,9 +846,8 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        color: var(--sec-title-color); /* ✅ استخدام المتغير الجديد */
+        color: var(--sec-title-color);
       }
-      /* ✅ كلاس إضافي لضمان التحكم */
       .category-header-text {
         color: var(--sec-title-color) !important;
       }
@@ -860,7 +859,6 @@
         border-radius: 2px;
       }
 
-      /* ✅ صورة القسم: بانر ثابت الارتفاع، مايتحركش أثناء السكرول، وبتظليل خفيف بس عشان الاسم يبان */
       .cat-hero {
         position: relative;
         height: 200px;
@@ -877,7 +875,6 @@
         content: "";
         position: absolute;
         inset: 0;
-        /* تظليل ثابت بالأسود بشفافية بسيطة - مش مربوط بلون الثيم عشان ميبقاش غامق جداً في الوضع الليلي */
         background: linear-gradient(
           to bottom,
           rgba(0, 0, 0, 0.05) 0%,
@@ -914,8 +911,8 @@
      .layout-modern .prod-card {
   display: flex;
   margin-bottom: 15px;
-  min-height: 120px; /* تغيير من height إلى min-height */
-  height: auto;      /* السماح للكارت بالتمدد */
+  min-height: 120px;
+  height: auto;
 }
       .layout-modern .prod-img {
         width: 120px;
@@ -1021,7 +1018,7 @@
         font-size: 16px;
         font-weight: 800;
         margin: 0;
-        color: var(--prod-title-color); /* تم الربط بمتغير التحكم */
+        color: var(--prod-title-color);
       }
       .prod-desc {
         font-size: 12px;
@@ -1041,7 +1038,7 @@
       .prod-price {
         font-size: 16px;
         font-weight: 800;
-        color: var(--prod-price-color); /* تم الربط بمتغير التحكم */
+        color: var(--prod-price-color);
       }
 
       .add-btn {
@@ -1292,7 +1289,7 @@
       .cat-chip {
   background: var(--card-bg);
   color: var(--text-sub);
-  padding: 8px 16px; /* زيادة الحشو ليكون الزر مريحاً */
+  padding: 8px 16px;
   border-radius: 30px;
   font-size: 14px;
   border: 1px solid var(--border);
@@ -1303,7 +1300,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px; /* ضمان ارتفاع موحد */
+  min-height: 40px;
 }
       .cat-chip img {
   width: 28px;
@@ -1312,11 +1309,9 @@
   object-fit: cover;
   display: none; 
 }
-/* إظهار الصورة فقط إذا كان الرابط صالحاً وليس فارغاً */
 .cat-chip img:not([src=""]):not([src="#"]) {
   display: block;
 }
-/* تعديل الـ Padding إذا كانت الصورة موجودة */
 .cat-chip:has(img:not([src=""]):not([src="#"])) {
     padding-right: 16px;
     padding-left: 6px; 
@@ -1330,9 +1325,7 @@
         padding-left: 20px;
       }
 
-      /* === Luxury Animated Themes CSS === */
       
-      /* 1. Golden Dust (ذهب) */
       body.theme-gold-dust { background: #0f0f0f; }
       body.theme-gold-dust .hero::after {
           background: linear-gradient(to bottom, rgba(0,0,0,0.6), #0f0f0f);
@@ -1349,7 +1342,6 @@
           100% { background-position: 100% 50%; }
       }
 
-      /* 2. Royal Pulse (ملكي) */
       body.theme-royal-pulse { background: #1a0b2e; }
       body.theme-royal-pulse .prod-card {
           border: 1px solid rgba(118, 75, 162, 0.3);
@@ -1361,7 +1353,6 @@
           50% { box-shadow: 0 0 20px rgba(118, 75, 162, 0.4); border-color: rgba(118, 75, 162, 0.8); }
       }
 
-      /* 3. Midnight Float (عائم) */
       body.theme-midnight-float { background: #0f172a; }
       body.theme-midnight-float .prod-card {
           animation: float-card 6s ease-in-out infinite;
@@ -1371,7 +1362,6 @@
           50% { transform: translateY(-5px); }
       }
 
-      /* 4. Elegant Fade (أنيق) */
       body.theme-elegant-fade .prod-card {
           animation: fade-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           opacity: 0;
@@ -1380,12 +1370,10 @@
       @keyframes fade-in-up {
           to { opacity: 1; transform: translateY(0); }
       }
-      /* تطبيق التأخير للكروت */
       body.theme-elegant-fade .prod-card:nth-child(1) { animation-delay: 0.1s; }
       body.theme-elegant-fade .prod-card:nth-child(2) { animation-delay: 0.2s; }
       body.theme-elegant-fade .prod-card:nth-child(3) { animation-delay: 0.3s; }
 
-      /* 5. Cyber Glow (نيون متحرك) */
       body.theme-cyber-glow { background: #000; }
       body.theme-cyber-glow .cat-chip.active {
           box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
@@ -1396,11 +1384,7 @@
           to { box-shadow: 0 0 20px var(--primary), 0 0 30px var(--primary); }
       }
 
-      /* ========================================= */
-      /* 🚀 10 NEW ULTRA LUXURY ANIMATED THEMES 🚀 */
-      /* ========================================= */
 
-      /* 1. Cosmic Nebula (سديم كوني) */
       body.theme-cosmic {
           background: radial-gradient(circle at 50% 50%, #2e1065, #000000);
           background-size: 200% 200%;
@@ -1424,7 +1408,6 @@
           100% { background-position: 0% 50%; }
       }
 
-      /* 2. Liquid Gold (ذهب سائل) */
       body.theme-liquid-gold {
           background: #000;
       }
@@ -1458,7 +1441,6 @@
           100% { background-position: 100% 50%; }
       }
 
-      /* 3. Matrix Code (المصفوفة) */
       body.theme-matrix {
           background-color: #0D0208;
           font-family: 'Courier New', monospace;
@@ -1477,7 +1459,6 @@
           letter-spacing: 1px;
       }
 
-      /* 4. Ocean Glass (زجاج المحيط) */
       body.theme-ocean-glass {
           background: linear-gradient(to bottom, #f0f9ff, #e0f2fe);
       }
@@ -1497,7 +1478,6 @@
           50% { transform: translateY(-8px); }
       }
 
-      /* 5. Volcanic Ember (جمر بركاني) */
       body.theme-volcano {
           background-color: #1a0500;
       }
@@ -1518,7 +1498,6 @@
           animation: pulse-fire 2s infinite;
       }
 
-      /* 6. Diamond Prism (منشور ماسي) */
       body.theme-prism {
           background: #ffffff;
       }
@@ -1534,7 +1513,6 @@
           transform: translate(-2px, -2px);
       }
 
-      /* 7. Retro Vaporwave (ريترو) */
       body.theme-vapor {
           background: linear-gradient(to bottom, #2b003b, #1a0024);
       }
@@ -1552,7 +1530,6 @@
           color: #00ffff;
       }
 
-      /* 8. Frosted Mint (نعناع مثلج) */
       body.theme-frosted {
           background-image: radial-gradient(#10b981 0.5px, #ecfdf5 0.5px);
           background-size: 10px 10px;
@@ -1569,7 +1546,6 @@
           box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
       }
 
-      /* 9. Phantom Dark (شبح الليل) */
       body.theme-phantom {
           background: #000;
       }
@@ -1590,7 +1566,6 @@
           box-shadow: 0 0 10px #f43f5e;
       }
 
-      /* 10. Holographic Silver (هولوغرافيك) */
       body.theme-holo {
           background: #f0f2f5;
       }
@@ -1625,17 +1600,14 @@
         font-size: 16px;
         font-weight: 700;
         margin-bottom: 5px;
-        color: var(--prod-title-color); /* ✅ ربطه بالمتغير */
+        color: var(--prod-title-color);
       }
       .item-price {
         font-weight: 800;
-        color: var(--prod-price-color); /* ✅ ربطه بالمتغير */
+        color: var(--prod-price-color);
         font-size: 15px;
       }
 
-      /* ========================================= */
-      /* 🎁 نظام العروض (Offers Popup) */
-      /* ========================================= */
       .oc-gold    { --oa: #f7c948; --ob: #b78728; }
       .oc-fire    { --oa: #ff7a45; --ob: #e11d48; }
       .oc-royal   { --oa: #8b5cf6; --ob: #4338ca; }
@@ -1799,12 +1771,11 @@
       .offer-body { position: relative; padding: 4px 22px 20px; text-align: center; }
       .offer-body > *:not(.offer-bg) { position: relative; z-index: 1; }
 
-      /* 🖼️ طبقات صور خلفية الجزء الأبيض (شفافية + blur لكل صورة من لوحة التحكم) */
       .offer-bg {
         position: absolute;
         left: -10%;
         right: -10%;
-        top: -36px; /* بيبدأ من منحنى الهيدر عشان الصور تملا الجزء الأبيض كله */
+        top: -36px;
         bottom: 0;
         z-index: 0;
         overflow: hidden;
@@ -2151,7 +2122,6 @@
       let appliedCoupon = null;
       let accounting = { tax: 0, service: 0, noteFontSize: 11, noteColor: "#888888" };
 
-      // إظهار أيقونات التواصل الاجتماعي والتقييم حسب إعدادات المالك
       function renderSocialLinks(socialLinks, slug) {
         const bar = document.getElementById("social-links-bar");
         if (!bar) return;
@@ -2169,8 +2139,6 @@
           const cfg = socialLinks?.[item.key];
           const isRating = item.key === "rating";
 
-          // التقييم بقى صفحة داخل السيستم نفسه، مش رابط خارجي بيحطه صاحب المطعم
-          // بيظهر افتراضياً إلا لو صاحب المطعم خفاه بنفسه
           if (isRating) {
             if (cfg && cfg.visible === false) return;
           } else {
@@ -2214,24 +2182,21 @@
       function applyTheme(config) {
         const root = document.documentElement;
 
-        // 1. الألوان والخطوط الأساسية
         root.style.setProperty("--primary", config.primaryColor || "#B78728");
-        root.style.setProperty("--sec-title-color", config.secTitleColor || "#2d2d2d"); // ✅ تطبيق لون الأقسام
-        root.style.setProperty("--prod-title-color", config.prodTitleColor || "#2d2d2d"); // ✅ تطبيق لون اسم المنتج
-        root.style.setProperty("--prod-price-color", config.prodPriceColor || "#b78728"); // ✅ تطبيق لون السعر
+        root.style.setProperty("--sec-title-color", config.secTitleColor || "#2d2d2d");
+        root.style.setProperty("--prod-title-color", config.prodTitleColor || "#2d2d2d");
+        root.style.setProperty("--prod-price-color", config.prodPriceColor || "#b78728");
         root.style.setProperty(
           "--font",
           `'${config.fontFamily || "Tajawal"}', sans-serif`,
         );
         root.style.setProperty("--radius", `${config.cardRadius || 16}px`);
 
-        // 2. الهيدر والخلفية
         root.style.setProperty("--hero-height", `${config.heroHeight || 180}px`);
         root.style.setProperty("--hero-overlay-opacity", (config.heroOverlay || 30) / 100);
 
-        document.body.className = ""; // Reset classes
+        document.body.className = "";
         
-        // تطبيق ثيم الأنيميشن إذا وجد
         if (config.animationTheme) {
             document.body.classList.add(config.animationTheme);
         }
@@ -2246,12 +2211,10 @@
           document.body.classList.add("bg-image");
           document.body.style.backgroundImage = `url('${config.bgValue}')`;
           
-          // تطبيق خصائص الخلفية المتقدمة
           document.body.style.backgroundSize = config.bgSize || "cover";
           document.body.style.backgroundRepeat = config.bgRepeat || "no-repeat";
           document.body.style.backgroundAttachment = config.bgAttachment || "fixed";
           document.body.style.backgroundPosition = config.bgPosition || "center";
-        // تطبيق نسبة التعتيم (تحويل من 0-100 إلى 0.0-1.0)
         root.style.setProperty("--bg-overlay-opacity", (config.bgOverlay !== undefined ? config.bgOverlay : 90) / 100);
         }
 
@@ -2260,13 +2223,11 @@
           document.querySelector(".hero").style.backgroundImage = `url('${cleanPath}')`;
         }
 
-        // 3. تعريف عناصر النصوص
         const resNameEl = document.getElementById("res-name");
         const resDescEl = document.getElementById("res-desc");
         const heroSection = document.querySelector(".hero");
         const heroContent = document.querySelector(".hero-content");
 
-        // 4. التحكم في ظهور النصوص
         if (resNameEl) {
             resNameEl.style.display = config.showResName === false ? "none" : "block";
             if(config.customResName && config.customResName.trim() !== "") {
@@ -2281,7 +2242,6 @@
             }
         }
 
-        // 5. شريط البحث
         const searchWrapper = document.querySelector(".search-wrapper");
         const searchInput = document.getElementById("search-input");
         if (searchWrapper) {
@@ -2293,30 +2253,25 @@
              }
         }
 
-        // 6. المحاذاة (Alignment)
         if(heroContent) {
             heroContent.style.textAlign = config.headerTextAlignment || "center";
             heroContent.style.alignItems = config.headerTextAlignment === "right" ? "flex-end" : (config.headerTextAlignment === "left" ? "flex-start" : "center");
         }
 
-        // 7. التحكم في مكان الاسم (داخل/تحت الهيدر) - [جديد]
         if (heroSection && heroContent) {
             if (config.resNamePosition === "below") {
-                // الحالة الأولى: عرض الاسم تحت الصورة
                 if (heroSection.contains(heroContent)) {
                     heroSection.after(heroContent);
                 }
                 heroContent.style.position = "relative";
                 heroContent.style.padding = "15px 15px 5px 15px";
                 heroContent.style.textShadow = "none";
-                // التعديل هنا: جعل المحاذاة تأخذ القيمة المختارة بدلاً من إجبارها على الوسط
                 heroContent.style.textAlign = config.headerTextAlignment || "center";
                 
                 if (resNameEl) resNameEl.style.color = config.resNameColor || "var(--primary)";
                 if (resDescEl) resDescEl.style.color = config.resDescColor || "var(--text-sub)";
 
             } else {
-                // الحالة الثانية: عرض الاسم داخل الصورة (الافتراضي)
                 if (!heroSection.contains(heroContent)) {
                     heroSection.appendChild(heroContent);
                 }
@@ -2329,7 +2284,6 @@
             }
         }
 
-        // 8. تطبيق التخطيط (Layout)
         const container = document.getElementById("menu-container");
         const layoutClass = `layout-${config.layoutType || "modern"}`;
         const styleClass = `style-${config.cardStyle || "solid"}`;
@@ -2377,14 +2331,12 @@
                 catData.data.categories.forEach((c) => {
                   categoryImages[c.name] = c.image;
                 });
-                // ترتيب الأقسام زي ما رتبه صاحب المطعم بالظبط (سحب وإفلات)
                 categoryOrderList = catData.data.categories.map((c) => c.name);
               }
             } catch (e) {
               console.log("Silent Error: Failed to load category images");
             }
 
-            // المنيو دايماً للعرض فقط - مفيش نظام طلب أونلاين خالص من صفحة المنيو
             storeSettings.mode = "view_only";
             storeSettings.whatsappNumber =
               restaurant.contactInfo?.whatsapp || "";
@@ -2393,7 +2345,6 @@
             renderSocialLinks(restaurant.socialLinks || {}, slug);
             window.__offers = Array.isArray(restaurant.offers) ? restaurant.offers : [];
             
-            // إظهار تحذير النسخة التجريبية
             if (restaurant.owner && restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
                  checkTrialWarning({ message: "هذا المنيو يعمل بنسخة تجريبية مؤقتة." });
             }
@@ -2442,7 +2393,6 @@
           grouped[item.category].push(item);
         });
 
-        // ترتيب الأقسام حسب ترتيب صاحب المطعم (categoryOrderList)، وأي قسم مش موجود في القايمة يتحط في الآخر
         const orderedCatNames = [
           ...categoryOrderList.filter((name) => grouped[name]),
           ...Object.keys(grouped).filter((name) => !categoryOrderList.includes(name)),
@@ -2490,7 +2440,6 @@
             const hasDiscount =
               p.oldPrice && Number(p.oldPrice) > Number(p.price);
 
-           // أضفنا حدث onclick للكارت لعرض الأحجام حتى في وضع العرض فقط
 const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSelectionModal(JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(p))}')))"` : "";
 
                     sectionHTML += `
@@ -2507,7 +2456,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                             
                             <div class="prod-footer" style="${p.sizes && p.sizes.length > 0 ? 'display:block;' : ''}">
     ${p.sizes && p.sizes.length > 0 ? 
-        // إذا كان هناك أحجام، نعرضها في قائمة صغيرة تحت بعضها
         `<div class="prod-sizes-display" style="margin-top:5px; border-top:1px dashed var(--border); padding-top:5px;">
             ${p.sizes.map(s => `
                 <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px;">
@@ -2520,7 +2468,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             `).join('')}
         </div>` 
         : 
-        // إذا كان سعراً مفرداً، نعرض التنسيق القديم
         `<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
             <div class="prod-price">
                 ${hasDiscount ? `<span style="text-decoration:line-through; color:var(--text-sub); font-size:12px; margin-left:5px; opacity:0.7">${p.oldPrice}</span>` : ""}
@@ -2539,7 +2486,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     `;
           });
 
-          // ملاحظة الضريبة والخدمة تحت آخر منتج في القسم
           const taxVal = Number(accounting.tax) || 0;
           const serviceVal = Number(accounting.service) || 0;
           if (taxVal > 0 || serviceVal > 0) {
@@ -2673,7 +2619,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             priceDisplay = `<span style="color:var(--prod-price-color); font-weight:800; font-size:16px">${s.price} ج.م</span>`;
         }
 
-        // إذا كان الوضع "عرض فقط"، نجعل الزر غير قابل للضغط لإضافة عناصر
         const clickAction = (storeSettings.mode === "view_only") ? "" : `onclick="addToCart('${product._id}', '${s.name}', ${s.price})"`;
 
         sizesHtml += `
@@ -2796,7 +2741,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
       function openCart() {
         renderCartItems();
         
-        // ✅ إصلاح: التأكد من إخفاء القسم إذا كان النظام معطلاً
         const couponSec = document.getElementById("coupon-section");
         if (storeSettings.enableCoupons) {
           couponSec.classList.remove("hidden");
@@ -2979,7 +2923,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                 updateCartUI();
                 closeCart();
 
-                // 🟢 التغيير الأساسي هنا: الحفظ في قائمة بدلاً من استبدال الطلب
                 const myOrder = {
                     _id: data.data.order._id,
                     orderNum: data.data.order.orderNum,
@@ -2991,11 +2934,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     timestamp: new Date().getTime(),
                 };
 
-                // جلب القائمة القديمة أو إنشاء جديدة
                 let history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
-                history.unshift(myOrder); // إضافة الجديد في المقدمة
+                history.unshift(myOrder);
                 
-                // (اختياري) الاحتفاظ بآخر 20 طلب فقط
                 if(history.length > 20) history = history.slice(0, 20);
 
                 localStorage.setItem("myOrdersHistory", JSON.stringify(history));
@@ -3041,7 +2982,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         Toast.fire({ icon: "info", title: "تم تحديث القائمة 🔄" });
       });
 
-      // دالة إلغاء الطلب
 async function cancelOrder(id) {
     if((await Swal.fire({ title: 'هل تريد إلغاء الطلب؟', text:"سيتم حذفه من القائمة", icon: 'warning', showCancelButton: true, confirmButtonText: 'نعم، إلغاء', cancelButtonText: 'تراجع', confirmButtonColor: '#ef4444' })).isConfirmed) {
         try {
@@ -3049,12 +2989,11 @@ async function cancelOrder(id) {
             const data = await res.json();
             if(res.ok) {
                 Swal.fire({ toast:true, icon:'success', title:'تم إلغاء الطلب', position:'top-end', showConfirmButton:false, timer:1500 });
-                // تحديث الحالة محلياً
                 const history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
                 const order = history.find(o => o._id === id);
                 if(order) order.status = 'canceled';
                 localStorage.setItem("myOrdersHistory", JSON.stringify(history));
-                showMyReceipt(); // إعادة رسم القائمة
+                showMyReceipt();
             } else {
                 Swal.fire('تنبيه', data.message, 'warning');
             }
@@ -3102,11 +3041,9 @@ function trackOrder(orderId) {
     const history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
     const btn = document.getElementById("active-order-btn");
     
-    // تنظيف الطلبات القديمة جداً (أكثر من 24 ساعة)
     const now = new Date().getTime();
     const validOrders = history.filter(o => (now - o.timestamp) < 86400000);
     
-    // تحديث التخزين إذا تم حذف شيء قديم
     if (validOrders.length < history.length) {
         localStorage.setItem("myOrdersHistory", JSON.stringify(validOrders));
     }
@@ -3114,17 +3051,14 @@ function trackOrder(orderId) {
     if (validOrders.length > 0) {
         btn.classList.add("visible");
         
-        // إعادة تفعيل التتبع لكل الطلبات غير المكتملة
         validOrders.forEach(order => {
             if (order.status !== 'completed' && order.status !== 'canceled') {
                 socket.emit("join-order", order._id);
             }
         });
 
-        // تشغيل مستمع الحالة مرة واحدة
         listenToStatus();
 
-        // تحديث النص ليظهر عدد الطلبات
         btn.innerHTML = `<i class=\"fas fa-receipt\"></i> <span>طلباتي (${validOrders.length})</span>`;
     } else {
         btn.classList.remove("visible");
@@ -3139,7 +3073,6 @@ function trackOrder(orderId) {
 
     history.forEach((order) => {
         let statusText = "قيد الانتظار ⏳";
-        // إضافة زر الإلغاء فقط إذا كان الطلب معلقاً والوضع ليس "للعرض فقط"
         if (order.status === "pending" && typeof storeSettings !== 'undefined' && storeSettings.mode !== 'view_only') {
              statusText += ` <button onclick="event.stopPropagation(); cancelOrder('${order._id}')" style="margin-right:5px; background:#fee2e2; color:#ef4444; border:1px solid #ef4444; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">إلغاء 🗑️</button>`;
         }
@@ -3201,7 +3134,7 @@ function trackOrder(orderId) {
         denyButtonText: "مسح السجل",
         denyButtonColor: "#ef4444",
         customClass: {
-            popup: 'swal-wide' // يمكنك إضافة تنسيق CSS لهذا الكلاس لعرض أوسع إذا أردت
+            popup: 'swal-wide'
         }
     }).then((result) => {
         if (result.isDenied) {
@@ -3212,26 +3145,20 @@ function trackOrder(orderId) {
     });
 }
      function listenToStatus() {
-    // إزالة أي مستمعين سابقين لتجنب التكرار
     socket.off("status-changed");
     
     socket.on("status-changed", (status) => {
-        // جلب السجل
         let history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
         
-        // البحث عن أحدث طلب في القائمة لم ينتهِ بعد
-        // (نفترض أن التحديث يخص أحدث طلب قمت به)
         const activeOrderIndex = history.findIndex(o => o.status !== 'completed' && o.status !== 'canceled');
         
         if (activeOrderIndex !== -1) {
             const oldStatus = history[activeOrderIndex].status;
             
-            // تحديث الحالة فقط إذا كانت مختلفة
             if (oldStatus !== status) {
                 history[activeOrderIndex].status = status;
                 localStorage.setItem("myOrdersHistory", JSON.stringify(history));
                 
-                // رسالة التنبيه
                 let msg = "";
                 let icon = "info";
                 
@@ -3259,10 +3186,8 @@ function trackOrder(orderId) {
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 }
                 
-                // تحديث الواجهة (الزر العائم)
                 checkActiveOrder();
                 
-                // لو نافذة الفاتورة مفتوحة، نقوم بتحديثها (اختياري، يتطلب إعادة فتحها)
                 if(Swal.isVisible() && Swal.getTitle()?.innerText.includes('سجل')) {
                     showMyReceipt();
                 }
@@ -3368,23 +3293,15 @@ function trackOrder(orderId) {
     `;
 
     document.body.appendChild(warningDiv);
-    // رفع المحتوى قليلاً لكي لا يغطيه الشريط
     document.body.style.paddingBottom = "80px";
   }
 
-  // دمج هذه الوظيفة مع الفيتش الموجود في صفحاتك
-  // مثال: عند جلب بيانات المطعم، إذا وجدت data.warning استدعِ هذه الدالة
-  // if (data.warning) checkTrialWarning(data.warning);
 </script>
     <script>
-      /* ========================================= */
-      /* 🎁 نظام العروض: حساب الخصم + البوب اب      */
-      /* ========================================= */
       (function () {
         const ICONS = { percent: "fa-percent", fire: "fa-fire", gift: "fa-gift", star: "fa-star", bolt: "fa-bolt", crown: "fa-crown", tag: "fa-tags" };
         const THEMES = ["gold", "fire", "royal", "emerald", "night", "rose", "brown"];
         const HEX6 = /^#[0-9a-fA-F]{6}$/;
-        // لون مخصص للعرض (لو الأونر اختار ألوان بنفسه) بيتغلب على القالب الجاهز
         function ocStyle(o) {
           return o && HEX6.test(o.colorA || "") && HEX6.test(o.colorB || "")
             ? "--oa:" + o.colorA + ";--ob:" + o.colorB + ";" : "";
@@ -3406,10 +3323,9 @@ function trackOrder(orderId) {
         function applies(o, p) {
           if (o.scope === "categories") return (o.categories || []).indexOf(p.category) > -1;
           if (o.scope === "products") return (o.productIds || []).indexOf(p._id) > -1;
-          return true; // all
+          return true;
         }
 
-        // ---- تطبيق الخصم على أسعار المنيو (أعلى خصم ينطبق على المنتج هو اللي بيتطبق) ----
         window.applyOffersToMenu = function (menu) {
           window.__rawMenu = menu;
           const offs = activeOffers().filter((o) => o.applyPrices !== false && Number(o.discountPercent) > 0);
@@ -3434,7 +3350,6 @@ function trackOrder(orderId) {
           });
         };
 
-        // ---- منطق "اتشاف قبل كده؟" ----
         function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
         function seenKey(o) { return "offer_seen_" + o.id + "_" + hash([o.title, o.message, o.discountPercent, o.badgeText, o.endsAt, o.theme, o.colorA, o.colorB].join("|")); }
         function wasSeen(o) {
@@ -3444,7 +3359,7 @@ function trackOrder(orderId) {
             if (f === "session") return sessionStorage.getItem(seenKey(o)) === "1";
             const v = localStorage.getItem(seenKey(o));
             if (f === "once") return v === "1";
-            return v === new Date().toDateString(); // daily
+            return v === new Date().toDateString();
           } catch (e) { return false; }
         }
         function markSeen(o) {
@@ -3457,7 +3372,6 @@ function trackOrder(orderId) {
           } catch (e) {}
         }
 
-        // ---- بناء الشرائح ----
         function scopeChips(o) {
           const h = scopeChipsRaw(o), st = tsty(o, "chips");
           return st ? h.replace(/<span class="offer-chip">/g, '<span class="offer-chip" style="' + st + '">') : h;
@@ -3486,16 +3400,14 @@ function trackOrder(orderId) {
           }
           return h;
         }
-        // ---- طبقات صور الخلفية (opacity 0-100 / blur بالبكسل) ----
         function cssUrl(u) {
           return String(u || "").trim().replace(/["'()\\\s<>]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
         }
-        // ---- الخطوط (لازم تطابق القائمة في السيرفر) ----
         const OFFER_FONTS = {
           "Tajawal": 1, "Cairo": 1, "Almarai": 1, "Amiri": 1, "Zain": 1, "Changa": 1, "El Messiri": 1, "Reem Kufi": 1,
           "Readex Pro": 1, "IBM Plex Sans Arabic": 1, "Noto Kufi Arabic": 1, "Markazi Text": 1, "Mada": 1, "Harmattan": 1,
           "Lemonada": 1, "Rubik": 1, "Baloo Bhaijaan 2": 1, "Aref Ruqaa": 1, "Lalezar": 0, "Katibeh": 0,
-        }; // 1 = يدعم 400;700 ، 0 = وزن واحد بس
+        };
         const _fontsLoaded = {};
         function loadOfferFont(name) {
           if (!Object.prototype.hasOwnProperty.call(OFFER_FONTS, name) || _fontsLoaded[name]) return;
@@ -3506,7 +3418,6 @@ function trackOrder(orderId) {
             (OFFER_FONTS[name] ? ":wght@400;700" : "") + "&display=swap";
           document.head.appendChild(l);
         }
-        // style string لعنصر معيّن (badge/title/message/chips/timerLabel/timer/button)
         function tsty(o, k, extra) {
           const t = o.textStyle && o.textStyle[k];
           let st = "";
@@ -3521,7 +3432,6 @@ function trackOrder(orderId) {
           return st + (extra || "");
         }
 
-        // ---- طبقات/تقسيم صور الخلفية ----
         function cssUrl(u) {
           return String(u || "").trim().replace(/["'()\\\s<>]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
         }
@@ -3542,7 +3452,7 @@ function trackOrder(orderId) {
           const cells = imgs.map((i, k) => {
             const op = Math.min(100, Math.max(0, Number(i.opacity)));
             const bl = Math.min(30, Math.max(0, Number(i.blur) || 0));
-            const edge = bl > 0 ? -(bl * 2) : 0; // نكبّر الصورة جوه خليتها عشان حواف الـ blur متظهرش شفافة
+            const edge = bl > 0 ? -(bl * 2) : 0;
             let cs = "";
             if (layout === "grid" && n % 2 === 1 && k === n - 1) cs = ' style="grid-column:1/-1"';
             if (layout === "mosaic" && k === 0) cs = ' style="grid-row:1/span ' + (n - 1) + '"';
@@ -3578,7 +3488,6 @@ function trackOrder(orderId) {
             "</div></div>";
         }
 
-        // ---- الـ DOM ----
         function ensureDom() {
           if (document.getElementById("offer-overlay")) return;
           const ov = document.createElement("div");
@@ -3683,7 +3592,6 @@ function trackOrder(orderId) {
           setTimeout(() => window.scrollTo({ top: Math.max(0, y), behavior: "smooth" }), 300);
         }
 
-        // إعادة رسم المنيو عند بداية/نهاية أي عرض بدون ما العميل يعمل ريفريش
         function refresh() {
           if (window.__rawMenu && typeof renderMenu === "function") renderMenu(window.__rawMenu);
           window.initOffersPopup();
@@ -3718,7 +3626,6 @@ function trackOrder(orderId) {
             closeOffers();
           }
 
-          // أول دخول: اعرض غير المشاهد حسب التكرار. بعد كده: اعرض بس العروض الجديدة (flash sale)
           const fresh = list.filter((o) => !wasSeen(o) && (first || known.indexOf(o.id) === -1));
           if (fresh.length) setTimeout(() => openOffers(fresh), first ? 700 : 300);
           scheduleExpiry();

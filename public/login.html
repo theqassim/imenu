@@ -15,10 +15,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
       :root {
-        /* Palette: Deep Luxury Space */
         --bg-dark: #0f1115;
         --bg-panel: rgba(30, 35, 45, 0.7);
-        --primary: #d4af37; /* Royal Gold */
+        --primary: #d4af37;
         --primary-glow: rgba(212, 175, 55, 0.4);
         --text-main: #ffffff;
         --text-muted: #9ca3af;
@@ -35,7 +34,7 @@
       * {
         box-sizing: border-box;
         outline: none;
-        -webkit-tap-highlight-color: transparent; /* إزالة الوميض عند اللمس في الموبايل */
+        -webkit-tap-highlight-color: transparent;
       }
 
       body {
@@ -49,7 +48,7 @@
         background-image: 
             radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.08) 0%, transparent 40%),
             radial-gradient(circle at 90% 80%, rgba(60, 80, 100, 0.1) 0%, transparent 40%);
-        overflow: hidden; /* لمنع السكرول الزائد */
+        overflow: hidden;
         color: var(--text-main);
       }
 
@@ -85,7 +84,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 100vh; /* ضمان التوسط العمودي */
+        min-height: 100vh;
       }
 
       .login-card {
@@ -175,9 +174,9 @@
         border-radius: 16px;
         color: #fff;
         font-family: inherit;
-        font-size: 16px; /* 16px مهم جداً عشان الايفون ميعملش زووم */
+        font-size: 16px;
         transition: var(--transition);
-        appearance: none; /* إزالة الستايل الافتراضي للموبايل */
+        appearance: none;
         -webkit-appearance: none;
       }
 
@@ -259,20 +258,19 @@
         box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
       }
 
-      /* ====== Mobile Responsiveness Tweaks ====== */
       @media (max-width: 480px) {
         .container {
-            padding: 15px; /* هوامش أقل للشاشة الصغيرة */
-            align-items: center; /* توسيط عمودي */
+            padding: 15px;
+            align-items: center;
         }
         
         .login-card {
-            padding: 30px 20px; /* تقليل الحشو الداخلي للكارت */
+            padding: 30px 20px;
             border-radius: 20px;
         }
 
         .logo {
-            font-size: 28px; /* تصغير اللوجو */
+            font-size: 28px;
             margin-bottom: 8px;
         }
 
@@ -285,16 +283,16 @@
         }
 
         input {
-            padding: 15px 15px 15px 45px; /* تقليل ارتفاع الحقل */
-            font-size: 16px; /* الحفاظ على الحجم لمنع الزووم */
+            padding: 15px 15px 15px 45px;
+            font-size: 16px;
         }
         
         .input-wrapper i {
-            left: 15px; /* تظبيط مكان الأيقونة */
+            left: 15px;
         }
 
         .btn-login {
-            padding: 15px; /* زرار أنحف قليلاً */
+            padding: 15px;
         }
 
         .logo-area {
@@ -410,7 +408,6 @@
               }).then(() => {
                 window.location.href = "/sales-dashboard";
               });
-            // ✅ تم إضافة waiter للقائمة المسموح لها بالدخول
             } else if (["owner", "cashier", "kitchen", "waiter"].includes(user.role)) {
               sessionStorage.setItem("ownerToken", data.token);
               sessionStorage.setItem("currentUserName", user.name);
@@ -442,7 +439,6 @@
               btn.disabled = false;
             }
           } else {
-            // فحص خاص لرسالة انتهاء الاشتراك
             if (data.message && data.message.includes("انتهت فترة الاشتراك")) {
                 Swal.fire({
                     icon: "warning",
@@ -456,20 +452,19 @@
                             <i class="fab fa-whatsapp"></i> تجديد الاشتراك الآن
                         </a>
                     `,
-                    background: "#0f172a", // Dark background for modal
+                    background: "#0f172a",
                     color: "#fff",
                     showConfirmButton: false,
                     showCloseButton: true
                 });
             } else {
-                // رسائل الخطأ العادية
                 Swal.fire({
                   icon: "error",
                   title: "خطأ",
                   text: data.message || "بيانات الدخول غير صحيحة",
                   background: "#1e293b",
                   color: "#fff",
-                  confirmButtonColor: "#d4af37" // Matching gold color
+                  confirmButtonColor: "#d4af37"
                 });
             }
             btn.innerHTML = originalHTML;

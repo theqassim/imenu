@@ -34,7 +34,6 @@
     text-align: center;
   }
 
-  /* Decorations */
   .deco-row {
     display: flex;
     justify-content: space-between;
@@ -164,7 +163,6 @@
     padding: 60px 20px;
   }
 
-  /* ===== Reviews ===== */
   .reviews-section { margin-top: 38px; }
   .reviews-head { margin-bottom: 18px; }
   .reviews-eyebrow {
@@ -285,7 +283,7 @@
 
 <script>
   const slug = window.location.pathname.split("/").pop();
-  const isPreview = window.self !== window.top; // داخل iframe المعاينة بالأدمن
+  const isPreview = window.self !== window.top;
 
   const decoIcons = {
     ramadan: ["🏮", "⭐", "🏮"],
@@ -377,7 +375,6 @@
   }
 
 
-  // ===== Reviews =====
   let reviewsTimer = null;
 
   function escapeHtml(str) {
@@ -447,7 +444,6 @@
     };
     track.onscroll = updateDots;
 
-    // تقليب تلقائي هادي
     if (cards.length > 1) {
       let paused = false;
       track.addEventListener("touchstart", () => { paused = true; }, { passive: true });
@@ -476,7 +472,7 @@
       const res = await fetch(`/api/v1/store-page/${slug}`);
       const data = await res.json();
       if (data.status !== "success") {
-        if (isPreview) return; // في المعاينة ننتظر postMessage بدل ما نظهر خطأ
+        if (isPreview) return;
         return showNotFound();
       }
       render(data.data);
@@ -485,7 +481,6 @@
     }
   }
 
-  // استقبال تحديث حي من لوحة تحكم الأدمن (المعاينة المباشرة)
   window.addEventListener("message", (event) => {
     if (event.data && event.data.type === "UPDATE_STORE_PAGE") {
       render(event.data.config);

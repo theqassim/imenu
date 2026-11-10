@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const { createClient } = require('@supabase/supabase-js');
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // يفضل استخدام Service Role في الباك إند لتخطي RLS إذا لزم الأمر
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
@@ -17,16 +17,7 @@ const { Server } = require("socket.io");
 const http = require("http");
 const cron = require("node-cron");
 
-// ==========================================
-// 1. Supabase & Database Layer
-// ==========================================
-// ملاحظة: تم إزالة جميع تعريفات نماذج Mongoose (Schemas).
-// تُدار الآن جميع الجداول، أنواع البيانات، والعلاقات (Foreign Keys) مباشرة داخل قاعدة بيانات PostgreSQL في Supabase.
 
-// ==========================================
-// CRON JOB: Auto-Delete Expired Trials
-// ==========================================
-// تشغيل كل ساعة (الدقيقة 0)
 cron.schedule("0 * * * *", async () => {
   console.log("⏳ Checking for expired trial accounts...");
   try {
@@ -41,8 +32,6 @@ cron.schedule("0 * * * *", async () => {
     for (const user of expiredUsers || []) {
       console.log(`🗑️ Deleting expired trial user: ${user.email}`);
       
-      // في Supabase يُفضل إعداد ON DELETE CASCADE في الجداول المرتبطة
-      // لكن سنقوم بمحاكاة الحذف هنا لضمان عمل الكود كما كان
       if (user.role === 'owner') {
         const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', user._id).single();
         if (restaurant) {
@@ -52,11 +41,10 @@ cron.schedule("0 * * * *", async () => {
           await supabase.from('coupons').delete().eq('restaurant', restaurant._id);
           await supabase.from('stock_items').delete().eq('restaurant', restaurant._id);
           await supabase.from('stock_logs').delete().eq('restaurant', restaurant._id);
-          await supabase.from('users').delete().eq('restaurant', restaurant._id); // حذف الموظفين
+          await supabase.from('users').delete().eq('restaurant', restaurant._id);
           await supabase.from('restaurants').delete().eq('_id', restaurant._id);
         }
       }
-      // حذف المستخدم نفسه
       await supabase.from('users').delete().eq('_id', user._id);
     }
     if(expiredUsers && expiredUsers.length > 0) console.log(`✅ Cleaned up ${expiredUsers.length} expired accounts.`);
@@ -65,14 +53,10 @@ cron.schedule("0 * * * *", async () => {
   }
 });
 
-// ==========================================
-// 2. App Configuration
-// ==========================================
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-// Web Push Config
 const publicVapidKey = process.env.WEB_PUSH_PUBLIC;
 const privateVapidKey = process.env.WEB_PUSH_PRIVATE;
 if (publicVapidKey && privateVapidKey) {
@@ -81,9 +65,6 @@ if (publicVapidKey && privateVapidKey) {
   console.warn("⚠️ WEB_PUSH keys are missing in .env. Notifications will not work.");
 }
 
-// ==========================================
-// Cloudinary & Multer Config
-// ==========================================
 const cloudinary = require("cloudinary").v2;
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 
@@ -93,37 +74,30 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// إعداد التخزين على كلاوديناري
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "smart-menu-uploads", // مجلد موحد لكل الملفات المرفوعة عبر السيرفر
+    folder: "smart-menu-uploads",
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
   },
 });
 
-const upload = multer({ storage: storage }); // الآن الرفع يتم مباشرة لكلاوديناري ويعيد رابط URL
-const memoryUpload = multer({ storage: multer.memoryStorage() }); // يظل كما هو (للذكاء الاصطناعي)
+const upload = multer({ storage: storage });
+const memoryUpload = multer({ storage: multer.memoryStorage() });
 
-// Google AI Config
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Middleware
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
-// ==========================================
-// Middleware Configuration (تم التعديل لزيادة حجم الرفع)
-// ==========================================
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(cors());
 app.use(express.static("public"));
-app.use('/uploads', express.static('public/uploads')); // لخدمة الصور المرفوعة
+app.use('/uploads', express.static('public/uploads'));
 
-// Socket.io Logic
 io.on("connection", (socket) => {
   socket.on("join-restaurant", (restaurantId) => {
     socket.join(restaurantId);
@@ -133,9 +107,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// ==========================================
-// 3. Helper Functions & Auth Middleware
-// ==========================================
 const SUPER_ADMIN_ID = "000000000000000000000000";
 
 const signToken = (id) => {
@@ -153,7 +124,6 @@ const createSendToken = (user, statusCode, res) => {
   res.status(statusCode).json({ status: "success", token, data: { user } });
 };
 
-// Middleware: Protect (Login Check)
 const protect = async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
@@ -167,7 +137,6 @@ const protect = async (req, res, next) => {
       req.user = { _id: SUPER_ADMIN_ID, name: "Super Admin", role: "admin" };
       return next();
     }
-    // ✅ التحقق من المستخدم عبر Supabase
     const { data: currentUser, error } = await supabase
       .from('users')
       .select('*')
@@ -177,25 +146,21 @@ const protect = async (req, res, next) => {
     if (error || !currentUser) return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
     if (!currentUser) return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
 
-    // ✅ تصحيح نهائي ذكي: فحص التجربة مع معالجة التاريخ الناقص تلقائياً
     if (currentUser.role === "owner") {
       if (currentUser.isTrial) {
-         // 1. تصحيح تلقائي: لو التاريخ مش موجود، نمنحه 24 ساعة من دلوقتي
          if (!currentUser.trialExpires) {
              console.log(`⚠️ تنبيه: المستخدم ${currentUser.email} حساب تجريبي بدون تاريخ، جاري التصحيح...`);
-             currentUser.trialExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // إضافة 24 ساعة
+             currentUser.trialExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
              await supabase.from('users').update({ trialExpires: currentUser.trialExpires }).eq('_id', currentUser._id);
              console.log(`✅ تم تحديد مهلة جديدة تنتهي في: ${currentUser.trialExpires}`);
          }
 
-         // 2. الفحص العادي للتاريخ
          if (new Date() > new Date(currentUser.trialExpires)) {
              console.log("❌ النتيجة: انتهت الفترة -> تم منع الدخول");
              return res.status(403).json({ message: "انتهت الفترة التجريبية للحساب." });
          }
       }
 
-      // فحص الاشتراك العادي
       if (currentUser.subscriptionExpires && new Date() > new Date(currentUser.subscriptionExpires)) {
         currentUser.active = false;
         await supabase.from('users').update({ active: false }).eq('_id', currentUser._id);
@@ -211,18 +176,16 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Middleware: Optional Protect (للتحقق من المستخدم إن وجد، والسماح للزائر إن لم يوجد)
 const protectOptional = async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     token = req.headers.authorization.split(" ")[1];
   }
 
-  if (!token) return next(); // لا يوجد توكن، اكمل كزائر
+  if (!token) return next();
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // ✅ التحقق من المستخدم عبر Supabase
     const { data: currentUser, error } = await supabase
       .from('users')
       .select('*')
@@ -233,11 +196,10 @@ const protectOptional = async (req, res, next) => {
     if (currentUser) req.user = currentUser;
     next();
   } catch (err) {
-    next(); // التوكن غير صالح، اكمل كزائر
+    next();
   }
 };
 
-// Middleware: RestrictTo (Role Check)
 const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -247,11 +209,7 @@ const restrictTo = (...roles) => {
   };
 };
 
-// ==========================================
-// 4. API ROUTES & LOGIC (Merged Controllers)
-// ==========================================
 
-// ---------------- AUTH ROUTES ----------------
 app.post("/api/v1/users/signup", async (req, res) => {
   try {
     const {
@@ -294,7 +252,6 @@ app.post("/api/v1/users/signup", async (req, res) => {
       .single();
 
     if (error) {
-       // معالجة خطأ تكرار الإيميل في Postgres (الكود 23505)
        if (error.code === '23505') throw new Error("البريد مسجل بالفعل");
        throw error;
     }
@@ -310,10 +267,9 @@ app.post("/api/v1/users/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ message: "أدخل البريد وكلمة المرور" });
 
-    // ✅ فحص حساب السوبر أدمن من ملف الـ env
     if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
       const superAdminUser = {
-        _id: "000000000000000000000000", // نفس الـ ID المخصص للسوبر أدمن في النظام
+        _id: "000000000000000000000000",
         name: "Super Admin",
         email: email,
         role: "admin",
@@ -322,7 +278,6 @@ app.post("/api/v1/users/login", async (req, res) => {
       return createSendToken(superAdminUser, 200, res);
     }
 
-    // ✅ جلب المستخدم من Supabase
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
@@ -333,15 +288,13 @@ app.post("/api/v1/users/login", async (req, res) => {
       return res.status(401).json({ status: "fail", message: "بيانات الدخول خاطئة" });
     }
     
-    // ✅ تحديث: منع الدخول إذا انتهى الوقت أو تبقى أقل من دقيقة
     if (user.isTrial && user.trialExpires) {
-      const nowBuffer = new Date(Date.now() + 60000); // إضافة دقيقة هامش أمان
+      const nowBuffer = new Date(Date.now() + 60000);
       if (nowBuffer > user.trialExpires) {
         return res.status(403).json({ message: "انتهت الفترة التجريبية للحساب." });
       }
     }
 
-    // التحقق من حالة الحساب والشيفتات (منطق الكاشير/المطبخ)
     if (!user.active) {
        if (user.role === "owner" && user.subscriptionExpires && new Date() > user.subscriptionExpires) {
          return res.status(401).json({ message: "انتهى الاشتراك" });
@@ -386,7 +339,7 @@ app.patch("/api/v1/users/update-password", protect, async (req, res) => {
     const { error } = await supabase
       .from('users')
       .update({ password: hashedPassword })
-      .eq('_id', req.user._id); // تأكد أن المفتاح الأساسي في Supabase اسمه _id أو id حسب تصميمك
+      .eq('_id', req.user._id);
 
     if (error) throw error;
 
@@ -501,9 +454,7 @@ app.delete("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, 
   }
 });
 
-// Admin User Management Routes
 
-// 1. Get All Users (Missing Route) - جلب جميع المستخدمين مع فحص الاشتراكات
 app.get("/api/v1/users", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { data: users, error } = await supabase.from('users').select('*');
@@ -511,7 +462,6 @@ app.get("/api/v1/users", protect, restrictTo("admin"), async (req, res) => {
 
     const updatedUsers = await Promise.all(
       users.map(async (user) => {
-        // إذا كان المالك نشطاً ولكن انتهى وقت اشتراكه، قم بتعطيله
         if (user.role === "owner" && user.active && user.subscriptionExpires) {
           if (new Date() > new Date(user.subscriptionExpires)) {
             user.active = false;
@@ -539,7 +489,7 @@ app.patch("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) =>
     if (updates.allowedSections !== undefined) {
       updates.allowedSections = Array.isArray(updates.allowedSections) && updates.allowedSections.length > 0
         ? updates.allowedSections
-        : null; // null = مسموح بكل الأقسام (توافق مع الحسابات القديمة)
+        : null;
     }
 
     if (updates.subscriptionExpires !== undefined) {
@@ -550,10 +500,10 @@ app.patch("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) =>
           updates.subscriptionExpires = newExpiry.toISOString();
           if (newExpiry > new Date()) updates.active = true;
         } else {
-          updates.subscriptionExpires = null; // قيمة غير صالحة → اعتبرها بلا تاريخ انتهاء
+          updates.subscriptionExpires = null;
         }
       } else {
-        updates.subscriptionExpires = null; // 🟢 الحقل اتبعت فاضي "" → لازم يتحول null مش يتبعت زي ما هو (كان بيسبب: invalid input syntax for type timestamp)
+        updates.subscriptionExpires = null;
       }
     }
 
@@ -606,7 +556,6 @@ app.patch("/api/v1/users/:id/toggle-status", protect, restrictTo("admin"), async
   }
 });
 
-// Route: Delete User (Admin Only)
 app.delete("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { data: user, error: fetchError } = await supabase.from('users').select('*').eq('_id', req.params.id).single();
@@ -633,7 +582,6 @@ app.delete("/api/v1/users/:id", protect, restrictTo("admin"), async (req, res) =
   }
 });
 
-// Route: Change User Password by Admin
 app.patch("/api/v1/users/:id/change-password-admin", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { password } = req.body;
@@ -659,7 +607,6 @@ app.patch("/api/v1/users/:id/change-password-admin", protect, restrictTo("admin"
   }
 });
 
-// ---------------- RESTAURANT ROUTES ----------------
 app.post("/api/v1/restaurants", protect, restrictTo("admin"), upload.single('image'), async (req, res) => {
   try {
     const { restaurantName, businessType, slug, contactInfo, owner, hasStock } = req.body;
@@ -694,12 +641,10 @@ app.get("/api/v1/restaurants/my-restaurant", protect, async (req, res) => {
 
     if (error || !restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم" });
     
-    // معالجة العلاقة (Join) إذا كانت ترجع كمصفوفة أو ككائن مباشر
     const ownerData = Array.isArray(restaurant.owner) ? restaurant.owner[0] : restaurant.owner;
     
     const stockPermission = ownerData ? ownerData.hasStock : req.user.hasStock;
     const accountingPermission = ownerData ? ownerData.hasAccounting : req.user.hasAccounting;
-    // 🟢 الأقسام المسموح للمالك برؤيتها (يتحكم بها السوبر أدمن) - null تعني كل الأقسام متاحة
     const allowedSectionsPermission = ownerData ? ownerData.allowedSections : req.user.allowedSections;
     
     let warning = null;
@@ -784,11 +729,6 @@ app.get("/api/v1/restaurants", protect, async (req, res) => {
    }
 });
 
-// ==========================================
-// 🛠️ Auto-Migration: التأكد من وجود عمود offers في جدول restaurants
-// ==========================================
-// Supabase client (REST) مبيقدرش ينفذ DDL، فبنستخدم اتصال Postgres مباشر عن طريق DATABASE_URL.
-// الأمر idempotent (IF NOT EXISTS) فآمن يتنفذ أكتر من مرة.
 let _offersColumnReady = false;
 let _offersMigrationPromise = null;
 function ensureOffersColumn() {
@@ -803,7 +743,7 @@ function ensureOffersColumn() {
     }
     let client;
     try {
-      const { Client } = require("pg"); // npm i pg
+      const { Client } = require("pg");
       client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
       client.on("error", (e) => console.error("⚠️ pg client error (offers):", e.message));
       await client.connect();
@@ -811,7 +751,6 @@ function ensureOffersColumn() {
       await client.query("NOTIFY pgrst, 'reload schema'");
       _offersColumnReady = true;
       console.log("✅ عمود offers جاهز في جدول restaurants");
-      // نستنى ثانية عشان PostgREST يحدّث الـ schema cache
       await new Promise((r) => setTimeout(r, 1500));
       return true;
     } catch (e) {
@@ -828,16 +767,10 @@ function ensureOffersColumn() {
 const isMissingOffersColumn = (err) =>
   !!err && /offers/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
 
-// ==========================================
-// 🖼️ صور خلفية بوب أب العروض (الجزء الأبيض)
-// ==========================================
-// الصور بتتخزن كـ URL جوه كل عرض في عمود offers (jsonb) => offer.bgImages = [{ url, opacity, blur }]
-// فمفيش جدول جديد مطلوب، وعمود offers بيتعمل تلقائياً بواسطة ensureOffersColumn().
 const _clampNum = (v, min, max, def) => {
   const n = Number(v);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : def;
 };
-// الخطوط المسموحة (whitelist) — نفس القائمة في menu.html و admin.html
 const OFFER_FONTS = [
   "Tajawal", "Cairo", "Almarai", "Amiri", "Zain", "Changa", "El Messiri", "Reem Kufi",
   "Readex Pro", "IBM Plex Sans Arabic", "Noto Kufi Arabic", "Markazi Text", "Mada", "Harmattan",
@@ -850,14 +783,13 @@ function sanitizeOfferBgImages(o) {
   if (!o || typeof o !== "object") return o;
   const imgs = (Array.isArray(o.bgImages) ? o.bgImages : [])
     .filter((i) => i && typeof i.url === "string" && /^https?:\/\//i.test(i.url.trim()))
-    .slice(0, 6) // أقصى عدد صور لكل عرض
+    .slice(0, 6)
     .map((i) => ({
       url: i.url.trim(),
-      opacity: _clampNum(i.opacity, 0, 100, 40), // % شفافية
-      blur: _clampNum(i.blur, 0, 30, 0),         // px
+      opacity: _clampNum(i.opacity, 0, 100, 40),
+      blur: _clampNum(i.blur, 0, 30, 0),
     }));
 
-  // 🔤 ألوان وخطوط النصوص لكل عنصر (قيم مسموحة بس)
   const textStyle = {};
   const ts = o.textStyle && typeof o.textStyle === "object" ? o.textStyle : {};
   OFFER_TEXT_KEYS.forEach((k) => {
@@ -870,7 +802,6 @@ function sanitizeOfferBgImages(o) {
     if (item.color || item.font || item.weight) textStyle[k] = item;
   });
 
-  // 🎨 لون مخصص للإعلان (hex فقط)
   const _hex = (v) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v.trim()) ? v.trim() : "");
   const colorA = _hex(o.colorA), colorB = _hex(o.colorB);
 
@@ -885,11 +816,9 @@ function sanitizeOfferBgImages(o) {
   };
 }
 
-// رفع صورة خلفية للعرض (بيرجع الـ URL بس، والحفظ بيتم مع باقي العرض عن طريق PATCH /restaurants/:id)
 app.post("/api/v1/offers/upload-bg", protect, upload.single("image"), async (req, res) => {
   try {
     if (!req.file || !req.file.path) return res.status(400).json({ message: "مفيش صورة اتبعتت" });
-    // 🛠️ تأكد إن عمود offers موجود قبل ما الأدمن يحفظ العرض
     ensureOffersColumn().catch(() => {});
     res.status(200).json({ status: "success", url: req.file.path });
   } catch (err) {
@@ -934,7 +863,6 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
 
     let { data: updatedRestaurant, error } = await runUpdate();
 
-    // 🛠️ لو عمود offers مش موجود: أنشئه تلقائياً وأعد المحاولة مرة واحدة
     if (error && isMissingOffersColumn(error)) {
       const created = await ensureOffersColumn();
       if (created) ({ data: updatedRestaurant, error } = await runUpdate());
@@ -971,12 +899,9 @@ app.patch("/api/v1/restaurants/update-qr/:slug", protect, async (req, res) => {
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// ---------------- RESERVATION ROUTES & LOGIC ----------------
 
-// CRON: تصفير العدادات يومياً الساعة 4 فجراً (لحل مشكلة التراكم)
 cron.schedule("0 4 * * *", async () => {
   try {
-    // 1. تصفير العدادات لجميع المطاعم المفعلة
     await Restaurant.updateMany(
       { "reservationSettings.isEnabled": true },
       { $set: { "reservationSettings.bookedSeats": 0 } }
@@ -987,7 +912,6 @@ cron.schedule("0 4 * * *", async () => {
   }
 });
 
-// 1. إعدادات الحجز (تفعيل - تصفير - تعديل العدد) [تمت إضافته لإصلاح زر التصفير]
 app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
         const { restaurantId, isEnabled, totalSeats, resetCounter } = req.body;
@@ -995,19 +919,15 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin")
         if(!restaurant) return res.status(404).json({message: "المطعم غير موجود"});
 
         if(resetCounter) {
-            // تصفير كامل للعداد
             restaurant.reservationSettings.bookedSeats = 0;
-            // حذف الحجوزات السابقة لتنظيف القائمة (اختياري)
             await Reservation.deleteMany({ restaurant: restaurantId });
         } else {
-            // تحديث القيم العادية
             if(isEnabled !== undefined) restaurant.reservationSettings.isEnabled = isEnabled;
             if(totalSeats !== undefined) restaurant.reservationSettings.totalSeats = Number(totalSeats);
         }
 
         await restaurant.save();
         
-        // تحديث فوري للواجهات (أدمن ومستخدم)
         if(req.io) {
             req.io.emit("seats_updated", { 
                 slug: restaurant.slug,
@@ -1022,7 +942,6 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin")
     }
 });
 
-// 2. إنشاء حجز جديد (للعميل)
 app.post("/api/v1/reservations/book/:slug", async (req, res) => {
   try {
     const { name, phone, seats } = req.body;
@@ -1033,24 +952,19 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
     if (!settings.isEnabled) return res.status(400).json({ message: "نظام الحجز غير مفعل حالياً" });
 
     const available = settings.totalSeats - settings.bookedSeats;
-    // التحقق من العدد المتاح
     if (Number(seats) > available) return res.status(400).json({ message: `عذراً، المتاح فقط ${available} مقاعد` });
 
-    // إنشاء الحجز
     await Reservation.create({
       restaurant: restaurant._id,
       name, phone, seats: Number(seats), status: "pending"
     });
 
-    // خصم المقاعد فوراً
     restaurant.reservationSettings.bookedSeats += Number(seats);
     await restaurant.save();
 
-    // إشعار للأونر
     if (req.io) {
         req.io.to(restaurant._id.toString()).emit("new_reservation_request", { name, seats });
         
-        // تحديث عدادات المقاعد لحظياً
         req.io.emit("seats_updated", { 
             slug: restaurant.slug,
             total: settings.totalSeats, 
@@ -1068,7 +982,6 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
   }
 });
 
-// 3. جلب قائمة الحجوزات (للأدمن)
 app.get("/api/v1/reservations/list", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
         const restaurant = await Restaurant.findOne({ owner: req.user._id });
@@ -1081,23 +994,19 @@ app.get("/api/v1/reservations/list", protect, restrictTo("owner", "admin"), asyn
     }
 });
 
-// 4. اتخاذ إجراء (قبول/رفض)
 app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
-        const { status } = req.body; // approved, rejected
+        const { status } = req.body;
         const reservation = await Reservation.findById(req.params.id);
         if(!reservation) return res.status(404).json({message: "الطلب غير موجود"});
 
         const restaurant = await Restaurant.findById(reservation.restaurant);
         
-        // إذا تم الرفض، نعيد المقاعد للمتاح (إذا لم يكن مرفوضاً مسبقاً)
         if (status === 'rejected' && reservation.status !== 'rejected') {
             restaurant.reservationSettings.bookedSeats -= reservation.seats;
-            // حماية من القيم السالبة
             if(restaurant.reservationSettings.bookedSeats < 0) restaurant.reservationSettings.bookedSeats = 0;
             await restaurant.save();
 
-            // تحديث العدادات
             if (req.io) {
                 req.io.emit("seats_updated", { 
                     slug: restaurant.slug,
@@ -1116,7 +1025,6 @@ app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner", "admin
     }
 });
 
-// ---------------- PRODUCT ROUTES ----------------
 app.post("/api/v1/products", protect, upload.single('image'), async (req, res) => {
   try {
     const currentUser = req.user;
@@ -1156,7 +1064,6 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
 
 app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner", "admin", "cashier", "kitchen", "sales", "waiter"), async (req, res) => {
   try {
-    // جلب المنتجات. بناءً على هيكلة قاعدة البيانات، يتم جلب ingredients كـ JSON.
     const { data: products, error } = await supabase
       .from('products')
       .select('*')
@@ -1171,13 +1078,11 @@ app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner"
   }
 });
 
-// مسار جديد: إعادة ترتيب المنتجات
 app.patch("/api/v1/products/reorder", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { order } = req.body; 
     if (!order || !Array.isArray(order)) return res.status(400).json({ message: "Invalid data" });
 
-    // استخدام Upsert كبديل لـ BulkWrite مع توفير المفتاح الأساسي
     const operations = order.map((item) => ({
       _id: item.id,
       sortOrder: item.sortOrder
@@ -1272,12 +1177,10 @@ app.patch("/api/v1/products/toggle/:id", protect, async (req, res) => {
     } catch(err) { res.status(400).json({ message: err.message }); }
 });
 
-// ---------------- CATEGORY ROUTES ----------------
 app.post("/api/v1/categories", protect, restrictTo("owner", "admin"), upload.single('image'), async (req, res) => {
   try {
     const { name, restaurantId } = req.body;
     
-    // 1. حساب العدد الحالي
     const { count, error: countError } = await supabase
       .from('categories')
       .select('*', { count: 'exact', head: true })
@@ -1285,7 +1188,6 @@ app.post("/api/v1/categories", protect, restrictTo("owner", "admin"), upload.sin
       
     if (countError) throw countError;
 
-    // 2. إنشاء القسم الجديد
     const { data: newCategory, error: insertError } = await supabase
       .from('categories')
       .insert([
@@ -1308,7 +1210,6 @@ app.post("/api/v1/categories", protect, restrictTo("owner", "admin"), upload.sin
   }
 });
 
-// مسار جديد: إضافة أقسام بالجملة
 app.post("/api/v1/categories/bulk", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { names, restaurantId } = req.body;
@@ -1333,11 +1234,9 @@ app.post("/api/v1/categories/bulk", protect, restrictTo("owner", "admin"), async
   }
 });
 
-// مسار جديد: إعادة ترتيب الأقسام
 app.patch("/api/v1/categories/reorder", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { order } = req.body; 
-    // Supabase Upsert يعمل كـ Bulk Update إذا وفرنا المفتاح الأساسي
     const operations = order.map((item) => ({
       _id: item.id,
       sort_order: item.sortOrder
@@ -1399,7 +1298,6 @@ app.patch("/api/v1/categories/:id", protect, restrictTo("owner", "admin"), uploa
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// ---------------- MENU EXPORT / IMPORT ----------------
 app.get("/api/v1/restaurants/:id/export-menu", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const rId = req.params.id;
@@ -1505,9 +1403,7 @@ app.post("/api/v1/restaurants/:id/import-menu", protect, restrictTo("owner", "ad
   }
 });
 
-// ---------------- ACCOUNTING ROUTES (نظام الرواتب الآلي) ----------------
 
-// 1. حفظ قواعد الرواتب (سعر الساعة والغياب)
 app.patch("/api/v1/restaurants/accounting-settings/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { overtimeRate, absencePenalty, latePenalty } = req.body;
@@ -1522,10 +1418,9 @@ app.patch("/api/v1/restaurants/accounting-settings/:id", protect, restrictTo("ow
   }
 });
 
-// 2. المولد الآلي للرواتب (الماكينة الحاسبة)
 app.post("/api/v1/accounting/generate-payroll", protect, restrictTo("owner"), async (req, res) => {
   try {
-    const { month, restaurantId } = req.body; // format: "2024-01"
+    const { month, restaurantId } = req.body;
     const restaurant = await Restaurant.findById(restaurantId);
     if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
 
@@ -1535,7 +1430,6 @@ app.post("/api/v1/accounting/generate-payroll", protect, restrictTo("owner"), as
     let payrolls = [];
 
     for (const emp of employees) {
-      // جلب سجل الحضور لهذا الشهر
       const attendanceList = await Attendance.find({
         employee: emp._id,
         date: { $regex: new RegExp(`^${month}`) }
@@ -1546,7 +1440,6 @@ app.post("/api/v1/accounting/generate-payroll", protect, restrictTo("owner"), as
       let absentDays = 0;
       let presentDays = 0;
 
-      // تحليل الحضور
       attendanceList.forEach(att => {
         if (att.status === 'present' || att.status === 'late') {
             presentDays++;
@@ -1557,41 +1450,35 @@ app.post("/api/v1/accounting/generate-payroll", protect, restrictTo("owner"), as
         }
       });
 
-      // [مطور] جلب المعاملات المالية (سلف، مكافآت، خصومات) المسجلة كمصروفات لهذا الشهر
 const financialRecords = await Expense.find({ 
     restaurant: restaurantId, 
     employee: emp._id, 
-    category: { $in: ['salary_advance', 'bonus', 'deduction'] }, // جلب السلف والخصومات والمكافآت
+    category: { $in: ['salary_advance', 'bonus', 'deduction'] },
     date: { $gte: new Date(`${month}-01`), $lt: new Date(new Date(`${month}-01`).setMonth(new Date(`${month}-01`).getMonth() + 1)) } 
 });
 
-// تصنيف المبالغ
 const totalAdvances = financialRecords.filter(e => e.category === 'salary_advance').reduce((sum, e) => sum + e.amount, 0);
 const totalBonuses = financialRecords.filter(e => e.category === 'bonus').reduce((sum, e) => sum + e.amount, 0);
 const totalManualDeductions = financialRecords.filter(e => e.category === 'deduction').reduce((sum, e) => sum + e.amount, 0);
       
-      // حساب قيمة اليوم للموظف
       let dayValue = 0;
       let baseSalary = emp.baseSalary || 0;
 
       if (emp.salaryType === 'monthly') {
-        dayValue = baseSalary / 30; // لو شهري نقسم على 30
+        dayValue = baseSalary / 30;
       } else {
-        dayValue = baseSalary; // لو يومية، فالراتب الأساسي هو قيمة اليوم
-        baseSalary = dayValue * presentDays; // الراتب المستحق هو عدد أيام الحضور
+        dayValue = baseSalary;
+        baseSalary = dayValue * presentDays;
       }
 
-      // المعادلات الحسابية
       const overtimePay = totalOvertimeHours * settings.overtimeRate;
       const lateDeduction = totalLateHours * settings.latePenalty;
       const absenceDeduction = absentDays * settings.absencePenalty * dayValue;
       
-      // صافي الراتب النهائي
-      // تم استبدال (emp.loansDeducted) بـ totalAdvancesThisMonth المحسوبة أوتوماتيكياً
       const totalSalary = baseSalary + overtimePay + (emp.bonuses || 0) + totalBonuses - lateDeduction - absenceDeduction - totalManualDeductions - totalAdvances;
 
       payrolls.push({
-        employee: emp, // نحفظ الموظف كاملاً للعرض
+        employee: emp,
         restaurant: restaurantId,
         month,
         baseAmount: Math.round(baseSalary),
@@ -1603,14 +1490,11 @@ bonuses: Math.round(totalBonuses),
       });
     }
 
-    // حفظ الرواتب في قاعدة البيانات (استبدال القديم إن وجد)
     await Payroll.deleteMany({ restaurant: restaurant._id, month });
     
-    // تحويل employee object إلى ID فقط للحفظ
     const dbPayload = payrolls.map(p => ({...p, employee: p.employee._id}));
     await Payroll.insertMany(dbPayload);
 
-    // ✅ تعديل: استرجاع البيانات المحفوظة بـ IDs لتمكين التعديل
     const savedPayrolls = await Payroll.find({ restaurant: restaurant._id, month }).populate('employee');
 
     res.status(200).json({ status: "success", data: savedPayrolls });
@@ -1619,7 +1503,6 @@ bonuses: Math.round(totalBonuses),
   }
 });
 
-// 3. تحديث قسيمة راتب (تعديل يدوي حي)
 app.patch("/api/v1/accounting/payroll/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { bonuses, deductions, loansDeducted } = req.body;
@@ -1634,8 +1517,6 @@ app.patch("/api/v1/accounting/payroll/:id", protect, restrictTo("owner"), async 
     if (deductions !== undefined) payroll.deductions = deductions;
     if (loansDeducted !== undefined) payroll.loansDeducted = loansDeducted;
 
-    // إعادة حساب الصافي
-    // المعادلة: (أساسي + إضافي + مكافآت) - (جزاءات + سلف)
     const net = (payroll.baseAmount + payroll.overtimeAmount + payroll.bonuses) - (payroll.deductions + payroll.loansDeducted);
     payroll.totalSalary = net < 0 ? 0 : net;
 
@@ -1646,7 +1527,6 @@ app.patch("/api/v1/accounting/payroll/:id", protect, restrictTo("owner"), async 
   }
 });
 
-// 4. جلب الرواتب (للعرض والطباعة)
 app.get("/api/v1/accounting/payroll", protect, restrictTo("owner"), async (req, res) => {
     try {
         const { month, restaurantId, employeeId } = req.query;
@@ -1661,12 +1541,10 @@ app.get("/api/v1/accounting/payroll", protect, restrictTo("owner"), async (req, 
     }
 });
 
-// 5. اعتماد الرواتب (تسجيل المصروفات وخصم السلف)
 app.post("/api/v1/accounting/approve-payroll", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { month, restaurantId } = req.body;
     
-    // جلب الرواتب المعلقة لهذا الشهر
     const payrolls = await Payroll.find({ restaurant: restaurantId, month, status: 'Pending' });
     
     if (payrolls.length === 0) {
@@ -1677,17 +1555,14 @@ app.post("/api/v1/accounting/approve-payroll", protect, restrictTo("owner"), asy
     let totalNetSalaries = 0;
 
     for (const p of payrolls) {
-        // 1. تحديث الحالة
         p.status = 'Approved';
         p.isPaid = true;
         p.paidAt = new Date();
         await p.save();
 
-        // تجميع المبالغ للمصروفات
         totalBaseSalaries += p.baseAmount;
         totalNetSalaries += p.totalSalary;
 
-        // 2. ✅ إصلاح السلف: خصم السلفة من رصيد الموظف الفعلي
         if (p.loansDeducted > 0) {
             await Employee.findByIdAndUpdate(p.employee, { 
                 $inc: { loanBalance: -p.loansDeducted } 
@@ -1695,8 +1570,6 @@ app.post("/api/v1/accounting/approve-payroll", protect, restrictTo("owner"), asy
         }
     }
 
-    // 3. ✅ تسجيل المصروفات: تسجيل (صافي الرواتب) فقط كمصروف
-    // السبب: السلف تم تسجيلها كمصروفات عند صرفها، لذا يجب تسجيل المتبقي فقط (الصافي) حتى لا يتم حساب السلفة مرتين
     if (totalNetSalaries > 0) {
         await Expense.create({
             restaurant: restaurantId,
@@ -1714,7 +1587,6 @@ app.post("/api/v1/accounting/approve-payroll", protect, restrictTo("owner"), asy
   }
 });
 
-// مسار جلب الرواتب (للتقارير)
 app.get("/api/v1/accounting/payroll", protect, async (req, res) => {
   try {
     const { restaurantId, month, employee } = req.query;
@@ -1729,9 +1601,7 @@ app.get("/api/v1/accounting/payroll", protect, async (req, res) => {
   }
 });
 
-// ---------------- ORDER ROUTES ----------------
 
-// ---------------- ORDER ROUTES ----------------
 const checkOrderPermission = async (user, restaurantId) => {
   if (user.role === "admin") return true;
   if (user.role === "owner") {
@@ -1741,7 +1611,6 @@ const checkOrderPermission = async (user, restaurantId) => {
   return user.restaurant && user.restaurant.toString() === restaurantId.toString();
 };
 
-// --- مسار إلغاء الطلب (جديد) ---
 app.patch("/api/v1/orders/:id/cancel", protect, async (req, res) => {
   try {
     const { data: order, error: orderError } = await supabase.from('orders').select('*').eq('_id', req.params.id).eq('status', 'pending').single();
@@ -1765,7 +1634,6 @@ app.patch("/api/v1/orders/:id/cancel", protect, async (req, res) => {
   }
 });
 
-// ✅ مسار جديد: تعديل محتويات الطلب (للويتر والأونر)
 app.put("/api/v1/orders/:id", protect, async (req, res) => {
   try {
     const { items, subTotal, totalPrice, taxAmount, serviceAmount } = req.body;
@@ -1794,7 +1662,6 @@ app.put("/api/v1/orders/:id", protect, async (req, res) => {
   }
 });
 
-// إنشـاء طلب جديد (أو الإضافة على فاتورة مفتوحة)
 app.post("/api/v1/orders", protectOptional, async (req, res) => {
   try {
     const { 
@@ -1895,7 +1762,6 @@ app.post("/api/v1/orders", protectOptional, async (req, res) => {
   }
 });
 
-// ✅ مسار جديد لجلب طلبات الويتر الخاصة به فقط
 app.get("/api/v1/orders/my-orders", protect, async (req, res) => {
   try {
     const startOfToday = new Date();
@@ -2051,7 +1917,6 @@ app.get("/api/v1/orders/recent-completed/:restaurantId", protect, async (req, re
     }
 });
 
-// ---------------- COUPON ROUTES ----------------
 app.post("/api/v1/coupons/:restaurantId", protect, async (req, res) => {
   try {
     const { data: existing } = await supabase.from('coupons').select('_id').eq('code', req.body.code.toUpperCase()).eq('restaurant', req.params.restaurantId).single();
@@ -2098,7 +1963,6 @@ app.post("/api/v1/coupons/validate/:restaurantId", async (req, res) => {
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// ---------------- STOCK ROUTES ----------------
 const restrictToStockFeature = (req, res, next) => {
   if (req.user.role === "owner" && !req.user.hasStock) {
     return res.status(403).json({
@@ -2109,7 +1973,6 @@ const restrictToStockFeature = (req, res, next) => {
   next();
 };
 
-// 1. مسار اللوجز (يجب أن يكون الأول لأنه محدد)
 app.get("/api/v1/stock/logs", protect, restrictToStockFeature, async (req, res) => {
   try {
     const { restaurantId, startDate, endDate } = req.query;
@@ -2126,7 +1989,6 @@ app.get("/api/v1/stock/logs", protect, restrictToStockFeature, async (req, res) 
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 2. مسارات الإضافة والتعديل والحذف
 app.post("/api/v1/stock", protect, restrictToStockFeature, async (req, res) => {
   try {
     const { data: item, error } = await supabase.from('stock_items').insert([{ ...req.body, restaurant: req.body.restaurantId }]).select().single();
@@ -2163,7 +2025,6 @@ app.delete("/api/v1/stock/:id", protect, restrictToStockFeature, async (req, res
     catch(err) { res.status(400).json({ message: err.message }); }
 });
 
-// 3. مسار جلب العناصر بالـ ID (يجب أن يكون الأخير لأنه يحتوي على متغير :restaurantId)
 app.get("/api/v1/stock/:restaurantId", protect, restrictToStockFeature, async (req, res) => {
   try {
     const { data: items, error } = await supabase.from('stock_items').select('*').eq('restaurant', req.params.restaurantId);
@@ -2172,9 +2033,7 @@ app.get("/api/v1/stock/:restaurantId", protect, restrictToStockFeature, async (r
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// ---------------- RESERVATION SYSTEM ROUTES ----------------
 
-// 1. جلب حالة الحجز (للعميل)
 app.get("/api/v1/reservations/status/:slug", async (req, res) => {
   try {
     const { data: restaurant, error } = await supabase.from('restaurants').select('restaurantName, reservationSettings, isActive').eq('slug', req.params.slug).single();
@@ -2203,7 +2062,6 @@ app.get("/api/v1/reservations/status/:slug", async (req, res) => {
   }
 });
 
-// 2. استقبال طلب حجز جديد (للعميل) - إنشاء طلب Pending
 app.post("/api/v1/reservations/book/:slug", async (req, res) => {
   try {
     const { seats, name, phone } = req.body;
@@ -2249,7 +2107,6 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
   }
 });
 
-// 3. جلب طلبات الحجز (للأونر)
 app.get("/api/v1/reservations/requests", protect, restrictTo("owner"), async (req, res) => {
     try {
         const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
@@ -2262,7 +2119,6 @@ app.get("/api/v1/reservations/requests", protect, restrictTo("owner"), async (re
     } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 4. اتخاذ قرار (قبول/رفض)
 app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { status } = req.body; 
@@ -2307,7 +2163,6 @@ app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner"), async
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// مسار جديد: حذف طلب حجز
 app.delete("/api/v1/reservations/:id", protect, restrictTo("owner"), async (req, res) => {
     try {
         const { data: reservation, error: fetchError } = await supabase.from('reservations').select('*').eq('_id', req.params.id).single();
@@ -2324,7 +2179,6 @@ app.delete("/api/v1/reservations/:id", protect, restrictTo("owner"), async (req,
     }
 });
 
-// 5. إعدادات الحجز وتصفير العداد (للأونر)
 app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { isEnabled, totalSeats, resetCounter } = req.body;
@@ -2351,7 +2205,6 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (
     res.status(400).json({ message: err.message });
   }
 });
-// ---------------- SALES ROUTES ----------------
 app.post("/api/v1/sales/join", upload.single('image'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "يرجى رفع صورة" });
@@ -2374,9 +2227,7 @@ app.get("/api/v1/sales/requests", protect, restrictTo("admin"), async (req, res)
   catch(err) { res.status(400).json({ message: err.message }); }
 });
 
-// --- Sales Management Routes (New System) ---
 
-// 1. إنشاء حساب سيلز جديد (بواسطة الأدمن)
 app.post("/api/v1/users/create-sales-agent", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -2396,7 +2247,6 @@ app.post("/api/v1/users/create-sales-agent", protect, restrictTo("admin"), async
   }
 });
 
-// 2. إحصائيات السيلز (Leaderboard) - تم التعديل لإرجاع كل البيانات
 app.get("/api/v1/admin/sales-stats", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { data: salesAgents, error: agentsError } = await supabase.from('users').select('*').eq('role', 'sales');
@@ -2429,7 +2279,6 @@ app.get("/api/v1/admin/sales-stats", protect, restrictTo("admin"), async (req, r
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 3. السيلز ينشئ عميل جديد (كلا المسارين المكررين تم دمجهما في هذا المنطق)
 app.post("/api/v1/sales/create-client", protect, restrictTo("sales", "admin"), async (req, res) => {
   try {
     const { name, email, password, phone, restaurantName, slug } = req.body;
@@ -2511,7 +2360,6 @@ app.delete("/api/v1/sales/:id", protect, restrictTo("admin"), async (req, res) =
     }
 });
 
-// ---------------- AI ROUTES ----------------
 app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.array("menuImages", 10), async (req, res) => {
   try {
     const { ownerId } = req.body;
@@ -2586,11 +2434,7 @@ app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.a
   }
 });
 
-// ==========================================
-// 5. General & Static Routes
-// ==========================================
 
-// Static HTML Pages
 app.get("/menu/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "menu.html")));
 app.get("/reserve/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "reservation.html")));
 app.get("/rate/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "rate.html")));
@@ -2638,7 +2482,6 @@ app.get("/store/:slug", async (req, res) => {
     ${logo ? `<meta name="twitter:image" content="${escapeHtml(logo)}" />` : ""}
 `;
 
-      // نشيل أي عنوان/ميتا تاجز قديمة عشان مايبقاش فيه تكرار أو تعارض
       html = html.replace(/<title>.*?<\/title>/is, "");
       html = html.replace(/<meta\s+property=["']og:[^"']+["'][^>]*>/gi, "");
       html = html.replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>/gi, "");
@@ -2661,7 +2504,6 @@ app.get("/join-sales", (req, res) => res.sendFile(path.join(__dirname, "public",
 app.get("/promo", (req, res) => res.sendFile(path.join(__dirname, "public", "promo.html")));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
 
-// Menu Request Handling (Landing Page)
 app.post("/api/v1/requests", async (req, res) => {
   try {
     const newRequest = await MenuRequest.create(req.body);
@@ -2689,13 +2531,11 @@ app.delete("/api/v1/requests", async (req, res) => {
     catch(err) { res.status(500).json({ status: "error", message: err.message }); }
 });
 
-// Subscriptions
 app.post("/api/v1/subscribe", async (req, res) => {
   await PushSubscription.findOneAndUpdate({ endpoint: req.body.endpoint }, req.body, { upsert: true });
   res.status(201).json({ status: "success" });
 });
 
-// أضف هذا المسار في server.js تحت مسارات الـ Sales
 app.get("/api/v1/sales/my-clients", protect, restrictTo("sales"), async (req, res) => {
   try {
     const clients = await User.find({ createdBy: req.user._id }).sort("-createdAt");
@@ -2706,11 +2546,7 @@ app.get("/api/v1/sales/my-clients", protect, restrictTo("sales"), async (req, re
 
 app.get("/api/v1/vapid-key", (req, res) => res.json({ publicKey: publicVapidKey }));
 
-// ==========================================
-// روابط التواصل الاجتماعي + إشعارات التقييم (Push)
-// ==========================================
 
-// المالك يفعّل إشعارات التقييم من لوحة التحكم (تسجيل الاشتراك)
 app.post("/api/v1/owner/push-subscribe", protect, async (req, res) => {
   try {
     let restaurantId = req.user.restaurant;
@@ -2747,7 +2583,6 @@ app.post("/api/v1/owner/push-subscribe", protect, async (req, res) => {
   }
 });
 
-// المالك يقدر يلغي تفعيل الإشعارات
 app.post("/api/v1/owner/push-unsubscribe", protect, async (req, res) => {
   try {
     const { endpoint } = req.body || {};
@@ -2759,11 +2594,7 @@ app.post("/api/v1/owner/push-unsubscribe", protect, async (req, res) => {
   }
 });
 
-// ==========================================
-// نظام التقييمات الداخلي (بديل رابط جوجل الخارجي)
-// ==========================================
 
-// دالة مساعدة: إرسال إشعار Push لكل الأجهزة المشتركة لمطعم معيّن
 async function sendPushToRestaurant(restaurantId, payloadObj) {
   try {
     const { data: subs } = await supabase
@@ -2790,7 +2621,6 @@ async function sendPushToRestaurant(restaurantId, payloadObj) {
   }
 }
 
-// 1. بيانات المطعم لصفحة التقييم (اسم + هوية بصرية بسيطة)
 app.get("/api/v1/ratings/info/:slug", async (req, res) => {
   try {
     const { data: restaurant, error } = await supabase
@@ -2813,10 +2643,6 @@ app.get("/api/v1/ratings/info/:slug", async (req, res) => {
   }
 });
 
-// ==========================================
-// STORE LINK PAGE (صفحة روابط المتجر)
-// ==========================================
-// جلب بيانات صفحة المتجر العامة (لوجو، روابط، ألوان) لعرضها للعملاء
 app.get("/api/v1/store-page/:slug", async (req, res) => {
   try {
     const { data: restaurant, error } = await supabase
@@ -2832,7 +2658,6 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
       return res.status(404).json({ status: "error", message: "هذه الصفحة غير متاحة حالياً" });
     }
 
-    // ===== التقييمات: أي تقييم أكتر من 3 نجوم وفيه تعليق يظهر أوتوماتيك =====
     let reviews = [];
     let ratingsAverage = 0;
     let ratingsCount = 0;
@@ -2853,7 +2678,6 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
         .filter((r) => Number(r.stars) > 3 && r.comment && r.comment.trim())
         .slice(0, 12)
         .map((r) => ({
-          // بنعرض الاسم الأول فقط حفاظاً على الخصوصية، ومن غير رقم التليفون
           name: (r.customerName || "عميل").trim().split(/\s+/)[0],
           stars: Number(r.stars),
           comment: r.comment.trim(),
@@ -2886,7 +2710,6 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
   }
 });
 
-// 2. استقبال تقييم جديد من العميل (نجوم + كومنت) - مباشرة داخل السيستم
 app.post("/api/v1/ratings/submit/:slug", async (req, res) => {
   try {
     const { name, phone, visitTime, stars, comment } = req.body;
@@ -2937,7 +2760,6 @@ app.post("/api/v1/ratings/submit/:slug", async (req, res) => {
   }
 });
 
-// 3. جلب كل التقييمات لصاحب المطعم + المتوسط العام
 app.get("/api/v1/ratings/list", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
@@ -2963,7 +2785,6 @@ app.get("/api/v1/ratings/list", protect, restrictTo("owner", "admin"), async (re
   }
 });
 
-// 4. مسح تقييم واحد (لازم يكون تابع لمطعم صاحب الطلب)
 app.delete("/api/v1/ratings/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
@@ -2989,7 +2810,6 @@ app.delete("/api/v1/ratings/:id", protect, restrictTo("owner", "admin"), async (
   }
 });
 
-// 5. مسح كل التقييمات الخاصة بالمطعم
 app.delete("/api/v1/ratings", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
@@ -3004,9 +2824,7 @@ app.delete("/api/v1/ratings", protect, restrictTo("owner", "admin"), async (req,
   }
 });
 
-// ---------------- ACCOUNTING & FINANCE ROUTES (المطور) ----------------
 
-// 1. Financial Stats (لوحة القيادة المالية - شامل التفاصيل)
 app.get("/api/v1/accounting/stats", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
@@ -3058,7 +2876,6 @@ app.get("/api/v1/accounting/stats", protect, restrictTo("owner", "admin"), async
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 2. Expenses Management
 app.post("/api/v1/accounting/expenses", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
@@ -3106,7 +2923,6 @@ app.delete("/api/v1/accounting/expenses/:id", protect, restrictTo("owner"), asyn
   catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 3. Employees & Advances
 app.post("/api/v1/accounting/employees", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
@@ -3119,7 +2935,6 @@ app.post("/api/v1/accounting/employees", protect, restrictTo("owner", "admin"), 
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// تعديل بيانات موظف (محاسبة)
 app.patch("/api/v1/accounting/employees/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const updates = { ...req.body };
@@ -3146,7 +2961,6 @@ app.get("/api/v1/accounting/employees", protect, async (req, res) => {
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// إضافة سلفة لموظف
 app.post("/api/v1/accounting/employees/:id/advance", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { amount } = req.body;
@@ -3181,7 +2995,6 @@ app.delete("/api/v1/accounting/employees/:id", protect, restrictTo("owner"), asy
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 4. Attendance 
 app.post("/api/v1/accounting/attendance", protect, restrictTo("owner", "admin", "cashier"), async (req, res) => {
   try {
     const { employeeId, type, date } = req.body;
@@ -3234,7 +3047,6 @@ app.get("/api/v1/accounting/attendance", protect, async (req, res) => {
   } catch (err) { res.status(400).json({ message: err.message }); }
 });
 
-// 5. Payroll Logic (Developed)
 app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { month, bonuses, deductions, deductLoan, isPreview } = req.body; 
@@ -3333,15 +3145,10 @@ app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "ad
   }
 });
 
-// ==========================================
-// 🌐 إعدادات الصفحة الرئيسية (الشركاء + روابط التواصل) - يديرها السوبر أدمن
-// ==========================================
-// بنخزن الإعدادات كملفات JSON جوه Supabase Storage (bucket بيتعمل تلقائياً بالـ Service Role Key).
-// مفيش جدول ولا DDL ولا حزمة pg ولا DATABASE_URL مطلوبين.
 const SITE_BUCKET = "site-settings";
 let _siteBucketReady = false;
 let _siteBucketPromise = null;
-function ensureSiteSettingsTable() { // الاسم قديم عشان باقي الكود، بس بيجهّز الـ bucket
+function ensureSiteSettingsTable() {
   if (_siteBucketReady) return Promise.resolve(true);
   if (_siteBucketPromise) return _siteBucketPromise;
   _siteBucketPromise = (async () => {
@@ -3366,17 +3173,15 @@ const SITE_DEFAULTS = {
 
 const _isMissing = (err) => !!err && /not.?found|does not exist|404/i.test(String(err.message || "") + " " + String(err.statusCode || err.status || ""));
 
-// كاش في الذاكرة (write-through): Supabase Storage بيعمل كاش للملفات، فلو قرينا الملف بعد ما اتعدل
-// ممكن ييجي القديم (وده كان بيخلي آخر شريك يمسح اللي قبله). السيرفر بيعتمد على آخر نسخة كتبها هو.
 const _siteCache = {};
 const _clone = (o) => JSON.parse(JSON.stringify(o));
 
 async function readSiteSetting(key) {
   if (_siteCache[key]) return _clone(_siteCache[key]);
-  const base = _clone(SITE_DEFAULTS[key]); // نسخة جديدة عشان الافتراضي ميتعدلش
+  const base = _clone(SITE_DEFAULTS[key]);
   const { data, error } = await supabase.storage.from(SITE_BUCKET).download(key + ".json");
   if (error) {
-    if (_isMissing(error)) return base; // لسه مفيش ملف/bucket = إعدادات افتراضية
+    if (_isMissing(error)) return base;
     throw error;
   }
   let value = {};
@@ -3390,7 +3195,7 @@ async function writeSiteSetting(key, value) {
   const body = Buffer.from(JSON.stringify(value));
   const up = () => supabase.storage.from(SITE_BUCKET).upload(key + ".json", body, { contentType: "application/json", upsert: true, cacheControl: "0" });
   let { error } = await up();
-  if (error && _isMissing(error)) { // الـ bucket لسه مش موجود: اعمله وجرّب تاني
+  if (error && _isMissing(error)) {
     if (await ensureSiteSettingsTable()) ({ error } = await up());
   }
   if (error) throw error;
@@ -3411,14 +3216,12 @@ const _cleanUrl = (u) => {
   try { const url = new URL(full); return /^https?:$/.test(url.protocol) ? url.href : ""; } catch (_) { return ""; }
 };
 
-// يتأكد إن الـ slug بتاع المطعم موجود فعلاً. بيرجّع { slug, restaurantName } أو null لو مش موجود
 async function _findRestaurantBySlug(slug) {
   const { data, error } = await supabase.from("restaurants").select("slug, restaurantName").eq("slug", slug).maybeSingle();
   if (error) throw error;
   return data || null;
 }
 
-// عام: الصفحة الرئيسية بتقرأ منه (الشركاء الظاهرين فقط)
 app.get("/api/v1/site/public", async (req, res) => {
   try {
     const [partners, contacts] = await Promise.all([readSiteSetting("partners"), readSiteSetting("contacts")]);
@@ -3426,12 +3229,10 @@ app.get("/api/v1/site/public", async (req, res) => {
     res.set("Cache-Control", "no-store");
     res.json({ status: "success", data: { partners: { enabled: partners.enabled !== false, title: partners.title, subtitle: partners.subtitle, items }, contacts } });
   } catch (err) {
-    // لو الجدول لسه مش موجود الصفحة تشتغل عادي بدون الأقسام دي
     res.json({ status: "success", data: { partners: { enabled: false, items: [] }, contacts: SITE_DEFAULTS.contacts } });
   }
 });
 
-// سوبر أدمن: قراءة كل شيء (بما فيهم المخفيين)
 app.get("/api/v1/site/admin", protect, restrictTo("admin"), async (req, res) => {
   try {
     await ensureSiteSettingsTable();
@@ -3440,7 +3241,6 @@ app.get("/api/v1/site/admin", protect, restrictTo("admin"), async (req, res) => 
   } catch (err) { res.status(500).json({ status: "error", message: err.message }); }
 });
 
-// سوبر أدمن: قائمة المطاعم الموجودة (للربط بالشريك) - خفيفة: slug + الاسم فقط
 app.get("/api/v1/site/restaurants", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { data, error } = await supabase.from("restaurants").select("slug, restaurantName");
@@ -3453,7 +3253,6 @@ app.get("/api/v1/site/restaurants", protect, restrictTo("admin"), async (req, re
   } catch (err) { res.status(500).json({ status: "error", message: err.message }); }
 });
 
-// سوبر أدمن: روابط التواصل
 app.put("/api/v1/site/contacts", protect, restrictTo("admin"), async (req, res) => {
   try {
     const value = {
@@ -3466,7 +3265,6 @@ app.put("/api/v1/site/contacts", protect, restrictTo("admin"), async (req, res) 
   } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
 });
 
-// سوبر أدمن: عنوان القسم وإظهاره/إخفاؤه كله
 app.put("/api/v1/site/partners-settings", protect, restrictTo("admin"), async (req, res) => {
   try {
     const cur = await readSiteSetting("partners");
@@ -3481,7 +3279,6 @@ app.put("/api/v1/site/partners-settings", protect, restrictTo("admin"), async (r
   } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
 });
 
-// سوبر أدمن: ترتيب الشركاء (لازم قبل :id)
 app.patch("/api/v1/site/partners/reorder", protect, restrictTo("admin"), async (req, res) => {
   try {
     const ids = Array.isArray(req.body.ids) ? req.body.ids : [];
@@ -3495,7 +3292,6 @@ app.patch("/api/v1/site/partners/reorder", protect, restrictTo("admin"), async (
   } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
 });
 
-// سوبر أدمن: إضافة شريك (اسم + صورة + ظاهر/مخفي)
 app.post("/api/v1/site/partners", protect, restrictTo("admin"), upload.single("image"), async (req, res) => {
   try {
     let name = _str(req.body.name, 80);
@@ -3522,7 +3318,6 @@ app.post("/api/v1/site/partners", protect, restrictTo("admin"), upload.single("i
   } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
 });
 
-// سوبر أدمن: تعديل شريك (اسم / صورة / ظاهر)
 app.patch("/api/v1/site/partners/:id", protect, restrictTo("admin"), upload.single("image"), async (req, res) => {
   try {
     const cur = await readSiteSetting("partners");
@@ -3532,7 +3327,7 @@ app.patch("/api/v1/site/partners/:id", protect, restrictTo("admin"), upload.sing
     if (req.body.slug !== undefined) {
       const slug = _str(req.body.slug, 120);
       if (slug && !(await _findRestaurantBySlug(slug))) return res.status(400).json({ status: "fail", message: "المطعم المختار غير موجود" });
-      p.slug = slug; // فاضي = فك الربط
+      p.slug = slug;
     }
     if (req.body.visible !== undefined) p.visible = req.body.visible !== "false" && req.body.visible !== false;
     if (req.body.removeImage === "true") p.image = "";
@@ -3542,7 +3337,6 @@ app.patch("/api/v1/site/partners/:id", protect, restrictTo("admin"), upload.sing
   } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
 });
 
-// سوبر أدمن: حذف شريك
 app.delete("/api/v1/site/partners/:id", protect, restrictTo("admin"), async (req, res) => {
   try {
     const cur = await readSiteSetting("partners");
@@ -3552,9 +3346,7 @@ app.delete("/api/v1/site/partners/:id", protect, restrictTo("admin"), async (req
   } catch (err) { res.status(400).json({ status: "error", message: err.message }); }
 });
 
-// Back handling
 app.get(/.*/, (req, res) => {
-  // ✅ إصلاح: إذا كان الرابط API وغير موجود، أرجع خطأ JSON بدلاً من HTML
   if (req.originalUrl.startsWith('/api')) {
       return res.status(404).json({ status: "fail", message: "API Route Not Found - تأكد من تحديث السيرفر" });
   }
@@ -3564,24 +3356,18 @@ app.get(/.*/, (req, res) => {
   res.redirect(backUrl);
 });
 
-// Error Handling
 app.use((err, req, res, next) => {
   console.error("🔥 Error Log:", err);
   res.status(500).json({ status: "error", message: err.message || "حدث خطأ غير متوقع في السيرفر" });
 });
 
-// ==========================================
-// 6. DB Connection & Server Start
-// ==========================================
-// تم الاستغناء عن اتصال Mongoose.
-// Supabase Client يعمل عبر REST/PostgREST ولا يحتاج لاتصال مستمر (Persistent Connection) بنفس الطريقة.
 console.log("✅ Supabase Client Initialized!");
 
 process.on("unhandledRejection", (r) => console.error("🔥 unhandledRejection:", r));
 process.on("uncaughtException", (e) => console.error("🔥 uncaughtException:", e));
 
-ensureOffersColumn().catch(() => {}); // تأكد من عمود offers عند بدء التشغيل
-ensureSiteSettingsTable().catch(() => {}); // جدول إعدادات الصفحة الرئيسية
+ensureOffersColumn().catch(() => {});
+ensureSiteSettingsTable().catch(() => {});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
