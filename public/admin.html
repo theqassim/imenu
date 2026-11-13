@@ -8148,69 +8148,59 @@ async function submitPosOrder() {
       }
 
       function addSizeRow(name = "", price = "", oldPrice = "") {
-        const id = Date.now();
+        const id = Date.now() + "-" + Math.floor(Math.random() * 100000);
         const oldValDisplay = oldPrice && oldPrice > 0 ? oldPrice : "";
 
         const html = `
             <div class="size-row" id="size-${id}" style="
-                background: #fff; 
-                padding: 12px; 
-                border-radius: 12px; 
-                border: 1px solid var(--border-color); 
-                margin-bottom: 10px; 
+                background: #fff;
+                padding: 12px;
+                border-radius: 12px;
+                border: 1px solid var(--border-color);
+                margin-bottom: 10px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-                display: flex; 
-                align-items: center; 
-                gap: 12px;
-                transition: transform 0.2s;
+                display: grid;
+                grid-template-columns: auto 1fr 1fr auto;
+                grid-template-areas:
+                    'grip name  name  del'
+                    'grip price old   del';
+                align-items: end;
+                gap: 10px;
             ">
-                <div style="color: var(--secondary); opacity: 0.4; cursor: grab; padding: 5px;">
+                <div style="grid-area: grip; color: var(--secondary); opacity: 0.4; cursor: grab; padding: 5px; align-self:center;">
                     <i class="fas fa-grip-vertical"></i>
                 </div>
 
-                <div style="flex: 2;">
+                <div style="grid-area: name; min-width:0;">
                     <label style="font-size: 11px; color: var(--secondary); font-weight: bold; margin-bottom: 4px; display: block;">اسم الحجم</label>
-                    <input type="text" class="s-name" placeholder="مثال: وسط / كومبو" value="${name}" 
-                        style="height: 38px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 13px; width: 100%;">
+                    <input type="text" class="s-name" placeholder="مثال: وسط / كومبو" value="${name}"
+                        style="height: 40px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 13px; width: 100%; box-sizing: border-box;">
                 </div>
 
-                <div style="flex: 1;">
-                    <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-bottom: 4px; display: block;">السعر</label>
-                    <input type="number" class="s-price" placeholder="0" value="${price}" 
-                        style="height: 38px; border: 1px solid var(--primary-light); background: #fff; font-weight: bold; color: var(--primary); font-size: 14px; width: 100%; text-align:center;">
+                <div style="grid-area: price; min-width:0;">
+                    <label style="font-size: 11px; color: var(--primary); font-weight: bold; margin-bottom: 4px; display: block;">السعر (ج.م)</label>
+                    <input type="number" inputmode="decimal" min="0" step="any" class="s-price" placeholder="0" value="${price}"
+                        style="height: 40px; border: 1px solid var(--primary-light); background: #fff; font-weight: bold; color: var(--primary); font-size: 15px; width: 100%; min-width: 0; box-sizing: border-box; text-align:center; padding: 0 6px;">
                 </div>
 
-                <div style="flex: 1;">
-                    <label style="font-size: 11px; color: var(--danger); font-weight: bold; margin-bottom: 4px; display: block;">خصم (اختياري)</label>
-                    <input type="number" class="s-old" placeholder="0" value="${oldValDisplay}" 
-                        style="height: 38px; border: 1px dashed #fca5a5; background: #fef2f2; color: var(--danger); font-size: 13px; width: 100%; text-align:center;">
+                <div style="grid-area: old; min-width:0;">
+                    <label style="font-size: 11px; color: var(--danger); font-weight: bold; margin-bottom: 4px; display: block;">قبل الخصم (اختياري)</label>
+                    <input type="number" inputmode="decimal" min="0" step="any" class="s-old" placeholder="0" value="${oldValDisplay}"
+                        style="height: 40px; border: 1px dashed #fca5a5; background: #fef2f2; color: var(--danger); font-size: 14px; width: 100%; min-width: 0; box-sizing: border-box; text-align:center; padding: 0 6px;">
                 </div>
 
-                <div style="padding-top: 18px;">
-                    <button type="button" onclick="document.getElementById('size-${id}').remove()" 
-                        style="
-                            background: #fee2e2; 
-                            color: #ef4444; 
-                            border: none; 
-                            width: 38px; 
-                            height: 38px; 
-                            border-radius: 10px; 
-                            cursor: pointer; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center;
-                            transition: 0.2s;
-                        "
+                <div style="grid-area: del; align-self:center;">
+                    <button type="button" onclick="document.getElementById('size-${id}').remove()"
+                        style="background: #fee2e2; color: #ef4444; border: none; width: 38px; height: 38px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;"
                         title="حذف الحجم"
                         onmouseover="this.style.background='#fecaca'"
-                        onmouseout="this.style.background='#fee2e2'"
-                    >
+                        onmouseout="this.style.background='#fee2e2'">
                         <i class="fas fa-trash-alt" style="font-size: 14px;"></i>
                     </button>
                 </div>
             </div>
         `;
-        
+
         document.getElementById("sizes-list").insertAdjacentHTML("beforeend", html);
       }
       async function loadCoupons() {
