@@ -2435,66 +2435,259 @@ app.post("/api/v1/ai/process-menu", protect, restrictTo("admin"), memoryUpload.a
 });
 
 
-app.get("/menu/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "menu.html")));
+// ======================= SEO / Brand helpers =======================
+const SITE_URL = (process.env.SITE_URL || "https://imenueg.com").replace(/\/+$/, "");
+
+const escHtml = (str) =>
+  String(str == null ? "" : str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+const absUrl = (p) => {
+  const u = String(p || "").replace(/\\/g, "/").trim();
+  if (!u) return "";
+  if (/^https?:\/\//i.test(u)) return u;
+  return `${SITE_URL}/${u.replace(/^\/+/, "")}`;
+};
+
+// الأولوية: لوجو صفحة المتجر ← صورة المطعم ← صورة الهيرو
+const pickBrandImage = (r) =>
+  absUrl(r.storePage && r.storePage.logo) ||
+  absUrl(r.image) ||
+  absUrl(r.customUI && r.customUI.heroImage) ||
+  "";
+
+const slugToWords = (slug) => String(slug || "").replace(/[-_]+/g, " ").trim();
+
+const getBrand = async (slug) => {
+  const { data, error } = await supabase
+    .from("restaurants")
+    .select("restaurantName, slug, image, customUI, storePage, isActive, owner:users(active, subscriptionExpires, isTrial)")
+    .eq("slug", slug)
+    .single();
+  if (error || !data) return null;
+  const o = Array.isArray(data.owner) ? data.owner[0] : data.owner;
+  const expired = o && o.subscriptionExpires && new Date() > new Date(o.subscriptionExpires);
+  data.isPublic = data.isActive !== false && !(o && (o.active === false || expired || o.isTrial));
+  return data;
+};
+
+const injectHead = (html, { title, description, url, image, keywords, robots, jsonld }) => {
+  const tags = [
+    `<title>${escHtml(title)}</title>`,
+    `<meta name="description" content="${escHtml(description)}" />`,
+    keywords ? `<meta name="keywords" content="${escHtml(keywords)}" />` : "",
+    `<meta name="robots" content="${robots || "index, follow, max-image-preview:large"}" />`,
+    `<link rel="canonical" href="${escHtml(url)}" />`,
+    `<meta property="og:type" content="website" />`,
+    `<meta property="og:site_name" content="iMenu" />`,
+    `<meta property="og:locale" content="ar_EG" />`,
+    `<meta property="og:title" content="${escHtml(title)}" />`,
+    `<meta property="og:description" content="${escHtml(description)}" />`,
+    `<meta property="og:url" content="${escHtml(url)}" />`,
+    image ? `<meta property="og:image" content="${escHtml(image)}" />` : "",
+    image ? `<meta property="og:image:alt" content="${escHtml(title)}" />` : "",
+    `<meta name="twitter:card" content="summary" />`,
+    `<meta name="twitter:title" content="${escHtml(title)}" />`,
+    `<meta name="twitter:description" content="${escHtml(description)}" />`,
+    image ? `<meta name="twitter:image" content="${escHtml(image)}" />` : "",
+    image ? `<link rel="icon" href="${escHtml(image)}" />` : "",
+    jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>` : "",
+  ].filter(Boolean).join("\n    ");
+
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, "");
+  html = html.replace(/<meta\s+(?:property|name)=["'](?:og:|twitter:|description|keywords|robots)[^"']*["'][^>]*>/gi, "");
+  html = html.replace(/<link\s+rel=["'](?:canonical|icon)["'][^>]*>/gi, "");
+  return html.replace(/<head(\s[^>]*)?>/i, (m) => `${m}\n    ${tags}\n`);
+};
+
+const buildJsonLd = (r, pageUrl, image, kind) => {
+  const name = r.restaurantName || r.slug;
+  const words = slugToWords(r.slug);
+  const alt = words && words.toLowerCase() !== String(name).toLowerCase() ? [words] : [];
+  return {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    name,
+    ...(alt.length ? { alternateName: alt } : {}),
+    url: pageUrl,
+    ...(image ? { image, logo: image } : {}),
+    ...(kind === "menu" ? { hasMenu: pageUrl } : {}),
+    isPartOf: { "@type": "WebSite", name: "iMenu", url: SITE_URL },
+  };
+};
+
+// ======================= /menu/:slug =======================
+app.get("/menu/:slug", async (req, res) => {
+  const filePath = path.join(__dirname, "public", "menu.html");
+  try {
+    const r = await getBrand(req.params.slug);
+    let html = fs.readFileSync(filePath, "utf8");
+    if (r) {
+      const name = r.restaurantName || r.slug;
+      const words = slugToWords(r.slug);
+      const showWords = words && words.toLowerCase() !== String(name).toLowerCase();
+      const title = `${name}${showWords ? ` (${words})` : ""} | المنيو الإلكتروني`;
+      const description = `شوف منيو ${name} بالأصناف والأسعار وأطلب أونلاين — منيو إلكتروني من iMenu.`;
+      const pageUrl = `${SITE_URL}/menu/${encodeURIComponent(r.slug)}`;
+      const image = pickBrandImage(r);
+      html = injectHead(html, {
+        title, description, url: pageUrl, image,
+        keywords: [name, words, "منيو", "menu", "iMenu"].filter(Boolean).join(", "),
+        robots: r.isPublic ? undefined : "noindex, nofollow",
+        jsonld: buildJsonLd(r, pageUrl, image, "menu"),
+      });
+    }
+    res.set("Cache-Control", "public, max-age=300");
+    res.send(html);
+  } catch (err) {
+    console.error("Menu meta injection error:", err);
+    res.sendFile(filePath);
+  }
+});
+
 app.get("/reserve/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "reservation.html")));
 app.get("/rate/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "rate.html")));
+
+// ======================= /store/:slug =======================
 app.get("/store/:slug", async (req, res) => {
   const filePath = path.join(__dirname, "public", "store.html");
   try {
-    const { data: restaurant } = await supabase
-      .from("restaurants")
-      .select("restaurantName, slug, storePage")
-      .eq("slug", req.params.slug)
-      .single();
-
+    const r = await getBrand(req.params.slug);
     let html = fs.readFileSync(filePath, "utf8");
-
-    if (restaurant) {
-      const sp = restaurant.storePage || {};
-      const title = sp.title || restaurant.restaurantName || "صفحة المتجر";
-      const description =
-        sp.message || sp.subtitle || sp.greeting || `تابع ${title} وكل روابطنا من هنا`;
-
-      let logo = (sp.logo || "").replace(/\\/g, "/");
-      if (logo && !/^https?:\/\//i.test(logo)) {
-        logo = `${req.protocol}://${req.get("host")}/${logo.replace(/^\/+/, "")}`;
-      }
-
-      const pageUrl = `${req.protocol}://${req.get("host")}/store/${req.params.slug}`;
-
-      const escapeHtml = (str) =>
-        String(str)
-          .replace(/&/g, "&amp;")
-          .replace(/"/g, "&quot;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
-
-      const metaTags = `
-    <title>${escapeHtml(title)}</title>
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="${escapeHtml(title)}" />
-    <meta property="og:description" content="${escapeHtml(description)}" />
-    <meta property="og:url" content="${escapeHtml(pageUrl)}" />
-    ${logo ? `<meta property="og:image" content="${escapeHtml(logo)}" />\n    <meta property="og:image:width" content="512" />\n    <meta property="og:image:height" content="512" />` : ""}
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="${escapeHtml(title)}" />
-    <meta name="twitter:description" content="${escapeHtml(description)}" />
-    ${logo ? `<meta name="twitter:image" content="${escapeHtml(logo)}" />` : ""}
-`;
-
-      html = html.replace(/<title>.*?<\/title>/is, "");
-      html = html.replace(/<meta\s+property=["']og:[^"']+["'][^>]*>/gi, "");
-      html = html.replace(/<meta\s+name=["']twitter:[^"']+["'][^>]*>/gi, "");
-
-      html = html.replace(/<head(\s[^>]*)?>/i, (match) => `${match}\n${metaTags}`);
+    if (r) {
+      const sp = r.storePage || {};
+      const name = sp.title || r.restaurantName || "صفحة المتجر";
+      const words = slugToWords(r.slug);
+      const showWords = words && words.toLowerCase() !== String(name).toLowerCase();
+      const description = sp.message || sp.subtitle || sp.greeting || `تابع ${name} وكل روابطنا من هنا`;
+      const pageUrl = `${SITE_URL}/store/${encodeURIComponent(r.slug)}`;
+      const image = pickBrandImage(r);
+      html = injectHead(html, {
+        title: `${name}${showWords ? ` (${words})` : ""}`,
+        description, url: pageUrl, image,
+        keywords: [name, words, "iMenu"].filter(Boolean).join(", "),
+        robots: r.isPublic && sp.enabled !== false ? undefined : "noindex, nofollow",
+        jsonld: buildJsonLd(r, pageUrl, image, "store"),
+      });
     }
-
+    res.set("Cache-Control", "public, max-age=300");
     res.send(html);
   } catch (err) {
     console.error("Store page meta injection error:", err);
     res.sendFile(filePath);
   }
 });
+
+// ======================= دليل المنيوهات + sitemap + robots =======================
+const listPublicBrands = async () => {
+  const { data, error } = await supabase
+    .from("restaurants")
+    .select("restaurantName, slug, image, customUI, storePage, isActive, owner:users(active, subscriptionExpires, isTrial)");
+  if (error) throw error;
+  const now = new Date();
+  return (data || [])
+    .filter((r) => {
+      if (!r.slug || r.isActive === false) return false;
+      const o = Array.isArray(r.owner) ? r.owner[0] : r.owner;
+      if (o && (o.active === false || o.isTrial)) return false;
+      if (o && o.subscriptionExpires && now > new Date(o.subscriptionExpires)) return false;
+      return true;
+    })
+    .map((r) => ({
+      slug: r.slug,
+      name: r.restaurantName || r.slug,
+      image: pickBrandImage(r),
+      hasStore: !!(r.storePage && r.storePage.enabled !== false && (r.storePage.title || (r.storePage.links || []).length)),
+    }))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), "ar"));
+};
+
+app.get("/menus", async (req, res) => {
+  try {
+    const brands = await listPublicBrands();
+    const cards = brands.map((b) => {
+      const ini = escHtml(String(b.name).trim().charAt(0));
+      const logo = b.image
+        ? `<img src="${escHtml(b.image)}" alt="${escHtml(b.name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${ini}'}))">`
+        : `<span>${ini}</span>`;
+      return `<div class="card"><a class="logo" href="/menu/${encodeURIComponent(b.slug)}">${logo}</a><h2><a href="/menu/${encodeURIComponent(b.slug)}">${escHtml(b.name)}</a></h2><div class="links"><a href="/menu/${encodeURIComponent(b.slug)}">المنيو</a>${b.hasStore ? `<a href="/store/${encodeURIComponent(b.slug)}">صفحة المتجر</a>` : ""}</div></div>`;
+    }).join("");
+
+    const jsonld = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: "منيوهات ومتاجر iMenu",
+      itemListElement: brands.map((b, i) => ({ "@type": "ListItem", position: i + 1, name: b.name, url: `${SITE_URL}/menu/${encodeURIComponent(b.slug)}` })),
+    };
+
+    const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>كل المنيوهات والمتاجر | iMenu</title>
+<meta name="description" content="دليل المطاعم والكافيهات والمتاجر اللي عندها منيو إلكتروني على iMenu. اختار المكان وشوف المنيو." />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="${SITE_URL}/menus" />
+<meta property="og:type" content="website" /><meta property="og:title" content="كل المنيوهات والمتاجر | iMenu" /><meta property="og:url" content="${SITE_URL}/menus" /><meta property="og:image" content="${SITE_URL}/og-image.jpg" />
+<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet" />
+<style>
+*{box-sizing:border-box;margin:0;font-family:"Tajawal",sans-serif}body{background:#0f1115;color:#fff;padding:90px 5% 40px}
+a{color:inherit;text-decoration:none}header{position:fixed;inset:0 0 auto 0;padding:16px 5%;background:rgba(15,17,21,.95);border-bottom:1px solid rgba(255,255,255,.08);font-weight:900;font-size:22px}
+header b{color:#d4af37}h1{text-align:center;font-size:clamp(24px,4vw,38px);margin-bottom:8px}p.sub{text-align:center;color:#9ca3af;margin-bottom:32px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;max-width:1100px;margin:auto}
+.card{background:rgba(30,35,45,.7);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px 14px;text-align:center}
+.logo{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;background:#1b2029;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:34px;font-weight:800;color:#d4af37}
+.logo img{width:100%;height:100%;object-fit:cover}h2{font-size:16px;margin-bottom:10px}
+.links{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.links a{font-size:13px;padding:6px 12px;border-radius:50px;border:1px solid #d4af37;color:#d4af37}.links a:hover{background:#d4af37;color:#000}
+</style></head><body>
+<header><a href="/"><b>i</b>Menu</a></header>
+<h1>كل المنيوهات والمتاجر</h1><p class="sub">الأماكن اللي عندها منيو إلكتروني على iMenu</p>
+<div class="grid">${cards || "<p class='sub'>لا يوجد بعد</p>"}</div>
+</body></html>`;
+    res.set("Cache-Control", "public, max-age=600");
+    res.type("html").send(html);
+  } catch (err) {
+    console.error("menus directory error:", err);
+    res.status(500).send("Error");
+  }
+});
+
+app.get("/sitemap.xml", async (req, res) => {
+  try {
+    const brands = await listPublicBrands();
+    const urls = [
+      `<url><loc>${SITE_URL}/</loc><priority>1.0</priority></url>`,
+      `<url><loc>${SITE_URL}/menus</loc><priority>0.9</priority></url>`,
+    ];
+    brands.forEach((b) => {
+      const img = b.image ? `<image:image><image:loc>${escHtml(b.image)}</image:loc><image:title>${escHtml(b.name)}</image:title></image:image>` : "";
+      urls.push(`<url><loc>${SITE_URL}/menu/${encodeURIComponent(b.slug)}</loc><priority>0.8</priority>${img}</url>`);
+      if (b.hasStore) urls.push(`<url><loc>${SITE_URL}/store/${encodeURIComponent(b.slug)}</loc><priority>0.7</priority>${img}</url>`);
+    });
+    res.set("Cache-Control", "public, max-age=3600");
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.join("\n")}\n</urlset>`);
+  } catch (err) {
+    console.error("sitemap error:", err);
+    res.status(500).send("Error");
+  }
+});
+
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain").send(
+`User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /owner
+Disallow: /super-admin
+Disallow: /sales-dashboard
+Disallow: /login
+Disallow: /simulator
+
+Sitemap: ${SITE_URL}/sitemap.xml
+`);
+});
+
 app.get("/simulator", (req, res) => res.sendFile(path.join(__dirname, "public", "simulator.html")));
 app.get("/owner", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.get("/super-admin", (req, res) => res.sendFile(path.join(__dirname, "public", "super.html")));
