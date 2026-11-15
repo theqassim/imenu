@@ -17,6 +17,20 @@ const { Server } = require("socket.io");
 const http = require("http");
 const cron = require("node-cron");
 
+let firebaseServiceAccount = null;
+if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+  try {
+    firebaseServiceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+  } catch (error) {
+    console.error("FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON:", error.message);
+  }
+}
+if (!firebaseServiceAccount) {
+  console.warn("⚠️ Firebase service account is not configured. Android push notifications are disabled.");
+}
+let firebaseAccessToken = "";
+let firebaseAccessTokenExpiresAt = 0;
+
 
 cron.schedule("0 * * * *", async () => {
   console.log("⏳ Checking for expired trial accounts...");
@@ -62,7 +76,7 @@ const privateVapidKey = process.env.WEB_PUSH_PRIVATE;
 if (publicVapidKey && privateVapidKey) {
   webPush.setVapidDetails("mailto:admin@imenueg.com", publicVapidKey, privateVapidKey);
 } else {
-  console.warn("⚠️ WEB_PUSH keys are missing in .env. Notifications will not work.");
+  console.warn("⚠️ WEB_PUSH keys are missing in .env. Browser push notifications will not work.");
 }
 
 const cloudinary = require("cloudinary").v2;
@@ -2787,6 +2801,141 @@ app.post("/api/v1/owner/push-unsubscribe", protect, async (req, res) => {
   }
 });
 
+app.post("/api/v1/owner/fcm-subscribe", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    if (!firebaseServiceAccount?.client_email || !firebaseServiceAccount?.private_key || !firebaseServiceAccount?.project_id) {
+      return res.status(503).json({ message: "إشعارات Android الفورية غير مهيأة على السيرفر" });
+    }
+
+    const deviceToken = String(req.body?.token || "").trim();
+    if (deviceToken.length < 20 || deviceToken.length > 4096) {
+      return res.status(400).json({ message: "رمز جهاز Android غير صالح" });
+    }
+
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from("restaurants")
+      .select("_id")
+      .eq("owner", req.user._id)
+      .single();
+    if (restaurantError || !restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم" });
+
+    const { error } = await supabase.from("push_subscriptions").upsert(
+      {
+        restaurant_id: restaurant._id,
+        endpoint: `fcm:${deviceToken}`,
+        p256dh: "fcm",
+        auth: "fcm",
+      },
+      { onConflict: "restaurant_id,endpoint" },
+    );
+    if (error) throw error;
+    res.status(201).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.post("/api/v1/owner/fcm-unsubscribe", protect, restrictTo("owner"), async (req, res) => {
+  try {
+    const deviceToken = String(req.body?.token || "").trim();
+    if (!deviceToken) return res.status(400).json({ message: "رمز الجهاز مطلوب" });
+
+    const { data: restaurant, error: restaurantError } = await supabase
+      .from("restaurants")
+      .select("_id")
+      .eq("owner", req.user._id)
+      .single();
+    if (restaurantError || !restaurant) return res.status(404).json({ message: "لم يتم العثور على مطعم" });
+
+    const { error } = await supabase.from("push_subscriptions")
+      .delete()
+      .eq("restaurant_id", restaurant._id)
+      .eq("endpoint", `fcm:${deviceToken}`);
+    if (error) throw error;
+    res.status(200).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+async function getFirebaseAccessToken() {
+  if (firebaseAccessToken && Date.now() < firebaseAccessTokenExpiresAt - 60000) {
+    return firebaseAccessToken;
+  }
+  if (!firebaseServiceAccount?.client_email || !firebaseServiceAccount?.private_key) {
+    throw new Error("Firebase service account is not configured");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const assertion = jwt.sign(
+    {
+      iss: firebaseServiceAccount.client_email,
+      scope: "https://www.googleapis.com/auth/firebase.messaging",
+      aud: "https://oauth2.googleapis.com/token",
+      iat: now,
+      exp: now + 3600,
+    },
+    firebaseServiceAccount.private_key,
+    { algorithm: "RS256" },
+  );
+  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+  const tokenData = await tokenResponse.json();
+  if (!tokenResponse.ok || !tokenData.access_token) {
+    throw new Error(`Firebase OAuth failed: ${tokenData.error_description || tokenData.error || tokenResponse.status}`);
+  }
+  firebaseAccessToken = tokenData.access_token;
+  firebaseAccessTokenExpiresAt = Date.now() + Number(tokenData.expires_in || 3600) * 1000;
+  return firebaseAccessToken;
+}
+
+async function sendFirebasePush(deviceToken, payloadObj) {
+  const accessToken = await getFirebaseAccessToken();
+  const message = {
+    message: {
+      token: deviceToken,
+      notification: {
+        title: String(payloadObj.title || "تقييم جديد"),
+        body: String(payloadObj.body || ""),
+      },
+      data: {
+        title: String(payloadObj.title || "تقييم جديد"),
+        body: String(payloadObj.body || ""),
+        url: String(payloadObj.url || "/"),
+        ratingId: String(payloadObj.ratingId || ""),
+      },
+      android: {
+        priority: "HIGH",
+        notification: { channel_id: "customer_ratings" },
+      },
+    },
+  };
+  const response = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(firebaseServiceAccount.project_id)}/messages:send`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(message),
+    },
+  );
+  const responseData = await response.json();
+  if (!response.ok) {
+    const error = new Error(responseData.error?.message || `Firebase push failed (${response.status})`);
+    error.statusCode = response.status;
+    error.code = responseData.error?.details?.find((detail) => detail.errorCode)?.errorCode;
+    throw error;
+  }
+}
+
 
 async function sendPushToRestaurant(restaurantId, payloadObj) {
   try {
@@ -2798,17 +2947,35 @@ async function sendPushToRestaurant(restaurantId, payloadObj) {
     if (!subs || subs.length === 0) return;
 
     const payload = JSON.stringify(payloadObj);
-    subs.forEach((sub) => {
-      webPush
-        .sendNotification({ endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } }, payload)
-        .catch((e) => {
-          if (e.statusCode === 410 || e.statusCode === 404) {
-            supabase.from("push_subscriptions").delete().eq("id", sub.id).then(() => {});
+    await Promise.all(subs.map(async (sub) => {
+      if (sub.endpoint.startsWith("fcm:")) {
+        try {
+          await sendFirebasePush(sub.endpoint.slice(4), payloadObj);
+        } catch (error) {
+          if (error.code === "UNREGISTERED" || error.statusCode === 404) {
+            const { error: deleteError } = await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+            if (deleteError) console.error("Failed to remove invalid FCM token:", deleteError.message);
           } else {
-            console.error("Push error:", e.message);
+            console.error("Firebase push error:", error.message);
           }
-        });
-    });
+        }
+        return;
+      }
+
+      try {
+        await webPush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          payload,
+        );
+      } catch (error) {
+        if (error.statusCode === 410 || error.statusCode === 404) {
+          const { error: deleteError } = await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+          if (deleteError) console.error("Failed to remove expired web push subscription:", deleteError.message);
+        } else {
+          console.error("Push error:", error.message);
+        }
+      }
+    }));
   } catch (e) {
     console.error("sendPushToRestaurant error:", e.message);
   }
@@ -2941,10 +3108,11 @@ app.post("/api/v1/ratings/submit/:slug", async (req, res) => {
     }
 
     const starsEmoji = "⭐".repeat(starsNum);
-    sendPushToRestaurant(restaurant._id, {
+    await sendPushToRestaurant(restaurant._id, {
       title: `${starsEmoji} تقييم جديد من ${name.trim()}`,
       body: (comment || "").trim() || `تقييم ${starsNum} نجوم على ${restaurant.restaurantName}`,
       url: "/owner",
+      ratingId: newRating._id,
     });
 
     res.status(200).json({ status: "success", message: "تم إرسال تقييمك، شكراً لوقتك!" });

@@ -1,0 +1,74 @@
+plugins {
+    id "com.android.application"
+}
+
+def firebaseConfigFile = file("google-services.json")
+def firebaseConfigValues = [:]
+if (firebaseConfigFile.isFile()) {
+    def firebaseConfig = new groovy.json.JsonSlurper().parse(firebaseConfigFile)
+    def firebaseClient = firebaseConfig.client?.find { client ->
+        client.client_info?.android_client_info?.package_name == "com.imenu.owner"
+    }
+    if (!firebaseClient) {
+        throw new GradleException("google-services.json does not contain the com.imenu.owner Android client")
+    }
+    firebaseConfigValues = [
+        imenuFirebaseApiKey: firebaseClient.api_key?.find { it.current_key }?.current_key,
+        imenuFirebaseAppId: firebaseClient.client_info?.mobilesdk_app_id,
+        imenuFirebaseProjectId: firebaseConfig.project_info?.project_id,
+        imenuFirebaseSenderId: firebaseConfig.project_info?.project_number
+    ]
+}
+
+def firebasePropertyNames = [
+    "imenuFirebaseApiKey",
+    "imenuFirebaseAppId",
+    "imenuFirebaseProjectId",
+    "imenuFirebaseSenderId"
+]
+def firebaseBuildValues = firebasePropertyNames.collectEntries { propertyName ->
+    def configuredValue = providers.gradleProperty(propertyName).orNull
+    [(propertyName): configuredValue?.trim() ? configuredValue : (firebaseConfigValues[propertyName] ?: "")]
+}
+if (firebaseConfigFile.isFile()) {
+    def missingFirebaseValues = firebasePropertyNames.findAll { !firebaseBuildValues[it] }
+    if (!missingFirebaseValues.isEmpty()) {
+        throw new GradleException("Firebase configuration is missing: ${missingFirebaseValues.join(', ')}")
+    }
+}
+
+def firebaseBuildField = { propertyName ->
+    firebaseBuildValues[propertyName]
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+}
+
+android {
+    namespace "com.imenu.owner"
+    compileSdk 35
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    defaultConfig {
+        applicationId "com.imenu.owner"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+        buildConfigField "String", "FIREBASE_API_KEY", "\"${firebaseBuildField('imenuFirebaseApiKey')}\""
+        buildConfigField "String", "FIREBASE_APP_ID", "\"${firebaseBuildField('imenuFirebaseAppId')}\""
+        buildConfigField "String", "FIREBASE_PROJECT_ID", "\"${firebaseBuildField('imenuFirebaseProjectId')}\""
+        buildConfigField "String", "FIREBASE_SENDER_ID", "\"${firebaseBuildField('imenuFirebaseSenderId')}\""
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+dependencies {
+    implementation "com.google.firebase:firebase-messaging:24.1.0"
+}
