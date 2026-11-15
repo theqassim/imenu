@@ -1,11 +1,18 @@
 <resources>
     <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:fontFamily">sans</item>
-        <item name="android:colorAccent">#4338CA</item>
-        <item name="android:statusBarColor">#FFFFFF</item>
-        <item name="android:navigationBarColor">#4338CA</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:fontFamily">@font/tajawal_regular</item>
+        <item name="android:colorAccent">#5B3DF5</item>
+        <item name="android:colorPrimary">#5B3DF5</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:windowBackground">#F5F6FA</item>
+        <item name="android:windowBackground">#F4F2FC</item>
+    </style>
+    <style name="AppDialog" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:fontFamily">@font/tajawal_medium</item>
+        <item name="android:colorAccent">#5B3DF5</item>
+        <item name="android:textColorPrimary">#14122B</item>
+        <item name="android:textColorSecondary">#6B6A85</item>
+        <item name="android:windowBackground">@drawable/bg_dialog</item>
     </style>
 </resources>
