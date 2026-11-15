@@ -778,6 +778,42 @@ function ensureOffersColumn() {
   return _offersMigrationPromise;
 }
 
+let _ratingCommentVisibilityColumnReady = false;
+let _ratingCommentVisibilityMigrationPromise = null;
+function ensureRatingCommentVisibilityColumn() {
+  if (_ratingCommentVisibilityColumnReady) return Promise.resolve(true);
+  if (_ratingCommentVisibilityMigrationPromise) return _ratingCommentVisibilityMigrationPromise;
+
+  _ratingCommentVisibilityMigrationPromise = (async () => {
+    const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+    let client;
+    try {
+      if (!dbUrl) throw new Error("DATABASE_URL is required to enable rating comment visibility");
+      const { Client } = require("pg");
+      client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+      client.on("error", (e) => console.error("pg client error (rating visibility):", e.message));
+      await client.connect();
+      await client.query(
+        'ALTER TABLE public.ratings ADD COLUMN IF NOT EXISTS "isCommentVisible" boolean NOT NULL DEFAULT true'
+      );
+      await client.query("NOTIFY pgrst, 'reload schema'");
+      _ratingCommentVisibilityColumnReady = true;
+      console.log("Rating comment visibility column is ready");
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return true;
+    } catch (e) {
+      console.error("Failed to prepare rating comment visibility:", e.message);
+      throw e;
+    } finally {
+      if (client) {
+        try { await client.end(); } catch (_) {}
+      }
+      _ratingCommentVisibilityMigrationPromise = null;
+    }
+  })();
+  return _ratingCommentVisibilityMigrationPromise;
+}
+
 const isMissingOffersColumn = (err) =>
   !!err && /offers/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
 
@@ -1080,7 +1116,9 @@ app.get("/api/v1/products/restaurant/:restaurantId", protect, restrictTo("owner"
   try {
     const { data: products, error } = await supabase
       .from('products')
-      .select('*')
+      .select(req.query.compact === "true"
+        ? '_id, name, category, price, sizes, isAvailable'
+        : '*')
       .eq('restaurant', req.params.restaurantId)
       .order('sortOrder', { ascending: true })
       .order('createdAt', { ascending: false });
@@ -3022,9 +3060,17 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
     let ratingsAverage = 0;
     let ratingsCount = 0;
     try {
+      let visibilityColumnReady = false;
+      try {
+        visibilityColumnReady = await ensureRatingCommentVisibilityColumn();
+      } catch (migrationError) {
+        console.error("Rating comment visibility is unavailable:", migrationError.message);
+      }
       const { data: allRatings } = await supabase
         .from("ratings")
-        .select("customerName, stars, comment, createdAt")
+        .select(visibilityColumnReady
+          ? "customerName, stars, comment, createdAt, isCommentVisible"
+          : "customerName, stars, comment, createdAt")
         .eq("restaurant", restaurant._id)
         .order("createdAt", { ascending: false });
 
@@ -3035,7 +3081,8 @@ app.get("/api/v1/store-page/:slug", async (req, res) => {
       }
 
       reviews = list
-        .filter((r) => Number(r.stars) > 3 && r.comment && r.comment.trim())
+        .filter((r) => visibilityColumnReady && r.isCommentVisible !== false
+          && Number(r.stars) > 3 && r.comment && r.comment.trim())
         .slice(0, 12)
         .map((r) => ({
           name: (r.customerName || "عميل").trim().split(/\s+/)[0],
@@ -3143,6 +3190,51 @@ app.get("/api/v1/ratings/list", protect, restrictTo("owner", "admin"), async (re
     });
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+app.patch("/api/v1/ratings/:id/comment-visibility", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    if (typeof req.body?.isCommentVisible !== "boolean") {
+      return res.status(400).json({ message: "حالة ظهور التعليق غير صحيحة" });
+    }
+
+    await ensureRatingCommentVisibilityColumn();
+
+    const { data: rating, error: findError } = await supabase
+      .from("ratings")
+      .select("_id, restaurant")
+      .eq("_id", req.params.id)
+      .single();
+
+    if (findError || !rating) return res.status(404).json({ message: "التقييم غير موجود" });
+    if (req.user.role !== "admin") {
+      const { data: restaurant } = await supabase
+        .from("restaurants")
+        .select("_id")
+        .eq("_id", rating.restaurant)
+        .eq("owner", req.user._id)
+        .single();
+      if (!restaurant) return res.status(403).json({ message: "غير مسموح لك بتعديل هذا التعليق" });
+    }
+
+    const { data: updatedRating, error: updateError } = await supabase
+      .from("ratings")
+      .update({ isCommentVisible: req.body.isCommentVisible })
+      .eq("_id", req.params.id)
+      .select("_id, isCommentVisible")
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.status(200).json({
+      status: "success",
+      message: req.body.isCommentVisible ? "تم إظهار التعليق على الموقع" : "تم إخفاء التعليق من الموقع",
+      data: { rating: updatedRating },
+    });
+  } catch (err) {
+    console.error("Rating comment visibility update failed:", err.message);
+    res.status(503).json({ message: "تعذر تحديث ظهور التعليق على الموقع" });
   }
 });
 

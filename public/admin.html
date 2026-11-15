@@ -2743,6 +2743,7 @@
                   <th>التقييم</th>
                   <th>التعليق</th>
                   <th>الوقت</th>
+                  <th>ظهور التعليق</th>
                   <th></th>
                 </tr>
               </thead>
@@ -4126,7 +4127,7 @@ function renderStarsHtml(stars) {
 async function loadRatings() {
   const list = document.getElementById("ratings-list");
   if (!list) return;
-  list.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">جاري التحميل... <i class="fas fa-spinner fa-spin"></i></td></tr>';
+  list.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">جاري التحميل... <i class="fas fa-spinner fa-spin"></i></td></tr>';
 
   try {
     const res = await fetch('/api/v1/ratings/list', {
@@ -4143,12 +4144,16 @@ async function loadRatings() {
 
       list.innerHTML = "";
       if (!ratings || ratings.length === 0) {
-        list.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:#64748b;">لسه معندكش تقييمات، شارك رابط التقييم مع عملائك</td></tr>';
+        list.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:#64748b;">لسه معندكش تقييمات، شارك رابط التقييم مع عملائك</td></tr>';
         return;
       }
 
       ratings.forEach(r => {
         const date = new Date(r.createdAt).toLocaleString('ar-EG');
+        const commentVisible = r.isCommentVisible !== false;
+        const commentVisibilityButton = r.comment
+          ? `<button class="btn btn-outline" style="padding:5px 10px; font-size:12px; white-space:nowrap; color:${commentVisible ? '#ef4444' : '#10b981'}; border-color:${commentVisible ? '#ef4444' : '#10b981'};" onclick="toggleRatingCommentVisibility('${r._id}', ${commentVisible}, this)"><i class="fas fa-${commentVisible ? 'eye-slash' : 'eye'}"></i> ${commentVisible ? 'إخفاء التعليق' : 'إظهار التعليق'}</button>`
+          : '-';
         list.innerHTML += `
           <tr>
             <td>${r.customerName}</td>
@@ -4157,6 +4162,7 @@ async function loadRatings() {
             <td style="color:#f5b301; direction:ltr; white-space:nowrap;">${renderStarsHtml(r.stars)}</td>
             <td style="font-size:13px; color:var(--secondary); max-width:260px;">${r.comment ? r.comment : '-'}</td>
             <td style="font-size:12px; direction:ltr">${date}</td>
+            <td>${commentVisibilityButton}</td>
             <td><button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="deleteRating('${r._id}')"><i class="fas fa-trash"></i></button></td>
           </tr>
         `;
@@ -4164,7 +4170,42 @@ async function loadRatings() {
     }
   } catch (e) {
     console.error(e);
-    list.innerHTML = '<tr><td colspan="7" style="text-align:center; color:red;">فشل الاتصال بالسيرفر</td></tr>';
+    list.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">فشل الاتصال بالسيرفر</td></tr>';
+  }
+}
+
+async function toggleRatingCommentVisibility(id, currentlyVisible, button) {
+  const isCommentVisible = !currentlyVisible;
+  button.disabled = true;
+  try {
+    const res = await fetch(`/api/v1/ratings/${id}/comment-visibility`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ isCommentVisible })
+    });
+    const data = await res.json();
+    if (!res.ok || data.status !== 'success') {
+      button.disabled = false;
+      Swal.fire('خطأ', data.message || 'تعذر تحديث ظهور التعليق', 'error');
+      return;
+    }
+
+    Swal.fire({
+      toast: true,
+      position: 'top',
+      icon: 'success',
+      title: isCommentVisible ? 'تم إظهار التعليق على الموقع' : 'تم إخفاء التعليق من الموقع',
+      showConfirmButton: false,
+      timer: 1800
+    });
+    loadRatings();
+  } catch (e) {
+    console.error(e);
+    button.disabled = false;
+    Swal.fire('خطأ', 'فشل الاتصال بالسيرفر', 'error');
   }
 }
 
