@@ -10403,6 +10403,7 @@ function calculatePreviewTotals() {
       .ofr-box { background:#fff; border-radius:20px; width:100%; max-width:640px; padding:20px; direction:rtl; }
       .ofr-prev { max-width:380px; margin-left:auto; margin-right:auto; border-radius:16px; padding:18px; color:#fff; text-align:center; background:linear-gradient(135deg,var(--oa),var(--ob)); margin-top:8px; }
       .ofr-prev b { font-size:34px; display:block; }
+      .ofr-prev b.ofr-hero-text-preview { font-size:clamp(20px,5vw,28px); line-height:1.35; overflow-wrap:anywhere; }
       .ofr-prev-white { position:relative; overflow:hidden; border:1px solid var(--border-color); border-radius:0 0 16px 16px; margin:-6px auto 0; max-width:380px; padding:16px 16px 18px; min-height:300px; background:#fff; text-align:center; color:#1e293b; }
             .ofr-bgl { position:absolute; inset:0; display:grid; pointer-events:none; }
       .ofr-bgl.stack { display:block; }
@@ -10465,6 +10466,8 @@ function calculatePreviewTotals() {
           <div><label class="ofr-lbl">نص الشارة</label><input type="text" id="ofr-badge" maxlength="16" placeholder="خصم" /></div>
           <div><label class="ofr-lbl">نص فرعي للشارة</label><input type="text" id="ofr-badgesub" maxlength="20" placeholder="لفترة محدودة" /></div>
         </div>
+        <label class="ofr-lbl">عبارة كبيرة بدل الدايرة (اختياري)</label>
+        <textarea id="ofr-hero-text" oninput="ofrPrev()" rows="2" maxlength="80" placeholder="مثال: فطار شهي وتجربة مختلفة"></textarea>
 
         <div class="ofr-sec">ينطبق على</div>
         <div class="ofr-chips" id="ofr-scope">
@@ -10585,7 +10588,7 @@ function calculatePreviewTotals() {
         };
         function bgUrl(u) { return String(u || "").replace(/["'()\\\s<>]/g, function (c) { return "%" + c.charCodeAt(0).toString(16).toUpperCase(); }); }
         var FONTS = { "Tajawal":1, "Cairo":1, "Almarai":1, "Amiri":1, "Zain":1, "Changa":1, "El Messiri":1, "Reem Kufi":1, "Readex Pro":1, "IBM Plex Sans Arabic":1, "Noto Kufi Arabic":1, "Markazi Text":1, "Mada":1, "Harmattan":1, "Lemonada":1, "Rubik":1, "Baloo Bhaijaan 2":1, "Aref Ruqaa":1, "Lalezar":0, "Katibeh":0 };
-        var TS_KEYS = [["badge","الشارة (النسبة)"],["title","العنوان"],["message","الرسالة"],["chips","شارات النطاق"],["timerLabel","نص العداد"],["timer","أرقام العداد"],["button","الزرار"]];
+        var TS_KEYS = [["badge","الشارة (النسبة)"],["hero","العبارة الكبيرة"],["title","العنوان"],["message","الرسالة"],["chips","شارات النطاق"],["timerLabel","نص العداد"],["timer","أرقام العداد"],["button","الزرار"]];
         var LAYOUTS = [["auto","تلقائي"],["stack","فوق بعض"],["columns","أعمدة"],["rows","صفوف"],["grid","شبكة"],["mosaic","موزايك"]];
         var fontsLoaded = {};
         function loadFont(n) {
@@ -10625,7 +10628,8 @@ function calculatePreviewTotals() {
           q("pv-msg").textContent = $("ofr-message").value || "رسالة العرض هتظهر هنا";
           q("pv-btn").textContent = ($("ofr-btn").value || "اطلب دلوقتي") + " 🎉";
           applyTS(q("pv-title"), "title"); applyTS(q("pv-msg"), "message"); applyTS(q("pv-chip"), "chips");
-          applyTS(q("pv-tl"), "timerLabel"); applyTS(q("pv-btn"), "button"); applyTS($("ofr-prev-pct"), "badge");
+          applyTS(q("pv-tl"), "timerLabel"); applyTS(q("pv-btn"), "button");
+          applyTS($("ofr-prev-pct"), $("ofr-hero-text").value.trim() ? "hero" : "badge");
           Array.prototype.forEach.call(q("pv-tm").querySelectorAll("b,small"), function (e) { applyTS(e, "timer"); });
         }
         function fontOpts(sel) { return '<option value="">الخط الافتراضي</option>' + Object.keys(FONTS).map(function (f) { return '<option value="' + esc(f) + '"' + (sel === f ? " selected" : "") + ">" + esc(f) + "</option>"; }).join(""); }
@@ -10707,7 +10711,9 @@ function calculatePreviewTotals() {
         window.ofrPrev = function () {
           var t = curCols(), p = $("ofr-prev"); if (!p) return;
           p.style.setProperty("--oa", t[0]); p.style.setProperty("--ob", t[1]);
-          $("ofr-prev-pct").textContent = ($("ofr-percent").value || 0) + "%";
+          var heroText = $("ofr-hero-text").value.trim(), heroPreview = $("ofr-prev-pct");
+          heroPreview.textContent = heroText || ($("ofr-percent").value || 0) + "%";
+          heroPreview.classList.toggle("ofr-hero-text-preview", !!heroText);
           $("ofr-prev-title").textContent = $("ofr-title").value || "عنوان العرض";
           textPreview();
         };
@@ -10724,6 +10730,7 @@ function calculatePreviewTotals() {
           $("ofr-title").value = o.title || ""; $("ofr-message").value = o.message || "";
           $("ofr-percent").value = o.discountPercent || 20; $("ofr-btn").value = o.buttonText || "اطلب دلوقتي";
           $("ofr-badge").value = o.badgeText || ""; $("ofr-badgesub").value = o.badgeSub || "";
+          $("ofr-hero-text").value = o.heroText || "";
           $("ofr-start").value = toLocal(o.startsAt); $("ofr-end").value = toLocal(o.endsAt);
           $("ofr-freq").value = o.frequency || "session"; $("ofr-psearch").value = "";
           $("ofr-apply").checked = o.applyPrices !== false; $("ofr-popup").checked = o.showPopup !== false; $("ofr-enabled").checked = o.enabled !== false;
@@ -10761,6 +10768,7 @@ function calculatePreviewTotals() {
           var o = {
             id: old ? old.id : "ofr_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
             enabled: $("ofr-enabled").checked, title: $("ofr-title").value.trim(), message: $("ofr-message").value.trim(),
+            heroText: $("ofr-hero-text").value.trim(),
             discountPercent: pct, badgeText: $("ofr-badge").value.trim(), badgeSub: $("ofr-badgesub").value.trim(),
             scope: scope, categories: scope === "categories" ? selCats.slice() : [], productIds: scope === "products" ? selProds.slice() : [],
             applyPrices: $("ofr-apply").checked, showPopup: $("ofr-popup").checked,

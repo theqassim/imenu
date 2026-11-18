@@ -1681,9 +1681,13 @@
 
       .offer-hero {
         position: relative;
+        min-height: 230px;
         padding: 40px 20px 58px;
         text-align: center;
         color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         background:
           radial-gradient(circle at 20% 15%, rgba(255, 255, 255, 0.35), transparent 45%),
           radial-gradient(circle at 85% 80%, rgba(0, 0, 0, 0.22), transparent 50%),
@@ -1748,6 +1752,17 @@
         direction: ltr;
       }
       .offer-badge .off { font-size: 15px; font-weight: 800; letter-spacing: 1px; margin-top: 4px; }
+      .offer-hero-text {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        font-size: clamp(26px, 8vw, 42px);
+        font-weight: 900;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+        text-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+        white-space: pre-line;
+      }
       .offer-badge-icon {
         position: absolute;
         top: -8px;
@@ -3351,7 +3366,7 @@ function trackOrder(orderId) {
         };
 
         function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
-        function seenKey(o) { return "offer_seen_" + o.id + "_" + hash([o.title, o.message, o.discountPercent, o.badgeText, o.endsAt, o.theme, o.colorA, o.colorB].join("|")); }
+        function seenKey(o) { return "offer_seen_" + o.id + "_" + hash([o.title, o.message, o.heroText, o.discountPercent, o.badgeText, o.endsAt, o.theme, o.colorA, o.colorB].join("|")); }
         function wasSeen(o) {
           try {
             const f = o.frequency || "session";
@@ -3471,6 +3486,9 @@ function trackOrder(orderId) {
           const inner = pct
             ? '<span class="pct" dir="ltr" style="font-size:' + fs + 'px;' + tsty(o, "badge") + '">' + pct + '</span><span class="off" style="' + tsty(o, "badge") + '">' + esc(o.badgeSub || "خصم") + "</span>"
             : '<i class="fas ' + icon + '" style="font-size:50px;' + tsty(o, "badge") + '"></i>';
+          const hero = o.heroText
+            ? '<div class="offer-hero-text" style="' + tsty(o, "hero") + '">' + esc(o.heroText) + '</div>'
+            : '<div class="offer-badge">' + inner + '<div class="offer-badge-icon"><i class="fas ' + icon + '"></i></div></div>';
           const end = ts(o.endsAt);
           const timer = end && end > Date.now()
             ? '<div class="offer-timer-label" style="' + tsty(o, "timerLabel") + '">⏳ العرض ينتهي خلال</div><div class="offer-timer" data-end="' + end + '">' +
@@ -3479,7 +3497,7 @@ function trackOrder(orderId) {
             : "";
           return '<div class="offer-slide oc-' + theme + '"' + (ocStyle(o) ? ' style="' + ocStyle(o) + '"' : "") + ">" +
             '<div class="offer-hero"><div class="offer-confetti">' + confettiHTML() + "</div>" +
-            '<div class="offer-badge">' + inner + '<div class="offer-badge-icon"><i class="fas ' + icon + '"></i></div></div></div>' +
+            hero + "</div>" +
             '<div class="offer-body">' + bgLayersHTML(o) +
             (o.title ? '<h2 class="offer-title" style="' + tsty(o, "title") + '">' + esc(o.title) + "</h2>" : "") +
             (o.message ? '<p class="offer-msg" style="' + tsty(o, "message") + '">' + esc(o.message) + "</p>" : "") +

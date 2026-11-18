@@ -790,7 +790,7 @@ const OFFER_FONTS = [
   "Readex Pro", "IBM Plex Sans Arabic", "Noto Kufi Arabic", "Markazi Text", "Mada", "Harmattan",
   "Lemonada", "Rubik", "Baloo Bhaijaan 2", "Aref Ruqaa", "Lalezar", "Katibeh",
 ];
-const OFFER_TEXT_KEYS = ["badge", "title", "message", "chips", "timerLabel", "timer", "button"];
+const OFFER_TEXT_KEYS = ["badge", "hero", "title", "message", "chips", "timerLabel", "timer", "button"];
 const OFFER_BG_LAYOUTS = ["auto", "stack", "columns", "rows", "grid", "mosaic"];
 
 function sanitizeOfferBgImages(o) {
@@ -821,6 +821,7 @@ function sanitizeOfferBgImages(o) {
 
   return {
     ...o,
+    heroText: typeof o.heroText === "string" ? o.heroText.slice(0, 80) : "",
     colorA: colorA && colorB ? colorA : "",
     colorB: colorA && colorB ? colorB : "",
     bgImages: imgs,
