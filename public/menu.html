@@ -130,6 +130,22 @@
         transition: background 0.3s;
       }
 
+      .order-announcement {
+        margin: 10px 15px 0;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #ef4444, #b45309);
+        color: #fff;
+        box-shadow: 0 10px 24px rgba(180, 83, 9, 0.22);
+        font-size: 13px;
+        font-weight: 800;
+        line-height: 1.6;
+        text-align: center;
+        animation: announcementIn 0.45s ease-out;
+      }
+      .order-announcement strong { display: block; font-size: 15px; }
+      @keyframes announcementIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
       .top-bar {
         display: flex;
         align-items: center;
@@ -2359,6 +2375,7 @@
 
             renderSocialLinks(restaurant.socialLinks || {}, slug);
             window.__offers = Array.isArray(restaurant.offers) ? restaurant.offers : [];
+            window.__announcements = Array.isArray(restaurant.announcements) ? restaurant.announcements : [];
             
             if (restaurant.owner && restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
                  checkTrialWarning({ message: "هذا المنيو يعمل بنسخة تجريبية مؤقتة." });
@@ -2677,6 +2694,36 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         saveCart();
       }
 
+      function updateOrderAnnouncement(subTotal) {
+        if (typeof window.getOrderOfferStatus !== "function") return;
+        const status = window.getOrderOfferStatus(subTotal);
+        let banner = document.getElementById("order-announcement");
+        if (!status) {
+          if (banner) banner.remove();
+          return;
+        }
+
+        const a = (window.__announcements || []).find((x) => x && x.enabled !== false &&
+          (Number(x.orderPercent) || 0) === status.orderPercent &&
+          (Number(x.minAmount) || 0) === status.minAmount);
+        if (!banner) {
+          banner = document.createElement("div");
+          banner.id = "order-announcement";
+          banner.className = "order-announcement";
+          const container = document.querySelector(".container") || document.body;
+          container.prepend(banner);
+        }
+        if (status.active) {
+          const strong = document.createElement("strong");
+          strong.textContent = a && a.title ? a.title : "خصم العرض متاح الآن";
+          banner.replaceChildren(strong, document.createTextNode("تم تطبيق خصم " + status.orderPercent + "% على الفاتورة"));
+        } else {
+          const strong = document.createElement("strong");
+          strong.textContent = a && a.title ? a.title : "عرض خاص لطلبات القيمة الأعلى";
+          banner.replaceChildren(strong, document.createTextNode("أضف " + status.remaining.toLocaleString("ar-EG") + " ج.م لتحصل على خصم " + status.orderPercent + "%"));
+        }
+      }
+
       function updateCartUI() {
         const bar = document.getElementById("cart-bar");
         let totalQty = 0;
@@ -2686,10 +2733,14 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           totalQty += cart[id].qty;
           subTotal += cart[id].price * cart[id].qty;
         }
+        updateOrderAnnouncement(subTotal);
 
         let discountVal = 0;
         if (appliedCoupon) {
           discountVal = appliedCoupon.amount;
+        }
+        if (typeof window.calculateOrderOfferDiscount === "function") {
+          discountVal += window.calculateOrderOfferDiscount(subTotal);
         }
 
         const orderTypeInput = document.querySelector(
@@ -2716,6 +2767,13 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
         let detailsHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>المجموع:</span><span>${subTotal.toLocaleString()} ج.م</span></div>`;
 
+        if (typeof window.getOrderOfferStatus === "function") {
+          const offerStatus = window.getOrderOfferStatus(subTotal);
+          if (offerStatus && !offerStatus.active) {
+            detailsHTML += `<div style="margin:8px 0;padding:9px 10px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-size:12px;font-weight:800;text-align:center;">أضف ${offerStatus.remaining.toLocaleString()} ج.م لتحصل على خصم ${offerStatus.orderPercent}%</div>`;
+          }
+        }
+
         if (accounting.tax > 0) {
           detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>ضريبة (${accounting.tax}%):</span><span>${taxVal.toLocaleString()} ج.م</span></div>`;
         }
@@ -2724,7 +2782,15 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         }
 
         if (discountVal > 0) {
-          detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--success); font-weight:bold;"><span>خصم (${appliedCoupon.code}):</span><span>-${discountVal.toLocaleString()} ج.م</span></div>`;
+          if (appliedCoupon) {
+            detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--success); font-weight:bold;"><span>خصم (${appliedCoupon.code}):</span><span>-${appliedCoupon.amount.toLocaleString()} ج.م</span></div>`;
+          }
+          const offerDiscount = typeof window.calculateOrderOfferDiscount === "function"
+            ? window.calculateOrderOfferDiscount(subTotal)
+            : 0;
+          if (offerDiscount > 0) {
+            detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--success); font-weight:bold;"><span>خصم العرض:</span><span>-${offerDiscount.toLocaleString()} ج.م</span></div>`;
+          }
         }
 
         let summaryContainer = document.getElementById("cart-summary-details");
@@ -2851,6 +2917,13 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             discountVal = appliedCoupon.amount;
             msg += `🎟️ خصم كوبون (${appliedCoupon.code}): -${discountVal} ج.م\n`;
         }
+        const offerDiscount = typeof window.calculateOrderOfferDiscount === "function"
+            ? window.calculateOrderOfferDiscount(total)
+            : 0;
+        if (offerDiscount > 0) {
+            discountVal += offerDiscount;
+            msg += `🎉 خصم العرض: -${offerDiscount} ج.م\n`;
+        }
 
         const grandTotal = total + taxVal + serviceVal - discountVal;
 
@@ -2894,7 +2967,11 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
         const taxVal = (subTotal * accounting.tax) / 100;
         const serviceVal = orderType === "dining" ? (subTotal * accounting.service) / 100 : 0;
-        const discountVal = appliedCoupon ? appliedCoupon.amount : 0;
+        const couponDiscount = appliedCoupon ? appliedCoupon.amount : 0;
+        const offerDiscount = typeof window.calculateOrderOfferDiscount === "function"
+            ? window.calculateOrderOfferDiscount(subTotal)
+            : 0;
+        const discountVal = couponDiscount + offerDiscount;
 
         let finalTotal = subTotal + taxVal + serviceVal - discountVal;
         if (finalTotal < 0) finalTotal = 0;
@@ -3365,6 +3442,32 @@ function trackOrder(orderId) {
           });
         };
 
+        window.calculateOrderOfferDiscount = function (subTotal) {
+          const status = window.getOrderOfferStatus
+            ? window.getOrderOfferStatus(subTotal)
+            : null;
+          if (!status || !status.active) return 0;
+          return Math.round(Number(subTotal) * status.orderPercent / 100 * 100) / 100;
+        };
+
+        window.getOrderOfferStatus = function (subTotal) {
+          let best = null;
+          (window.__announcements || []).filter((a) => {
+            if (!a || a.enabled === false) return false;
+            const now = Date.now(), s = ts(a.startsAt), e = ts(a.endsAt);
+            return (s === null || now >= s) && (e === null || now <= e);
+          }).forEach((a) => {
+            const minAmount = Number(a.minAmount) || 0;
+            const orderPercent = Number(a.orderPercent) || 0;
+            if (orderPercent > 0 && (!best || minAmount > best.minAmount)) {
+              best = { minAmount, orderPercent };
+            }
+          });
+          if (!best) return null;
+          if (Number(subTotal) >= best.minAmount) return { active: true, ...best };
+          return { active: false, remaining: Math.max(0, best.minAmount - Number(subTotal)), ...best };
+        };
+
         function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
         function seenKey(o) { return "offer_seen_" + o.id + "_" + hash([o.title, o.message, o.heroText, o.discountPercent, o.badgeText, o.endsAt, o.theme, o.colorA, o.colorB].join("|")); }
         function wasSeen(o) {
@@ -3393,19 +3496,22 @@ function trackOrder(orderId) {
         }
         function scopeChipsRaw(o) {
           const raw = window.__rawMenu || [];
+          let h = "";
           if (o.scope === "categories" && (o.categories || []).length) {
             const c = o.categories;
-            let h = c.slice(0, 4).map((x) => '<span class="offer-chip">' + esc(x) + "</span>").join("");
+            h += c.slice(0, 4).map((x) => '<span class="offer-chip">' + esc(x) + "</span>").join("");
             if (c.length > 4) h += '<span class="offer-chip">+' + (c.length - 4) + "</span>";
             return h;
           }
           if (o.scope === "products" && (o.productIds || []).length) {
             const names = raw.filter((p) => o.productIds.indexOf(p._id) > -1).map((p) => (p.name && p.name.ar) || "");
-            let h = names.slice(0, 3).map((x) => '<span class="offer-chip">' + esc(x) + "</span>").join("");
+            h += names.slice(0, 3).map((x) => '<span class="offer-chip">' + esc(x) + "</span>").join("");
             if (names.length > 3) h += '<span class="offer-chip">+' + (names.length - 3) + "</span>";
             return h;
           }
-          return '<span class="offer-chip"><i class="fas fa-store" style="margin-left:5px"></i>على المنيو بالكامل</span>';
+          if (!h) h = '<span class="offer-chip"><i class="fas fa-store" style="margin-left:5px"></i>على المنيو بالكامل</span>';
+          else if (o.scope === "all") h += '<span class="offer-chip"><i class="fas fa-store" style="margin-left:5px"></i>على المنيو بالكامل</span>';
+          return h;
         }
         function confettiHTML() {
           let h = "";

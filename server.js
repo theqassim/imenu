@@ -778,8 +778,45 @@ function ensureOffersColumn() {
   return _offersMigrationPromise;
 }
 
+let _announcementsColumnReady = false;
+let _announcementsMigrationPromise = null;
+function ensureAnnouncementsColumn() {
+  if (_announcementsColumnReady) return Promise.resolve(true);
+  if (_announcementsMigrationPromise) return _announcementsMigrationPromise;
+
+  _announcementsMigrationPromise = (async () => {
+    const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+    if (!dbUrl) {
+      console.warn("⚠️ DATABASE_URL غير موجود — لن يتم إنشاء عمود announcements تلقائياً.");
+      return false;
+    }
+    let client;
+    try {
+      const { Client } = require("pg");
+      client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+      client.on("error", (e) => console.error("⚠️ pg client error (announcements):", e.message));
+      await client.connect();
+      await client.query("ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS announcements jsonb NOT NULL DEFAULT '[]'::jsonb");
+      await client.query("NOTIFY pgrst, 'reload schema'");
+      _announcementsColumnReady = true;
+      console.log("✅ عمود announcements جاهز في جدول restaurants");
+      await new Promise((r) => setTimeout(r, 1500));
+      return true;
+    } catch (e) {
+      console.error("❌ فشل إضافة عمود announcements تلقائياً:", e.message);
+      return false;
+    } finally {
+      if (client) { try { await client.end(); } catch (_) {} }
+      _announcementsMigrationPromise = null;
+    }
+  })();
+  return _announcementsMigrationPromise;
+}
+
 const isMissingOffersColumn = (err) =>
   !!err && /offers/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
+const isMissingAnnouncementsColumn = (err) =>
+  !!err && /announcements/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
 
 const _clampNum = (v, min, max, def) => {
   const n = Number(v);
@@ -848,6 +885,23 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       try { updateData.offers = JSON.parse(updateData.offers); } catch (e) { delete updateData.offers; }
     }
     if (Array.isArray(updateData.offers)) updateData.offers = updateData.offers.map(sanitizeOfferBgImages);
+    if (typeof updateData.announcements === "string") {
+      try { updateData.announcements = JSON.parse(updateData.announcements); } catch (e) { delete updateData.announcements; }
+    }
+    if (Array.isArray(updateData.announcements)) {
+      updateData.announcements = updateData.announcements.slice(0, 10).map((a) => ({
+        id: typeof a.id === "string" ? a.id.slice(0, 80) : "ann_" + Date.now().toString(36),
+        enabled: a.enabled !== false,
+        title: typeof a.title === "string" ? a.title.trim().slice(0, 80) : "",
+        message: typeof a.message === "string" ? a.message.trim().slice(0, 240) : "",
+        minAmount: _clampNum(a.minAmount, 0, 100000000, 0),
+        orderPercent: _clampNum(a.orderPercent, 0, 100, 0),
+        startsAt: typeof a.startsAt === "string" ? a.startsAt : null,
+        endsAt: typeof a.endsAt === "string" ? a.endsAt : null,
+        theme: ["gold", "fire", "royal", "emerald", "night", "rose", "brown"].includes(a.theme) ? a.theme : "fire",
+        position: ["top", "cart"].includes(a.position) ? a.position : "top",
+      })).filter((a) => a.title || a.message);
+    }
     if (updateData.customUI && typeof updateData.customUI === "string") {
       try { updateData.customUI = JSON.parse(updateData.customUI); } catch (e) { updateData.customUI = {}; }
     }
@@ -896,6 +950,10 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
 
     if (error && isMissingOffersColumn(error)) {
       const created = await ensureOffersColumn();
+      if (created) ({ data: updatedRestaurant, error } = await runUpdate());
+    }
+    if (error && isMissingAnnouncementsColumn(error)) {
+      const created = await ensureAnnouncementsColumn();
       if (created) ({ data: updatedRestaurant, error } = await runUpdate());
     }
 
@@ -3819,6 +3877,7 @@ process.on("unhandledRejection", (r) => console.error("🔥 unhandledRejection:"
 process.on("uncaughtException", (e) => console.error("🔥 uncaughtException:", e));
 
 ensureOffersColumn().catch(() => {});
+ensureAnnouncementsColumn().catch(() => {});
 ensureSiteSettingsTable().catch(() => {});
 
 const PORT = process.env.PORT || 3000;

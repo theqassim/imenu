@@ -3359,6 +3359,18 @@
             <button class="btn btn-primary" type="button" onclick="ofrOpenEditor()"><i class="fas fa-plus"></i> عرض جديد</button>
           </div>
           <div id="ofr-list" class="ofr-list"></div>
+          <div class="card" style="margin-top:20px">
+            <h3 style="color:var(--primary);margin-top:0"><i class="fas fa-bullhorn"></i> تنبيهات الحد الأدنى للطلب</h3>
+            <div style="color:var(--secondary);font-size:12px;margin-bottom:14px">تنبيه مستقل في المنيو والسلة، ويحصل خصم الفاتورة فقط عند تجاوز الحد المحدد.</div>
+            <div id="ann-list"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div><label class="ofr-lbl">عنوان التنبيه</label><input type="text" id="ann-title" maxlength="80" placeholder="مثال: عرض خاص لطلبات 500 جنيه+" /></div>
+              <div><label class="ofr-lbl">الحد الأدنى (ج.م)</label><input type="number" id="ann-min" min="0" step="1" value="500" /></div>
+              <div><label class="ofr-lbl">خصم الفاتورة %</label><input type="number" id="ann-percent" min="0" max="100" step="1" value="20" /></div>
+              <div><label class="ofr-lbl">نص الرسالة</label><input type="text" id="ann-message" maxlength="240" placeholder="خصم 20% على الفاتورة عند تجاوز الحد" /></div>
+            </div>
+            <button type="button" class="btn btn-primary" style="margin-top:12px" onclick="annSave()"><i class="fas fa-plus"></i> إضافة التنبيه</button>
+          </div>
         </div>
 
        <div id="view-design" class="hidden">
@@ -3828,6 +3840,8 @@
             window.currentRestaurantSlug = data.restaurant.slug;
             window.offersData = Array.isArray(data.restaurant.offers) ? data.restaurant.offers : [];
             if (typeof window.ofrRender === "function") window.ofrRender();
+            window.announcementsData = Array.isArray(data.restaurant.announcements) ? data.restaurant.announcements : [];
+            if (typeof window.annRender === "function") window.annRender();
 
             document.getElementById("set-orderMode").value = "view_only";
             renderSocialLinksEditor(data.restaurant.socialLinks || {});
@@ -10486,7 +10500,6 @@ function calculatePreviewTotals() {
           <div><label class="ofr-lbl">يبدأ (اختياري)</label><input type="datetime-local" id="ofr-start" /></div>
           <div><label class="ofr-lbl">ينتهي (اختياري)</label><input type="datetime-local" id="ofr-end" /></div>
         </div>
-
         <div class="ofr-sec">الشكل</div>
         <div class="ofr-chips" id="ofr-themes"></div>
         <label class="ofr-lbl">🎨 أو اختار لون الإعلان بنفسك (فاتح ← غامق)</label>
@@ -10785,6 +10798,58 @@ function calculatePreviewTotals() {
           var r = await Swal.fire({ title: "حذف العرض؟", text: "مش هتقدر ترجعه تاني", icon: "warning", showCancelButton: true, confirmButtonText: "حذف", cancelButtonText: "إلغاء" });
           if (!r.isConfirmed) return;
           var arr = list().slice(); arr.splice(i, 1); persist(arr, "تم حذف العرض");
+        };
+      })();
+    </script>
+
+    <script>
+      (function () {
+        function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]; }); }
+        function list() { return Array.isArray(window.announcementsData) ? window.announcementsData : []; }
+        async function persist(arr, message) {
+          var rId = document.getElementById("restaurant-id").value;
+          var res = await fetch("/api/v1/restaurants/" + rId, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+            body: JSON.stringify({ announcements: arr })
+          });
+          var data = await res.json().catch(function () { return {}; });
+          if (!res.ok) { Swal.fire("خطأ", data.message || "فشل حفظ التنبيه", "error"); return false; }
+          window.announcementsData = arr;
+          window.annRender();
+          Swal.fire({ toast: true, position: "top", icon: "success", title: message, showConfirmButton: false, timer: 1800 });
+          return true;
+        }
+        window.annRender = function () {
+          var box = document.getElementById("ann-list");
+          if (!box) return;
+          var arr = list();
+          box.innerHTML = arr.length ? arr.map(function (a, i) {
+            return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border-color);border-radius:12px;padding:10px;margin-bottom:8px">' +
+              '<div><b>' + esc(a.title || "تنبيه الطلب") + '</b><div style="font-size:12px;color:var(--secondary)">من ' + Number(a.minAmount || 0).toLocaleString("ar-EG") + ' ج.م • خصم فاتورة ' + Number(a.orderPercent || 0) + '%</div></div>' +
+              '<div style="display:flex;gap:6px"><button type="button" class="btn" onclick="annToggle(' + i + ')">' + (a.enabled !== false ? "إيقاف" : "تفعيل") + '</button><button type="button" class="btn" style="color:var(--danger)" onclick="annDelete(' + i + ')">حذف</button></div></div>';
+          }).join("") : '<div style="text-align:center;color:#94a3b8;padding:12px">لا توجد تنبيهات منفصلة حالياً</div>';
+        };
+        window.annSave = async function () {
+          var title = document.getElementById("ann-title").value.trim();
+          var message = document.getElementById("ann-message").value.trim();
+          var minAmount = Number(document.getElementById("ann-min").value) || 0;
+          var orderPercent = Number(document.getElementById("ann-percent").value) || 0;
+          if (!title && !message) return Swal.fire("تنبيه", "اكتب عنوان أو رسالة للتنبيه", "warning");
+          if (minAmount < 0) return Swal.fire("تنبيه", "الحد الأدنى لازم يكون صفر أو أكتر", "warning");
+          if (orderPercent < 0 || orderPercent > 100) return Swal.fire("تنبيه", "نسبة خصم الفاتورة بين 0 و 100", "warning");
+          var arr = list().slice();
+          arr.push({ id:"ann_" + Date.now().toString(36), enabled:true, title:title, message:message, minAmount:minAmount, orderPercent:orderPercent, startsAt:null, endsAt:null, theme:"fire", position:"top" });
+          if (await persist(arr, "تم إضافة التنبيه")) {
+            document.getElementById("ann-title").value = "";
+            document.getElementById("ann-message").value = "";
+          }
+        };
+        window.annToggle = function (i) { var arr = list().map(function (a) { return Object.assign({}, a); }); arr[i].enabled = arr[i].enabled === false ? true : false; persist(arr, arr[i].enabled ? "تم تفعيل التنبيه" : "تم إيقاف التنبيه"); };
+        window.annDelete = async function (i) {
+          var r = await Swal.fire({ title:"حذف التنبيه؟", icon:"warning", showCancelButton:true, confirmButtonText:"حذف", cancelButtonText:"إلغاء" });
+          if (!r.isConfirmed) return;
+          var arr = list().slice(); arr.splice(i, 1); persist(arr, "تم حذف التنبيه");
         };
       })();
     </script>
