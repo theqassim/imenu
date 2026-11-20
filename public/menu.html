@@ -186,6 +186,13 @@
       }
       .an-cta:active { transform: scale(0.97); }
       .an-cta::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgba(0, 0, 0, 0.14), transparent); transform: skewX(-20deg); animation: offerShine 2.8s ease-in-out infinite; }
+      /* بوب أب التنبيه: بيستخدم نفس شكل بوب أب العروض (offer-*) */
+      .an-ptimer { display: flex; gap: 8px; justify-content: center; direction: ltr; margin-bottom: 16px; }
+      .an-ptimer .t { min-width: 56px; padding: 8px 0; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--border); text-align: center; }
+      .an-ptimer .t b { display: block; font-size: 21px; font-weight: 900; color: var(--ob); font-variant-numeric: tabular-nums; }
+      .an-ptimer .t small { font-size: 10px; color: var(--text-sub); font-weight: 700; }
+      .an-pop-hint { text-align: center; font-weight: 900; font-size: 15px; line-height: 2.1; margin: 0 0 14px; }
+      .an-pop-hint em { font-style: normal; display: inline-block; padding: 1px 12px; border-radius: 99px; margin: 0 3px; color: var(--ob); background: var(--input-bg); border: 1px solid var(--border); }
       @keyframes anIn { from { opacity: 0; transform: translateY(-18px) scale(0.92); } to { opacity: 1; transform: none; } }
       @keyframes anGlow { 0%, 100% { box-shadow: 0 18px 40px -10px var(--ob), 0 0 0 0 rgba(255, 255, 255, 0.6); } 50% { box-shadow: 0 18px 44px -8px var(--ob), 0 0 0 9px rgba(255, 255, 255, 0); } }
       @media (max-width: 380px) { .an-badge { width: 86px; height: 86px; } .an-pct { font-size: 29px; } .an-title { font-size: 18px; } .an-top { gap: 14px; } }
@@ -2453,6 +2460,7 @@
 
             renderMenu(data.data.menu);
             if (typeof initOffersPopup === "function") initOffersPopup();
+            if (typeof initAnnouncementPopup === "function") initAnnouncementPopup();
           }
         } catch (err) {
           console.log(err);
@@ -2877,6 +2885,177 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         }
         window.__anWasActive = !!status.active;
       }
+
+      /* ===== بوب أب التنبيه (بيتفتح بعد بوب أب العروض لو فيه واحد) ===== */
+      (function () {
+        const THEMES = ["gold", "fire", "royal", "emerald", "night", "rose", "brown"];
+        const nf = (n) => Number(n).toLocaleString("ar-EG");
+        const el = (tag, cls, txt) => {
+          const e = document.createElement(tag);
+          if (cls) e.className = cls;
+          if (txt != null) e.textContent = txt;
+          return e;
+        };
+        let timer = null;
+        const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); };
+        const freqOf = (a) => (["session", "once", "daily", "always"].includes(a.popupFreq) ? a.popupFreq : "session");
+        const seenKey = (a) => "ann_seen_" + a.id + "_" + hash([a.title, a.message, a.minAmount, a.orderPercent, a.endsAt, a.theme, a.colorA, a.colorB, a.tagText, a.buttonText].join("|"));
+        function wasSeen(a) {
+          try {
+            const f = freqOf(a);
+            if (f === "always") return false;
+            if (f === "session") return sessionStorage.getItem(seenKey(a)) === "1";
+            const v = localStorage.getItem(seenKey(a));
+            return f === "once" ? v === "1" : v === new Date().toDateString();
+          } catch (e) { return false; }
+        }
+        function markSeen(a) {
+          try {
+            const f = freqOf(a);
+            if (f === "always") return;
+            if (f === "session") sessionStorage.setItem(seenKey(a), "1");
+            else if (f === "once") localStorage.setItem(seenKey(a), "1");
+            else localStorage.setItem(seenKey(a), new Date().toDateString());
+          } catch (e) {}
+        }
+        function subTotal() { let s = 0; for (const id in cart) s += cart[id].price * cart[id].qty; return s; }
+        function current() {
+          if (typeof window.getOrderOfferStatus !== "function") return null;
+          const sub = subTotal();
+          const status = window.getOrderOfferStatus(sub);
+          if (!status) return null;
+          const a = (window.__announcements || []).find((x) => x && x.enabled !== false &&
+            (Number(x.orderPercent) || 0) === status.orderPercent && (Number(x.minAmount) || 0) === status.minAmount);
+          return a ? { a, status, sub } : null;
+        }
+        function content(c) {
+          const { a, status, sub } = c;
+          const theme = THEMES.includes(a.theme) ? a.theme : "fire";
+          const slide = el("div", "offer-slide oc-" + theme);
+          if (/^#[0-9a-f]{6}$/i.test(a.colorA || "") && /^#[0-9a-f]{6}$/i.test(a.colorB || "")) {
+            slide.style.setProperty("--oa", a.colorA);
+            slide.style.setProperty("--ob", a.colorB);
+          }
+          const hero = el("div", "offer-hero");
+          const cf = el("div", "offer-confetti");
+          const cols = ["#ffffff", "#ffe08a", "#ffb3c1", "#bff3d4", "#cfe3ff"];
+          for (let i = 0; i < 22; i++) {
+            const s = el("span");
+            s.style.left = Math.random() * 100 + "%";
+            s.style.background = cols[i % cols.length];
+            s.style.animationDuration = 3 + Math.random() * 3 + "s";
+            s.style.animationDelay = -Math.random() * 5 + "s";
+            cf.append(s);
+          }
+          const badge = el("div", "offer-badge");
+          const pct = el("span", "pct", nf(status.orderPercent) + "%");
+          pct.dir = "ltr"; pct.style.fontSize = "44px";
+          badge.append(pct, el("span", "off", "خصم"));
+          const ic = el("div", "offer-badge-icon"); ic.append(el("i", "fas fa-gift"));
+          badge.append(ic);
+          hero.append(cf, badge);
+
+          const body = el("div", "offer-body");
+          body.append(el("h2", "offer-title", a.title || "خصم " + nf(status.orderPercent) + "% على طلبك"));
+          if (a.message) body.append(el("p", "offer-msg", a.message));
+          const chips = el("div", "offer-scope");
+          const tagText = typeof a.tagText === "string" ? a.tagText : "⚡ عرض خاص على الفاتورة كلها";
+          if (tagText) chips.append(el("span", "offer-chip", tagText));
+          chips.append(el("span", "offer-chip", "🧾 على الفاتورة كلها"), el("span", "offer-chip", "من " + nf(status.minAmount) + " ج.م"));
+          body.append(chips);
+
+          const hint = el("p", "an-pop-hint");
+          if (status.active) hint.append("✅ الخصم متطبق على طلبك — وفّرت ", el("em", "", nf(Math.round(window.calculateOrderOfferDiscount ? window.calculateOrderOfferDiscount(sub) : 0)) + " ج.م"));
+          else if (sub > 0) hint.append("فاضل ", el("em", "", nf(Math.ceil(status.remaining)) + " ج.م"), " وتاخد خصم " + nf(status.orderPercent) + "% 🔥");
+          else hint.append("اطلب بـ ", el("em", "", nf(status.minAmount) + " ج.م"), " أو أكتر وخد خصم " + nf(status.orderPercent) + "% 🎁");
+          body.append(hint);
+
+          const end = a.endsAt ? Date.parse(a.endsAt) : NaN;
+          if (!isNaN(end) && end > Date.now()) {
+            body.append(el("div", "offer-timer-label", "⏳ العرض ينتهي خلال"));
+            const t = el("div", "an-ptimer"); t.dataset.end = String(end);
+            [["d", "يوم"], ["h", "ساعة"], ["m", "دقيقة"], ["s", "ثانية"]].forEach(([k, label]) => {
+              const box = el("div", "t t-" + k); box.append(el("b", "", "00"), el("small", "", label)); t.append(box);
+            });
+            body.append(t);
+          }
+          const cta = el("button", "offer-cta", (status.active ? "راجع السلة وأكّد الطلب 🛒" : (a.buttonText || "ابدأ اطلب دلوقتي")) + (status.active ? "" : " 🎉"));
+          cta.type = "button";
+          cta.onclick = () => {
+            close();
+            if (status.active) return setTimeout(openCart, 350);
+            const m = document.getElementById("menu-container");
+            const hh = (document.querySelector(".sticky-header") || {}).offsetHeight || 0;
+            if (m) setTimeout(() => window.scrollTo({ top: m.getBoundingClientRect().top + window.scrollY - hh - 6, behavior: "smooth" }), 350);
+          };
+          body.append(cta);
+          slide.append(hero, body);
+          return slide;
+        }
+        function tick() {
+          document.querySelectorAll(".an-ptimer").forEach((t) => {
+            const diff = Number(t.dataset.end) - Date.now();
+            if (diff <= 0) { t.style.display = "none"; return; }
+            const p = (n) => String(n).padStart(2, "0");
+            const d = Math.floor(diff / 86400000);
+            t.querySelector(".t-d").style.display = d > 0 ? "" : "none";
+            t.querySelector(".t-d b").textContent = p(d);
+            t.querySelector(".t-h b").textContent = p(Math.floor((diff % 86400000) / 3600000));
+            t.querySelector(".t-m b").textContent = p(Math.floor((diff % 3600000) / 60000));
+            t.querySelector(".t-s b").textContent = p(Math.floor((diff % 60000) / 1000));
+          });
+        }
+        function open(c) {
+          let ov = document.getElementById("an-overlay");
+          if (!ov) {
+            ov = el("div", "offer-overlay"); ov.id = "an-overlay";
+            ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".offer-close")) close(); });
+            document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+            document.body.append(ov);
+          }
+          const card = el("div", "offer-card");
+          card.setAttribute("role", "dialog"); card.setAttribute("aria-modal", "true");
+          const x = el("button", "offer-close"); x.type = "button"; x.setAttribute("aria-label", "إغلاق"); x.append(el("i", "fas fa-times"));
+          card.append(x, content(c));
+          ov.replaceChildren(card);
+          markSeen(c.a);
+          ov.classList.add("show");
+          document.body.style.overflow = "hidden";
+          requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add("in")));
+          tick(); clearInterval(timer); timer = setInterval(tick, 1000);
+        }
+        function close() {
+          const ov = document.getElementById("an-overlay");
+          if (!ov || !ov.classList.contains("show")) return;
+          ov.classList.remove("in");
+          document.body.style.overflow = "";
+          clearInterval(timer);
+          setTimeout(() => { if (!ov.classList.contains("in")) ov.classList.remove("show"); }, 380);
+        }
+        function waitAndOpen(id) {
+          let tries = 0;
+          clearInterval(window.__anWait);
+          window.__anWait = setInterval(() => {
+            tries++;
+            const off = document.getElementById("offer-overlay");
+            if (off && off.classList.contains("show")) { if (tries > 240) clearInterval(window.__anWait); return; } // استنى بوب أب العروض يخلص
+            if (tries < 3) return; // أول ~1.5 ثانية: نسيب بوب أب العروض يفتح الأول لو فيه
+            clearInterval(window.__anWait);
+            const c = current();
+            if (c && c.a.id === id && !wasSeen(c.a)) open(c);
+          }, 500);
+        }
+        window.initAnnouncementPopup = function () {
+          const first = !window.__anPopInit;
+          const known = window.__anKnown || [];
+          window.__anPopInit = true;
+          const c = current();
+          if (!c) { window.__anKnown = []; close(); return; }
+          window.__anKnown = [c.a.id];
+          if (c.a.showPopup === false || wasSeen(c.a)) return;
+          if (first || known.indexOf(c.a.id) === -1) waitAndOpen(c.a.id);
+        };
+      })();
 
       function updateCartUI() {
         const bar = document.getElementById("cart-bar");

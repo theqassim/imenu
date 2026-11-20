@@ -869,6 +869,8 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
         colorB: _annHex(a.colorA) && _annHex(a.colorB) ? _annHex(a.colorB) : "",
         ...(typeof a.tagText === "string" ? { tagText: a.tagText.trim().slice(0, 40) } : {}),
         buttonText: typeof a.buttonText === "string" ? a.buttonText.trim().slice(0, 30) : "",
+        showPopup: a.showPopup !== false,
+        popupFreq: ["session", "once", "daily", "always"].includes(a.popupFreq) ? a.popupFreq : "session",
       })).filter((a) => a.title || a.message);
       delete updateData.announcements;
       const { data: currentRestaurant, error: currentRestaurantError } = await supabase

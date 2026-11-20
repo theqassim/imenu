@@ -3373,6 +3373,14 @@
               <div><label class="ofr-lbl">النص الصغير فوق العنوان (فاضي = يختفي)</label><input type="text" id="ann-tag" maxlength="40" oninput="annPreview()" /></div>
               <div><label class="ofr-lbl">نص الزرار (فاضي = الافتراضي)</label><input type="text" id="ann-btn" maxlength="30" oninput="annPreview()" placeholder="ابدأ اطلب دلوقتي 🔥" /></div>
             </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:14px"><label class="toggle-switch"><input type="checkbox" id="ann-popup" checked><span class="slider"></span></label><span style="font-size:13px;font-weight:700">أظهر بوب أب للعميل أول ما يفتح المنيو (غير البانر اللي فوق)</span></div>
+            <div style="margin-top:10px"><label class="ofr-lbl">تكرار ظهور البوب أب</label>
+              <select id="ann-freq">
+                <option value="session">مرة كل جلسة</option>
+                <option value="always">في كل زيارة</option>
+                <option value="daily">مرة كل يوم</option>
+                <option value="once">مرة واحدة فقط</option>
+              </select></div>
             <label class="ofr-lbl" style="margin-top:12px">ألوان جاهزة</label>
             <div id="ann-swatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -10879,6 +10887,7 @@ function calculatePreviewTotals() {
           $("ann-tag").value = DEFAULT_TAG; $("ann-btn").value = "";
           $("ann-colorA").value = PRESETS.fire[0]; $("ann-colorB").value = PRESETS.fire[1];
           $("ann-start").value = ""; $("ann-end").value = "";
+          $("ann-popup").checked = true; $("ann-freq").value = "session";
           $("ann-form-title").textContent = "تنبيه جديد";
           $("ann-save-btn").innerHTML = '<i class="fas fa-plus"></i> إضافة التنبيه';
           $("ann-cancel-btn").classList.add("hidden");
@@ -10907,6 +10916,7 @@ function calculatePreviewTotals() {
           $("ann-tag").value = typeof a.tagText === "string" ? a.tagText : DEFAULT_TAG; $("ann-btn").value = a.buttonText || "";
           $("ann-colorA").value = c[0]; $("ann-colorB").value = c[1];
           $("ann-start").value = toLocal(a.startsAt); $("ann-end").value = toLocal(a.endsAt);
+          $("ann-popup").checked = a.showPopup !== false; $("ann-freq").value = a.popupFreq || "session";
           $("ann-form-title").textContent = "تعديل التنبيه";
           $("ann-save-btn").innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
           $("ann-cancel-btn").classList.remove("hidden");
@@ -10931,7 +10941,8 @@ function calculatePreviewTotals() {
             title: title, message: message, minAmount: minAmount, orderPercent: orderPercent,
             startsAt: sVal ? new Date(sVal).toISOString() : null, endsAt: eVal ? new Date(eVal).toISOString() : null,
             theme: curTheme, position: "top", colorA: $("ann-colorA").value, colorB: $("ann-colorB").value,
-            tagText: $("ann-tag").value.trim(), buttonText: $("ann-btn").value.trim()
+            tagText: $("ann-tag").value.trim(), buttonText: $("ann-btn").value.trim(),
+            showPopup: $("ann-popup").checked, popupFreq: $("ann-freq").value
           };
           var wasEditing = editing !== null;
           if (wasEditing) arr[editing] = o; else arr.push(o);
