@@ -779,46 +779,8 @@ function ensureOffersColumn() {
   return _offersMigrationPromise;
 }
 
-let _announcementsColumnReady = false;
-let _announcementsMigrationPromise = null;
-function ensureAnnouncementsColumn() {
-  if (_announcementsColumnReady) return Promise.resolve(true);
-  if (_announcementsMigrationPromise) return _announcementsMigrationPromise;
-
-  _announcementsMigrationPromise = (async () => {
-    const dbUrl = process.env.SUPABASE_DB_URL ||
-      (/^postgres(ql)?:\/\//i.test(process.env.DATABASE_URL || "") ? process.env.DATABASE_URL : "");
-    if (!dbUrl) {
-      console.error("❌ إنشاء عمود announcements يتطلب SUPABASE_DB_URL أو DATABASE_URL بصيغة PostgreSQL.");
-      return false;
-    }
-    let client;
-    try {
-      const { Client } = require("pg");
-      client = new Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
-      client.on("error", (e) => console.error("⚠️ pg client error (announcements):", e.message));
-      await client.connect();
-      await client.query("ALTER TABLE public.restaurants ADD COLUMN IF NOT EXISTS announcements jsonb NOT NULL DEFAULT '[]'::jsonb");
-      await client.query("NOTIFY pgrst, 'reload schema'");
-      _announcementsColumnReady = true;
-      console.log("✅ عمود announcements جاهز في جدول restaurants");
-      await new Promise((r) => setTimeout(r, 5000));
-      return true;
-    } catch (e) {
-      console.error("❌ فشل إضافة عمود announcements تلقائياً:", e.message);
-      return false;
-    } finally {
-      if (client) { try { await client.end(); } catch (_) {} }
-      _announcementsMigrationPromise = null;
-    }
-  })();
-  return _announcementsMigrationPromise;
-}
-
 const isMissingOffersColumn = (err) =>
   !!err && /offers/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
-const isMissingAnnouncementsColumn = (err) =>
-  !!err && /announcements/i.test(err.message || "") && /(schema cache|column|does not exist)/i.test(err.message || "");
 
 const _clampNum = (v, min, max, def) => {
   const n = Number(v);
@@ -891,7 +853,7 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       try { updateData.announcements = JSON.parse(updateData.announcements); } catch (e) { delete updateData.announcements; }
     }
     if (Array.isArray(updateData.announcements)) {
-      updateData.announcements = updateData.announcements.slice(0, 10).map((a) => ({
+      const announcements = updateData.announcements.slice(0, 10).map((a) => ({
         id: typeof a.id === "string" ? a.id.slice(0, 80) : "ann_" + Date.now().toString(36),
         enabled: a.enabled !== false,
         title: typeof a.title === "string" ? a.title.trim().slice(0, 80) : "",
@@ -903,6 +865,21 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
         theme: ["gold", "fire", "royal", "emerald", "night", "rose", "brown"].includes(a.theme) ? a.theme : "fire",
         position: ["top", "cart"].includes(a.position) ? a.position : "top",
       })).filter((a) => a.title || a.message);
+      delete updateData.announcements;
+      const { data: currentRestaurant, error: currentRestaurantError } = await supabase
+        .from("restaurants")
+        .select("customUI")
+        .eq("_id", req.params.id)
+        .single();
+      if (currentRestaurantError) throw currentRestaurantError;
+      const currentCustomUI = currentRestaurant && currentRestaurant.customUI && typeof currentRestaurant.customUI === "object"
+        ? currentRestaurant.customUI
+        : {};
+      updateData.customUI = {
+        ...currentCustomUI,
+        ...(updateData.customUI && typeof updateData.customUI === "object" ? updateData.customUI : {}),
+        orderAnnouncements: announcements,
+      };
     }
     if (updateData.customUI && typeof updateData.customUI === "string") {
       try { updateData.customUI = JSON.parse(updateData.customUI); } catch (e) { updateData.customUI = {}; }
@@ -953,16 +930,6 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
     if (error && isMissingOffersColumn(error)) {
       const created = await ensureOffersColumn();
       if (created) ({ data: updatedRestaurant, error } = await runUpdate());
-    }
-    if (error && isMissingAnnouncementsColumn(error)) {
-      const created = await ensureAnnouncementsColumn();
-      if (created) {
-        for (let attempt = 0; attempt < 4 && error; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 1000));
-          ({ data: updatedRestaurant, error } = await runUpdate());
-        }
-      }
-      if (!created) throw new Error("تعذر إنشاء عمود announcements تلقائياً. أضف SUPABASE_DB_URL لبيئة السيرفر بصيغة PostgreSQL، ثم أعد التشغيل.");
     }
 
     if (error) throw error;
@@ -3885,7 +3852,6 @@ process.on("unhandledRejection", (r) => console.error("🔥 unhandledRejection:"
 process.on("uncaughtException", (e) => console.error("🔥 uncaughtException:", e));
 
 ensureOffersColumn().catch(() => {});
-ensureAnnouncementsColumn().catch(() => {});
 ensureSiteSettingsTable().catch(() => {});
 
 const PORT = process.env.PORT || 3000;

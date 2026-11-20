@@ -3840,7 +3840,9 @@
             window.currentRestaurantSlug = data.restaurant.slug;
             window.offersData = Array.isArray(data.restaurant.offers) ? data.restaurant.offers : [];
             if (typeof window.ofrRender === "function") window.ofrRender();
-            window.announcementsData = Array.isArray(data.restaurant.announcements) ? data.restaurant.announcements : [];
+            window.announcementsData = Array.isArray(data.restaurant.customUI && data.restaurant.customUI.orderAnnouncements)
+              ? data.restaurant.customUI.orderAnnouncements
+              : (Array.isArray(data.restaurant.announcements) ? data.restaurant.announcements : []);
             if (typeof window.annRender === "function") window.annRender();
 
             document.getElementById("set-orderMode").value = "view_only";

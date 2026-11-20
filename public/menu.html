@@ -2375,7 +2375,9 @@
 
             renderSocialLinks(restaurant.socialLinks || {}, slug);
             window.__offers = Array.isArray(restaurant.offers) ? restaurant.offers : [];
-            window.__announcements = Array.isArray(restaurant.announcements) ? restaurant.announcements : [];
+            window.__announcements = Array.isArray(restaurant.customUI && restaurant.customUI.orderAnnouncements)
+              ? restaurant.customUI.orderAnnouncements
+              : (Array.isArray(restaurant.announcements) ? restaurant.announcements : []);
             
             if (restaurant.owner && restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
                  checkTrialWarning({ message: "هذا المنيو يعمل بنسخة تجريبية مؤقتة." });
