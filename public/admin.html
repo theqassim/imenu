@@ -3361,22 +3361,30 @@
           <div id="ofr-list" class="ofr-list"></div>
           <div class="card" style="margin-top:20px">
             <h3 style="color:var(--primary);margin-top:0"><i class="fas fa-bullhorn"></i> تنبيهات الحد الأدنى للطلب</h3>
-            <div style="color:var(--secondary);font-size:12px;margin-bottom:14px">تنبيه مستقل بيظهر أعلى المنيو، ويحصل خصم الفاتورة فقط عند تجاوز الحد المحدد.</div>
+            <div style="color:var(--secondary);font-size:12px;margin-bottom:14px">تنبيه مستقل بيظهر أعلى المنيو، ويحصل خصم الفاتورة فقط عند تجاوز الحد المحدد. تقدر تعدّل أي تنبيه موجود بزرار "تعديل".</div>
             <div id="ann-list"></div>
+            <div id="ann-form-title" style="font-weight:800;margin:14px 0 10px;color:var(--primary)">تنبيه جديد</div>
+            <div id="ann-preview" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;color:#fff;margin-bottom:14px;border:2px solid rgba(255,255,255,.5);box-shadow:0 10px 24px -8px rgba(0,0,0,.35)"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div><label class="ofr-lbl">عنوان التنبيه</label><input type="text" id="ann-title" maxlength="80" placeholder="مثال: عرض خاص لطلبات 500 جنيه+" /></div>
+              <div><label class="ofr-lbl">عنوان التنبيه</label><input type="text" id="ann-title" maxlength="80" oninput="annPreview()" placeholder="مثال: عرض خاص لطلبات 500 جنيه+" /></div>
+              <div><label class="ofr-lbl">نص الرسالة</label><input type="text" id="ann-message" maxlength="240" oninput="annPreview()" placeholder="خصم 20% على الفاتورة عند تجاوز الحد" /></div>
               <div><label class="ofr-lbl">الحد الأدنى (ج.م)</label><input type="number" id="ann-min" min="0" step="1" value="500" /></div>
-              <div><label class="ofr-lbl">خصم الفاتورة %</label><input type="number" id="ann-percent" min="0" max="100" step="1" value="20" /></div>
-              <div><label class="ofr-lbl">نص الرسالة</label><input type="text" id="ann-message" maxlength="240" placeholder="خصم 20% على الفاتورة عند تجاوز الحد" /></div>
-              <div><label class="ofr-lbl">لون التنبيه</label>
-                <select id="ann-theme">
-                  <option value="fire">🔥 ناري</option><option value="gold">🏆 ذهبي</option><option value="royal">👑 ملكي</option>
-                  <option value="emerald">💚 زمردي</option><option value="night">🌙 ليلي</option><option value="rose">🌹 وردي</option><option value="brown">☕ بني</option>
-                </select></div>
+              <div><label class="ofr-lbl">خصم الفاتورة %</label><input type="number" id="ann-percent" min="0" max="100" step="1" value="20" oninput="annPreview()" /></div>
+              <div><label class="ofr-lbl">النص الصغير فوق العنوان (فاضي = يختفي)</label><input type="text" id="ann-tag" maxlength="40" oninput="annPreview()" /></div>
+              <div><label class="ofr-lbl">نص الزرار (فاضي = الافتراضي)</label><input type="text" id="ann-btn" maxlength="30" oninput="annPreview()" placeholder="ابدأ اطلب دلوقتي 🔥" /></div>
+            </div>
+            <label class="ofr-lbl" style="margin-top:12px">ألوان جاهزة</label>
+            <div id="ann-swatches" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div><label class="ofr-lbl">اللون الأول (مخصص)</label><input type="color" id="ann-colorA" value="#ff7a45" oninput="annPreview()" style="width:100%;height:44px;padding:3px;cursor:pointer" /></div>
+              <div><label class="ofr-lbl">اللون الثاني (مخصص)</label><input type="color" id="ann-colorB" value="#e11d48" oninput="annPreview()" style="width:100%;height:44px;padding:3px;cursor:pointer" /></div>
               <div><label class="ofr-lbl">يبدأ (اختياري)</label><input type="datetime-local" id="ann-start" /></div>
               <div><label class="ofr-lbl">ينتهي (اختياري)</label><input type="datetime-local" id="ann-end" /></div>
             </div>
-            <button type="button" class="btn btn-primary" style="margin-top:12px" onclick="annSave()"><i class="fas fa-plus"></i> إضافة التنبيه</button>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button type="button" id="ann-save-btn" class="btn btn-primary" onclick="annSave()"><i class="fas fa-plus"></i> إضافة التنبيه</button>
+              <button type="button" id="ann-cancel-btn" class="btn hidden" onclick="annCancel()">إلغاء التعديل</button>
+            </div>
           </div>
         </div>
 
@@ -10829,38 +10837,112 @@ function calculatePreviewTotals() {
           Swal.fire({ toast: true, position: "top", icon: "success", title: message, showConfirmButton: false, timer: 1800 });
           return true;
         }
+        var $ = function (id) { return document.getElementById(id); };
+        var PRESETS = {
+          fire: ["#ff7a45", "#e11d48", "🔥 ناري"], gold: ["#f7c948", "#b78728", "🏆 ذهبي"], royal: ["#8b5cf6", "#4338ca", "👑 ملكي"],
+          emerald: ["#34d399", "#047857", "💚 زمردي"], night: ["#475569", "#0f172a", "🌙 ليلي"], rose: ["#fb7185", "#be185d", "🌹 وردي"], brown: ["#a1724e", "#3e2418", "☕ بني"]
+        };
+        var DEFAULT_TAG = "⚡ عرض خاص على الفاتورة كلها";
+        var editing = null, curTheme = "fire";
+        function toLocal(iso) {
+          if (!iso) return ""; var d = new Date(iso); if (isNaN(d)) return "";
+          return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        }
+        function colorsOf(a) {
+          var p = PRESETS[a.theme] || PRESETS.fire;
+          return /^#[0-9a-f]{6}$/i.test(a.colorA || "") && /^#[0-9a-f]{6}$/i.test(a.colorB || "") ? [a.colorA, a.colorB] : [p[0], p[1]];
+        }
+        window.annPreview = function () {
+          var box = $("ann-preview"); if (!box) return;
+          var ca = $("ann-colorA").value, cb = $("ann-colorB").value;
+          var pct = Number($("ann-percent").value) || 0, title = $("ann-title").value.trim(), msg = $("ann-message").value.trim();
+          var tag = $("ann-tag").value.trim(), btn = $("ann-btn").value.trim();
+          box.style.background = "radial-gradient(circle at 15% 10%,rgba(255,255,255,.38),transparent 45%),radial-gradient(circle at 90% 90%,rgba(0,0,0,.25),transparent 50%),linear-gradient(145deg," + ca + "," + cb + ")";
+          box.innerHTML = '<div style="flex:0 0 auto;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.65);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;line-height:1"><span style="font-size:24px;direction:ltr">' + pct + '%</span><small style="font-size:11px;margin-top:3px">خصم</small></div>' +
+            '<div style="flex:1;min-width:0">' + (tag ? '<div style="display:inline-block;font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;background:rgba(0,0,0,.25);margin-bottom:5px">' + esc(tag) + '</div>' : '') +
+            '<div style="font-size:17px;font-weight:900;line-height:1.4">' + esc(title || "عنوان التنبيه") + '</div>' +
+            (msg ? '<div style="font-size:12px;font-weight:700;opacity:.95;margin-top:3px">' + esc(msg) + '</div>' : '') +
+            '<div style="margin-top:9px;display:inline-block;background:#fff;color:' + cb + ';font-weight:900;font-size:12px;padding:6px 16px;border-radius:12px">' + esc(btn || "ابدأ اطلب دلوقتي 🔥") + '</div></div>';
+        };
+        window.annPickTheme = function (k) {
+          curTheme = k; $("ann-colorA").value = PRESETS[k][0]; $("ann-colorB").value = PRESETS[k][1]; window.annPreview();
+        };
+        function swatches() {
+          var box = $("ann-swatches"); if (!box || box.children.length) return;
+          box.innerHTML = Object.keys(PRESETS).map(function (k) {
+            return '<button type="button" onclick="annPickTheme(\'' + k + '\')" style="border:2px solid var(--border-color);border-radius:12px;padding:6px 12px;cursor:pointer;font-family:inherit;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4);background:linear-gradient(135deg,' + PRESETS[k][0] + ',' + PRESETS[k][1] + ')">' + PRESETS[k][2] + '</button>';
+          }).join("");
+        }
+        function resetForm() {
+          editing = null; curTheme = "fire";
+          $("ann-title").value = ""; $("ann-message").value = ""; $("ann-min").value = 500; $("ann-percent").value = 20;
+          $("ann-tag").value = DEFAULT_TAG; $("ann-btn").value = "";
+          $("ann-colorA").value = PRESETS.fire[0]; $("ann-colorB").value = PRESETS.fire[1];
+          $("ann-start").value = ""; $("ann-end").value = "";
+          $("ann-form-title").textContent = "تنبيه جديد";
+          $("ann-save-btn").innerHTML = '<i class="fas fa-plus"></i> إضافة التنبيه';
+          $("ann-cancel-btn").classList.add("hidden");
+          window.annPreview();
+        }
         window.annRender = function () {
-          var box = document.getElementById("ann-list");
+          var box = $("ann-list");
           if (!box) return;
+          swatches();
+          if (!$("ann-title").dataset.init) { $("ann-title").dataset.init = "1"; resetForm(); }
           var arr = list();
           box.innerHTML = arr.length ? arr.map(function (a, i) {
-            return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border-color);border-radius:12px;padding:10px;margin-bottom:8px">' +
-              '<div><b>' + esc(a.title || "تنبيه الطلب") + '</b><div style="font-size:12px;color:var(--secondary)">من ' + Number(a.minAmount || 0).toLocaleString("ar-EG") + ' ج.م • خصم فاتورة ' + Number(a.orderPercent || 0) + '%</div></div>' +
-              '<div style="display:flex;gap:6px"><button type="button" class="btn" onclick="annToggle(' + i + ')">' + (a.enabled !== false ? "إيقاف" : "تفعيل") + '</button><button type="button" class="btn" style="color:var(--danger)" onclick="annDelete(' + i + ')">حذف</button></div></div>';
+            var c = colorsOf(a);
+            return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--border-color);border-radius:12px;padding:10px;margin-bottom:8px;' + (editing === i ? 'outline:2px solid var(--primary);' : '') + '">' +
+              '<div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,' + c[0] + ',' + c[1] + ');box-shadow:0 2px 6px rgba(0,0,0,.25)"></span>' +
+              '<div style="min-width:0"><b>' + esc(a.title || "تنبيه الطلب") + (a.enabled === false ? ' <span style="font-size:11px;color:#94a3b8">(موقوف)</span>' : '') + '</b><div style="font-size:12px;color:var(--secondary)">من ' + Number(a.minAmount || 0).toLocaleString("ar-EG") + ' ج.م • خصم فاتورة ' + Number(a.orderPercent || 0) + '%</div></div></div>' +
+              '<div style="display:flex;gap:6px;flex:0 0 auto"><button type="button" class="btn" onclick="annEdit(' + i + ')"><i class="fas fa-pen"></i> تعديل</button><button type="button" class="btn" onclick="annToggle(' + i + ')">' + (a.enabled !== false ? "إيقاف" : "تفعيل") + '</button><button type="button" class="btn" style="color:var(--danger)" onclick="annDelete(' + i + ')">حذف</button></div></div>';
           }).join("") : '<div style="text-align:center;color:#94a3b8;padding:12px">لا توجد تنبيهات منفصلة حالياً</div>';
         };
+        window.annEdit = function (i) {
+          var a = list()[i]; if (!a) return;
+          editing = i; curTheme = PRESETS[a.theme] ? a.theme : "fire";
+          var c = colorsOf(a);
+          $("ann-title").value = a.title || ""; $("ann-message").value = a.message || "";
+          $("ann-min").value = Number(a.minAmount) || 0; $("ann-percent").value = Number(a.orderPercent) || 0;
+          $("ann-tag").value = typeof a.tagText === "string" ? a.tagText : DEFAULT_TAG; $("ann-btn").value = a.buttonText || "";
+          $("ann-colorA").value = c[0]; $("ann-colorB").value = c[1];
+          $("ann-start").value = toLocal(a.startsAt); $("ann-end").value = toLocal(a.endsAt);
+          $("ann-form-title").textContent = "تعديل التنبيه";
+          $("ann-save-btn").innerHTML = '<i class="fas fa-save"></i> حفظ التعديلات';
+          $("ann-cancel-btn").classList.remove("hidden");
+          window.annPreview(); window.annRender();
+          $("ann-form-title").scrollIntoView({ behavior: "smooth", block: "center" });
+        };
+        window.annCancel = function () { resetForm(); window.annRender(); };
         window.annSave = async function () {
-          var title = document.getElementById("ann-title").value.trim();
-          var message = document.getElementById("ann-message").value.trim();
-          var minAmount = Number(document.getElementById("ann-min").value) || 0;
-          var orderPercent = Number(document.getElementById("ann-percent").value) || 0;
+          var title = $("ann-title").value.trim();
+          var message = $("ann-message").value.trim();
+          var minAmount = Number($("ann-min").value) || 0;
+          var orderPercent = Number($("ann-percent").value) || 0;
           if (!title && !message) return Swal.fire("تنبيه", "اكتب عنوان أو رسالة للتنبيه", "warning");
           if (minAmount < 0) return Swal.fire("تنبيه", "الحد الأدنى لازم يكون صفر أو أكتر", "warning");
           if (orderPercent < 0 || orderPercent > 100) return Swal.fire("تنبيه", "نسبة خصم الفاتورة بين 0 و 100", "warning");
-          var sVal = document.getElementById("ann-start").value, eVal = document.getElementById("ann-end").value;
+          var sVal = $("ann-start").value, eVal = $("ann-end").value;
           if (sVal && eVal && new Date(eVal) <= new Date(sVal)) return Swal.fire("تنبيه", "تاريخ النهاية لازم يكون بعد البداية", "warning");
           var arr = list().slice();
-          arr.push({ id:"ann_" + Date.now().toString(36), enabled:true, title:title, message:message, minAmount:minAmount, orderPercent:orderPercent, startsAt:sVal ? new Date(sVal).toISOString() : null, endsAt:eVal ? new Date(eVal).toISOString() : null, theme:document.getElementById("ann-theme").value, position:"top" });
-          if (await persist(arr, "تم إضافة التنبيه")) {
-            document.getElementById("ann-title").value = "";
-            document.getElementById("ann-message").value = "";
-          }
+          var old = editing !== null ? arr[editing] : null;
+          var o = {
+            id: old ? old.id : "ann_" + Date.now().toString(36), enabled: old ? old.enabled !== false : true,
+            title: title, message: message, minAmount: minAmount, orderPercent: orderPercent,
+            startsAt: sVal ? new Date(sVal).toISOString() : null, endsAt: eVal ? new Date(eVal).toISOString() : null,
+            theme: curTheme, position: "top", colorA: $("ann-colorA").value, colorB: $("ann-colorB").value,
+            tagText: $("ann-tag").value.trim(), buttonText: $("ann-btn").value.trim()
+          };
+          var wasEditing = editing !== null;
+          if (wasEditing) arr[editing] = o; else arr.push(o);
+          if (await persist(arr, wasEditing ? "تم حفظ التعديلات" : "تم إضافة التنبيه")) { resetForm(); window.annRender(); }
         };
         window.annToggle = function (i) { var arr = list().map(function (a) { return Object.assign({}, a); }); arr[i].enabled = arr[i].enabled === false ? true : false; persist(arr, arr[i].enabled ? "تم تفعيل التنبيه" : "تم إيقاف التنبيه"); };
         window.annDelete = async function (i) {
-          var r = await Swal.fire({ title:"حذف التنبيه؟", icon:"warning", showCancelButton:true, confirmButtonText:"حذف", cancelButtonText:"إلغاء" });
+          var r = await Swal.fire({ title: "حذف التنبيه؟", icon: "warning", showCancelButton: true, confirmButtonText: "حذف", cancelButtonText: "إلغاء" });
           if (!r.isConfirmed) return;
-          var arr = list().slice(); arr.splice(i, 1); persist(arr, "تم حذف التنبيه");
+          var arr = list().slice(); arr.splice(i, 1);
+          if (await persist(arr, "تم حذف التنبيه")) { if (editing !== null) resetForm(); window.annRender(); }
         };
       })();
     </script>

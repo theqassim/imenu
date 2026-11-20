@@ -853,6 +853,7 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       try { updateData.announcements = JSON.parse(updateData.announcements); } catch (e) { delete updateData.announcements; }
     }
     if (Array.isArray(updateData.announcements)) {
+      const _annHex = (v) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v.trim()) ? v.trim() : "");
       const announcements = updateData.announcements.slice(0, 10).map((a) => ({
         id: typeof a.id === "string" ? a.id.slice(0, 80) : "ann_" + Date.now().toString(36),
         enabled: a.enabled !== false,
@@ -864,6 +865,10 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
         endsAt: typeof a.endsAt === "string" ? a.endsAt : null,
         theme: ["gold", "fire", "royal", "emerald", "night", "rose", "brown"].includes(a.theme) ? a.theme : "fire",
         position: ["top", "cart"].includes(a.position) ? a.position : "top",
+        colorA: _annHex(a.colorA) && _annHex(a.colorB) ? _annHex(a.colorA) : "",
+        colorB: _annHex(a.colorA) && _annHex(a.colorB) ? _annHex(a.colorB) : "",
+        ...(typeof a.tagText === "string" ? { tagText: a.tagText.trim().slice(0, 40) } : {}),
+        buttonText: typeof a.buttonText === "string" ? a.buttonText.trim().slice(0, 30) : "",
       })).filter((a) => a.title || a.message);
       delete updateData.announcements;
       const { data: currentRestaurant, error: currentRestaurantError } = await supabase
