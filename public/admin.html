@@ -3361,13 +3361,20 @@
           <div id="ofr-list" class="ofr-list"></div>
           <div class="card" style="margin-top:20px">
             <h3 style="color:var(--primary);margin-top:0"><i class="fas fa-bullhorn"></i> تنبيهات الحد الأدنى للطلب</h3>
-            <div style="color:var(--secondary);font-size:12px;margin-bottom:14px">تنبيه مستقل في المنيو والسلة، ويحصل خصم الفاتورة فقط عند تجاوز الحد المحدد.</div>
+            <div style="color:var(--secondary);font-size:12px;margin-bottom:14px">تنبيه مستقل بيظهر أعلى المنيو، ويحصل خصم الفاتورة فقط عند تجاوز الحد المحدد.</div>
             <div id="ann-list"></div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div><label class="ofr-lbl">عنوان التنبيه</label><input type="text" id="ann-title" maxlength="80" placeholder="مثال: عرض خاص لطلبات 500 جنيه+" /></div>
               <div><label class="ofr-lbl">الحد الأدنى (ج.م)</label><input type="number" id="ann-min" min="0" step="1" value="500" /></div>
               <div><label class="ofr-lbl">خصم الفاتورة %</label><input type="number" id="ann-percent" min="0" max="100" step="1" value="20" /></div>
               <div><label class="ofr-lbl">نص الرسالة</label><input type="text" id="ann-message" maxlength="240" placeholder="خصم 20% على الفاتورة عند تجاوز الحد" /></div>
+              <div><label class="ofr-lbl">لون التنبيه</label>
+                <select id="ann-theme">
+                  <option value="fire">🔥 ناري</option><option value="gold">🏆 ذهبي</option><option value="royal">👑 ملكي</option>
+                  <option value="emerald">💚 زمردي</option><option value="night">🌙 ليلي</option><option value="rose">🌹 وردي</option><option value="brown">☕ بني</option>
+                </select></div>
+              <div><label class="ofr-lbl">يبدأ (اختياري)</label><input type="datetime-local" id="ann-start" /></div>
+              <div><label class="ofr-lbl">ينتهي (اختياري)</label><input type="datetime-local" id="ann-end" /></div>
             </div>
             <button type="button" class="btn btn-primary" style="margin-top:12px" onclick="annSave()"><i class="fas fa-plus"></i> إضافة التنبيه</button>
           </div>
@@ -10840,8 +10847,10 @@ function calculatePreviewTotals() {
           if (!title && !message) return Swal.fire("تنبيه", "اكتب عنوان أو رسالة للتنبيه", "warning");
           if (minAmount < 0) return Swal.fire("تنبيه", "الحد الأدنى لازم يكون صفر أو أكتر", "warning");
           if (orderPercent < 0 || orderPercent > 100) return Swal.fire("تنبيه", "نسبة خصم الفاتورة بين 0 و 100", "warning");
+          var sVal = document.getElementById("ann-start").value, eVal = document.getElementById("ann-end").value;
+          if (sVal && eVal && new Date(eVal) <= new Date(sVal)) return Swal.fire("تنبيه", "تاريخ النهاية لازم يكون بعد البداية", "warning");
           var arr = list().slice();
-          arr.push({ id:"ann_" + Date.now().toString(36), enabled:true, title:title, message:message, minAmount:minAmount, orderPercent:orderPercent, startsAt:null, endsAt:null, theme:"fire", position:"top" });
+          arr.push({ id:"ann_" + Date.now().toString(36), enabled:true, title:title, message:message, minAmount:minAmount, orderPercent:orderPercent, startsAt:sVal ? new Date(sVal).toISOString() : null, endsAt:eVal ? new Date(eVal).toISOString() : null, theme:document.getElementById("ann-theme").value, position:"top" });
           if (await persist(arr, "تم إضافة التنبيه")) {
             document.getElementById("ann-title").value = "";
             document.getElementById("ann-message").value = "";

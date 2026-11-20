@@ -130,21 +130,80 @@
         transition: background 0.3s;
       }
 
-      .order-announcement {
-        margin: 10px 15px 0;
-        padding: 12px 14px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #ef4444, #b45309);
-        color: #fff;
-        box-shadow: 0 10px 24px rgba(180, 83, 9, 0.22);
-        font-size: 13px;
-        font-weight: 800;
-        line-height: 1.6;
-        text-align: center;
-        animation: announcementIn 0.45s ease-out;
+      /* ===== تنبيه خصم الفاتورة (بنفس لغة تصميم العروض) ===== */
+      #order-announcement { max-width: 800px; margin: 0 auto; padding: 0 15px; }
+      .an {
+        position: relative; overflow: hidden; isolation: isolate; direction: rtl; text-align: right;
+        margin: 14px 0 6px; border-radius: 26px; color: #fff;
+        background:
+          radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.38), transparent 45%),
+          radial-gradient(circle at 90% 90%, rgba(0, 0, 0, 0.25), transparent 50%),
+          linear-gradient(145deg, var(--oa), var(--ob));
+        border: 2px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 18px 40px -10px var(--ob), 0 0 0 0 rgba(255, 255, 255, 0.6);
+        animation: anIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), anGlow 2.4s ease-in-out 0.6s infinite;
       }
-      .order-announcement strong { display: block; font-size: 15px; }
-      @keyframes announcementIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+      .an.an-done { --oa: #4ade80; --ob: #15803d; }
+      .an::after { /* لمعة بتعدي على البانر */
+        content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 35%; z-index: 3; pointer-events: none;
+        background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+        transform: skewX(-20deg); animation: offerShine 3.6s ease-in-out infinite;
+      }
+      .an-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+      .an-confetti span { position: absolute; top: -16px; width: 8px; height: 14px; border-radius: 2px; opacity: 0.9; animation: offerFall linear infinite; }
+      .an-inner { position: relative; z-index: 2; padding: 20px 18px 16px; }
+      .an-top { display: flex; align-items: center; gap: 18px; }
+      .an-badge {
+        position: relative; flex: 0 0 auto; width: 104px; height: 104px; border-radius: 50%;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), inset 0 0 26px rgba(255, 255, 255, 0.3);
+        animation: offerBounce 2.6s ease-in-out infinite;
+      }
+      .an-badge::before { content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, 0.8); animation: offerSpin 16s linear infinite; }
+      .an-pct { font-size: 36px; font-weight: 900; line-height: 1; direction: ltr; text-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); }
+      .an-off { font-size: 14px; font-weight: 800; letter-spacing: 1px; margin-top: 3px; }
+      .an-ico {
+        position: absolute; top: -6px; right: -6px; width: 36px; height: 36px; border-radius: 50%;
+        background: #fff; color: var(--ob); font-size: 16px;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); animation: offerWiggle 2.6s ease-in-out infinite;
+      }
+      .an-txt { flex: 1; min-width: 0; }
+      .an-tag { display: inline-block; font-size: 11px; font-weight: 800; padding: 3px 11px; border-radius: 30px; background: rgba(0, 0, 0, 0.25); margin-bottom: 7px; }
+      .an-title { margin: 0; font-size: 21px; font-weight: 900; line-height: 1.4; text-shadow: 0 3px 10px rgba(0, 0, 0, 0.35); }
+      .an-msg { margin-top: 5px; font-size: 13px; font-weight: 700; line-height: 1.65; opacity: 0.96; white-space: pre-line; }
+      .an-prog { margin-top: 18px; }
+      .an-prog-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 7px; }
+      .an-cur { direction: rtl; font-variant-numeric: tabular-nums; }
+      .an-track { position: relative; height: 14px; border-radius: 99px; background: rgba(0, 0, 0, 0.3); box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3); }
+      .an-fill {
+        height: 100%; width: 0; border-radius: 99px;
+        background: repeating-linear-gradient(45deg, #fff 0 10px, #ffe9a8 10px 20px); background-size: 28px 28px;
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.85);
+        transition: width 0.6s cubic-bezier(0.34, 1.2, 0.64, 1); animation: anStripes 0.7s linear infinite;
+      }
+      .an-gift { position: absolute; top: 50%; left: -3px; transform: translateY(-50%); font-size: 24px; animation: offerWiggle 1.8s ease-in-out infinite; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35)); }
+      .an-hint { margin-top: 12px; text-align: center; font-size: 14px; font-weight: 900; line-height: 2; }
+      .an-hint em { font-style: normal; display: inline-block; background: #fff; color: var(--ob); padding: 1px 11px; border-radius: 99px; margin: 0 3px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
+      .an-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
+      .an-chip { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 30px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+      .an-timer { direction: ltr; font-variant-numeric: tabular-nums; }
+      .an-cta {
+        position: relative; overflow: hidden; width: 100%; margin-top: 14px; padding: 14px;
+        border: none; border-radius: 16px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer;
+        background: #fff; color: var(--ob); box-shadow: 0 12px 26px -8px rgba(0, 0, 0, 0.5); transition: transform 0.15s;
+      }
+      .an-cta:active { transform: scale(0.97); }
+      .an-cta::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgba(0, 0, 0, 0.14), transparent); transform: skewX(-20deg); animation: offerShine 2.8s ease-in-out infinite; }
+      @keyframes anIn { from { opacity: 0; transform: translateY(-18px) scale(0.92); } to { opacity: 1; transform: none; } }
+      @keyframes anGlow { 0%, 100% { box-shadow: 0 18px 40px -10px var(--ob), 0 0 0 0 rgba(255, 255, 255, 0.6); } 50% { box-shadow: 0 18px 44px -8px var(--ob), 0 0 0 9px rgba(255, 255, 255, 0); } }
+      @keyframes anStripes { to { background-position: 28px 0; } }
+      @media (max-width: 380px) { .an-badge { width: 86px; height: 86px; } .an-pct { font-size: 29px; } .an-title { font-size: 18px; } .an-top { gap: 14px; } }
+      @media (prefers-reduced-motion: reduce) {
+        .an, .an::after, .an-badge, .an-badge::before, .an-ico, .an-gift, .an-fill, .an-confetti span, .an-cta::after { animation: none !important; }
+      }
 
       .top-bar {
         display: flex;
@@ -2378,6 +2437,7 @@
             window.__announcements = Array.isArray(restaurant.customUI && restaurant.customUI.orderAnnouncements)
               ? restaurant.customUI.orderAnnouncements
               : (Array.isArray(restaurant.announcements) ? restaurant.announcements : []);
+            setTimeout(updateCartUI, 100);
             
             if (restaurant.owner && restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
                  checkTrialWarning({ message: "هذا المنيو يعمل بنسخة تجريبية مؤقتة." });
@@ -2697,33 +2757,141 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
       }
 
       function updateOrderAnnouncement(subTotal) {
+        const THEMES = ["gold", "fire", "royal", "emerald", "night", "rose", "brown"];
+        const nf = (n) => Number(n).toLocaleString("ar-EG");
+        const el = (tag, cls, txt) => {
+          const e = document.createElement(tag);
+          if (cls) e.className = cls;
+          if (txt != null) e.textContent = txt;
+          return e;
+        };
+        const sub = Number(subTotal) || 0;
+
+        const clearAll = () => {
+          const t = document.getElementById("order-announcement"); if (t) t.remove();
+        };
         if (typeof window.getOrderOfferStatus !== "function") return;
         const status = window.getOrderOfferStatus(subTotal);
-        let banner = document.getElementById("order-announcement");
-        if (!status) {
-          if (banner) banner.remove();
-          return;
-        }
+        if (!status) { window.__anWasActive = false; return clearAll(); }
 
         const a = (window.__announcements || []).find((x) => x && x.enabled !== false &&
           (Number(x.orderPercent) || 0) === status.orderPercent &&
-          (Number(x.minAmount) || 0) === status.minAmount);
-        if (!banner) {
-          banner = document.createElement("div");
-          banner.id = "order-announcement";
-          banner.className = "order-announcement";
-          const container = document.querySelector(".container") || document.body;
-          container.prepend(banner);
+          (Number(x.minAmount) || 0) === status.minAmount) || {};
+        const theme = THEMES.includes(a.theme) ? a.theme : "fire";
+        const pct = status.minAmount > 0 ? Math.min(100, (sub / status.minAmount) * 100) : 100;
+        const saved = typeof window.calculateOrderOfferDiscount === "function" ? window.calculateOrderOfferDiscount(sub) : 0;
+        const endTs = a.endsAt ? Date.parse(a.endsAt) : NaN;
+        const key = [a.id, theme, a.title, a.message, status.minAmount, status.orderPercent,
+          status.active ? 1 : 0, sub > 0 ? 1 : 0, a.endsAt, a.position].join("|");
+
+        const fillHint = (h) => {
+          h.replaceChildren();
+          if (status.active) h.append("💰 وفّرت ", el("em", "", nf(Math.round(saved)) + " ج.م"), " على فاتورتك");
+          else if (sub > 0) h.append("فاضل ", el("em", "", nf(Math.ceil(status.remaining)) + " ج.م"), " وتاخد خصم " + nf(status.orderPercent) + "% 🔥");
+          else h.append("اطلب بـ ", el("em", "", nf(status.minAmount) + " ج.م"), " أو أكتر وخد خصم " + nf(status.orderPercent) + "% 🎁");
+        };
+        const patch = (root) => {
+          const f = root.querySelector(".an-fill");
+          if (f) f.style.width = (sub > 0 ? Math.max(6, pct) : 0) + "%";
+          const c = root.querySelector(".an-cur");
+          if (c) c.textContent = nf(Math.floor(Math.min(sub, status.minAmount))) + " / " + nf(status.minAmount) + " ج.م";
+          const h = root.querySelector(".an-hint");
+          if (h) fillHint(h);
+        };
+
+        const build = () => {
+          const root = el("div", "an oc-" + theme + (status.active ? " an-done" : ""));
+          root.dataset.key = key;
+          {
+            const cf = el("div", "an-confetti");
+            const cols = ["#ffffff", "#ffe08a", "#ffb3c1", "#bff3d4", "#cfe3ff"];
+            for (let i = 0; i < 16; i++) {
+              const s = el("span");
+              s.style.left = Math.random() * 100 + "%";
+              s.style.background = cols[i % cols.length];
+              s.style.animationDuration = 3 + Math.random() * 3 + "s";
+              s.style.animationDelay = -Math.random() * 5 + "s";
+              cf.append(s);
+            }
+            root.append(cf);
+          }
+          const inner = el("div", "an-inner");
+          const top = el("div", "an-top");
+          const badge = el("div", "an-badge");
+          badge.append(el("div", "an-pct", nf(status.orderPercent) + "%"), el("div", "an-off", "خصم"));
+          const ico = el("div", "an-ico"); ico.append(el("i", "fas " + (status.active ? "fa-check" : "fa-gift")));
+          badge.append(ico);
+          const txt = el("div", "an-txt");
+          txt.append(el("div", "an-tag", "⚡ عرض خاص على الفاتورة كلها"));
+          txt.append(el("h3", "an-title", status.active
+            ? "🎉 مبروك! خصم " + nf(status.orderPercent) + "% اتطبق"
+            : (a.title || "خصم " + nf(status.orderPercent) + "% على طلبك")));
+          if (a.message) txt.append(el("div", "an-msg", a.message));
+          top.append(badge, txt);
+
+          const prog = el("div", "an-prog");
+          const row = el("div", "an-prog-row"); row.append(el("span", "", "تقدم طلبك"), el("span", "an-cur"));
+          const track = el("div", "an-track"); track.append(el("div", "an-fill"), el("span", "an-gift", "🎁"));
+          prog.append(row, track, el("div", "an-hint"));
+          inner.append(top, prog);
+
+          {
+            const chips = el("div", "an-chips");
+            chips.append(el("span", "an-chip", "🧾 على الفاتورة كلها"), el("span", "an-chip", "من " + nf(status.minAmount) + " ج.م"));
+            if (!isNaN(endTs)) {
+              const t = el("span", "an-chip an-timer", "⏳ ...");
+              t.dataset.end = String(endTs);
+              chips.append(t);
+            }
+            const cta = el("button", "an-cta", status.active ? "راجع السلة وأكّد الطلب 🛒" : (sub > 0 ? "كمّل اختيارك 🔥" : "ابدأ اطلب دلوقتي 🔥"));
+            cta.type = "button";
+            cta.onclick = () => {
+              if (status.active) return openCart();
+              const m = document.getElementById("menu-container");
+              const hh = (document.querySelector(".sticky-header") || {}).offsetHeight || 0;
+              if (m) window.scrollTo({ top: m.getBoundingClientRect().top + window.scrollY - hh - 6, behavior: "smooth" });
+            };
+            inner.append(chips, cta);
+          }
+          root.append(inner);
+          return root;
+        };
+
+        // البانر: فوق المنيو (عنصر مستقل، مش جوه الـ container)
+        let holder = document.getElementById("order-announcement");
+        if (!holder) {
+          holder = el("div"); holder.id = "order-announcement";
+          const c = document.querySelector(".container");
+          if (c && c.parentNode) c.parentNode.insertBefore(holder, c);
         }
-        if (status.active) {
-          const strong = document.createElement("strong");
-          strong.textContent = a && a.title ? a.title : "خصم العرض متاح الآن";
-          banner.replaceChildren(strong, document.createTextNode("تم تطبيق خصم " + status.orderPercent + "% على الفاتورة"));
-        } else {
-          const strong = document.createElement("strong");
-          strong.textContent = a && a.title ? a.title : "عرض خاص لطلبات القيمة الأعلى";
-          banner.replaceChildren(strong, document.createTextNode("أضف " + status.remaining.toLocaleString("ar-EG") + " ج.م لتحصل على خصم " + status.orderPercent + "%"));
+        const cur = holder.firstElementChild;
+        if (cur && cur.dataset.key === key) patch(cur);
+        else { const b = build(); holder.replaceChildren(b); patch(b); }
+
+        // عدّاد الوقت (لو التنبيه له تاريخ نهاية)
+        if (!window.__anTimer) {
+          window.__anTimer = setInterval(() => {
+            document.querySelectorAll(".an-timer").forEach((t) => {
+              const ms = Number(t.dataset.end) - Date.now();
+              if (ms <= 0) { t.textContent = "⏳ انتهى"; return; }
+              const s = Math.floor(ms / 1000), d = Math.floor(s / 86400);
+              const p = (n) => String(n).padStart(2, "0");
+              t.textContent = "⏳ ينتهي خلال " + (d > 0 ? d + "ي " : "") + p(Math.floor((s % 86400) / 3600)) + ":" + p(Math.floor((s % 3600) / 60)) + ":" + p(s % 60);
+            });
+          }, 1000);
         }
+
+        // احتفال لما العميل يفتح الخصم
+        if (status.active && window.__anWasActive === false) {
+          document.querySelectorAll(".an").forEach((root) => {
+            for (let i = 0; i < 16; i++) {
+              const sp = el("span", "", ["🎉", "✨", "🎊", "⭐"][i % 4]);
+              sp.style.cssText = "position:absolute;top:0;z-index:4;font-size:18px;pointer-events:none;left:" + Math.random() * 92 + "%;animation:offerFall 1.4s ease-out " + Math.random() * 0.4 + "s forwards";
+              root.append(sp); setTimeout(() => sp.remove(), 2000);
+            }
+          });
+        }
+        window.__anWasActive = !!status.active;
       }
 
       function updateCartUI() {
