@@ -750,7 +750,8 @@ function ensureOffersColumn() {
   if (_offersMigrationPromise) return _offersMigrationPromise;
 
   _offersMigrationPromise = (async () => {
-    const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+    const dbUrl = process.env.SUPABASE_DB_URL ||
+      (/^postgres(ql)?:\/\//i.test(process.env.DATABASE_URL || "") ? process.env.DATABASE_URL : "");
     if (!dbUrl) {
       console.warn("⚠️ DATABASE_URL غير موجود في .env — مش هقدر أضيف عمود offers تلقائياً. ضيف رابط اتصال Postgres من Supabase (Project Settings → Database → Connection string).");
       return false;
@@ -785,9 +786,10 @@ function ensureAnnouncementsColumn() {
   if (_announcementsMigrationPromise) return _announcementsMigrationPromise;
 
   _announcementsMigrationPromise = (async () => {
-    const dbUrl = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+    const dbUrl = process.env.SUPABASE_DB_URL ||
+      (/^postgres(ql)?:\/\//i.test(process.env.DATABASE_URL || "") ? process.env.DATABASE_URL : "");
     if (!dbUrl) {
-      console.warn("⚠️ DATABASE_URL غير موجود — لن يتم إنشاء عمود announcements تلقائياً.");
+      console.error("❌ إنشاء عمود announcements يتطلب SUPABASE_DB_URL أو DATABASE_URL بصيغة PostgreSQL.");
       return false;
     }
     let client;
@@ -800,7 +802,7 @@ function ensureAnnouncementsColumn() {
       await client.query("NOTIFY pgrst, 'reload schema'");
       _announcementsColumnReady = true;
       console.log("✅ عمود announcements جاهز في جدول restaurants");
-      await new Promise((r) => setTimeout(r, 1500));
+      await new Promise((r) => setTimeout(r, 5000));
       return true;
     } catch (e) {
       console.error("❌ فشل إضافة عمود announcements تلقائياً:", e.message);
@@ -954,7 +956,13 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
     }
     if (error && isMissingAnnouncementsColumn(error)) {
       const created = await ensureAnnouncementsColumn();
-      if (created) ({ data: updatedRestaurant, error } = await runUpdate());
+      if (created) {
+        for (let attempt = 0; attempt < 4 && error; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 1000));
+          ({ data: updatedRestaurant, error } = await runUpdate());
+        }
+      }
+      if (!created) throw new Error("تعذر إنشاء عمود announcements تلقائياً. أضف SUPABASE_DB_URL لبيئة السيرفر بصيغة PostgreSQL، ثم أعد التشغيل.");
     }
 
     if (error) throw error;
