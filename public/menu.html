@@ -2829,7 +2829,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
           {
             const chips = el("div", "an-chips");
-            chips.append(el("span", "an-chip", "🧾 على الفاتورة كلها"), el("span", "an-chip", "من " + nf(status.minAmount) + " ج.م"));
+            chips.append(el("span", "an-chip", "من " + nf(status.minAmount) + " ج.م"));
             if (!isNaN(endTs)) {
               const t = el("span", "an-chip an-timer", "⏳ ...");
               t.dataset.end = String(endTs);
