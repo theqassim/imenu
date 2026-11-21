@@ -2961,7 +2961,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           const chips = el("div", "offer-scope");
           const tagText = typeof a.tagText === "string" ? a.tagText : "⚡ عرض خاص على الفاتورة كلها";
           if (tagText) chips.append(el("span", "offer-chip", tagText));
-          chips.append(el("span", "offer-chip", "🧾 على الفاتورة كلها"), el("span", "offer-chip", "من " + nf(status.minAmount) + " ج.م"));
+          chips.append(el("span", "offer-chip", "من " + nf(status.minAmount) + " ج.م"));
           body.append(chips);
 
           const hint = el("p", "an-pop-hint");
