@@ -2295,8 +2295,9 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (
     const { isEnabled, totalSeats, resetCounter } = req.body;
     const rId = req.body.restaurantId;
 
-    const { data: restaurant, error: fetchError } = await supabase.from('restaurants').select('_id, slug, reservationSettings').eq('_id', rId).single();
+    const { data: restaurant, error: fetchError } = await supabase.from('restaurants').select('_id, slug, reservationSettings, customUI').eq('_id', rId).single();
     if (fetchError || !restaurant) throw new Error("المطعم غير موجود");
+    if (isEnabled === true && restaurant.customUI && restaurant.customUI.timedReservations && restaurant.customUI.timedReservations.enabled === true && !(restaurant.reservationSettings && restaurant.reservationSettings.isEnabled === true)) throw new Error("الحجز بالميعاد شغّال. اقفله الأول لو عايز ترجع لحجز المقاعد القديم.");
 
     let settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
     

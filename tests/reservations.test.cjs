@@ -145,6 +145,19 @@ for (const mode of ["pg", "rest"]) {
       assert.equal((await api("POST", "/api/v1/timed-reservations/demo", good())).body.code, "DISABLED");
     });
 
+    await t.test("legacy seat-counter and timed reservations cannot both be on for a venue", async () => {
+      restaurant.customUI = { timedReservations: { enabled: false } };
+      restaurant.reservationSettings = { isEnabled: true, totalSeats: 20, bookedSeats: 5 };
+      const blocked = await api("PATCH", "/api/v1/timed-reservations/settings", { enabled: true });
+      assert.equal(blocked.status, 409); assert.equal(blocked.body.code, "LEGACY_ACTIVE");
+      assert.equal(restaurant.customUI.timedReservations.enabled, false);
+      assert.equal(restaurant.reservationSettings.bookedSeats, 5, "old data untouched");
+      restaurant.reservationSettings = { isEnabled: false, totalSeats: 20, bookedSeats: 5 };
+      assert.equal((await api("PATCH", "/api/v1/timed-reservations/settings", { enabled: true })).status, 200);
+      assert.equal(restaurant.reservationSettings.bookedSeats, 5, "old data untouched");
+      restaurant.reservationSettings = undefined;
+    });
+
     await t.test("date + time are read in the venue zone (Cairo by default), whatever the device says", async () => {
       clock = T0; restaurant.customUI = { timedReservations: { enabled: true } };
       const r = await api("POST", "/api/v1/timed-reservations/demo", { name: "ليلى", phone: "01012345678", partySize: 2, date: "2030-05-03", time: "20:30", requestKey: "zone-key-" + Math.random().toString(36).slice(2) });
