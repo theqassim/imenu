@@ -108,3 +108,39 @@ test("CAS: persistent conflict gives up with ok:false after max attempts", async
   assert.strictEqual(r.ok, false);
   assert.strictEqual(r.attempts, 3);
 });
+
+test("CAS: multiple mutations + explicit customUI apply atomically in one write", async () => {
+  const { writeCustomUICas } = require("../category-names-en");
+  const row = { customUI: { heroText: "أهلا", categoryNamesEn: { "مشويات": "Grill" } } };
+  const mutations = [
+    (ui) => applyCategoryNamesEnOps(ui, { set: { "مشروبات": "Drinks" } }),
+    (ui) => ({ ...ui, orderAnnouncements: [{ id: "a1", title: "عرض" }] }),
+    (ui) => ({ ...ui, bgValue: "/uploads/bg.jpg", bgType: "image" }),
+  ];
+  const explicit = { themeColor: "#4f46e5" };
+  const r = await writeCustomUICas(makeCasClient(row), "r1",
+    (fresh) => mutations.reduce((ui, f) => f(ui), { ...fresh, ...explicit }), 3);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.attempts, 1);
+  assert.strictEqual(row.customUI.heroText, "أهلا");               // untouched key preserved
+  assert.strictEqual(row.customUI.themeColor, "#4f46e5");          // explicit client UI applied
+  assert.strictEqual(row.customUI.orderAnnouncements[0].id, "a1"); // announcements mutation
+  assert.strictEqual(row.customUI.bgValue, "/uploads/bg.jpg");     // upload mutation
+  assert.deepStrictEqual(row.customUI.categoryNamesEn, { "مشويات": "Grill", "مشروبات": "Drinks" });
+});
+
+test("CAS: retry re-applies mutations onto the fresh value, not the stale read", async () => {
+  const { writeCustomUICas } = require("../category-names-en");
+  const row = { customUI: { files: { logo: "old.png" } } };
+  let writes = 0;
+  const client = makeCasClient(row, (r) => {
+    if (writes++ === 0) r.customUI = { files: { logo: "new.png" }, note: "concurrent" };
+  });
+  const r = await writeCustomUICas(client, "r1",
+    (fresh) => ({ ...fresh, bgValue: "/uploads/bg.jpg" }), 3);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.attempts, 2);
+  assert.strictEqual(row.customUI.note, "concurrent");       // concurrent write survived the upload merge
+  assert.strictEqual(row.customUI.files.logo, "new.png");
+  assert.strictEqual(row.customUI.bgValue, "/uploads/bg.jpg");
+});

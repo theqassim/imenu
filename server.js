@@ -883,30 +883,23 @@ app.post("/api/v1/offers/upload-bg", protect, upload.single("image"), async (req
 app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
     let updateData = { ...req.body };
-    // Narrow, compare-and-set write for the category English-name map: the dashboard sends
-    // ops (set/delete) instead of a full customUI object. Each attempt reads customUI, merges
-    // the ops, then writes with a conditional UPDATE (WHERE _id AND customUI = the value just
-    // read, jsonb semantic equality), so a concurrent save that lands first makes our write
-    // affect zero rows and we re-read + retry (up to 3 attempts). Unrelated keys written by
-    // other sessions always survive.
-    let casApplied = false;
-    let casCustomUI = null;
+    // customUI changes from narrow branches (category EN ops, announcements, image uploads)
+    // are collected as mutations and committed in ONE compare-and-set write at the end:
+    // each attempt reads the freshest customUI, applies explicit client customUI (if any)
+    // then every mutation, and writes with a conditional UPDATE (WHERE _id AND customUI =
+    // the value just read, PostgREST jsonb semantic equality). A concurrent save makes the
+    // write match zero rows -> re-read + retry (3 attempts), 409 on persistent conflict.
+    // Unrelated keys written by other sessions always survive, including mid-flight ones.
+    const uiMutations = [];
     if (typeof updateData.categoryNamesEnOps === "string") {
       try { updateData.categoryNamesEnOps = JSON.parse(updateData.categoryNamesEnOps); } catch (e) { updateData.categoryNamesEnOps = null; }
     }
     if (updateData.categoryNamesEnOps && typeof updateData.categoryNamesEnOps === "object") {
       const ops = updateData.categoryNamesEnOps;
-      delete updateData.categoryNamesEnOps;
-      const { applyCategoryNamesEnOpsCas } = require("./category-names-en");
-      const cas = await applyCategoryNamesEnOpsCas(supabase, req.params.id, ops, 3);
-      if (!cas.ok) {
-        return res.status(409).json({ message: "حصل تعديل تاني في نفس اللحظة، حاول تاني" });
-      }
-      casApplied = true;
-      casCustomUI = cas.customUI;
-    } else {
-      delete updateData.categoryNamesEnOps;
+      const { applyCategoryNamesEnOps } = require("./category-names-en");
+      uiMutations.push((ui) => applyCategoryNamesEnOps(ui, ops));
     }
+    delete updateData.categoryNamesEnOps;
     if (typeof updateData.offers === "string") {
       try { updateData.offers = JSON.parse(updateData.offers); } catch (e) { delete updateData.offers; }
     }
@@ -935,20 +928,7 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
         popupFreq: ["session", "once", "daily", "always"].includes(a.popupFreq) ? a.popupFreq : "session",
       })).filter((a) => a.title || a.message);
       delete updateData.announcements;
-      const { data: currentRestaurant, error: currentRestaurantError } = await supabase
-        .from("restaurants")
-        .select("customUI")
-        .eq("_id", req.params.id)
-        .single();
-      if (currentRestaurantError) throw currentRestaurantError;
-      const currentCustomUI = currentRestaurant && currentRestaurant.customUI && typeof currentRestaurant.customUI === "object"
-        ? currentRestaurant.customUI
-        : {};
-      updateData.customUI = {
-        ...currentCustomUI,
-        ...(updateData.customUI && typeof updateData.customUI === "object" ? updateData.customUI : {}),
-        orderAnnouncements: announcements,
-      };
+      uiMutations.push((ui) => ({ ...ui, orderAnnouncements: announcements }));
     }
     if (updateData.customUI && typeof updateData.customUI === "string") {
       try { updateData.customUI = JSON.parse(updateData.customUI); } catch (e) { updateData.customUI = {}; }
@@ -973,13 +953,13 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       };
     }
     if (req.files) {
-      if (!updateData.customUI) updateData.customUI = casApplied && casCustomUI ? { ...casCustomUI } : {};
       if (req.files["bgImage"]) {
-        updateData.customUI.bgValue = req.files["bgImage"][0].path;
-        updateData.customUI.bgType = "image";
+        const p = req.files["bgImage"][0].path;
+        uiMutations.push((ui) => ({ ...ui, bgValue: p, bgType: "image" }));
       }
       if (req.files["heroImage"]) {
-        updateData.customUI.heroImage = req.files["heroImage"][0].path;
+        const p = req.files["heroImage"][0].path;
+        uiMutations.push((ui) => ({ ...ui, heroImage: p }));
       }
       if (req.files["storeLogo"]) {
         if (!updateData.storePage) updateData.storePage = {};
@@ -987,6 +967,23 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       }
     }
     
+    if (uiMutations.length) {
+      const explicitUI = updateData.customUI && typeof updateData.customUI === "object" && !Array.isArray(updateData.customUI)
+        ? updateData.customUI
+        : null;
+      delete updateData.customUI;
+      const { writeCustomUICas } = require("./category-names-en");
+      const cas = await writeCustomUICas(
+        supabase,
+        req.params.id,
+        (fresh) => uiMutations.reduce((ui, f) => f(ui), explicitUI ? { ...fresh, ...explicitUI } : fresh),
+        3
+      );
+      if (!cas.ok) {
+        return res.status(409).json({ message: "حصل تعديل تاني في نفس اللحظة، حاول تاني" });
+      }
+    }
+
     const runUpdate = () => supabase
       .from('restaurants')
       .update(updateData)
@@ -994,7 +991,17 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       .select()
       .single();
 
-    let { data: updatedRestaurant, error } = await runUpdate();
+    let updatedRestaurant, error;
+    if (Object.keys(updateData).length) {
+      ({ data: updatedRestaurant, error } = await runUpdate());
+    } else {
+      // CAS-only request: nothing left for the unconditional update, just re-read.
+      ({ data: updatedRestaurant, error } = await supabase
+        .from('restaurants')
+        .select()
+        .eq('_id', req.params.id)
+        .single());
+    }
 
     if (error && isMissingOffersColumn(error)) {
       const created = await ensureOffersColumn();

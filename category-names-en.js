@@ -28,11 +28,12 @@ function applyCategoryNamesEnOps(currentUI, ops) {
 
 module.exports = { applyCategoryNamesEnOps };
 
-// Revision-checked write of the ops result: a single conditional UPDATE per attempt
+// Revision-checked write of a customUI change: a single conditional UPDATE per attempt
 // (WHERE _id AND customUI = the value just read — PostgREST jsonb equality is semantic),
-// retried when a concurrent write wins the race. `client` is the small slice of the
-// supabase-js API the restaurants route uses, so tests can stub it.
-async function applyCategoryNamesEnOpsCas(client, restaurantId, ops, maxAttempts) {
+// retried when a concurrent write wins the race. `buildUI(freshUI)` returns the new customUI
+// from the value just read, so every retry re-applies the change onto fresh state.
+// `client` is the small slice of the supabase-js API the restaurants route uses, so tests can stub it.
+async function writeCustomUICas(client, restaurantId, buildUI, maxAttempts) {
   const attempts = maxAttempts || 3;
   for (let attempt = 0; attempt < attempts; attempt++) {
     const { data: row, error: readErr } = await client
@@ -42,7 +43,7 @@ async function applyCategoryNamesEnOpsCas(client, restaurantId, ops, maxAttempts
       .single();
     if (readErr) throw readErr;
     const current = row && row.customUI && typeof row.customUI === "object" ? row.customUI : {};
-    const merged = applyCategoryNamesEnOps(current, ops);
+    const merged = buildUI(current);
     const { data: wrote, error: writeErr } = await client
       .from("restaurants")
       .update({ customUI: merged })
@@ -55,4 +56,8 @@ async function applyCategoryNamesEnOpsCas(client, restaurantId, ops, maxAttempts
   return { ok: false, attempts };
 }
 
-module.exports = { applyCategoryNamesEnOps, applyCategoryNamesEnOpsCas };
+async function applyCategoryNamesEnOpsCas(client, restaurantId, ops, maxAttempts) {
+  return writeCustomUICas(client, restaurantId, (fresh) => applyCategoryNamesEnOps(fresh, ops), maxAttempts);
+}
+
+module.exports = { applyCategoryNamesEnOps, applyCategoryNamesEnOpsCas, writeCustomUICas };
