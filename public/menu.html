@@ -2681,7 +2681,7 @@
           catScroll.innerHTML += `
             <div class="cat-chip ${activeClass}" onclick="scrollToSection('${cat}', this)">
                 ${imgHtml}
-                <span>${cat}</span>
+                <span data-imenu-skip>${pickCat(cat)}</span>
             </div>`;
 
           first = false;
