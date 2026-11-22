@@ -24,6 +24,7 @@
 <div class="wrap">
   <div class="mast">
     <div class="identity"><div class="mark" id="venueMark" aria-hidden="true">م</div><div><div class="venue-label">أهلًا بيك في</div><h1 id="rname">حجز طاولة</h1></div></div>
+    <span data-imenu-lang-host style="display:inline-flex;align-items:center"></span>
     <a class="menu-link" id="menuLink" href="#">الرجوع للمنيو <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m9 5 7 7-7 7"/></svg></a>
   </div>
   <div class="layout">
@@ -240,17 +241,36 @@
     if (p.sizes && p.sizes.length) { var s = p.sizes.filter(function (z) { return z.name === size; })[0]; return s ? Number(s.price) : 0; }
     return Number(p.price) || 0;
   }
+  function isEn() { return !!(window.imenuGetLang && window.imenuGetLang() === "en"); }
+  function pickName(p) {
+    try { if (isEn() && p.name && p.name.en && String(p.name.en).trim() && p.name.en !== p.name.ar) return p.name.en; } catch (e) {}
+    return (p.name && p.name.ar) || "";
+  }
+  function pickCat(c) {
+    try {
+      if (isEn()) {
+        var m = (window.__restaurant && window.__restaurant.customUI && window.__restaurant.customUI.categoryNamesEn) || {};
+        if (m[c]) return m[c];
+      }
+    } catch (e) {}
+    return c;
+  }
+  window.addEventListener("imenu-lang-changed", function () {
+    try { renderMenu(window.__bookCats || []); } catch (e) {}
+  });
+
   function renderMenu(cats) {
+    window.__bookCats = cats;
     var html = "", by = {};
     products.forEach(function (p) { (by[p.category] = by[p.category] || []).push(p); });
     var order = cats.length ? cats.map(function (c) { return c.name; }) : Object.keys(by);
     Object.keys(by).forEach(function (k) { if (order.indexOf(k) < 0) order.push(k); });
     order.forEach(function (c) {
       if (!by[c]) return;
-      html += '<div class="cat">' + esc(c) + "</div>";
+      html += '<div class="cat" data-imenu-skip>' + esc(pickCat(c)) + "</div>";
       by[c].forEach(function (p) {
         var hasSizes = p.sizes && p.sizes.length;
-        html += '<div class="item" data-id="' + esc(p._id) + '"><div><div class="nm">' + esc(p.name && p.name.ar) + "</div>" +
+        html += '<div class="item" data-id="' + esc(p._id) + '"><div><div class="nm" data-imenu-skip>' + esc(pickName(p)) + "</div>" +
           (hasSizes ? '<select class="sz">' + p.sizes.map(function (s) { return '<option value="' + esc(s.name) + '">' + esc(s.name) + " · " + money(s.price) + "</option>"; }).join("") + "</select>"
                     : '<div class="pr">' + money(p.price) + "</div>") +
           '</div><div class="mini"><button type="button" data-d="-1" aria-label="تقليل الكمية">−</button><b>0</b><button type="button" data-d="1" aria-label="زيادة الكمية">+</button></div></div>';
@@ -309,7 +329,7 @@
   Promise.all([getJson(API + "/config/" + encodeURIComponent(slug)), getJson("/api/v1/restaurants/" + encodeURIComponent(slug))]).then(function (rs) {
     var c = rs[0], m = rs[1];
     if (m.ok && m.j.data && m.j.data.restaurant) {
-      var r = m.j.data.restaurant; document.title = "احجز طاولة | " + (r.restaurantName || ""); $("rname").textContent = r.restaurantName || "احجز طاولة";
+      var r = m.j.data.restaurant; window.__restaurant = r; document.title = "احجز طاولة | " + (r.restaurantName || ""); $("rname").textContent = r.restaurantName || "احجز طاولة";
       var letter = (r.restaurantName || "م").trim().charAt(0);
       var photo = (r.storePage && r.storePage.logo) || r.image || (r.customUI && r.customUI.heroImage) || "";
       if (photo) {
@@ -330,5 +350,6 @@
   }).catch(function () { $("loading").textContent = "تعذر تحميل الصفحة، حاول تاني"; });
 })();
 </script>
+<script src="/assets/js/web-i18n.js"></script>
 </body>
 </html>
