@@ -5,6 +5,9 @@ const http = require("http");
 const COLS = {
   live_pos_keys: ["restaurant_id", "key_hash", "key_hint", "created_at"],
   live_orders_inbox: ["id", "restaurant_id", "payload", "attempts", "created_at"],
+  reservations: ["id", "restaurant_id", "code", "request_key", "customer_name", "customer_phone", "party_size", "starts_at", "status",
+    "table_label", "window_start", "window_end", "preorder", "note", "version", "created_at", "updated_at"],
+  reservation_events: ["id", "restaurant_id", "reservation_id", "kind", "acked", "created_at"],
 };
 const ident = (n) => `"${n}"`;
 
@@ -14,10 +17,13 @@ function parseFilters(url, cols) {
   for (const [k, v] of url.searchParams) {
     if (["select", "order", "limit", "on_conflict", "columns"].includes(k)) continue;
     if (!cols.includes(k)) throw Object.assign(new Error("bad column " + k), { status: 400 });
-    const m = /^eq\.(.*)$/.exec(v);
-    if (!m) throw Object.assign(new Error("unsupported filter"), { status: 400 });
-    vals.push(m[1]);
-    where.push(`${ident(k)} = $${vals.length}`);
+    let m = /^eq\.(.*)$/.exec(v);
+    if (m) { vals.push(m[1]); where.push(`${ident(k)} = $${vals.length}`); continue; }
+    m = /^gte\.(.*)$/.exec(v);
+    if (m) { vals.push(m[1]); where.push(`${ident(k)} >= $${vals.length}`); continue; }
+    m = /^in\.\((.*)\)$/.exec(v);
+    if (m) { const items = m[1].split(",").map((x) => x.replace(/^"|"$/g, "")); const ph = items.map((x) => { vals.push(x); return "$" + vals.length; }); where.push(`${ident(k)} IN (${ph.join(",")})`); continue; }
+    throw Object.assign(new Error("unsupported filter"), { status: 400 });
   }
   return { where: where.length ? " WHERE " + where.join(" AND ") : "", vals };
 }
@@ -62,6 +68,7 @@ function startEmulator(pool, opts = {}) {
         const rows = Array.isArray(body) ? body : [body];
         const upsert = /resolution=merge-duplicates/.test(req.headers.prefer || "");
         const onConflict = url.searchParams.get("on_conflict");
+        const reps = [];
         for (const row of rows) {
           const keys = Object.keys(row);
           if (!keys.every((k) => cols.includes(k))) return send(400, { code: "PGRST204", message: "unknown column" });
@@ -70,12 +77,13 @@ function startEmulator(pool, opts = {}) {
           if (upsert && onConflict) {
             sql += ` ON CONFLICT (${ident(onConflict)}) DO UPDATE SET ${keys.filter((k) => k !== onConflict).map((k) => `${ident(k)} = EXCLUDED.${ident(k)}`).join(", ")}`;
           }
-          try { await pool.query(sql, vals); } catch (e) {
+          const wantRep = /return=representation/.test(req.headers.prefer || "");
+          try { const r = await pool.query(sql + (wantRep ? " RETURNING *" : ""), vals); if (wantRep) reps.push(...r.rows); } catch (e) {
             if (e.code === "23505") return send(409, { code: "23505", message: e.message });
             throw e;
           }
         }
-        return send(201);
+        return reps.length ? send(201, reps) : send(201);
       }
       if (req.method === "PATCH" || req.method === "DELETE") {
         const { where, vals } = parseFilters(url, cols);
@@ -87,7 +95,11 @@ function startEmulator(pool, opts = {}) {
           const keys = Object.keys(body);
           if (!keys.every((k) => cols.includes(k))) return send(400, { code: "PGRST204", message: "unknown column" });
           const set = keys.map((k, i) => `${ident(k)} = $${vals.length + i + 1}`).join(", ");
-          await pool.query(`UPDATE public.${ident(table)} SET ${set}${where}`, [...vals, ...keys.map((k) => body[k])]);
+          const wantRep = /return=representation/.test(req.headers.prefer || "");
+          let r;
+          try { r = await pool.query(`UPDATE public.${ident(table)} SET ${set}${where}${wantRep ? " RETURNING *" : ""}`, [...vals, ...keys.map((k) => body[k])]); }
+          catch (e) { if (e.code === "23P01") return send(409, { code: "23P01", message: e.message }); throw e; }
+          if (wantRep) return send(200, r.rows);
         }
         return send(204);
       }

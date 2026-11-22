@@ -2,19 +2,25 @@
 const test = require("node:test");
 const assert = require("node:assert");
 const { Pool } = require("pg");
-const { pgReservations } = require("../reservations-db");
+const { pgReservations, restReservations } = require("../reservations-db");
 
 const url = process.env.TEST_DATABASE_URL;
 const skip = !url && "TEST_DATABASE_URL not set";
-const base = (o = {}) => ({ restaurant_id: "r1", code: "C" + Math.random().toString(36).slice(2, 8), request_key: "k" + Math.random(),
+const base = (o = {}) => ({ restaurant_id: "r_" + (global.__m || "x"), code: "C" + Math.random().toString(36).slice(2, 8), request_key: "k" + Math.random(),
   customer_name: "Test", customer_phone: "0100", party_size: 4, starts_at: "2030-01-01T18:00:00Z", ...o });
 
-test("reservations store", { skip }, async (t) => {
+for (const mode of ["pg", "rest"]) test("reservations store (" + mode + ")", { skip }, async (t) => {
   const pool = new Pool({ connectionString: url });
-  const db = pgReservations(pool);
-  await db.ensure();
-  await db.ensure(); // idempotent
-  t.after(() => pool.end());
+  global.__m = mode; let db, emu;
+  if (mode === "pg") { db = pgReservations(pool); await db.ensure(); await db.ensure(); }
+  else {
+    await pgReservations(pool).ensure();
+    emu = await require("./helpers/postgrest-emulator.cjs").startEmulator(pool);
+    const { createClient } = require("@supabase/supabase-js");
+    db = restReservations(createClient(emu.url, "test-service-role-key", { auth: { persistSession: false } }));
+    await db.ensure();
+  }
+  t.after(async () => { if (emu) emu.server.close(); await pool.end(); });
 
   await t.test("create is idempotent on request_key", async () => {
     const r = base();
@@ -23,7 +29,7 @@ test("reservations store", { skip }, async (t) => {
     assert.equal(a.created, true);
     assert.equal(b.created, false);
     assert.equal(b.row.id, a.row.id);
-    assert.equal((await db.pendingEvents("r1", 1000)).filter((e) => e.reservation_id === a.row.id).length, 1);
+    assert.equal((await db.pendingEvents("r_" + global.__m, 1000)).filter((e) => e.reservation_id === a.row.id).length, 1);
   });
 
   await t.test("two owners approving: only one wins (compare-and-set)", async () => {
@@ -57,7 +63,7 @@ test("reservations store", { skip }, async (t) => {
     assert.equal(cx.ok, true);
     const b = (await db.create(base())).row;
     assert.equal((await db.transition(b.id, b.version, { ...p, status: "approved" })).ok, true);
-    const ev = await db.pendingEvents("r1", 1000);
+    const ev = await db.pendingEvents("r_" + global.__m, 1000);
     await db.ackEvent(ev[0].id);
     assert.ok(await db.get(a.id));
   });

@@ -80,4 +80,67 @@ function pgReservations(pool) {
   };
 }
 
-module.exports = { pgReservations, newId };
+function restReservations(supabase) {
+  const fail = (error) => {
+    const e = new Error(error.message || "supabase request failed");
+    e.code = error.code || (error.status ? "HTTP_" + error.status : "");
+    throw e;
+  };
+  const run = async (q) => { const { data, error } = await q; if (error) fail(error); return data; };
+  const one = async (q) => { const d = await run(q); return (d && d[0]) || null; };
+  const T = "reservations", E = "reservation_events";
+  const self = {
+    kind: "rest",
+    async ensure() {
+      await run(supabase.from(T).select("id").limit(1));
+      await run(supabase.from(E).select("id").limit(1));
+    },
+    async create(r) {
+      const id = newId();
+      const row = { id, restaurant_id: r.restaurant_id, code: r.code, request_key: r.request_key, customer_name: r.customer_name,
+        customer_phone: r.customer_phone, party_size: r.party_size, starts_at: r.starts_at, preorder: r.preorder || null, note: r.note || null };
+      const { data, error } = await supabase.from(T).insert(row).select(COLS);
+      if (error) {
+        if (error.code !== "23505") fail(error);
+        // A duplicate request_key is the same booking; a duplicate code is a bad luck collision and must not be hidden.
+        const dup = await one(supabase.from(T).select(COLS).eq("restaurant_id", r.restaurant_id).eq("request_key", r.request_key).limit(1));
+        if (!dup) fail(error);
+        return { created: false, row: dup };
+      }
+      await run(supabase.from(E).insert({ restaurant_id: r.restaurant_id, reservation_id: id, kind: "created" }));
+      return { created: true, row: data[0] };
+    },
+    async get(id) { return one(supabase.from(T).select(COLS).eq("id", id).limit(1)); },
+    async getByCode(code) { return one(supabase.from(T).select(COLS).eq("code", code).limit(1)); },
+    async listActive(rid, fromIso) {
+      return run(supabase.from(T).select(COLS).eq("restaurant_id", String(rid)).in("status", ["pending", "approved", "arrived"])
+        .gte("starts_at", fromIso).order("starts_at", { ascending: true }));
+    },
+    async listFor(rid) {
+      return run(supabase.from(T).select(COLS).eq("restaurant_id", String(rid)).order("starts_at", { ascending: false }).limit(200));
+    },
+    async transition(id, expectedVersion, patch) {
+      const set = {};
+      for (const k of Object.keys(patch)) if (PATCHABLE.has(k)) set[k] = patch[k];
+      set.version = expectedVersion + 1;
+      set.updated_at = new Date().toISOString();
+      const { data, error } = await supabase.from(T).update(set).eq("id", id).eq("version", expectedVersion).select(COLS);
+      if (error) {
+        if (error.code === "23P01") return { ok: false, reason: "conflict" };
+        fail(error);
+      }
+      if (!data || !data[0]) return { ok: false, reason: (await self.get(id)) ? "stale" : "missing" };
+      // The booking row is the truth. If this event insert fails, the POS still heals on its next full refresh.
+      await run(supabase.from(E).insert({ restaurant_id: data[0].restaurant_id, reservation_id: id, kind: patch.status || "updated" }));
+      return { ok: true, row: data[0] };
+    },
+    async pendingEvents(rid, limit = 100) {
+      return run(supabase.from(E).select("id, reservation_id, kind, created_at").eq("restaurant_id", String(rid)).eq("acked", false)
+        .order("id", { ascending: true }).limit(limit));
+    },
+    async ackEvent(id) { await run(supabase.from(E).update({ acked: true }).eq("id", id)); },
+  };
+  return self;
+}
+
+module.exports = { pgReservations, restReservations, newId };
