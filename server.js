@@ -883,24 +883,27 @@ app.post("/api/v1/offers/upload-bg", protect, upload.single("image"), async (req
 app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
     let updateData = { ...req.body };
-    // Narrow, server-side merge for the category English-name map: the dashboard sends
-    // ops (set/delete) instead of a full customUI object, and we re-read customUI here so
-    // unrelated keys written by other sessions survive. Not a cross-request lock: two
-    // category-rename saves landing in the same instant can still interleave.
+    // Narrow, compare-and-set write for the category English-name map: the dashboard sends
+    // ops (set/delete) instead of a full customUI object. Each attempt reads customUI, merges
+    // the ops, then writes with a conditional UPDATE (WHERE _id AND customUI = the value just
+    // read, jsonb semantic equality), so a concurrent save that lands first makes our write
+    // affect zero rows and we re-read + retry (up to 3 attempts). Unrelated keys written by
+    // other sessions always survive.
+    let casApplied = false;
+    let casCustomUI = null;
     if (typeof updateData.categoryNamesEnOps === "string") {
       try { updateData.categoryNamesEnOps = JSON.parse(updateData.categoryNamesEnOps); } catch (e) { updateData.categoryNamesEnOps = null; }
     }
     if (updateData.categoryNamesEnOps && typeof updateData.categoryNamesEnOps === "object") {
       const ops = updateData.categoryNamesEnOps;
       delete updateData.categoryNamesEnOps;
-      const { data: currentRow, error: currentErr } = await supabase
-        .from("restaurants")
-        .select("customUI")
-        .eq("_id", req.params.id)
-        .single();
-      if (currentErr) throw currentErr;
-      const { applyCategoryNamesEnOps } = require("./category-names-en");
-      updateData.customUI = applyCategoryNamesEnOps(currentRow && currentRow.customUI, ops);
+      const { applyCategoryNamesEnOpsCas } = require("./category-names-en");
+      const cas = await applyCategoryNamesEnOpsCas(supabase, req.params.id, ops, 3);
+      if (!cas.ok) {
+        return res.status(409).json({ message: "حصل تعديل تاني في نفس اللحظة، حاول تاني" });
+      }
+      casApplied = true;
+      casCustomUI = cas.customUI;
     } else {
       delete updateData.categoryNamesEnOps;
     }
@@ -970,7 +973,7 @@ app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', 
       };
     }
     if (req.files) {
-      if (!updateData.customUI) updateData.customUI = {};
+      if (!updateData.customUI) updateData.customUI = casApplied && casCustomUI ? { ...casCustomUI } : {};
       if (req.files["bgImage"]) {
         updateData.customUI.bgValue = req.files["bgImage"][0].path;
         updateData.customUI.bgType = "image";

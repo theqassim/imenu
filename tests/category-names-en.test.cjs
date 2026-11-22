@@ -35,3 +35,76 @@ test("categoryNamesEn ops: concurrent unrelated change survives re-read merge", 
   assert.strictEqual(out.heroImage, "/x.jpg");
   assert.deepStrictEqual(out.categoryNamesEn, { "مشويات": "Grill", "مشروبات": "Drinks" });
 });
+
+// Compare-and-set: a tiny supabase-js lookalike over an in-memory row, with jsonb
+// semantic equality on the conditional update (key order and whitespace ignored).
+function makeCasClient(row, onWrite) {
+  const semEq = (a, b) => JSON.stringify(sortKeys(a)) === JSON.stringify(sortKeys(b));
+  const sortKeys = (v) => Array.isArray(v) ? v.map(sortKeys)
+    : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).sort().map(k => [k, sortKeys(v[k])])) : v;
+  const chain = () => {
+    const c = {
+      _cols: null, _id: null, _eqUI: undefined, _update: null,
+      select(cols) { c._cols = cols; return c; },
+      update(patch) { c._update = patch; return c; },
+      eq(col, val) { if (col === "_id") c._id = val; else c._eqUI = val; return c; },
+      single: async () => {
+        if (c._update) {
+          if (onWrite) onWrite(row); // concurrent session's write lands before ours reaches the DB
+          if (!semEq(row.customUI, c._eqUI)) return { data: null, error: null }; // 0 rows matched
+          Object.assign(row, c._update);
+          return { data: row, error: null };
+        }
+        return { data: { customUI: JSON.parse(JSON.stringify(row.customUI)) }, error: null };
+      },
+      then(resolve) { // await on the chain itself (update path without .single in CAS helper)
+        const run = async () => {
+          if (c._update) {
+            if (onWrite) onWrite(row); // concurrent session's write lands before ours reaches the DB
+            if (!semEq(row.customUI, c._eqUI)) return { data: [], error: null };
+            Object.assign(row, c._update);
+            return { data: [{ _id: c._id }], error: null };
+          }
+          return { data: [{ customUI: JSON.parse(JSON.stringify(row.customUI)) }], error: null };
+        };
+        return run().then(resolve);
+      },
+    };
+    return c;
+  };
+  return { from: () => chain() };
+}
+
+test("CAS: clean write succeeds in one attempt", async () => {
+  const { applyCategoryNamesEnOpsCas } = require("../category-names-en");
+  const row = { customUI: { heroText: "أهلا", categoryNamesEn: { "مشويات": "Grill" } } };
+  const r = await applyCategoryNamesEnOpsCas(makeCasClient(row), "r1", { set: { "مشروبات": "Drinks" } }, 3);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.attempts, 1);
+  assert.deepStrictEqual(row.customUI.categoryNamesEn, { "مشويات": "Grill", "مشروبات": "Drinks" });
+  assert.strictEqual(row.customUI.heroText, "أهلا");
+});
+
+test("CAS: lost race retries on the fresh value and preserves both writes", async () => {
+  const { applyCategoryNamesEnOpsCas } = require("../category-names-en");
+  const row = { customUI: { categoryNamesEn: { "مشويات": "Grill" } } };
+  let writes = 0;
+  // Concurrent session lands its own change between our read and our write, exactly once.
+  const client = makeCasClient(row, (r) => {
+    if (writes++ === 0) r.customUI = { ...r.customUI, bgType: "image", categoryNamesEn: { "مشويات": "BBQ" } };
+  });
+  const r = await applyCategoryNamesEnOpsCas(client, "r1", { set: { "مشروبات": "Drinks" } }, 3);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.attempts, 2);
+  assert.strictEqual(row.customUI.bgType, "image");
+  assert.deepStrictEqual(row.customUI.categoryNamesEn, { "مشويات": "BBQ", "مشروبات": "Drinks" });
+});
+
+test("CAS: persistent conflict gives up with ok:false after max attempts", async () => {
+  const { applyCategoryNamesEnOpsCas } = require("../category-names-en");
+  const row = { customUI: { v: 0 } };
+  const client = makeCasClient(row, (r) => { r.customUI = { v: r.customUI.v + 1 }; });
+  const r = await applyCategoryNamesEnOpsCas(client, "r1", { set: { "مشروبات": "Drinks" } }, 3);
+  assert.strictEqual(r.ok, false);
+  assert.strictEqual(r.attempts, 3);
+});

@@ -27,3 +27,32 @@ function applyCategoryNamesEnOps(currentUI, ops) {
 }
 
 module.exports = { applyCategoryNamesEnOps };
+
+// Revision-checked write of the ops result: a single conditional UPDATE per attempt
+// (WHERE _id AND customUI = the value just read — PostgREST jsonb equality is semantic),
+// retried when a concurrent write wins the race. `client` is the small slice of the
+// supabase-js API the restaurants route uses, so tests can stub it.
+async function applyCategoryNamesEnOpsCas(client, restaurantId, ops, maxAttempts) {
+  const attempts = maxAttempts || 3;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const { data: row, error: readErr } = await client
+      .from("restaurants")
+      .select("customUI")
+      .eq("_id", restaurantId)
+      .single();
+    if (readErr) throw readErr;
+    const current = row && row.customUI && typeof row.customUI === "object" ? row.customUI : {};
+    const merged = applyCategoryNamesEnOps(current, ops);
+    const { data: wrote, error: writeErr } = await client
+      .from("restaurants")
+      .update({ customUI: merged })
+      .eq("_id", restaurantId)
+      .eq("customUI", current)
+      .select("_id");
+    if (writeErr) throw writeErr;
+    if (Array.isArray(wrote) && wrote.length > 0) return { ok: true, attempts: attempt + 1, customUI: merged };
+  }
+  return { ok: false, attempts };
+}
+
+module.exports = { applyCategoryNamesEnOps, applyCategoryNamesEnOpsCas };
