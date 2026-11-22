@@ -133,7 +133,7 @@ function generateKey() {
   return KEY_PREFIX + crypto.randomBytes(24).toString("base64url");
 }
 
-function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console }) {
+function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect }) {
   const db = dbIn || pgBackend(pool);
   const connections = new Map(); // restaurantId -> Set(socket)
   const locks = new Map(); // restaurantId -> Promise chain
@@ -286,6 +286,9 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
     connections.get(rid).add(socket);
     log.log(`🟢 live orders: restaurant ${socket.data.slug} online (${connections.get(rid).size})`);
     socket.emit("ready", { slug: socket.data.slug });
+    if (typeof onPosConnect === "function") {
+      try { onPosConnect(socket, rid); } catch (e) { log.error("onPosConnect error:", e.message); }
+    }
     // Reconnect: pull everything missed first.
     deliver(rid);
     socket.on("sync", () => deliver(rid));

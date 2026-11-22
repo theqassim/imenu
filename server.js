@@ -251,7 +251,15 @@ const restrictTo = (...roles) => {
     getProducts: async (restaurantId) => { const { data, error } = await supabase.from("products").select("_id, name, price, sizes, category, isAvailable").eq("restaurant", restaurantId); if (error) throw error; return data || []; },
     updateRestaurantCustomUI: async (id, customUI) => { const { error } = await supabase.from("restaurants").update({ customUI }).eq("_id", id); if (error) throw error; },
   };
-  require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo });
+  let timedReservations = null;
+  const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo,
+    onPosConnect: (socket, rid) => { if (timedReservations) timedReservations.posAttach(socket, rid); } });
+  // Timed reservations: dormant until the owner enables them (customUI.timedReservations.enabled) and sql/reservations.sql has been run.
+  {
+    const rdb = require("./reservations-db");
+    const resDb = pool ? rdb.pgReservations(pool) : (supabaseUrl && supabaseKey) ? rdb.restReservations(supabase) : null;
+    if (resDb) timedReservations = require("./reservations").createReservations({ app, io, db: resDb, store, protect, restrictTo, connections: liveOrders.connections });
+  }
 })();
 
 app.post("/api/v1/users/signup", async (req, res) => {
