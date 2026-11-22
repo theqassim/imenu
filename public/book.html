@@ -70,6 +70,7 @@
       <label>عدد الأشخاص</label>
       <div class="stepper"><button type="button" id="pm">−</button><b id="pn">2</b><button type="button" id="pp">+</button></div>
       <div class="hint" id="leadHint"></div>
+      <div class="hint" id="zoneHint"></div>
     </div>
 
     <div class="card">
@@ -107,10 +108,12 @@
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function show(id, on) { $(id).classList.toggle("hide", !on); }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
-  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  // Every date and time on this page is the restaurant's own clock (cfg.timezone), never the device's.
+  function zone() { return (cfg && cfg.timezone) || "Africa/Cairo"; }
+  function ymd(ts) { return new Intl.DateTimeFormat("en-CA", { timeZone: zone(), year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ts)); }
   function fmt(iso) {
     var d = new Date(iso);
-    return d.toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }) + " الساعة " + d.toLocaleTimeString("ar-EG", { hour: "numeric", minute: "2-digit" });
+    return d.toLocaleDateString("ar-EG", { timeZone: zone(), weekday: "long", day: "numeric", month: "long" }) + " الساعة " + d.toLocaleTimeString("ar-EG", { timeZone: zone(), hour: "numeric", minute: "2-digit" });
   }
   function money(n) { return Number(n).toFixed(2).replace(/\.00$/, "") + " ج.م"; }
   function fail(msg) { var e = $("err"); e.textContent = msg; e.style.display = msg ? "block" : "none"; if (msg) e.scrollIntoView({ behavior: "smooth", block: "center" }); }
@@ -160,9 +163,11 @@
   // ---------- form ----------
   function showForm() {
     show("loading", false); show("statusView", false); show("form", true); show("bar", true);
-    var now = new Date(), min = new Date(now.getTime() + cfg.minLeadMin * 60000), max = new Date(now.getTime() + cfg.maxDaysAhead * 86400000);
+    var now = Date.now(), min = now + cfg.minLeadMin * 60000, max = now + cfg.maxDaysAhead * 86400000;
     $("d").min = ymd(min); $("d").max = ymd(max);
     if (!$("d").value) $("d").value = ymd(min);
+    var dev = ""; try { dev = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+    $("zoneHint").textContent = "الوقت بتوقيت المطعم (" + zone() + ")" + (dev && dev !== zone() ? ". تنبيه: ساعة جهازك على توقيت مختلف، اكتب الميعاد بتوقيت المطعم." : ".");
     $("leadHint").textContent = cfg.minLeadMin >= 60 ? "أقرب ميعاد متاح بعد " + Math.round(cfg.minLeadMin / 60 * 10) / 10 + " ساعة من دلوقتي." : "أقرب ميعاد متاح بعد " + cfg.minLeadMin + " دقيقة من دلوقتي.";
     sum();
   }
@@ -225,13 +230,11 @@
     if (!d || !t) return fail("اختار اليوم والساعة");
     if (!name) return fail("اكتب اسمك");
     if (phone.replace(/\D/g, "").length < 7) return fail("اكتب رقم موبايل صحيح");
-    var when = new Date(d + "T" + t);
-    if (isNaN(when)) return fail("اختار اليوم والساعة");
     var items = Object.keys(cart).map(function (k) { var c = cart[k]; var o = { productId: c.p._id, qty: c.qty }; if (c.size) o.sizeName = c.size; return o; });
     sending = true; $("go").disabled = true; $("go").textContent = "بنبعت...";
     getJson(API + "/" + encodeURIComponent(slug), {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name, phone: phone, partySize: party, startsAt: when.toISOString(), note: $("note").value.trim(), items: items.length ? items : undefined, requestKey: newKey() })
+      body: JSON.stringify({ name: name, phone: phone, partySize: party, date: d, time: t, note: $("note").value.trim(), items: items.length ? items : undefined, requestKey: newKey() })
     }).then(function (x) {
       if (x.ok && x.j.data) { sessionStorage.removeItem(KEY); localStorage.setItem(LS, x.j.data.code); cart = {}; poll(x.j.data.code); renderStatus(x.j.data); return; }
       fail(x.j.message || "حصلت مشكلة، حاول تاني");

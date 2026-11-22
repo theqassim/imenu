@@ -3122,6 +3122,7 @@
                   <div><label class="form-label">أقرب ميعاد من دلوقتي (دقيقة)</label><input type="number" id="tr-minLead" min="0" max="1440"></div>
                   <div><label class="form-label">أبعد حجز (يوم)</label><input type="number" id="tr-maxDays" min="1" max="365"></div>
                   <div><label class="form-label">الطلب من غير رد يتقفل بعد (دقيقة، 0 = مايتقفلش)</label><input type="number" id="tr-expire" min="0" max="1440"></div>
+                  <div><label class="form-label">المنطقة الزمنية للمطعم</label><input type="text" id="tr-tz" list="tr-tz-list" dir="ltr" placeholder="Africa/Cairo"><datalist id="tr-tz-list"><option value="Africa/Cairo"><option value="Asia/Riyadh"><option value="Asia/Dubai"><option value="Asia/Kuwait"><option value="Asia/Qatar"><option value="Asia/Amman"><option value="Asia/Beirut"><option value="Europe/London"><option value="Europe/Istanbul"></datalist></div>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center">
                   <button type="button" class="btn" onclick="trSaveSettings()"><i class="fas fa-save"></i> حفظ إعدادات الحجز</button>
@@ -4807,7 +4808,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
 
 
       // ===== Timed reservations settings =====
-      const TR_DEFAULTS = { enabled: false, holdBeforeMin: 15, holdAfterMin: 90, minLeadMin: 30, maxDaysAhead: 60, expireMin: 0 };
+      const TR_DEFAULTS = { timezone: "Africa/Cairo", enabled: false, holdBeforeMin: 15, holdAfterMin: 90, minLeadMin: 30, maxDaysAhead: 60, expireMin: 0 };
       async function trLoad() {
         const line = document.getElementById("tr-status-line");
         try {
@@ -4825,6 +4826,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         document.getElementById("tr-minLead").value = d.minLeadMin;
         document.getElementById("tr-maxDays").value = d.maxDaysAhead;
         document.getElementById("tr-expire").value = d.expireMin;
+        document.getElementById("tr-tz").value = d.timezone || "Africa/Cairo";
         const slug = (window.__live && window.__live.slug) || "";
         document.getElementById("tr-link").textContent = slug ? location.origin + "/book/" + slug : "-";
         trRenderState();
@@ -4868,7 +4870,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
       async function trSaveSettings() {
         const n = (id) => Number(document.getElementById(id).value);
         try {
-          await trPatch({ holdBeforeMin: n("tr-holdBefore"), holdAfterMin: n("tr-holdAfter"), minLeadMin: n("tr-minLead"), maxDaysAhead: n("tr-maxDays"), expireMin: n("tr-expire") });
+          await trPatch({ holdBeforeMin: n("tr-holdBefore"), holdAfterMin: n("tr-holdAfter"), minLeadMin: n("tr-minLead"), maxDaysAhead: n("tr-maxDays"), expireMin: n("tr-expire"), timezone: document.getElementById("tr-tz").value.trim() });
           await trLoad();
           Swal.fire({ toast: true, icon: "success", title: "تم حفظ إعدادات الحجز", position: "top-end", showConfirmButton: false, timer: 1800 });
         } catch (e) {

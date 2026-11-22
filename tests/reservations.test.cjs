@@ -3,7 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert");
 const express = require("express");
 const { Pool } = require("pg");
-const { createReservations, planTransition, settingsOf } = require("../reservations");
+const { createReservations, planTransition, settingsOf, zonedInstant } = require("../reservations");
 const { pgReservations, restReservations } = require("../reservations-db");
 
 const S = settingsOf({ customUI: { timedReservations: { enabled: true } } });
@@ -22,6 +22,16 @@ test("planTransition rules", () => {
   assert.equal(planTransition(row({ status: "pending" }), "arrived", {}, S, T0).error, "STATE");
   assert.equal(planTransition(row({ status: "arrived" }), "cancel", {}, S, T0).error, "STATE");
   assert.equal(planTransition(row({ starts_at: "2030-05-01T09:00:00Z" }), "approve", { table_label: "1" }, S, T0).error, "PAST");
+});
+
+test("venue-zone time: wall clock resolves in the venue zone, not the device", () => {
+  const iso = (x) => new Date(x).toISOString();
+  assert.equal(iso(zonedInstant("2026-11-23", "20:30", "Africa/Cairo")), "2026-11-23T18:30:00.000Z");
+  assert.equal(iso(zonedInstant("2026-07-15", "20:30", "Africa/Cairo")), "2026-07-15T17:30:00.000Z");
+  assert.equal(iso(zonedInstant("2026-12-01", "20:30", "America/New_York")), "2026-12-02T01:30:00.000Z");
+  for (const bad of [["2026-13-01", "10:00"], ["abc", "10:00"], ["2026-11-23", "25:00"], ["2026-11-23", ""], [null, null]]) assert.ok(Number.isNaN(zonedInstant(bad[0], bad[1], "Africa/Cairo")));
+  assert.equal(settingsOf({ customUI: { timedReservations: { timezone: "Nope/Zone" } } }).timezone, "Africa/Cairo");
+  assert.equal(settingsOf({ customUI: { timedReservations: { timezone: "Europe/London" } } }).timezone, "Europe/London");
 });
 
 const DB = process.env.TEST_DATABASE_URL;
@@ -125,6 +135,16 @@ for (const mode of ["pg", "rest"]) {
       assert.equal((await api("GET", `/api/v1/timed-reservations/status/${p.code}`)).body.data.status, "expired");
       restaurant.customUI = { timedReservations: { enabled: false } };
       assert.equal((await api("POST", "/api/v1/timed-reservations/demo", good())).body.code, "DISABLED");
+    });
+
+    await t.test("date + time are read in the venue zone (Cairo by default), whatever the device says", async () => {
+      clock = T0; restaurant.customUI = { timedReservations: { enabled: true } };
+      const r = await api("POST", "/api/v1/timed-reservations/demo", { name: "ليلى", phone: "01012345678", partySize: 2, date: "2030-05-03", time: "20:30", requestKey: "zone-key-" + Math.random().toString(36).slice(2) });
+      assert.equal(r.status, 201);
+      assert.equal(r.body.data.startsAt, "2030-05-03T17:30:00.000Z"); // Cairo is UTC+3 in May 2030 (DST)
+      assert.equal((await api("POST", "/api/v1/timed-reservations/demo", { name: "ليلى", phone: "01012345678", partySize: 2, date: "2030-02-30", time: "20:30", requestKey: "zone-key-bad1xxxx" })).body.code, "TIME");
+      const cfgRes = await api("GET", "/api/v1/timed-reservations/config/demo");
+      assert.equal(cfgRes.body.data.timezone, "Africa/Cairo");
     });
   });
 }

@@ -6,7 +6,7 @@
 const crypto = require("crypto");
 const { buildOrder } = require("./live-orders");
 
-const DEFAULTS = { enabled: false, holdBeforeMin: 15, holdAfterMin: 90, minLeadMin: 30, maxDaysAhead: 60, expireMin: 0 };
+const DEFAULTS = { timezone: "Africa/Cairo", enabled: false, holdBeforeMin: 15, holdAfterMin: 90, minLeadMin: 30, maxDaysAhead: 60, expireMin: 0 };
 const CODE_CHARS = "ABCDEFGHJKMNPQRSTVWXYZ23456789";
 const cleanText = (v, max) => String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 const minutes = (n) => n * 60 * 1000;
@@ -14,7 +14,10 @@ const minutes = (n) => n * 60 * 1000;
 function settingsOf(restaurant) {
   const s = (restaurant && restaurant.customUI && restaurant.customUI.timedReservations) || {};
   const num = (k, lo, hi) => (Number.isFinite(Number(s[k])) && Number(s[k]) >= lo && Number(s[k]) <= hi ? Number(s[k]) : DEFAULTS[k]);
+  let timezone = DEFAULTS.timezone;
+  try { if (typeof s.timezone === "string" && s.timezone) { new Intl.DateTimeFormat("en", { timeZone: s.timezone }); timezone = s.timezone; } } catch (_) { /* unknown zone: keep the default */ }
   return {
+    timezone,
     enabled: s.enabled === true,
     holdBeforeMin: num("holdBeforeMin", 0, 240),
     holdAfterMin: num("holdAfterMin", 15, 720),
@@ -22,6 +25,27 @@ function settingsOf(restaurant) {
     maxDaysAhead: num("maxDaysAhead", 1, 365),
     expireMin: num("expireMin", 0, 1440),
   };
+}
+
+// Wall-clock time in a named zone -> UTC instant (ms). The venue's zone decides what "8:30 PM" means,
+// never the customer's device. Returns NaN for impossible input.
+function zonedInstant(date, time, timeZone) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(date || "")), t = /^(\d{2}):(\d{2})$/.exec(String(time || ""));
+  if (!m || !t) return NaN;
+  const [y, mo, d, hh, mm] = [+m[1], +m[2], +m[3], +t[1], +t[2]];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || hh > 23 || mm > 59) return NaN;
+  const fmt = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric" });
+  const offsetAt = (ts) => {
+    const p = Object.fromEntries(fmt.formatToParts(new Date(ts)).map((x) => [x.type, +x.value]));
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(ts / 1000) * 1000;
+  };
+  const wall = Date.UTC(y, mo - 1, d, hh, mm);
+  let guess = wall - offsetAt(wall);
+  guess = wall - offsetAt(guess);
+  const back = new Date(guess);
+  const check = Object.fromEntries(fmt.formatToParts(back).map((x) => [x.type, +x.value]));
+  if (check.year !== y || check.month !== mo || check.day !== d || check.hour !== hh || check.minute !== mm) return NaN; // skipped by a clock change
+  return guess;
 }
 const newCode = () => Array.from(crypto.randomBytes(8), (b) => CODE_CHARS[b % CODE_CHARS.length]).join("");
 
@@ -109,7 +133,8 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       const restaurant = await store.getRestaurantById(rid);
       if (!restaurant) return;
       const list = (await activeFor(restaurant)).map(posView);
-      for (const s of set) s.emit("reservations:list", { reservations: list });
+      const timezone = settingsOf(restaurant).timezone;
+      for (const s of set) s.emit("reservations:list", { reservations: list, timezone });
     } catch (e) { log.error("reservations push error:", e.message); }
   }
 
@@ -136,7 +161,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
       const s = settingsOf(restaurant);
       res.set("Cache-Control", "no-store");
-      res.json({ status: "success", data: { enabled: s.enabled && (await ensure()), minLeadMin: s.minLeadMin, maxDaysAhead: s.maxDaysAhead } });
+      res.json({ status: "success", data: { enabled: s.enabled && (await ensure()), minLeadMin: s.minLeadMin, maxDaysAhead: s.maxDaysAhead, timezone: s.timezone } });
     } catch (e) { res.status(500).json({ message: "تعذر قراءة الإعدادات" }); }
   });
 
@@ -151,7 +176,9 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       const b = req.body || {};
       const name = cleanText(b.name, 80), phone = cleanText(b.phone, 25).replace(/[^\d+]/g, "");
       const party = Number(b.partySize);
-      const startsAt = new Date(String(b.startsAt || ""));
+      // Preferred input: venue-local date + time ("2030-05-02", "20:30"), resolved in the venue zone.
+      // A raw ISO instant is still accepted (used by tests and API clients that already know the instant).
+      const startsAt = b.date != null || b.time != null ? new Date(zonedInstant(b.date, b.time, s.timezone)) : new Date(String(b.startsAt || ""));
       const key = cleanText(b.requestKey, 80);
       if (!name || phone.length < 7) return res.status(400).json({ message: "اكتب الاسم ورقم الموبايل", code: "CONTACT" });
       if (!Number.isInteger(party) || party < 1 || party > 100) return res.status(400).json({ message: "عدد الأشخاص غير صحيح", code: "PARTY" });
@@ -223,7 +250,8 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       const b = req.body || {};
       if (b.enabled === true && !(await ensure())) return res.status(503).json({ message: "قاعدة البيانات لسه ماجهزتش" });
       const merged = { ...settingsOf(restaurant) };
-      for (const k of ["enabled", "holdBeforeMin", "holdAfterMin", "minLeadMin", "maxDaysAhead", "expireMin"]) if (k in b) merged[k] = b[k];
+      for (const k of ["timezone", "enabled", "holdBeforeMin", "holdAfterMin", "minLeadMin", "maxDaysAhead", "expireMin"]) if (k in b) merged[k] = b[k];
+      if ("timezone" in b && settingsOf({ customUI: { timedReservations: { timezone: b.timezone } } }).timezone !== b.timezone) return res.status(400).json({ message: "المنطقة الزمنية غير صحيحة، مثال: Africa/Cairo" });
       const cleaned = settingsOf({ customUI: { timedReservations: merged } });
       const customUI = { ...(restaurant.customUI || {}), timedReservations: cleaned };
       await store.updateRestaurantCustomUI(restaurant._id, customUI);
@@ -259,4 +287,4 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
   return { ensure, act, push, posAttach, activeFor };
 }
 
-module.exports = { createReservations, planTransition, settingsOf, DEFAULTS };
+module.exports = { createReservations, planTransition, settingsOf, zonedInstant, DEFAULTS };
