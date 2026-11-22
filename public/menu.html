@@ -178,7 +178,8 @@
       .an-hint em { font-style: normal; display: inline-block; background: #fff; color: var(--ob); padding: 1px 11px; border-radius: 99px; margin: 0 3px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
       .an-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
       .an-chip { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 30px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-      .an-timer { direction: ltr; font-variant-numeric: tabular-nums; }
+      .an-timer { font-variant-numeric: tabular-nums; }
+      .an-timer .an-timer-time { direction: ltr; unicode-bidi: isolate; display: inline-block; }
       .an-cta {
         position: relative; overflow: hidden; width: 100%; margin-top: 14px; padding: 14px;
         border: none; border-radius: 16px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer;
@@ -3058,7 +3059,11 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
               if (ms <= 0) { t.textContent = isEn() ? "⏳ Ended" : "⏳ انتهى"; return; }
               const s = Math.floor(ms / 1000), d = Math.floor(s / 86400);
               const p = (n) => String(n).padStart(2, "0");
-              t.textContent = (isEn() ? "⏳ Ends in " : "⏳ ينتهي خلال ") + (d > 0 ? d + (isEn() ? "d " : "ي ") : "") + p(Math.floor((s % 86400) / 3600)) + ":" + p(Math.floor((s % 3600) / 60)) + ":" + p(s % 60);
+              const hms = p(Math.floor((s % 86400) / 3600)) + ":" + p(Math.floor((s % 3600) / 60)) + ":" + p(s % 60);
+              if (isEn()) { t.textContent = "⏳ Ends in " + (d > 0 ? d + "d " : "") + hms; return; }
+              const dayTxt = d === 1 ? "يوم واحد" : d === 2 ? "يومين" : nf(d) + " أيام";
+              const time = el("span", "an-timer-time", hms);
+              t.replaceChildren("⏳ ينتهي خلال " + (d > 0 ? dayTxt + " و" : ""), time);
             });
           }, 1000);
         }
