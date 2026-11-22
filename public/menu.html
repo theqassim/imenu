@@ -2014,7 +2014,7 @@
         <h1 class="res-name" id="res-name">...</h1>
         <p class="res-desc" id="res-desc">قائمة المأكولات والمشروبات</p>
         <div class="social-links-bar" id="social-links-bar"></div>
-        <a class="book-table-link" id="book-table-link" hidden>🗓️ احجز طاولة</a>
+        <a class="book-table-link" id="book-table-link" hidden><span class="btl-icon"><i class="fas fa-calendar-check"></i></span><span class="btl-text">احجز طاولة</span></a>
       </div>
     </div>
 
@@ -2238,6 +2238,27 @@
       #cart-modal .table-input-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
       #cart-modal #coupon-section { margin-top: 10px !important; padding-top: 10px !important; }
       #cart-modal .checkout-btn { margin-top: 12px; padding: 13px; border-radius: 13px; }
+
+      /* --- احجز طاولة: solid white pill, venue-colored icon chip, no emoji --- */
+      .book-table-link {
+        display: inline-flex; align-items: center; gap: 10px;
+        margin-top: 14px; padding: 7px; padding-inline-end: 20px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.96);
+        border: none;
+        color: var(--primary);
+        font-weight: 800; font-size: 15px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        text-decoration: none; text-shadow: none;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .book-table-link:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3); }
+      .book-table-link .btl-icon {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: var(--primary); color: #fff;
+        display: inline-flex; align-items: center; justify-content: center; font-size: 14px;
+        flex-shrink: 0;
+      }
     </style>
 
     <script>
