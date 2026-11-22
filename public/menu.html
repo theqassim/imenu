@@ -179,7 +179,7 @@
       .an-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 10px; }
       .an-chip { font-size: 12px; font-weight: 800; padding: 5px 12px; border-radius: 30px; background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
       .an-timer { font-variant-numeric: tabular-nums; }
-      .an-timer .an-timer-time { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+      .an-timer .an-timer-time { direction: ltr; unicode-bidi: isolate; display: inline-block; margin-inline-start: 5px; }
       .an-cta {
         position: relative; overflow: hidden; width: 100%; margin-top: 14px; padding: 14px;
         border: none; border-radius: 16px; font-family: inherit; font-size: 16px; font-weight: 900; cursor: pointer;
@@ -3027,6 +3027,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
               : (a.buttonText || (sub > 0
                 ? (isEn() ? "Keep picking 🔥" : "كمّل اختيارك 🔥")
                 : (isEn() ? "Start your order now 🔥" : "ابدأ اطلب دلوقتي 🔥"))));
+            cta.dir = "auto"; // owner-authored buttonText keeps its own direction (e.g. "Order Now!" reads LTR)
             cta.type = "button";
             cta.onclick = () => {
               if (status.active) return openCart();
@@ -3063,7 +3064,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
               if (isEn()) { t.textContent = "⏳ Ends in " + (d > 0 ? d + "d " : "") + hms; return; }
               const dayTxt = d === 1 ? "يوم واحد" : d === 2 ? "يومين" : nf(d) + " أيام";
               const time = el("span", "an-timer-time", hms);
-              t.replaceChildren("⏳ ينتهي خلال " + (d > 0 ? dayTxt + " و" : ""), time);
+              t.replaceChildren("⏳ ينتهي خلال" + (d > 0 ? " " + dayTxt : ""), time);
             });
           }, 1000);
         }
@@ -3178,6 +3179,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           const cta = el("button", "offer-cta", (status.active
             ? (isEn() ? "Review cart & confirm 🛒" : "راجع السلة وأكّد الطلب 🛒")
             : (a.buttonText || (isEn() ? "Start your order now" : "ابدأ اطلب دلوقتي"))) + (status.active ? "" : " 🎉"));
+          cta.dir = "auto"; // owner-authored buttonText keeps its own direction
           cta.type = "button";
           cta.onclick = () => {
             close();
