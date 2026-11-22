@@ -802,6 +802,7 @@
         text-shadow: none;
       }
       .book-table-link[hidden] { display: none; }
+      .hero.has-book-link { height: auto; min-height: var(--hero-height); padding-top: 40px; }
       .social-links-bar {
         display: flex;
         justify-content: center;
@@ -4231,6 +4232,7 @@ function trackOrder(orderId) {
             if (!a) return;
             a.href = "/book/" + encodeURIComponent(slug);
             a.hidden = false;
+            var h = document.querySelector(".hero"); if (h) h.classList.add("has-book-link");
           })
           .catch(function () {});
       })();
