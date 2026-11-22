@@ -2846,7 +2846,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             const btn = document.getElementById(`btn-${id}`);
             if (btn) {
               btn.classList.remove("in-cart");
-              btn.innerHTML = '<i class="fas fa-plus"></i> أضف';
+              btn.innerHTML = '<i class="fas fa-plus"></i>';
             }
           }
         }
@@ -3737,7 +3737,7 @@ function trackOrder(orderId) {
         try { localStorage.removeItem("myCart"); } catch (_) {}
         document.querySelectorAll(".add-btn.in-cart").forEach((b) => {
           b.classList.remove("in-cart");
-          b.innerHTML = '<i class="fas fa-plus"></i> أضف';
+          b.innerHTML = '<i class="fas fa-plus"></i>';
         });
       }
 
