@@ -1981,7 +1981,17 @@
         .offer-cta::after, .offer-fab, .offer-fab i { animation: none !important; }
       }
     </style>
-  </head>
+      <style id="imenu-polish">
+      /* modest polish: compact cards without a photo, steadier add button, smaller success dialog */
+      .prod-card:not(:has(.prod-img)) { min-height: 0 !important; }
+      .prod-card:not(:has(.prod-img)) .prod-content { padding: 14px 16px; gap: 10px; }
+      .prod-card:not(:has(.prod-img)) .prod-footer { margin-top: 2px; }
+      .add-btn { margin-inline-start: 10px; min-width: 38px; height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; }
+      .swal2-popup.imn-pop { width: 19em; padding: 1.1em 1em 1.3em; border-radius: 18px; }
+      .swal2-popup.imn-pop .swal2-title { font-size: 1.2em; padding: .2em .4em 0; }
+      .swal2-popup.imn-pop .swal2-html-container { font-size: .95em; margin: .6em 1em .2em; }
+    </style>
+</head>
   <body>
     <div class="hero">
       <div class="hero-content">
@@ -2435,15 +2445,16 @@
           });
           const data = await res.json().catch(() => ({}));
           if (res.status === 202 && data.status === "success") {
-            cart = {};
+            clearCartAfterOrder();
             appliedCoupon = null;
             updateCartUI();
             closeCart();
             Swal.fire({
               icon: "success",
-              title: "تم إرسال طلبك للمطعم 🎉",
+              title: "تم إرسال طلبك للمطعم",
               html: `الكاشير هيستلم الطلب ويأكده.<br>الإجمالي: <b>${Number(data.data.totalPrice).toLocaleString()} ج.م</b>`,
               confirmButtonText: "تمام",
+              customClass: { popup: "imn-pop" },
             });
             return;
           }
@@ -2830,7 +2841,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             const btn = document.getElementById(`btn-${id}`);
             if (btn) {
               btn.classList.remove("in-cart");
-              btn.innerHTML = '<i class="fas fa-plus"></i> أضف';
+              btn.innerHTML = '<i class="fas fa-plus"></i>';
             }
           }
         }
@@ -3368,9 +3379,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             localStorage.setItem(couponKey, "true");
         }
 
+        // WhatsApp only opens a chat with the text prefilled: we cannot know it was sent, so the cart stays intact.
         window.open(url, "_blank");
 
-        cart = {};
         appliedCoupon = null;
         updateCartUI();
         closeCart();
@@ -3430,7 +3441,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     localStorage.setItem(couponKey, "true");
                 }
 
-                cart = {};
+                clearCartAfterOrder();
                 appliedCoupon = null;
                 document.getElementById("coupon-code-input").value = "";
                 if (document.getElementById("coupon-msg"))
@@ -3462,10 +3473,11 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
                 Swal.fire({
                     icon: "success",
-                    title: "تم استلام طلبك! 🎉",
+                    title: "تم استلام طلبك!",
                     html: `رقم الطلب: <b>#${data.data.order.orderNum}</b><br>تمت إضافته لقائمة طلباتك.`,
                     confirmButtonText: "تمام",
                     allowOutsideClick: false,
+                    customClass: { popup: "imn-pop" },
                 });
             } else {
                 throw new Error(data.message);
@@ -3714,6 +3726,16 @@ function trackOrder(orderId) {
 
       checkActiveOrder();
       loadMenu();
+
+      // Only called once an order was really accepted: empty the cart, forget the saved copy and un-tick every item.
+      function clearCartAfterOrder() {
+        cart = {};
+        try { localStorage.removeItem("myCart"); } catch (_) {}
+        document.querySelectorAll(".add-btn.in-cart").forEach((b) => {
+          b.classList.remove("in-cart");
+          b.innerHTML = '<i class="fas fa-plus"></i>';
+        });
+      }
 
       function saveCart() {
         localStorage.setItem("myCart", JSON.stringify(cart));
