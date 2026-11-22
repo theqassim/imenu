@@ -32,10 +32,10 @@
       <h2>كل لمّة حلوة،<br>ليها مكان.</h2>
       <p>اختار الميعاد اللي يناسبك، وسيب لنا<br>طلب حجزك. الباقي نرتّبه سوا.</p>
       <svg class="table-art" viewBox="0 0 210 155" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><ellipse cx="105" cy="82" rx="58" ry="41"/><ellipse cx="105" cy="78" rx="58" ry="41"/><ellipse cx="105" cy="78" rx="48" ry="32" stroke-dasharray="2 4"/><ellipse cx="105" cy="78" rx="14" ry="10"/><path d="M105 75v-21m0 6c-10-1-11-9-11-9 10 0 11 9 11 9Zm1-2c1-9 9-11 9-11 0 9-9 11-9 11Z"/><ellipse cx="76" cy="81" rx="12" ry="8"/><ellipse cx="132" cy="81" rx="12" ry="8"/><path d="M57 120v17m96-17v17M38 70c-19 3-21 21-9 28m149-28c19 3 21 21 9 28M80 25c6-14 44-14 50 0M80 132c6 14 44 14 50 0"/><path d="M73 45v-9m62 9v-9M52 91l-11 4m116-4 12 4"/><circle cx="170" cy="31" r="2" fill="#af8b48" stroke="none"/><path d="M35 32v10m-5-5h10" stroke="#af8b48"/></svg>
-      <div class="promise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg><span>الحجز بيتأكد بعد موافقة المطعم.<br>هنوضح لك حالة طلبك أول بأول.</span></div>
+      <div class="promise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg><span>الحجز بيتأكد بعد موافقة المكان.<br>هنوضح لك حالة طلبك أول بأول.</span></div>
     </header>
     <main class="content">
-      <div id="closed" class="card status hide"><div class="status-symbol">○</div><h2>ناخدها وقت تاني؟</h2><p class="description">المطعم مش بيستقبل حجوزات أونلاين دلوقتي.<br>تقدر ترجع للمنيو وتختار طلبك.</p></div>
+      <div id="closed" class="card status hide"><div class="status-symbol">○</div><h2>ناخدها وقت تاني؟</h2><p class="description">المكان مش بيستقبل حجوزات أونلاين دلوقتي.<br>تقدر ترجع للمنيو وتختار طلبك.</p></div>
       <div id="loading" class="card status muted"><div class="loading-line"></div>بنجهّز لك الصفحة…</div>
       <div id="statusView" class="card status hide" aria-live="polite"></div>
       <form id="form" class="hide" autocomplete="on" novalidate>
@@ -56,12 +56,12 @@
           <div class="section-title"><h2>نتشرّف باسمك</h2><span class="section-kicker">A LITTLE ABOUT YOU</span></div>
           <div class="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M8 3v4m8-4v4"/></svg><div><strong class="visit-review"></strong><a href="#" class="edit-visit">تعديل الميعاد</a></div></div>
           <label for="n">اسمك</label><input id="n" type="text" maxlength="80" autocomplete="name" placeholder="الاسم اللي هنسجّل بيه الحجز" required>
-          <label for="p">رقم الموبايل</label><input id="p" type="tel" inputmode="tel" maxlength="30" autocomplete="tel" dir="ltr" style="text-align:right" placeholder="01xxxxxxxxx" required><div class="field-note">عشان المطعم يقدر يتواصل معاك بخصوص الحجز.</div>
+          <label for="p">رقم الموبايل</label><input id="p" type="tel" inputmode="tel" maxlength="30" autocomplete="tel" dir="ltr" style="text-align:right" placeholder="01xxxxxxxxx" required><div class="field-note">عشان المكان يقدر يتواصل معاك بخصوص الحجز.</div>
           <div class="note-box"><label for="note">حاجة نعرفها قبل ما تيجي؟ <span class="optional">اختياري</span></label><textarea id="note" rows="3" maxlength="300" placeholder="مناسبة خاصة، كرسي أطفال، أو أي طلب تاني…"></textarea></div>
         </section>
         <section class="card booking-step hide" data-panel="2" aria-label="الطلب المسبق الاختياري">
           <div class="section-title"><h2>تحب تضيف طلب؟</h2><span class="optional">اختياري</span></div>
-          <p class="preorder-note">اختار من المنيو، أو ابعت الحجز من غير طلب.<br>التجهيز بيبدأ لما توصل، والسعر النهائي عند المطعم.</p>
+          <p class="preorder-note">اختار من المنيو، أو ابعت الحجز من غير طلب.<br>التجهيز بيبدأ لما توصل، والسعر النهائي عند المكان.</p>
           <div class="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M8 3v4m8-4v4"/></svg><div><strong class="visit-review"></strong><a href="#" class="edit-visit">تعديل الميعاد</a></div></div>
           <div id="menu"></div>
         </section>
@@ -72,9 +72,9 @@
   </div>
 </div>
 <div class="bar hide" id="bar"><div class="in">
-  <div class="bar-description"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg>طلبك مش تأكيد نهائي، المطعم هيراجعه الأول.</div>
+  <div class="bar-description"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6Z"/><path d="m8 12 3 3 5-6"/></svg>طلبك مش تأكيد نهائي، المكان هيراجعه الأول.</div>
   <div class="actions"><button class="back hide" type="button" id="backStep" aria-label="الخطوة السابقة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m9 5 7 7-7 7"/></svg></button><div class="sum"><span id="sumLine">بدون طلب</span><b id="sumTotal"></b></div><button class="go" type="button" id="nextStep"><span>كمّل بياناتك</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m15 5-7 7 7 7M8 12h12"/></svg></button><button class="go hide" id="go" type="button">ابعت طلب الحجز</button></div>
-  <div class="bar-note">الحجز بيتأكد بعد موافقة المطعم</div>
+  <div class="bar-note">الحجز بيتأكد بعد موافقة المكان</div>
 </div></div>
 
 <script>
@@ -122,9 +122,9 @@
 
   // ---------- status view ----------
   var LABELS = {
-    pending: ["في انتظار موافقة المطعم", "b-pending", "الصفحة بتتحدث لوحدها أول ما المطعم يرد. تقدر ترجع لها بنفس المتصفح في أي وقت."],
+    pending: ["في انتظار موافقة المكان", "b-pending", "الصفحة بتتحدث لوحدها أول ما المكان يرد. تقدر ترجع لها بنفس المتصفح في أي وقت."],
     approved: ["تمت الموافقة", "b-approved", "طاولتك محجوزة. مستنيينك في الميعاد."],
-    rejected: ["المطعم مش قادر يقبل الحجز ده", "b-bad", "تقدر تجرب ميعاد تاني."],
+    rejected: ["المكان مش قادر يقبل الحجز ده", "b-bad", "تقدر تجرب ميعاد تاني."],
     cancelled: ["الحجز اتلغى", "b-bad", ""],
     expired: ["الطلب انتهى من غير رد", "b-bad", "تقدر تبعت طلب جديد."],
     arrived: ["تم تسجيل وصولك", "b-arrived", "بالهنا."],
@@ -136,7 +136,7 @@
     var live = r.status === "pending" || r.status === "approved";
     var clock = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>';
     var check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="m5 12 4 4L19 6"/></svg>';
-    var title = r.status === "pending" ? "طلبك وصل للمطعم" : (r.status === "approved" ? "نشوفك على خير!" : esc(L[0]));
+    var title = r.status === "pending" ? "طلبك وصل للمكان" : (r.status === "approved" ? "نشوفك على خير!" : esc(L[0]));
     $("statusView").innerHTML =
       '<div class="status-symbol">' + (r.status === "approved" || r.status === "arrived" || r.status === "completed" ? check : clock) + '</div>' +
       '<span class="badge ' + L[1] + '">' + esc(L[0]) + '</span><h2>' + title + '</h2>' +
@@ -227,7 +227,7 @@
     $("d").min = ymd(min); $("d").max = ymd(max);
     if (!$("d").value) $("d").value = ymd(min);
     var dev = ""; try { dev = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
-    $("zoneHint").textContent = "كل المواعيد بتوقيت المطعم (" + (zone() === "Africa/Cairo" ? "القاهرة" : zone()) + ")" + (dev && dev !== zone() ? ". ساعة جهازك على توقيت مختلف." : ".");
+    $("zoneHint").textContent = "كل المواعيد بتوقيت المكان (" + (zone() === "Africa/Cairo" ? "القاهرة" : zone()) + ")" + (dev && dev !== zone() ? ". ساعة جهازك على توقيت مختلف." : ".");
     $("leadHint").textContent = cfg.minLeadMin >= 60 ? "ابعت طلبك قبل الميعاد بـ " + Math.round(cfg.minLeadMin / 60 * 10) / 10 + " ساعة على الأقل." : "ابعت طلبك قبل الميعاد بـ " + cfg.minLeadMin + " دقيقة على الأقل.";
     renderDates(); document.querySelectorAll(".item").forEach(refreshRow); showStep(0, false);
   }

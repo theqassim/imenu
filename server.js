@@ -460,7 +460,7 @@ app.get("/api/v1/users/my-staff", protect, async (req, res) => {
 app.patch("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { data: myRestaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
-    if (!myRestaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+    if (!myRestaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
 
     const { data: staffMember } = await supabase.from('users').select('_id').eq('_id', req.params.id).eq('restaurant', myRestaurant._id).single();
     if (!staffMember) return res.status(404).json({ message: "الموظف غير موجود أو لا يتبع لمطعمك" });
@@ -492,7 +492,7 @@ app.patch("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, r
 app.delete("/api/v1/users/staff/:id", protect, restrictTo("owner"), async (req, res) => {
   try {
     const { data: myRestaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
-    if (!myRestaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+    if (!myRestaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
 
     const { data: staffMember } = await supabase.from('users').select('_id').eq('_id', req.params.id).eq('restaurant', myRestaurant._id).single();
     if (!staffMember) return res.status(404).json({ message: "الموظف غير موجود" });
@@ -741,7 +741,7 @@ app.get("/api/v1/restaurants/:slug", async (req, res) => {
         .eq('slug', req.params.slug)
         .single();
 
-    if (resError || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (resError || !restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const ownerData = Array.isArray(restaurant.owner) ? restaurant.owner[0] : restaurant.owner;
     let warning = null;
@@ -1025,7 +1025,7 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin")
     try {
         const { restaurantId, isEnabled, totalSeats, resetCounter } = req.body;
         const restaurant = await Restaurant.findById(restaurantId);
-        if(!restaurant) return res.status(404).json({message: "المطعم غير موجود"});
+        if(!restaurant) return res.status(404).json({message: "المكان غير موجود"});
 
         if(resetCounter) {
             restaurant.reservationSettings.bookedSeats = 0;
@@ -1055,7 +1055,7 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
   try {
     const { name, phone, seats } = req.body;
     const restaurant = await Restaurant.findOne({ slug: req.params.slug });
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
     if (!settings.isEnabled) return res.status(400).json({ message: "نظام الحجز غير مفعل حالياً" });
@@ -1533,7 +1533,7 @@ app.post("/api/v1/accounting/generate-payroll", protect, restrictTo("owner"), as
   try {
     const { month, restaurantId } = req.body;
     const restaurant = await Restaurant.findById(restaurantId);
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const settings = restaurant.accountingSettings || { overtimeRate: 0, absencePenalty: 1, latePenalty: 0 };
     const employees = await Employee.find({ restaurant: restaurantId });
@@ -2148,7 +2148,7 @@ app.get("/api/v1/stock/:restaurantId", protect, restrictToStockFeature, async (r
 app.get("/api/v1/reservations/status/:slug", async (req, res) => {
   try {
     const { data: restaurant, error } = await supabase.from('restaurants').select('restaurantName, reservationSettings, isActive').eq('slug', req.params.slug).single();
-    if (error || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (error || !restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
     if (!settings.isEnabled) {
@@ -2182,7 +2182,7 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
     if (!name || !phone) return res.status(400).json({ message: "الاسم ورقم الهاتف مطلوبين" });
 
     const { data: restaurant, error: resError } = await supabase.from('restaurants').select('_id, reservationSettings').eq('slug', req.params.slug).single();
-    if (resError || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (resError || !restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
     if (!settings.isEnabled) {
@@ -2221,7 +2221,7 @@ app.post("/api/v1/reservations/book/:slug", async (req, res) => {
 app.get("/api/v1/reservations/requests", protect, restrictTo("owner"), async (req, res) => {
     try {
         const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
-        if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+        if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
         const { data: reservations, error } = await supabase.from('reservations').select('*').eq('restaurant', restaurant._id).order('createdAt', { ascending: false });
         if (error) throw error;
@@ -2296,7 +2296,7 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (
     const rId = req.body.restaurantId;
 
     const { data: restaurant, error: fetchError } = await supabase.from('restaurants').select('_id, slug, reservationSettings, customUI').eq('_id', rId).single();
-    if (fetchError || !restaurant) throw new Error("المطعم غير موجود");
+    if (fetchError || !restaurant) throw new Error("المكان غير موجود");
     if (isEnabled === true && restaurant.customUI && restaurant.customUI.timedReservations && restaurant.customUI.timedReservations.enabled === true) throw new Error("الحجز بالميعاد شغّال. اقفله الأول لو عايز ترجع لحجز المقاعد القديم.");
 
     let settings = restaurant.reservationSettings || { isEnabled: false, totalSeats: 0, bookedSeats: 0 };
@@ -3089,7 +3089,7 @@ app.get("/api/v1/ratings/info/:slug", async (req, res) => {
       .eq("slug", req.params.slug)
       .single();
 
-    if (error || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (error || !restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     res.status(200).json({
       status: "success",
@@ -3191,7 +3191,7 @@ app.post("/api/v1/ratings/submit/:slug", async (req, res) => {
       .eq("slug", req.params.slug)
       .single();
 
-    if (resError || !restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (resError || !restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const { data: newRating, error: insertError } = await supabase
       .from("ratings")
@@ -3233,7 +3233,7 @@ app.get("/api/v1/ratings/list", protect, restrictTo("owner", "admin"), async (re
       .select("_id, storePage")
       .eq("owner", req.user._id)
       .single();
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const { data: ratings, error } = await supabase
       .from("ratings")
@@ -3321,7 +3321,7 @@ app.patch("/api/v1/ratings/:id/comment-visibility", protect, restrictTo("owner",
 app.delete("/api/v1/ratings/:id", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const { data: rating, error: findError } = await supabase
       .from("ratings")
@@ -3346,7 +3346,7 @@ app.delete("/api/v1/ratings/:id", protect, restrictTo("owner", "admin"), async (
 app.delete("/api/v1/ratings", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from("restaurants").select("_id").eq("owner", req.user._id).single();
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const { error: deleteError } = await supabase.from("ratings").delete().eq("restaurant", restaurant._id);
     if (deleteError) throw deleteError;
@@ -3361,7 +3361,7 @@ app.delete("/api/v1/ratings", protect, restrictTo("owner", "admin"), async (req,
 app.get("/api/v1/accounting/stats", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     let startOfMonth, endOfMonth, targetMonthStr;
     if (req.query.month) {
@@ -3459,7 +3459,7 @@ app.delete("/api/v1/accounting/expenses/:id", protect, restrictTo("owner"), asyn
 app.post("/api/v1/accounting/employees", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
 
     const { data: emp, error } = await supabase.from('employees').insert([{ ...req.body, restaurant: restaurant._id }]).select().single();
     if (error) throw error;
@@ -3584,7 +3584,7 @@ app.post("/api/v1/accounting/payroll/generate", protect, restrictTo("owner", "ad
   try {
     const { month, bonuses, deductions, deductLoan, isPreview } = req.body; 
     const { data: restaurant } = await supabase.from('restaurants').select('_id').eq('owner', req.user._id).single();
-    if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+    if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
     
     const { data: employees } = await supabase.from('employees').select('*').eq('restaurant', restaurant._id);
     const { data: allAttendance } = await supabase.from('attendances').select('*').eq('restaurant', restaurant._id).ilike('date', `${month}%`);

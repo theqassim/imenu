@@ -2449,7 +2449,7 @@
           if (!sizeName && c.isSizeVariant) sizeName = id.slice(String(c._id).length + 1);
           items.push({ productId: c._id, sizeName, qty: c.qty });
         }
-        Swal.fire({ title: "جاري إرسال الطلب للمطعم...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+        Swal.fire({ title: "جاري إرسال الطلب للمكان...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
         try {
           const res = await fetch(`/api/v1/live-orders/${encodeURIComponent(window.__liveSlug)}/orders`, {
             method: "POST",
@@ -2468,7 +2468,7 @@
             closeCart();
             Swal.fire({
               icon: "success",
-              title: "تم إرسال طلبك للمطعم",
+              title: "تم إرسال طلبك للمكان",
               html: `الكاشير هيستلم الطلب ويأكده.<br>الإجمالي: <b>${Number(data.data.totalPrice).toLocaleString()} ج.م</b>`,
               confirmButtonText: "تمام",
               customClass: { popup: "imn-pop" },
@@ -2508,7 +2508,7 @@
                             <div style="text-align:center; padding:50px; color:var(--text-sub)">
                                 <i class="fas fa-exclamation-triangle fa-3x" style="color:var(--primary); margin-bottom:20px"></i>
                                 <h2>عذراً، هذا المنيو غير متاح حالياً</h2>
-                                <p>يرجى التواصل مع إدارة المطعم.</p>
+                                <p>يرجى التواصل مع إدارة المكان.</p>
                             </div>`;
               return;
             }

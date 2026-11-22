@@ -176,7 +176,7 @@
   <div class="card hidden" id="form-card">
     <div class="icon-badge"><i class="fas fa-star"></i></div>
     <h1>قيّم تجربتك في <span class="res-name" id="res-name"></span></h1>
-    <p class="sub">رأيك بيهمنا ويوصل لصاحب المطعم فوراً</p>
+    <p class="sub">رأيك بيهمنا ويوصل لصاحب المكان فوراً</p>
 
     <div class="stars" id="stars-picker">
       <i class="fas fa-star" data-val="1"></i>
@@ -216,7 +216,7 @@
   <div class="card thanks" id="thanks-card">
     <div class="icon-badge"><i class="fas fa-check"></i></div>
     <h1 id="thanks-title">شكراً لتقييمك! 🎉</h1>
-    <p class="sub" id="thanks-sub">تم إرسال رأيك لصاحب المطعم مباشرة</p>
+    <p class="sub" id="thanks-sub">تم إرسال رأيك لصاحب المكان مباشرة</p>
   </div>
 
   <script>
@@ -301,7 +301,7 @@
 
         if (data.status === "success") {
           document.getElementById("thanks-title").innerText = `شكراً لتقييمك يا ${name}! 🎉`;
-          document.getElementById("thanks-sub").innerText = `تم إرسال رأيك في ${restaurantName} لصاحب المطعم مباشرة`;
+          document.getElementById("thanks-sub").innerText = `تم إرسال رأيك في ${restaurantName} لصاحب المكان مباشرة`;
           document.getElementById("form-card").classList.add("hidden");
           const thanksCard = document.getElementById("thanks-card");
           thanksCard.classList.remove("hidden");

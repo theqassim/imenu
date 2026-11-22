@@ -332,7 +332,7 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
   app.get("/api/v1/live-orders/status/:slug", async (req, res) => {
     try {
       const restaurant = await store.getRestaurantBySlug(cleanText(req.params.slug, 80).toLowerCase());
-      if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+      if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
       const enabled = isEnabled(restaurant);
       const ready = enabled ? await ensureSchema() : false;
       res.set("Cache-Control", "no-store");
@@ -349,11 +349,11 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
     try {
       if (rateLimited(req.ip)) return res.status(429).json({ message: "طلبات كتير، حاول بعد شوية", code: "RATE_LIMIT" });
       const restaurant = await store.getRestaurantBySlug(cleanText(req.params.slug, 80).toLowerCase());
-      if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+      if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
       if (!isEnabled(restaurant)) return res.status(403).json({ message: "المنيو للعرض فقط", code: "VIEW_ONLY" });
       if (!(await ensureSchema())) return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي", code: "UNAVAILABLE" });
       if (onlineCount(restaurant._id) === 0) {
-        return res.status(503).json({ message: "المطعم مش مستقبل طلبات دلوقتي", code: "POS_OFFLINE" });
+        return res.status(503).json({ message: "المكان مش مستقبل طلبات دلوقتي", code: "POS_OFFLINE" });
       }
       const products = await store.getProducts(restaurant._id);
       const built = buildOrder({ restaurant, products, body: req.body || {} });
@@ -373,7 +373,7 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
   app.get("/api/v1/live-orders/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
       const restaurant = await ownerRestaurant(req);
-      if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+      if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
       const ready = await ensureSchema();
       let keyHint = null;
       if (ready) {
@@ -400,7 +400,7 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
   app.patch("/api/v1/live-orders/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
       const restaurant = await ownerRestaurant(req);
-      if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+      if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
       const enabled = req.body && req.body.enabled === true;
       if (enabled && !(await ensureSchema())) {
         return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي، قاعدة البيانات لسه ماجهزتش", reason: schemaReason });
@@ -421,7 +421,7 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
   app.post("/api/v1/live-orders/key", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
       const restaurant = await ownerRestaurant(req);
-      if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+      if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
       if (!(await ensureSchema())) return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي", reason: schemaReason });
       const key = generateKey();
       const rid = String(restaurant._id);

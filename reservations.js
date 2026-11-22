@@ -166,7 +166,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
   app.get("/api/v1/timed-reservations/config/:slug", async (req, res) => {
     try {
       const restaurant = await store.getRestaurantBySlug(cleanText(req.params.slug, 80).toLowerCase());
-      if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+      if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
       const s = settingsOf(restaurant);
       res.set("Cache-Control", "no-store");
       res.json({ status: "success", data: { enabled: s.enabled && (await ensure()), minLeadMin: s.minLeadMin, maxDaysAhead: s.maxDaysAhead, timezone: s.timezone } });
@@ -177,7 +177,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
     try {
       if (limited(req.ip, "write", rateMax)) return res.status(429).json({ message: "طلبات كتير، حاول بعد شوية", code: "RATE_LIMIT" });
       const restaurant = await store.getRestaurantBySlug(cleanText(req.params.slug, 80).toLowerCase());
-      if (!restaurant) return res.status(404).json({ message: "المطعم غير موجود" });
+      if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
       const s = settingsOf(restaurant);
       if (!s.enabled) return res.status(403).json({ message: "الحجز بالميعاد مش متاح دلوقتي", code: "DISABLED" });
       if (!(await ensure())) return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي", code: "UNAVAILABLE" });
@@ -244,7 +244,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
   app.get("/api/v1/timed-reservations", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
       const restaurant = await ownerRestaurant(req);
-      if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+      if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
       if (!(await ensure())) return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي" });
       const rows = await sweep(await db.listFor(String(restaurant._id)), settingsOf(restaurant));
       res.json({ status: "success", data: { settings: settingsOf(restaurant), reservations: rows.map(posView) } });
@@ -270,7 +270,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
   app.patch("/api/v1/timed-reservations/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
       const restaurant = await ownerRestaurant(req);
-      if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+      if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
       const r = await applySettings(restaurant, req.body);
       res.status(r.status).json(r.body);
     } catch (e) { res.status(500).json({ message: e.message }); }
@@ -279,7 +279,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
   app.post("/api/v1/timed-reservations/:id/:action", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
       const restaurant = await ownerRestaurant(req);
-      if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
+      if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
       const r = await act(restaurant, cleanText(req.params.id, 60), req.body && req.body.version, req.params.action, req.body || {});
       res.status(r.ok ? 200 : r.code === "NOT_FOUND" ? 404 : 409).json(r.ok ? { status: "success", data: r.row } : { message: r.message, code: r.code, data: r.row });
     } catch (e) { res.status(500).json({ message: e.message }); }
@@ -294,7 +294,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       const reply = typeof cb === "function" ? cb : () => {};
       try {
         const restaurant = await store.getRestaurantById(restaurantId);
-        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المطعم مش موجود" });
+        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المكان مش موجود" });
         reply({ ok: true, settings: settingsOf(restaurant) });
       } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
     });
@@ -303,7 +303,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       const reply = typeof cb === "function" ? cb : () => {};
       try {
         const restaurant = await store.getRestaurantById(restaurantId);
-        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المطعم مش موجود" });
+        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المكان مش موجود" });
         const r = await applySettings(restaurant, msg && typeof msg === "object" ? msg : {});
         if (r.status === 200) return reply({ ok: true, settings: r.body.data });
         reply({ ok: false, code: (r.body && r.body.code) || "REFUSED", message: (r.body && r.body.message) || "تعذر الحفظ" });
@@ -313,7 +313,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       const reply = typeof cb === "function" ? cb : () => {};
       try {
         const restaurant = await store.getRestaurantById(restaurantId);
-        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المطعم مش موجود" });
+        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المكان مش موجود" });
         const m = msg || {};
         reply(await act(restaurant, cleanText(m.id, 60), m.version, cleanText(m.action, 20), m));
       } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }

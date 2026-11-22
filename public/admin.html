@@ -3122,7 +3122,7 @@
                   <div><label class="form-label">أقرب ميعاد من دلوقتي (دقيقة)</label><input type="number" id="tr-minLead" min="0" max="1440"></div>
                   <div><label class="form-label">أبعد حجز (يوم)</label><input type="number" id="tr-maxDays" min="1" max="365"></div>
                   <div><label class="form-label">الطلب من غير رد يتقفل بعد (دقيقة، 0 = مايتقفلش)</label><input type="number" id="tr-expire" min="0" max="1440"></div>
-                  <div><label class="form-label">المنطقة الزمنية للمطعم</label><input type="text" id="tr-tz" list="tr-tz-list" dir="ltr" placeholder="Africa/Cairo"><datalist id="tr-tz-list"><option value="Africa/Cairo"><option value="Asia/Riyadh"><option value="Asia/Dubai"><option value="Asia/Kuwait"><option value="Asia/Qatar"><option value="Asia/Amman"><option value="Asia/Beirut"><option value="Europe/London"><option value="Europe/Istanbul"></datalist></div>
+                  <div><label class="form-label">المنطقة الزمنية للمكان</label><input type="text" id="tr-tz" list="tr-tz-list" dir="ltr" placeholder="Africa/Cairo"><datalist id="tr-tz-list"><option value="Africa/Cairo"><option value="Asia/Riyadh"><option value="Asia/Dubai"><option value="Asia/Kuwait"><option value="Asia/Qatar"><option value="Asia/Amman"><option value="Asia/Beirut"><option value="Europe/London"><option value="Europe/Istanbul"></datalist></div>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center">
                   <button type="button" class="btn" onclick="trSaveSettings()"><i class="fas fa-save"></i> حفظ إعدادات الحجز</button>
@@ -3601,7 +3601,7 @@
                             <input type="checkbox" id="ui-showResName" onchange="setUiParam('showResName', this.checked)">
                             <span class="slider"></span>
                           </label>
-                          <span style="font-size:14px; font-weight:bold;">اسم المطعم</span>
+                          <span style="font-size:14px; font-weight:bold;">اسم المكان</span>
                       </div>
                       <input type="color" id="ui-resNameColor" oninput="setUiParam('resNameColor', this.value)" style="width:30px; height:30px; border:none; padding:0; background:none;">
                    </div>
@@ -3640,7 +3640,7 @@
                    </select>
 
                    <div style="margin-top:10px;">
-                       <label style="font-size:12px; font-weight:bold; margin-bottom:5px; display:block;">مكان اسم المطعم</label>
+                       <label style="font-size:12px; font-weight:bold; margin-bottom:5px; display:block;">مكان ظهور الاسم</label>
                        <select id="ui-resNamePosition" onchange="setUiParam('resNamePosition', this.value)" style="height:40px; font-size:13px;">
                           <option value="inside">داخل الهيدر (الافتراضي)</option>
                           <option value="below">تحت صورة الهيدر</option>
@@ -9982,7 +9982,7 @@ function downloadFinancialReportPDF() {
     const monthsAr = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
     const monthName = monthsAr[parseInt(month) - 1];
     
-    const restName = document.getElementById("page-title").innerText.split("\n")[0] || "المطعم";
+    const restName = document.getElementById("page-title").innerText.split("\n")[0] || "المكان";
     const totalExp = (d.totalExpenses || 0) + (d.totalSalaries || 0);
 
     const element = document.createElement('div');
