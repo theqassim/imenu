@@ -5341,20 +5341,20 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           if (data.status === "success") {
             try {
               const enCat = (document.getElementById("c-name-en").value || "").trim();
-              const freshRes = await fetch(`/api/v1/restaurants/${rId}`, { headers: { Authorization: `Bearer ${token}` } });
-              const freshData = await freshRes.json();
-              const freshUI = (freshData && freshData.data && freshData.data.restaurant && freshData.data.restaurant.customUI && typeof freshData.data.restaurant.customUI === "object")
-                ? { ...freshData.data.restaurant.customUI }
-                : (typeof currentDesign === "object" && currentDesign ? { ...currentDesign } : {});
-              freshUI.categoryNamesEn = { ...(freshUI.categoryNamesEn || {}) };
-              if (oldName && oldName !== name) delete freshUI.categoryNamesEn[oldName];
-              if (enCat) freshUI.categoryNamesEn[name] = enCat;
-              else delete freshUI.categoryNamesEn[name];
+              const sets = {};
+              if (enCat) sets[name] = enCat;
+              const dels = [];
+              if (oldName && oldName !== name) dels.push(oldName);
+              if (!enCat) dels.push(name);
               const uiFd = new FormData();
-              uiFd.append("customUI", JSON.stringify(freshUI));
+              uiFd.append("categoryNamesEnOps", JSON.stringify({ set: sets, delete: dels }));
               const uiRes = await fetch(`/api/v1/restaurants/${rId}`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: uiFd });
               if (!uiRes.ok) throw new Error("customUI save failed: " + uiRes.status);
-              if (typeof currentDesign === "object" && currentDesign) currentDesign.categoryNamesEn = freshUI.categoryNamesEn;
+              if (typeof currentDesign === "object" && currentDesign) {
+                currentDesign.categoryNamesEn = currentDesign.categoryNamesEn || {};
+                dels.forEach((k) => delete currentDesign.categoryNamesEn[k]);
+                Object.keys(sets).forEach((k) => (currentDesign.categoryNamesEn[k] = sets[k]));
+              }
             } catch (e) {
               console.error(e);
               enSaved = false;
@@ -5777,7 +5777,13 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
       }
 
+      // الترجمة التلقائية متعطلة افتراضيًا: بتشتغل بس لما تتفعّل صراحة بعد موافقة صاحب المنصة
+      // (الاقتراح بيبعت الاسم لخدمة MyMemory الخارجية). المعاينة التجريبية بتفعّلها يدويًا مع رد وهمي.
       async function suggestTranslation(arText) {
+        if (window.IMENU_TRANSLATE_SUGGEST !== true) {
+          Swal.fire("الترجمة التلقائية لسه متفعّلةش", "الميزة دي بتبعت الاسم لخدمة ترجمة خارجية (MyMemory). هتتفعّل بعد ما صاحب المنصة يراجعها ويوافق.", "info");
+          return null;
+        }
         const q = (arText || "").trim();
         if (!q) { Swal.fire("تنبيه", "اكتب الاسم بالعربي الأول", "warning"); return null; }
         try {

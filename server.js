@@ -883,6 +883,27 @@ app.post("/api/v1/offers/upload-bg", protect, upload.single("image"), async (req
 app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
     let updateData = { ...req.body };
+    // Narrow, server-side merge for the category English-name map: the dashboard sends
+    // ops (set/delete) instead of a full customUI object, and we re-read customUI here so
+    // unrelated keys written by other sessions survive. Not a cross-request lock: two
+    // category-rename saves landing in the same instant can still interleave.
+    if (typeof updateData.categoryNamesEnOps === "string") {
+      try { updateData.categoryNamesEnOps = JSON.parse(updateData.categoryNamesEnOps); } catch (e) { updateData.categoryNamesEnOps = null; }
+    }
+    if (updateData.categoryNamesEnOps && typeof updateData.categoryNamesEnOps === "object") {
+      const ops = updateData.categoryNamesEnOps;
+      delete updateData.categoryNamesEnOps;
+      const { data: currentRow, error: currentErr } = await supabase
+        .from("restaurants")
+        .select("customUI")
+        .eq("_id", req.params.id)
+        .single();
+      if (currentErr) throw currentErr;
+      const { applyCategoryNamesEnOps } = require("./category-names-en");
+      updateData.customUI = applyCategoryNamesEnOps(currentRow && currentRow.customUI, ops);
+    } else {
+      delete updateData.categoryNamesEnOps;
+    }
     if (typeof updateData.offers === "string") {
       try { updateData.offers = JSON.parse(updateData.offers); } catch (e) { delete updateData.offers; }
     }
