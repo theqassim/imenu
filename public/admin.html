@@ -3100,6 +3100,36 @@
               </div>
             </div>
 
+            <div class="form-group" id="tr-card-wrap">
+              <div id="tr-card" style="background: var(--bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                  <i class="fas fa-calendar-check" style="font-size: 22px; color: var(--primary)"></i>
+                  <div style="flex:1">
+                    <b>حجز الطاولات بميعاد</b>
+                    <div style="color: var(--secondary); font-size: 13px; margin-top: 3px">
+                      الزبون يختار اليوم والساعة وعدد الأشخاص ويضيف طلبه، وانت بتوافق من سيستم الكاشير وبتختار الطاولة. الطاولة بتتلون أصفر في الميعاد.
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button type="button" id="tr-mode-off" class="btn" onclick="trSetEnabled(false)" style="flex:1; min-width:150px;">متوقف</button>
+                  <button type="button" id="tr-mode-on" class="btn" onclick="trSetEnabled(true)" style="flex:1; min-width:150px;">الزبون يقدر يحجز</button>
+                </div>
+                <div id="tr-status-line" style="margin-top:12px; font-size:13px; color: var(--secondary)"></div>
+                <div class="form-grid" style="margin-top:14px">
+                  <div><label class="form-label">تفضل الطاولة قبل الميعاد بـ (دقيقة)</label><input type="number" id="tr-holdBefore" min="0" max="240"></div>
+                  <div><label class="form-label">وتفضل محجوزة بعد الميعاد بـ (دقيقة)</label><input type="number" id="tr-holdAfter" min="15" max="720"></div>
+                  <div><label class="form-label">أقرب ميعاد من دلوقتي (دقيقة)</label><input type="number" id="tr-minLead" min="0" max="1440"></div>
+                  <div><label class="form-label">أبعد حجز (يوم)</label><input type="number" id="tr-maxDays" min="1" max="365"></div>
+                  <div><label class="form-label">الطلب من غير رد يتقفل بعد (دقيقة، 0 = مايتقفلش)</label><input type="number" id="tr-expire" min="0" max="1440"></div>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center">
+                  <button type="button" class="btn" onclick="trSaveSettings()"><i class="fas fa-save"></i> حفظ إعدادات الحجز</button>
+                  <span style="font-size:13px; color: var(--secondary)">رابط الحجز للزبون: <b id="tr-link" dir="ltr">-</b></span>
+                </div>
+              </div>
+            </div>
+
             <div class="form-grid" style="margin-top: 20px">
               <div>
                 <label class="form-label">نسبة الضريبة (%)</label>
@@ -3877,7 +3907,7 @@
             if (typeof window.annRender === "function") window.annRender();
 
             document.getElementById("set-orderMode").value = "view_only";
-            liveLoad();
+            liveLoad().then(() => trLoad()).catch(() => {});
             renderSocialLinksEditor(data.restaurant.socialLinks || {});
             initReservationUI(data);
             document.getElementById("set-taxRate").value = data.restaurant.taxRate || 0;
@@ -4770,6 +4800,77 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             confirmButtonText: "نسخت المفتاح",
           });
           await liveLoad();
+        } catch (e) {
+          Swal.fire({ icon: "error", title: "حصل خطأ", text: e.message });
+        }
+      }
+
+
+      // ===== Timed reservations settings =====
+      const TR_DEFAULTS = { enabled: false, holdBeforeMin: 15, holdAfterMin: 90, minLeadMin: 30, maxDaysAhead: 60, expireMin: 0 };
+      async function trLoad() {
+        const line = document.getElementById("tr-status-line");
+        try {
+          const r = await fetch("/api/v1/timed-reservations", { headers: { Authorization: `Bearer ${token}` } });
+          const j = await r.json().catch(() => ({}));
+          if (r.status === 503) { window.__tr = { ...TR_DEFAULTS, unavailable: true }; }
+          else if (!r.ok) throw new Error(j.message || "x");
+          else window.__tr = { ...j.data.settings, unavailable: false };
+        } catch (e) {
+          window.__tr = { ...TR_DEFAULTS, unavailable: true };
+        }
+        const d = window.__tr;
+        document.getElementById("tr-holdBefore").value = d.holdBeforeMin;
+        document.getElementById("tr-holdAfter").value = d.holdAfterMin;
+        document.getElementById("tr-minLead").value = d.minLeadMin;
+        document.getElementById("tr-maxDays").value = d.maxDaysAhead;
+        document.getElementById("tr-expire").value = d.expireMin;
+        const slug = (window.__live && window.__live.slug) || "";
+        document.getElementById("tr-link").textContent = slug ? location.origin + "/book/" + slug : "-";
+        trRenderState();
+      }
+      function trRenderState() {
+        const d = window.__tr || {};
+        const setBtn = (id, active) => {
+          const b = document.getElementById(id);
+          if (!b) return;
+          b.style.background = active ? "var(--primary)" : "transparent";
+          b.style.color = active ? "#fff" : "var(--primary)";
+          b.style.border = "1px solid var(--primary)";
+        };
+        setBtn("tr-mode-off", !d.enabled);
+        setBtn("tr-mode-on", d.enabled === true);
+        const l = document.getElementById("tr-status-line");
+        if (!l) return;
+        if (d.unavailable && !d.enabled) l.textContent = "⚠️ الخدمة لسه ماتجهزتش على السيرفر، ماينفعش تتفعل دلوقتي.";
+        else if (!d.enabled) l.textContent = "الحجز متوقف: الزبون مش شايف صفحة حجز.";
+        else l.textContent = "الحجز شغال: الزبون يقدر يبعت طلب حجز، وبيوصل لسيستم الكاشير لما يكون متصل.";
+      }
+      async function trPatch(body) {
+        const r = await fetch("/api/v1/timed-reservations/settings", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify(body),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.message || "حصل خطأ");
+        return j.data;
+      }
+      async function trSetEnabled(enabled) {
+        try {
+          await trPatch({ enabled });
+          await trLoad();
+          Swal.fire({ toast: true, icon: "success", title: enabled ? "الحجز اتفعل" : "الحجز اتوقف", position: "top-end", showConfirmButton: false, timer: 1800 });
+        } catch (e) {
+          Swal.fire({ icon: "error", title: "حصل خطأ", text: e.message });
+        }
+      }
+      async function trSaveSettings() {
+        const n = (id) => Number(document.getElementById(id).value);
+        try {
+          await trPatch({ holdBeforeMin: n("tr-holdBefore"), holdAfterMin: n("tr-holdAfter"), minLeadMin: n("tr-minLead"), maxDaysAhead: n("tr-maxDays"), expireMin: n("tr-expire") });
+          await trLoad();
+          Swal.fire({ toast: true, icon: "success", title: "تم حفظ إعدادات الحجز", position: "top-end", showConfirmButton: false, timer: 1800 });
         } catch (e) {
           Swal.fire({ icon: "error", title: "حصل خطأ", text: e.message });
         }

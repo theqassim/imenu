@@ -2660,6 +2660,8 @@ app.get("/menu/:slug", async (req, res) => {
 });
 
 app.get("/reserve/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "reservation.html")));
+// Timed table reservations (customer page). Separate from /reserve (the seat counter); shows "closed" until the owner enables it.
+app.get("/book/:slug", (req, res) => { res.set("Cache-Control", "no-cache"); res.sendFile(path.join(__dirname, "public", "book.html")); });
 app.get("/rate/:slug", (req, res) => res.sendFile(path.join(__dirname, "public", "rate.html")));
 
 // ======================= /store/:slug =======================
