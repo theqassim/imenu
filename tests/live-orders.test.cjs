@@ -218,3 +218,23 @@ test("public menu endpoint never selects the owner's full user row", () => {
   assert.ok(!/users\(\s*\*\s*\)/.test(handler), "owner:users(*) would leak email, phone and password hash");
   assert.match(handler, /owner:users\(active, subscriptionExpires, isTrial\)/);
 });
+
+test("schema failure gives the owner a short non-secret reason code", async () => {
+  const express = require("express");
+  const { createLiveOrders } = require("../live-orders.js");
+  const app = express(); app.use(express.json());
+  const pool = { query: async () => { throw new Error("DATABASE_URL is not set"); } };
+  const store = { getRestaurantByOwner: async () => ({ _id: "r1", slug: "x", customUI: {} }), getRestaurantBySlug: async () => null, getRestaurantById: async () => null, getProducts: async () => [], updateRestaurantCustomUI: async () => {} };
+  const srv = require("http").createServer(app); const { Server: SIO } = require("socket.io"); const io = new SIO(srv);
+  createLiveOrders({ app, io, pool, store, protect: (q, s, n) => { q.user = { _id: "u", role: "owner" }; n(); }, restrictTo: () => (a, b, n) => n(), log: { log() {}, error() {} } });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  try {
+    const base = "http://127.0.0.1:" + srv.address().port;
+    const s = await (await fetch(base + "/api/v1/live-orders/settings")).json();
+    assert.equal(s.data.available, false);
+    assert.equal(s.data.unavailableReason, "no_database_url");
+    const k = await fetch(base + "/api/v1/live-orders/key", { method: "POST" });
+    assert.equal(k.status, 503);
+    assert.equal((await k.json()).reason, "no_database_url");
+  } finally { io.close(); srv.close(); }
+});

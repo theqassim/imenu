@@ -138,6 +138,18 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
   const rate = new Map(); // ip -> [timestamps]
   let schemaReady = false;
   let schemaPromise = null;
+  let schemaReason = null; // short non-secret code for the last schema failure (shown to the signed-in owner only)
+  function classifySchemaError(e) {
+    const msg = String((e && e.message) || "");
+    if (/DATABASE_URL is not set/i.test(msg)) return "no_database_url";
+    const code = e && e.code ? String(e.code) : "";
+    if (/^(ENOTFOUND|ENETUNREACH|ECONNREFUSED|ETIMEDOUT|ECONNRESET|EAI_AGAIN)$/.test(code)) return code;
+    if (/^[0-9A-Z]{5}$/.test(code)) return "pg_" + code; // e.g. 28P01 wrong password, 42501 permission, 3D000 no such database
+    if (/tenant or user not found/i.test(msg)) return "pooler_tenant_not_found";
+    if (/SSL|certificate/i.test(msg)) return "ssl_error";
+    if (/timeout/i.test(msg)) return "timeout";
+    return "other";
+  }
 
   async function ensureSchema() {
     if (schemaReady) return true;
@@ -164,8 +176,10 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
         await pool.query("ALTER TABLE public.live_pos_keys ENABLE ROW LEVEL SECURITY");
         await pool.query("ALTER TABLE public.live_orders_inbox ENABLE ROW LEVEL SECURITY");
         schemaReady = true;
+        schemaReason = null;
         return true;
       } catch (e) {
+        schemaReason = classifySchemaError(e);
         log.error("❌ live orders: schema setup failed:", e.message);
         return false;
       } finally {
@@ -389,6 +403,7 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
         data: {
           enabled: isEnabled(restaurant),
           available: ready,
+          unavailableReason: ready ? null : schemaReason,
           slug: restaurant.slug,
           hasKey: !!keyHint,
           keyHint,
@@ -406,7 +421,7 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
       if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
       const enabled = req.body && req.body.enabled === true;
       if (enabled && !(await ensureSchema())) {
-        return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي، قاعدة البيانات لسه ماجهزتش" });
+        return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي، قاعدة البيانات لسه ماجهزتش", reason: schemaReason });
       }
       const customUI = {
         ...(restaurant.customUI && typeof restaurant.customUI === "object" ? restaurant.customUI : {}),
@@ -425,7 +440,7 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
     try {
       const restaurant = await ownerRestaurant(req);
       if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
-      if (!(await ensureSchema())) return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي" });
+      if (!(await ensureSchema())) return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي", reason: schemaReason });
       const key = generateKey();
       const rid = String(restaurant._id);
       await pool.query(

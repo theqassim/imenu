@@ -4729,7 +4729,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         setBtn("live-mode-order", on);
         const l = document.getElementById("live-status-line");
         if (!l) return;
-        if (d.available === false) l.textContent = "⚠️ الخدمة غير جاهزة على السيرفر دلوقتي (قاعدة البيانات)، المنيو هيفضل للعرض فقط.";
+        if (d.available === false) l.textContent = "⚠️ الخدمة غير جاهزة على السيرفر دلوقتي (قاعدة البيانات)، المنيو هيفضل للعرض فقط." + (d.unavailableReason ? " [" + d.unavailableReason + "]" : "");
         else if (!on) l.textContent = "المنيو دلوقتي للعرض فقط: الزبون بيشوف الأسعار من غير أزرار طلب.";
         else if (!d.hasKey) l.textContent = "تم التفعيل، بس لازم تعمل مفتاح ربط وتدخله في السيستم الأوفلاين عشان الطلبات توصل.";
         else if (d.posOnline) l.textContent = "🟢 السيستم الأوفلاين متصل: الزبون يقدر يطلب من المنيو والطلب بيوصل للكاشير فورًا.";
@@ -4743,7 +4743,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             body: JSON.stringify({ enabled }),
           });
           const d = await r.json();
-          if (!r.ok) throw new Error(d.message || "حصل خطأ");
+          if (!r.ok) throw new Error((d.message || "حصل خطأ") + (d.reason ? " [" + d.reason + "]" : ""));
           await liveLoad();
           Swal.fire({ toast: true, icon: "success", title: enabled ? "المنيو بقى بيستقبل طلبات" : "المنيو بقى للعرض فقط", position: "top-end", showConfirmButton: false, timer: 2000 });
         } catch (e) {
@@ -4759,7 +4759,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         try {
           const r = await fetch("/api/v1/live-orders/key", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
           const d = await r.json();
-          if (!r.ok) throw new Error(d.message || "حصل خطأ");
+          if (!r.ok) throw new Error((d.message || "حصل خطأ") + (d.reason ? " [" + d.reason + "]" : ""));
           const k = d.data;
           await Swal.fire({
             icon: "success",
