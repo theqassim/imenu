@@ -880,7 +880,12 @@ app.post("/api/v1/offers/upload-bg", protect, upload.single("image"), async (req
   }
 });
 
-app.patch("/api/v1/restaurants/:id", protect, upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
+// Ownership guard: previously any authenticated user could PATCH any restaurant
+// by id. admin writes any; owner only their own; staff roles denied. Runs before
+// multer so a rejected request stores no uploaded files.
+const { createRestaurantWriteGuard } = require("./restaurant-access");
+
+app.patch("/api/v1/restaurants/:id", protect, createRestaurantWriteGuard(supabase), upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
     let updateData = { ...req.body };
     // customUI changes from narrow branches (category EN ops, announcements, image uploads)
