@@ -2078,6 +2078,16 @@
                     <label class="form-label">اسم القسم</label>
                     <input type="text" id="c-name" class="modern-input" placeholder="مثال: مشويات، مشروبات..." style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color);" />
                   </div>
+
+                  <div style="flex: 2; min-width: 250px;">
+                    <label class="form-label">اسم القسم بالإنجليزي <span style="color:#94a3b8; font-weight:400;">(اختياري)</span></label>
+                    <div style="display:flex; gap:8px;">
+                      <input type="text" id="c-name-en" class="modern-input" placeholder="e.g. Grill, Drinks..." dir="ltr" style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); flex:1;" />
+                      <button type="button" class="btn" onclick="suggestEnCat()" title="ترجمة تلقائية عبر MyMemory - الاسم بيتبعت للخدمة" style="white-space:nowrap; background:#eef2ff; color:var(--primary, #4338ca); border:1px solid #c7d2fe; font-size:12px; padding:0 12px; border-radius:12px;">
+                        <i class="fas fa-language"></i> اقتراح
+                      </button>
+                    </div>
+                  </div>
                   
                   <div style="flex: 1; min-width: 200px;">
                     <label class="form-label">صورة الغلاف (اختياري)</label>
@@ -2403,6 +2413,16 @@
                             <input type="text" id="p-name" class="modern-input" placeholder="اسم الوجبة (مثال: برجر دجاج)">
                         </div>
 
+                        <div class="input-group-modern">
+                            <label>اسم المنتج بالإنجليزي <span style="color:#94a3b8; font-weight:400;">(اختياري - يظهر لعملاء المنيو الإنجليزي)</span></label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input type="text" id="p-name-en" class="modern-input" placeholder="English name (e.g. Chicken Burger)" dir="ltr" style="flex:1;">
+                                <button type="button" class="btn" onclick="suggestEnName()" title="ترجمة تلقائية عبر MyMemory - الاسم بيتبعت للخدمة" style="white-space:nowrap; background:#eef2ff; color:var(--primary, #4338ca); border:1px solid #c7d2fe; font-size:12px; padding:8px 12px; border-radius:10px;">
+                                    <i class="fas fa-language"></i> اقتراح ترجمة
+                                </button>
+                            </div>
+                        </div>
+
                         <div style="display: flex; gap: 15px;">
                             <div class="input-group-modern" style="flex: 1;">
                                 <label>القسم</label>
@@ -2452,6 +2472,7 @@
                         <div class="input-group-modern">
                             <label>الوصف والمكونات</label>
                             <textarea id="p-desc" rows="3" class="modern-input" placeholder="وصف الطبق ليظهر للعميل..."></textarea>
+                            <input type="text" id="p-desc-en" class="modern-input" placeholder="English description (optional)" dir="ltr" style="margin-top:8px;">
                         </div>
                         
                         <div id="ingredients-section" class="hidden" style="margin-top: 15px; background: #ecfdf5; padding: 15px; border-radius: 16px; border: 1px dashed #10b981;">
@@ -5316,6 +5337,21 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
              }
           }
 
+          if (data.status === "success") {
+            try {
+              const enCat = (document.getElementById("c-name-en").value || "").trim();
+              if (typeof currentDesign === "object" && currentDesign) {
+                currentDesign.categoryNamesEn = currentDesign.categoryNamesEn || {};
+                if (oldName && oldName !== name) delete currentDesign.categoryNamesEn[oldName];
+                if (enCat) currentDesign.categoryNamesEn[name] = enCat;
+                else delete currentDesign.categoryNamesEn[name];
+                const uiFd = new FormData();
+                uiFd.append("customUI", JSON.stringify(currentDesign));
+                fetch(`/api/v1/restaurants/${rId}`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: uiFd }).catch(() => {});
+              }
+            } catch (e) { console.error(e); }
+          }
+
           Swal.close();
 
           if (data.status === "success") {
@@ -5340,6 +5376,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
       function editCategory(id, name, image) {
         document.getElementById("edit-cat-id").value = id;
         document.getElementById("c-name").value = name;
+        document.getElementById("c-name-en").value = (typeof currentDesign === "object" && currentDesign && currentDesign.categoryNamesEn && currentDesign.categoryNamesEn[name]) || "";
         document.getElementById("c-old-name").value = name;
         document.getElementById("cat-form-title").innerText =
           "تعديل القسم: " + name;
@@ -5363,6 +5400,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
       function resetCategoryForm() {
         document.getElementById("edit-cat-id").value = "";
         document.getElementById("c-name").value = "";
+        document.getElementById("c-name-en").value = "";
         document.getElementById("c-image").value = "";
         document.getElementById("c-preview").style.display = "none";
         document.getElementById("cat-form-title").innerText = "إضافة قسم جديد";
@@ -5588,6 +5626,8 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
       function duplicateProd(dataEncoded) {
           const p = JSON.parse(decodeURIComponent(dataEncoded));
           document.getElementById("p-name").value = p.name.ar + " (نسخة)";
+          document.getElementById("p-name-en").value = (p.name.en && p.name.en !== p.name.ar) ? p.name.en + " (copy)" : "";
+          document.getElementById("p-desc-en").value = (p.description && p.description.en) ? p.description.en : "";
           document.getElementById("p-cat").value = p.category;
           document.getElementById("p-desc").value = p.description ? p.description.ar : "";
           
@@ -5627,8 +5667,10 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
             ? "/api/v1/products"
             : `/api/v1/products/${editingProductId}`;
         const name = document.getElementById("p-name").value;
+        const nameEn = (document.getElementById("p-name-en").value || "").trim();
         const cat = document.getElementById("p-cat").value;
         const desc = document.getElementById("p-desc").value;
+        const descEn = (document.getElementById("p-desc-en").value || "").trim();
         const imageFile = document.getElementById("p-image").files[0];
         const pricingMode = document.querySelector(
           'input[name="pricingMode"]:checked',
@@ -5643,8 +5685,8 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           document.getElementById("restaurant-id").value,
         );
         formData.append("category", cat);
-        formData.append("name", JSON.stringify({ ar: name, en: name }));
-        formData.append("description", JSON.stringify({ ar: desc, en: "" }));
+        formData.append("name", JSON.stringify({ ar: name, en: nameEn || name }));
+        formData.append("description", JSON.stringify({ ar: desc, en: descEn }));
         if(currentIngredients.length > 0) {
             formData.append("ingredients", JSON.stringify(currentIngredients));
         }
@@ -5719,6 +5761,30 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         }
       }
 
+      async function suggestTranslation(arText) {
+        const q = (arText || "").trim();
+        if (!q) { Swal.fire("تنبيه", "اكتب الاسم بالعربي الأول", "warning"); return null; }
+        try {
+          const res = await fetch("https://api.mymemory.translated.net/get?q=" + encodeURIComponent(q) + "&langpair=ar|en");
+          const data = await res.json();
+          const t = data && data.responseData && data.responseData.translatedText;
+          if (t && !/[\u0621-\u064A]/.test(t)) return t;
+          Swal.fire("تعذر الاقتراح", "الخدمة مردتش بترجمة إنجليزية واضحة، اكتبها يدويًا", "info");
+          return null;
+        } catch (e) {
+          Swal.fire("تعذر الاقتراح", "خدمة الترجمة مش متاحة دلوقتي، اكتبها يدويًا", "info");
+          return null;
+        }
+      }
+      async function suggestEnName() {
+        const t = await suggestTranslation(document.getElementById("p-name").value);
+        if (t) document.getElementById("p-name-en").value = t;
+      }
+      async function suggestEnCat() {
+        const t = await suggestTranslation(document.getElementById("c-name").value);
+        if (t) document.getElementById("c-name-en").value = t;
+      }
+
       function editProd(dataEncoded) {
         const p = JSON.parse(decodeURIComponent(dataEncoded));
         editingProductId = p._id;
@@ -5729,8 +5795,10 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         if(activeCard) activeCard.classList.add('active-edit');
 
         document.getElementById("p-name").value = p.name.ar;
+        document.getElementById("p-name-en").value = (p.name.en && p.name.en !== p.name.ar) ? p.name.en : "";
         document.getElementById("p-cat").value = p.category;
         document.getElementById("p-desc").value = p.description ? p.description.ar : "";
+        document.getElementById("p-desc-en").value = (p.description && p.description.en) ? p.description.en : "";
 
         if (p.image) {
           document.getElementById("p-preview").src = p.image;
@@ -5768,9 +5836,11 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
         editingProductId = null;
         document.querySelectorAll('.prod-card-item').forEach(c => c.classList.remove('active-edit'));
         document.getElementById("p-name").value = "";
+        document.getElementById("p-name-en").value = "";
         document.getElementById("p-price").value = "";
         document.getElementById("p-cat").value = "";
         document.getElementById("p-desc").value = "";
+        document.getElementById("p-desc-en").value = "";
         document.getElementById("p-image").value = "";
         document.getElementById("p-preview").style.display = "none";
         document.getElementById("form-mode-title").innerText =
