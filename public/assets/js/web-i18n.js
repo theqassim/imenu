@@ -332,11 +332,13 @@
     var st = document.createElement('style');
     st.id = 'imenu-web-i18n-style';
     st.textContent =
-      '.imenu-lang-toggle{background:rgba(255,255,255,.14);color:inherit;border:1px solid rgba(128,128,128,.35);border-radius:999px;' +
+      // explicit light-pill colors: 'color:inherit' + translucent white went invisible on dark custom themes
+      '.imenu-lang-toggle{background:#ffffff;color:#20242e;border:1px solid rgba(32,36,46,.22);border-radius:999px;' +
       'padding:6px 12px;font-family:inherit;font-size:12px;font-weight:800;line-height:1;cursor:pointer;display:inline-flex;' +
-      'align-items:center;justify-content:center;gap:5px;white-space:nowrap;min-height:32px;backdrop-filter:blur(4px)}' +
+      'align-items:center;justify-content:center;gap:5px;white-space:nowrap;min-height:32px;' +
+      'box-shadow:0 2px 10px rgba(0,0,0,.22);backdrop-filter:blur(4px)}' +
       '.imenu-lang-toggle svg{width:13px;height:13px;flex-shrink:0}' +
-      '.imenu-lang-toggle:hover{filter:brightness(1.15)}' +
+      '.imenu-lang-toggle:hover{filter:brightness(.96)}' +
       '.imenu-lang-toggle:focus-visible{outline:2px solid currentColor;outline-offset:2px}';
     (document.head || document.documentElement).appendChild(st);
   }

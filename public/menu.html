@@ -2643,6 +2643,7 @@
       window.addEventListener("imenu-lang-changed", function () {
         try { if (window.__rawMenu) renderMenu(window.__rawMenu); } catch (e) {}
         try { renderCartItems(); } catch (e) {}
+        try { updateCartUI(); } catch (e) {} // rebuilds announcement card + cart summary in the new language
       });
 
       function renderMenu(menu) {
@@ -2718,7 +2719,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                             
                             <div class="prod-content">
                             <div style="flex:1">
-                                <h3 class="prod-title"><span data-imenu-skip>${pickName(p)}</span>${hasDiscount ? `<span class="disc-tag">خصم${Number(p.oldPrice) > 0 && !(p.sizes && p.sizes.length) ? " " + Math.round((1 - Number(p.price) / Number(p.oldPrice)) * 100) + "%" : ""}</span>` : ""}</h3>
+                                <h3 class="prod-title"><span data-imenu-skip>${pickName(p)}</span>${hasDiscount ? `<span class="disc-tag">${isEn() ? "Sale" : "خصم"}${Number(p.oldPrice) > 0 && !(p.sizes && p.sizes.length) ? " " + Math.round((1 - Number(p.price) / Number(p.oldPrice)) * 100) + "%" : ""}</span>` : ""}</h3>
                                 ${pickDesc(p) ? `<p class="prod-desc" data-imenu-skip>${pickDesc(p)}</p>` : ""}
                             </div>
                             
@@ -2875,7 +2876,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             const discountPercent = Math.round(((s.oldPrice - s.price) / s.oldPrice) * 100);
             if (discountPercent >= 15) {
                 btnClass = "hot-deal-btn";
-                badgeHtml = `<span class="fire-badge">🔥 خصم ${discountPercent}%</span>`;
+                badgeHtml = `<span class="fire-badge">🔥 ${isEn() ? discountPercent + "% off" : "خصم " + discountPercent + "%"}</span>`;
             } else {
                 badgeHtml = `<span style="background:#fee2e2; color:#d32f2f; font-size:12px; padding:3px 8px; border-radius:6px; font-weight:bold;">وفر ${s.oldPrice - s.price}ج</span>`;
             }
@@ -2935,7 +2936,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
       function updateOrderAnnouncement(subTotal) {
         const THEMES = ["gold", "fire", "royal", "emerald", "night", "rose", "brown"];
-        const nf = (n) => Number(n).toLocaleString("ar-EG");
+        const nf = (n) => Number(n).toLocaleString(isEn() ? "en-US" : "ar-EG");
         const el = (tag, cls, txt) => {
           const e = document.createElement(tag);
           if (cls) e.className = cls;
@@ -2958,7 +2959,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         const saved = typeof window.calculateOrderOfferDiscount === "function" ? window.calculateOrderOfferDiscount(sub) : 0;
         const endTs = a.endsAt ? Date.parse(a.endsAt) : NaN;
         const key = [a.id, theme, a.title, a.message, status.minAmount, status.orderPercent,
-          status.active ? 1 : 0, sub > 0 ? 1 : 0, a.endsAt, a.position, a.colorA, a.colorB, a.tagText, a.buttonText].join("|");
+          status.active ? 1 : 0, sub > 0 ? 1 : 0, a.endsAt, a.position, a.colorA, a.colorB, a.tagText, a.buttonText,
+          isEn() ? "en" : "ar"].join("|");
 
         const fillHint = (h) => {
           h.replaceChildren();
@@ -2974,6 +2976,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         const build = () => {
           const root = el("div", "an oc-" + theme + (status.active ? " an-done" : ""));
           root.dataset.key = key;
+          // system phrases below are fully locale-rendered at build time, and owner-authored
+          // title/message/tagText must stay as the owner wrote them: keep the dictionary pass out.
+          root.setAttribute("data-imenu-skip", "1");
           if (/^#[0-9a-f]{6}$/i.test(a.colorA || "") && /^#[0-9a-f]{6}$/i.test(a.colorB || "")) {
             root.style.setProperty("--oa", a.colorA);
             root.style.setProperty("--ob", a.colorB);
@@ -2994,11 +2999,11 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           const inner = el("div", "an-inner");
           const top = el("div", "an-top");
           const badge = el("div", "an-badge");
-          badge.append(el("div", "an-pct", nf(status.orderPercent) + "%"), el("div", "an-off", "خصم"));
+          badge.append(el("div", "an-pct", nf(status.orderPercent) + "%"), el("div", "an-off", isEn() ? "OFF" : "خصم"));
           const ico = el("div", "an-ico"); ico.append(el("i", "fas " + (status.active ? "fa-check" : "fa-gift")));
           badge.append(ico);
           const txt = el("div", "an-txt");
-          const tagText = typeof a.tagText === "string" ? a.tagText : "⚡ عرض خاص على الفاتورة كلها";
+          const tagText = typeof a.tagText === "string" ? a.tagText : (isEn() ? "⚡ Special offer on your whole bill" : "⚡ عرض خاص على الفاتورة كلها");
           if (tagText) txt.append(el("div", "an-tag", tagText));
           txt.append(el("h3", "an-title", status.active
             ? (isEn() ? "🎉 Congrats! " + nf(status.orderPercent) + "% off applied" : "🎉 مبروك! خصم " + nf(status.orderPercent) + "% اتطبق")
@@ -3010,13 +3015,17 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
           {
             const chips = el("div", "an-chips");
-            chips.append(el("span", "an-chip", "من " + nf(status.minAmount) + " ج.م"));
+            chips.append(el("span", "an-chip", (isEn() ? "From " : "من ") + nf(status.minAmount) + (isEn() ? " EGP" : " ج.م")));
             if (!isNaN(endTs)) {
               const t = el("span", "an-chip an-timer", "⏳ ...");
               t.dataset.end = String(endTs);
               chips.append(t);
             }
-            const cta = el("button", "an-cta", status.active ? "راجع السلة وأكّد الطلب 🛒" : (a.buttonText || (sub > 0 ? "كمّل اختيارك 🔥" : "ابدأ اطلب دلوقتي 🔥")));
+            const cta = el("button", "an-cta", status.active
+              ? (isEn() ? "Review cart & confirm 🛒" : "راجع السلة وأكّد الطلب 🛒")
+              : (a.buttonText || (sub > 0
+                ? (isEn() ? "Keep picking 🔥" : "كمّل اختيارك 🔥")
+                : (isEn() ? "Start your order now 🔥" : "ابدأ اطلب دلوقتي 🔥"))));
             cta.type = "button";
             cta.onclick = () => {
               if (status.active) return openCart();
@@ -3070,7 +3079,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
       /* ===== بوب أب التنبيه (بيتفتح بعد بوب أب العروض لو فيه واحد) ===== */
       (function () {
         const THEMES = ["gold", "fire", "royal", "emerald", "night", "rose", "brown"];
-        const nf = (n) => Number(n).toLocaleString("ar-EG");
+        const nf = (n) => Number(n).toLocaleString(isEn() ? "en-US" : "ar-EG");
         const el = (tag, cls, txt) => {
           const e = document.createElement(tag);
           if (cls) e.className = cls;
@@ -3131,16 +3140,16 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           const badge = el("div", "offer-badge");
           const pct = el("span", "pct", nf(status.orderPercent) + "%");
           pct.dir = "ltr"; pct.style.fontSize = "44px";
-          badge.append(pct, el("span", "off", "خصم"));
+          badge.append(pct, el("span", "off", isEn() ? "OFF" : "خصم"));
           const ic = el("div", "offer-badge-icon"); ic.append(el("i", "fas fa-gift"));
           badge.append(ic);
           hero.append(cf, badge);
 
           const body = el("div", "offer-body");
-          body.append(el("h2", "offer-title", a.title || "خصم " + nf(status.orderPercent) + "% على طلبك"));
+          body.append(el("h2", "offer-title", a.title || (isEn() ? nf(status.orderPercent) + "% off your order" : "خصم " + nf(status.orderPercent) + "% على طلبك")));
           if (a.message) body.append(el("p", "offer-msg", a.message));
           const chips = el("div", "offer-scope");
-          const tagText = typeof a.tagText === "string" ? a.tagText : "⚡ عرض خاص على الفاتورة كلها";
+          const tagText = typeof a.tagText === "string" ? a.tagText : (isEn() ? "⚡ Special offer on your whole bill" : "⚡ عرض خاص على الفاتورة كلها");
           if (tagText) chips.append(el("span", "offer-chip", tagText));
           chips.append(el("span", "offer-chip", (isEn() ? "From " : "من ") + nf(status.minAmount) + (isEn() ? " EGP" : " ج.م")));
           body.append(chips);
@@ -3153,14 +3162,17 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
           const end = a.endsAt ? Date.parse(a.endsAt) : NaN;
           if (!isNaN(end) && end > Date.now()) {
-            body.append(el("div", "offer-timer-label", "⏳ العرض ينتهي خلال"));
+            body.append(el("div", "offer-timer-label", isEn() ? "⏳ Offer ends in" : "⏳ العرض ينتهي خلال"));
             const t = el("div", "an-ptimer"); t.dataset.end = String(end);
-            [["d", "يوم"], ["h", "ساعة"], ["m", "دقيقة"], ["s", "ثانية"]].forEach(([k, label]) => {
+            const unitLabels = isEn() ? ["Days", "Hrs", "Min", "Sec"] : ["يوم", "ساعة", "دقيقة", "ثانية"];
+            [["d", unitLabels[0]], ["h", unitLabels[1]], ["m", unitLabels[2]], ["s", unitLabels[3]]].forEach(([k, label]) => {
               const box = el("div", "t t-" + k); box.append(el("b", "", "00"), el("small", "", label)); t.append(box);
             });
             body.append(t);
           }
-          const cta = el("button", "offer-cta", (status.active ? "راجع السلة وأكّد الطلب 🛒" : (a.buttonText || "ابدأ اطلب دلوقتي")) + (status.active ? "" : " 🎉"));
+          const cta = el("button", "offer-cta", (status.active
+            ? (isEn() ? "Review cart & confirm 🛒" : "راجع السلة وأكّد الطلب 🛒")
+            : (a.buttonText || (isEn() ? "Start your order now" : "ابدأ اطلب دلوقتي"))) + (status.active ? "" : " 🎉"));
           cta.type = "button";
           cta.onclick = () => {
             close();
@@ -3196,6 +3208,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           }
           const card = el("div", "offer-card");
           card.setAttribute("role", "dialog"); card.setAttribute("aria-modal", "true");
+          // locale-rendered system phrases + owner-authored content: keep the dictionary pass out.
+          card.setAttribute("data-imenu-skip", "1");
           const x = el("button", "offer-close"); x.type = "button"; x.setAttribute("aria-label", "إغلاق"); x.append(el("i", "fas fa-times"));
           card.append(x, content(c));
           ov.replaceChildren(card);
@@ -3213,6 +3227,13 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           clearInterval(timer);
           setTimeout(() => { if (!ov.classList.contains("in")) ov.classList.remove("show"); }, 380);
         }
+        // language switch while the popup is open: rebuild it in the new language
+        window.addEventListener("imenu-lang-changed", function () {
+          try {
+            const ov = document.getElementById("an-overlay");
+            if (ov && ov.classList.contains("show")) { const c = current(); if (c) open(c); }
+          } catch (e) {}
+        });
         function waitAndOpen(id) {
           let tries = 0;
           clearInterval(window.__anWait);
@@ -3279,31 +3300,32 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             maximumFractionDigits: 2,
           }) + " ج.م";
 
-        let detailsHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>المجموع:</span><span>${subTotal.toLocaleString()} ج.م</span></div>`;
+        const curUnit = isEn() ? " EGP" : " ج.م";
+        let detailsHTML = `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>${isEn() ? "Subtotal:" : "المجموع:"}</span><span>${subTotal.toLocaleString()}${curUnit}</span></div>`;
 
         if (typeof window.getOrderOfferStatus === "function") {
           const offerStatus = window.getOrderOfferStatus(subTotal);
           if (offerStatus && !offerStatus.active) {
-            detailsHTML += `<div style="margin:8px 0;padding:9px 10px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-size:12px;font-weight:800;text-align:center;">أضف ${offerStatus.remaining.toLocaleString()} ج.م لتحصل على خصم ${offerStatus.orderPercent}%</div>`;
+            detailsHTML += `<div style="margin:8px 0;padding:9px 10px;border-radius:10px;background:var(--primary-light);color:var(--primary);font-size:12px;font-weight:800;text-align:center;">${isEn() ? `Add ${offerStatus.remaining.toLocaleString()} EGP to get ${offerStatus.orderPercent}% off` : `أضف ${offerStatus.remaining.toLocaleString()} ج.م لتحصل على خصم ${offerStatus.orderPercent}%`}</div>`;
           }
         }
 
         if (accounting.tax > 0) {
-          detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>ضريبة (${accounting.tax}%):</span><span>${taxVal.toLocaleString()} ج.م</span></div>`;
+          detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>${isEn() ? "Tax" : "ضريبة"} (${accounting.tax}%):</span><span>${taxVal.toLocaleString()}${curUnit}</span></div>`;
         }
         if (accounting.service > 0) {
-          detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>خدمة (${accounting.service}%):</span><span>${serviceVal.toLocaleString()} ج.م</span></div>`;
+          detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>${isEn() ? "Service" : "خدمة"} (${accounting.service}%):</span><span>${serviceVal.toLocaleString()}${curUnit}</span></div>`;
         }
 
         if (discountVal > 0) {
           if (appliedCoupon) {
-            detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--success); font-weight:bold;"><span>خصم (${appliedCoupon.code}):</span><span>-${appliedCoupon.amount.toLocaleString()} ج.م</span></div>`;
+            detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--success); font-weight:bold;"><span>${isEn() ? "Coupon" : "خصم"} (${appliedCoupon.code}):</span><span>-${appliedCoupon.amount.toLocaleString()}${curUnit}</span></div>`;
           }
           const offerDiscount = typeof window.calculateOrderOfferDiscount === "function"
             ? window.calculateOrderOfferDiscount(subTotal)
             : 0;
           if (offerDiscount > 0) {
-            detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--success); font-weight:bold;"><span>خصم العرض:</span><span>-${offerDiscount.toLocaleString()} ج.م</span></div>`;
+            detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--success); font-weight:bold;"><span>${isEn() ? "Offer discount:" : "خصم العرض:"}</span><span>-${offerDiscount.toLocaleString()}${curUnit}</span></div>`;
           }
         }
 
@@ -3318,6 +3340,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           summaryContainer.style.marginTop = "20px";
           finalTotalEl.parentNode.insertBefore(summaryContainer, finalTotalEl);
         }
+        summaryContainer.setAttribute("data-imenu-skip", "1"); // rows above are fully locale-rendered
         summaryContainer.innerHTML = detailsHTML;
 
         document.getElementById("cart-final-total").innerText =
