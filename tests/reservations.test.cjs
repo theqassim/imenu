@@ -153,8 +153,11 @@ for (const mode of ["pg", "rest"]) {
       assert.equal(restaurant.customUI.timedReservations.enabled, false);
       assert.equal(restaurant.reservationSettings.bookedSeats, 5, "old data untouched");
       restaurant.reservationSettings = { isEnabled: false, totalSeats: 20, bookedSeats: 5 };
+      const stillOut = await api("PATCH", "/api/v1/timed-reservations/settings", { enabled: true });
+      assert.equal(stillOut.status, 409, "old flag off but guests still counted: still blocked");
+      restaurant.reservationSettings = { isEnabled: false, totalSeats: 20, bookedSeats: 0 };
       assert.equal((await api("PATCH", "/api/v1/timed-reservations/settings", { enabled: true })).status, 200);
-      assert.equal(restaurant.reservationSettings.bookedSeats, 5, "old data untouched");
+      assert.equal(restaurant.reservationSettings.totalSeats, 20, "old data untouched");
       restaurant.reservationSettings = undefined;
     });
 

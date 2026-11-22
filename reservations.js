@@ -258,7 +258,7 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
       const b = req.body || {};
       // The older seat-counter page (/reserve) has no tables or times, so the two cannot share one venue without double booking.
       // The owner must close the old one first; its existing requests and data stay untouched.
-      if (b.enabled === true && settingsOf(restaurant).enabled !== true && restaurant.reservationSettings && restaurant.reservationSettings.isEnabled === true) return res.status(409).json({ code: "LEGACY_ACTIVE", message: "حجز المقاعد القديم شغّال. اقفله الأول وبعدين فعّل الحجز بالميعاد. حجوزاته الحالية هتفضل زي ما هي." });
+      if (b.enabled === true && settingsOf(restaurant).enabled !== true && restaurant.reservationSettings && (restaurant.reservationSettings.isEnabled === true || Number(restaurant.reservationSettings.bookedSeats) > 0)) return res.status(409).json({ code: "LEGACY_ACTIVE", message: "حجز المقاعد القديم لسه شغّال أو عليه حجوزات مقاعد لسه ماخلصتش. اقفله وخلّص حجوزاته من صفحة الحجوزات القديمة (أو صفّر العداد بعد ما تخلصها) وبعدين فعّل الحجز بالميعاد. مفيش حاجة هتتمسح لوحدها." });
       if (b.enabled === true && !(await ensure())) return res.status(503).json({ message: "قاعدة البيانات لسه ماجهزتش" });
       const merged = { ...settingsOf(restaurant) };
       for (const k of ["timezone", "enabled", "holdBeforeMin", "holdAfterMin", "minLeadMin", "maxDaysAhead", "expireMin"]) if (k in b) merged[k] = b[k];
