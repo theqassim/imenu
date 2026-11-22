@@ -2066,24 +2066,20 @@
     <div class="modal-overlay" id="modal-overlay" onclick="closeCart()"></div>
     <div class="cart-modal" id="cart-modal">
       <div class="cart-header">
-        <div class="cart-title">فاتورة الطلب</div>
+        <div class="cart-title">
+          <i class="fas fa-shopping-basket"></i> سلة الطلب
+          <span class="cart-count-badge" id="cart-count-badge" hidden></span>
+        </div>
         <button class="close-cart" onclick="closeCart()">
           <i class="fas fa-times"></i>
         </button>
       </div>
       <div id="cart-items-container"></div>
 
-      <div
-        style="
-          margin-top: 15px;
-          display: flex;
-          justify-content: space-between;
-          font-size: 18px;
-          font-weight: bold;
-        "
-      >
-        <span style="color: var(--text-main)">الإجمالي:</span>
-        <span style="color: var(--primary)" id="cart-final-total">0 ج.م</span>
+      <div class="cart-footer">
+      <div class="cart-total-line">
+        <span class="t-label">الإجمالي:</span>
+        <span id="cart-final-total">0 ج.م</span>
       </div>
 
       <div class="order-type-container">
@@ -2162,6 +2158,7 @@
       <button class="checkout-btn" onclick="submitOrder()">
         <i class="fas fa-paper-plane"></i> إرسال الطلب
       </button>
+      </div>
     </div>
 
     <div class="powered-footer">
@@ -2218,6 +2215,29 @@
           opacity: 1;
         }
       }
+
+      /* --- سلة الطلب: tighter rows, clear footer, light type selector --- */
+      #cart-modal { padding: 16px 14px 18px; max-height: 88vh; }
+      #cart-modal .cart-header { margin-bottom: 10px; padding-bottom: 0; border-bottom: none; }
+      #cart-modal .cart-title { font-size: 17px; display: flex; align-items: center; gap: 8px; }
+      #cart-modal .cart-title i { color: var(--primary); font-size: 15px; }
+      .cart-count-badge { background: var(--primary); color: #fff; font-size: 11px; font-weight: 800; border-radius: 20px; padding: 2px 9px; line-height: 1.5; }
+      #cart-modal .cart-item { background: var(--input-bg); border-radius: 12px; padding: 8px 12px; margin-bottom: 8px; }
+      #cart-modal .cart-item-name { font-size: 14px; }
+      #cart-modal .cart-item-price { font-size: 12px; }
+      #cart-modal .qty-controls { padding: 3px; gap: 8px; }
+      #cart-modal .qty-btn { width: 26px; height: 26px; }
+      #cart-modal .cart-footer { background: var(--input-bg); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px 14px; margin-top: 12px; }
+      #cart-modal .cart-total-line { display: flex; justify-content: space-between; align-items: baseline; }
+      #cart-modal .cart-total-line .t-label { color: var(--text-main); font-size: 14px; font-weight: 700; }
+      #cart-modal .cart-total-line #cart-final-total { color: var(--primary); font-size: 20px; font-weight: 800; }
+      #cart-modal #cart-summary-details { margin-top: 6px !important; border-top: none !important; padding-top: 0 !important; }
+      #cart-modal .order-type-container { border-top: none; margin-top: 12px; padding: 4px; gap: 4px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; }
+      #cart-modal .type-content { background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 8px 6px; font-size: 14px; }
+      #cart-modal .type-option input:checked + .type-content { background: var(--primary-light); color: var(--primary); border-color: var(--primary); box-shadow: none; }
+      #cart-modal .table-input-container { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+      #cart-modal #coupon-section { margin-top: 10px !important; padding-top: 10px !important; }
+      #cart-modal .checkout-btn { margin-top: 12px; padding: 13px; border-radius: 13px; }
     </style>
 
     <script>
@@ -3287,6 +3307,12 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
       function renderCartItems() {
         const container = document.getElementById("cart-items-container");
         container.innerHTML = "";
+        const _cc = document.getElementById("cart-count-badge");
+        if (_cc) {
+          const _n = Object.keys(cart).length;
+          _cc.textContent = _n;
+          _cc.hidden = !_n;
+        }
         for (const id in cart) {
           const item = cart[id];
           container.innerHTML += `
