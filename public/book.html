@@ -309,7 +309,16 @@
   Promise.all([getJson(API + "/config/" + encodeURIComponent(slug)), getJson("/api/v1/restaurants/" + encodeURIComponent(slug))]).then(function (rs) {
     var c = rs[0], m = rs[1];
     if (m.ok && m.j.data && m.j.data.restaurant) {
-      var r = m.j.data.restaurant; $("venueMark").textContent = (r.restaurantName || "م").trim().charAt(0); document.title = "احجز طاولة | " + (r.restaurantName || ""); $("rname").textContent = r.restaurantName || "احجز طاولة";
+      var r = m.j.data.restaurant; document.title = "احجز طاولة | " + (r.restaurantName || ""); $("rname").textContent = r.restaurantName || "احجز طاولة";
+      var letter = (r.restaurantName || "م").trim().charAt(0);
+      var photo = (r.storePage && r.storePage.logo) || r.image || (r.customUI && r.customUI.heroImage) || "";
+      if (photo) {
+        var pic = document.createElement("img");
+        pic.src = photo; pic.alt = "";
+        pic.onerror = function () { $("venueMark").textContent = letter; };
+        $("venueMark").textContent = "";
+        $("venueMark").appendChild(pic);
+      } else $("venueMark").textContent = letter;
       products = (m.j.data.menu || []).filter(function (p) { return p && p.isAvailable !== false; });
       renderMenu(m.j.data.categories || []);
     }
