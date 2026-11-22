@@ -224,6 +224,30 @@ const restrictTo = (...roles) => {
 };
 
 
+// ======================= Live orders (online QR menu -> offline POS) =======================
+(() => {
+  const dbUrl = process.env.SUPABASE_DB_URL ||
+    (/^postgres(ql)?:\/\//i.test(process.env.DATABASE_URL || "") ? process.env.DATABASE_URL : "");
+  let pool;
+  if (dbUrl) {
+    const { Pool } = require("pg");
+    pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false }, max: 4, idleTimeoutMillis: 30000 });
+    pool.on("error", (e) => console.error("⚠️ pg pool error (live orders):", e.message));
+  } else {
+    console.warn("⚠️ DATABASE_URL غير موجود — الطلبات المباشرة للسيستم الأوفلاين مش هتشتغل (المنيو هيفضل للعرض فقط).");
+    pool = { query: async () => { throw new Error("DATABASE_URL is not set"); } };
+  }
+  const one = async (q) => { const { data, error } = await q; if (error && error.code !== "PGRST116") throw error; return data || null; };
+  const store = {
+    getRestaurantBySlug: (slug) => one(supabase.from("restaurants").select("*, owner:users(active, subscriptionExpires)").eq("slug", slug).maybeSingle()),
+    getRestaurantById: (id) => one(supabase.from("restaurants").select("*, owner:users(active, subscriptionExpires)").eq("_id", id).maybeSingle()),
+    getRestaurantByOwner: (ownerId) => one(supabase.from("restaurants").select("*, owner:users(active, subscriptionExpires)").eq("owner", ownerId).maybeSingle()),
+    getProducts: async (restaurantId) => { const { data, error } = await supabase.from("products").select("_id, name, price, sizes, category, isAvailable").eq("restaurant", restaurantId); if (error) throw error; return data || []; },
+    updateRestaurantCustomUI: async (id, customUI) => { const { error } = await supabase.from("restaurants").update({ customUI }).eq("_id", id); if (error) throw error; },
+  };
+  require("./live-orders").createLiveOrders({ app, io, pool, store, protect, restrictTo });
+})();
+
 app.post("/api/v1/users/signup", async (req, res) => {
   try {
     const {

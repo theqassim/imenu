@@ -3071,23 +3071,31 @@
               <select id="set-orderMode" style="display: none">
                 <option value="view_only" selected>view_only</option>
               </select>
-              <div
-                style="
-                  background: var(--bg);
-                  border: 1px solid var(--border-color);
-                  border-radius: 10px;
-                  padding: 15px;
-                  display: flex;
-                  align-items: center;
-                  gap: 12px;
-                "
-              >
-                <i class="fas fa-eye" style="font-size: 22px; color: var(--primary)"></i>
-                <div>
-                  <b>المنيو دلوقتي في وضع "للعرض فقط" بشكل دائم</b>
-                  <div style="color: var(--secondary); font-size: 13px; margin-top: 3px">
-                    مفيش أزرار إضافة أو طلب من صفحة المنيو، الزبون بيشوف الأسعار والمنتجات بس (كتالوج).
+              <div id="live-orders-card" style="background: var(--bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                  <i class="fas fa-bolt" style="font-size: 22px; color: var(--primary)"></i>
+                  <div style="flex:1">
+                    <b>الطلب من المنيو الأونلاين</b>
+                    <div style="color: var(--secondary); font-size: 13px; margin-top: 3px">
+                      اختار: الزبون يطلب من المنيو وبيوصل الطلب مباشرة لسيستم الكاشير الأوفلاين، أو المنيو يفضل للعرض فقط.
+                    </div>
                   </div>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button type="button" id="live-mode-view" class="btn" onclick="liveSetEnabled(false)" style="flex:1; min-width:150px;">
+                    <i class="fas fa-eye"></i> للعرض فقط
+                  </button>
+                  <button type="button" id="live-mode-order" class="btn" onclick="liveSetEnabled(true)" style="flex:1; min-width:150px;">
+                    <i class="fas fa-shopping-basket"></i> الزبون يطلب من المنيو
+                  </button>
+                </div>
+                <div id="live-status-line" style="margin-top:12px; font-size:13px; color: var(--secondary)"></div>
+                <div id="live-key-box" style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--border-color);">
+                  <div style="font-size:13px; margin-bottom:8px;">
+                    <b>ربط سيستم الكاشير الأوفلاين:</b> اعمل مفتاح الربط هنا، وبعدين ادخل الـ slug والمفتاح في إعدادات السيستم الأوفلاين (الطلبات الأونلاين).
+                  </div>
+                  <div style="font-size:13px; margin-bottom:8px;">الـ slug: <b id="live-slug" dir="ltr">-</b> &nbsp; المفتاح الحالي: <b id="live-key-hint" dir="ltr">لسه ماتعملش</b></div>
+                  <button type="button" class="btn" onclick="liveGenerateKey()"><i class="fas fa-key"></i> <span id="live-key-btn-txt">إنشاء مفتاح ربط</span></button>
                 </div>
               </div>
             </div>
@@ -3869,6 +3877,7 @@
             if (typeof window.annRender === "function") window.annRender();
 
             document.getElementById("set-orderMode").value = "view_only";
+            liveLoad();
             renderSocialLinksEditor(data.restaurant.socialLinks || {});
             initReservationUI(data);
             document.getElementById("set-taxRate").value = data.restaurant.taxRate || 0;
@@ -4687,6 +4696,82 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           console.error(err);
           Swal.fire({ icon: "error", title: "حصل خطأ", text: err.message });
           if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-bell"></i> تفعيل الإشعارات على هذا الجهاز'; }
+        }
+      }
+
+      // ===== Live orders settings =====
+      async function liveLoad() {
+        try {
+          const r = await fetch("/api/v1/live-orders/settings", { headers: { Authorization: `Bearer ${token}` } });
+          if (!r.ok) throw new Error("x");
+          const d = (await r.json()).data;
+          window.__live = d;
+          document.getElementById("live-slug").textContent = d.slug || "-";
+          document.getElementById("live-key-hint").textContent = d.hasKey ? "••••" + d.keyHint : "لسه ماتعملش";
+          document.getElementById("live-key-btn-txt").textContent = d.hasKey ? "إنشاء مفتاح جديد (القديم هيتوقف)" : "إنشاء مفتاح ربط";
+          liveRenderState();
+        } catch (e) {
+          const l = document.getElementById("live-status-line");
+          if (l) l.textContent = "تعذر تحميل إعدادات الطلب المباشر";
+        }
+      }
+      function liveRenderState() {
+        const d = window.__live || {};
+        const on = d.enabled === true;
+        const setBtn = (id, active) => {
+          const b = document.getElementById(id);
+          if (!b) return;
+          b.style.background = active ? "var(--primary)" : "transparent";
+          b.style.color = active ? "#fff" : "var(--primary)";
+          b.style.border = "1px solid var(--primary)";
+        };
+        setBtn("live-mode-view", !on);
+        setBtn("live-mode-order", on);
+        const l = document.getElementById("live-status-line");
+        if (!l) return;
+        if (d.available === false) l.textContent = "⚠️ الخدمة غير جاهزة على السيرفر دلوقتي (قاعدة البيانات)، المنيو هيفضل للعرض فقط.";
+        else if (!on) l.textContent = "المنيو دلوقتي للعرض فقط: الزبون بيشوف الأسعار من غير أزرار طلب.";
+        else if (!d.hasKey) l.textContent = "تم التفعيل، بس لازم تعمل مفتاح ربط وتدخله في السيستم الأوفلاين عشان الطلبات توصل.";
+        else if (d.posOnline) l.textContent = "🟢 السيستم الأوفلاين متصل: الزبون يقدر يطلب من المنيو والطلب بيوصل للكاشير فورًا.";
+        else l.textContent = "🔴 السيستم الأوفلاين مش متصل دلوقتي: المنيو متوقف عن استقبال الطلبات تلقائيًا لحد ما يتصل.";
+      }
+      async function liveSetEnabled(enabled) {
+        try {
+          const r = await fetch("/api/v1/live-orders/settings", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ enabled }),
+          });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.message || "حصل خطأ");
+          await liveLoad();
+          Swal.fire({ toast: true, icon: "success", title: enabled ? "المنيو بقى بيستقبل طلبات" : "المنيو بقى للعرض فقط", position: "top-end", showConfirmButton: false, timer: 2000 });
+        } catch (e) {
+          Swal.fire({ icon: "error", title: "حصل خطأ", text: e.message });
+        }
+      }
+      async function liveGenerateKey() {
+        const had = window.__live && window.__live.hasKey;
+        if (had) {
+          const c = await Swal.fire({ icon: "warning", title: "إنشاء مفتاح جديد؟", text: "المفتاح القديم هيتوقف، وسيستم الكاشير الأوفلاين لازم يتحدث بالمفتاح الجديد.", showCancelButton: true, confirmButtonText: "أيوه، اعمل مفتاح جديد", cancelButtonText: "إلغاء" });
+          if (!c.isConfirmed) return;
+        }
+        try {
+          const r = await fetch("/api/v1/live-orders/key", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+          const d = await r.json();
+          if (!r.ok) throw new Error(d.message || "حصل خطأ");
+          const k = d.data;
+          await Swal.fire({
+            icon: "success",
+            title: "مفتاح الربط",
+            html: `<div style="text-align:right;font-size:14px">انسخ البيانات دي وادخلها في السيستم الأوفلاين. المفتاح بيتعرض مرة واحدة بس.</div>
+                   <div style="margin-top:10px;text-align:left" dir="ltr"><b>Slug:</b> <code>${k.slug}</code></div>
+                   <div style="margin-top:6px;text-align:left" dir="ltr"><b>Key:</b> <code id="live-key-val" style="user-select:all;word-break:break-all">${k.key}</code></div>`,
+            confirmButtonText: "نسخت المفتاح",
+          });
+          await liveLoad();
+        } catch (e) {
+          Swal.fire({ icon: "error", title: "حصل خطأ", text: e.message });
         }
       }
 
