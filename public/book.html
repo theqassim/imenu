@@ -16,6 +16,7 @@
 .bar{position:fixed;inset-inline:0;bottom:0;z-index:10;background:rgba(246,245,240,.98);border-top:1px solid #e3e6dc;padding:14px 24px calc(12px + env(safe-area-inset-bottom))}.bar .in{max-width:984px;margin:auto;display:grid;grid-template-columns:1fr 1.45fr;gap:64px;align-items:center}.bar-description{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}.bar-description svg{width:15px;height:15px;flex:none}.actions{display:flex;gap:10px;align-items:center}.bar .sum{flex:1;font-size:11px;color:var(--muted);min-width:70px}.bar .sum b{display:block;color:var(--ink);font-size:14px}.go{border:0;border-radius:11px;background:var(--brand);color:white;font-weight:700;font-size:15px;padding:15px 20px;min-height:52px;display:flex;align-items:center;justify-content:center;gap:16px;flex:1.5;white-space:nowrap}.go:hover{background:var(--brand-d)}.go svg{width:17px;height:17px;flex:none}.back{width:44px;height:48px;border:1px solid #dce2d6;border-radius:11px;background:transparent;color:var(--ink);display:grid;place-items:center;flex:none}.back svg{width:18px;height:18px}.bar-note{display:none}.err{background:#fcf0ec;color:var(--bad);border:1px solid #eed0c8;border-radius:10px;padding:12px;margin-top:14px;font-size:13px;display:none}.status{text-align:center}.status-symbol{width:70px;height:70px;border:1px solid #e1e8dc;background:#f5f7ef;border-radius:50%;display:grid;place-items:center;margin:12px auto 22px;color:var(--gold)}.status-symbol svg{width:30px;height:30px}.badge{display:inline-block;padding:6px 12px;border-radius:6px;font-weight:700;font-size:13px}.b-pending{background:#f5efdf;color:var(--warn)}.b-approved{background:#e9f3e6;color:var(--ok)}.b-bad{background:#faebe7;color:var(--bad)}.b-arrived{background:#e8eee9;color:var(--brand)}.status h2{font-size:25px;margin:14px 0 6px;font-weight:800}.status-detail{margin:18px 0;padding:18px 0;border-block:1px dashed #d7dfd0}.status-detail p{margin:4px 0;font-size:14px}.code-label{font-size:11px;color:var(--muted);margin-top:20px}.code{font:500 30px/1.6 system-ui,sans-serif;letter-spacing:5px;direction:ltr;margin:3px 0 15px}.status .description{font-size:13px;line-height:1.9;color:var(--muted);max-width:310px;margin:16px auto}.ghost{border:1px solid #dae1d3;background:white;border-radius:10px;font-weight:700;font-size:13px;padding:11px 16px;margin:5px}.ghost.red{color:var(--bad);border-color:transparent;background:none;font-weight:500}.muted{color:var(--muted)}.loading-line{height:4px;width:60px;margin:20px auto;background:#dce4d5;border-radius:2px}.powered{color:#a0a69b;text-align:center;font:10px system-ui,sans-serif;letter-spacing:1px;margin-top:22px}
 @media(min-width:761px){.intro{position:sticky;top:35px;align-self:start}.content{min-width:0}}
 @media(max-width:760px){.wrap{max-width:520px;padding:0 20px 134px}.mast{padding:18px 0;border-bottom:0}.mark{width:36px;height:36px;font-size:21px}.identity h1{font-size:16px}.venue-label{font-size:9px}.menu-link{font-size:11px}.layout{display:block;padding-top:12px}.intro{position:relative;padding:0 0 28px}.eyebrow{font-size:10px;gap:6px}.eyebrow:before{width:16px}.intro h2{font-size:33px;line-height:1.28;letter-spacing:-.6px;margin:10px 0 8px}.intro p{font-size:12px;line-height:1.7;max-width:240px}.table-art{position:absolute;left:-3px;bottom:28px;width:111px;height:91px;margin:0;opacity:.8}.promise{display:none}.steps{margin:0 0 18px}.steps li{font-size:12px;gap:7px}.steps li:not(:last-child):after{margin:0 11px}.step-number{width:23px;height:23px;font-size:10px}.card{border-radius:18px;padding:20px}.section-title{margin-bottom:19px}.section-title h2{font-size:19px}.section-kicker{font-size:9px}label,.field-label{font-size:13px;margin:19px 0 9px}.date-head label{margin:0}.day{padding:9px 0 8px;gap:5px;font-size:10px;border-radius:10px}.day b{font-size:20px}.dates{gap:7px}.stepper{padding:7px}.stepper button{width:35px;height:33px}.zone{margin-top:17px;padding-top:12px}.hint{font-size:10px}.other-date{font-size:11px}.bar{padding:12px 20px calc(10px + env(safe-area-inset-bottom))}.bar .in{display:block;max-width:480px}.bar-description{display:none}.bar-note{display:block;text-align:center;color:var(--muted);font-size:10px;margin-top:10px}.go{font-size:14px;padding:14px 16px;min-height:49px}.bar .sum{font-size:10px}.bar .sum b{font-size:13px}.powered{margin-top:18px}.review{font-size:12px}.status h2{font-size:23px}.status-symbol{margin-top:6px}.status-detail p{font-size:13px}}
+@media(max-width:760px){html[dir="ltr"] .table-art{display:none}}
 @media(max-width:360px){.intro h2{font-size:29px}.table-art{width:90px;height:80px}.intro p{font-size:11px;max-width:205px}.menu-link{font-size:10px}.steps li:not(:last-child):after{margin:0 7px}}
 @media(prefers-reduced-motion:no-preference){.card{animation:enter .22s ease-out}@keyframes enter{from{opacity:.5;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}}
 </style>
@@ -113,9 +114,11 @@
     if ($("err").textContent.indexOf("فات أو قريب") >= 0) fail("");
     return false;
   }
+  function uiEn() { return window.imenuGetLang && imenuGetLang() === "en"; }
+  function uiLoc() { return uiEn() ? "en-GB" : "ar-EG"; }
   function fmt(iso) {
     var d = new Date(iso);
-    return d.toLocaleDateString("ar-EG", { timeZone: zone(), weekday: "long", day: "numeric", month: "long" }) + " الساعة " + d.toLocaleTimeString("ar-EG", { timeZone: zone(), hour: "numeric", minute: "2-digit" });
+    return d.toLocaleDateString(uiLoc(), { timeZone: zone(), weekday: "long", day: "numeric", month: "long" }) + (uiEn() ? " at " : " الساعة ") + d.toLocaleTimeString(uiLoc(), { timeZone: zone(), hour: "numeric", minute: "2-digit" });
   }
   function money(n) { return Number(n).toFixed(2).replace(/\.00$/, "") + " ج.م"; }
   function fail(msg) { var e = $("err"); e.textContent = msg; e.style.display = msg ? "block" : "none"; if (msg) e.scrollIntoView({ behavior: "smooth", block: "center" }); }
@@ -168,13 +171,14 @@
 
   // ---------- form ----------
   function visitSummary() {
+    var guests = uiEn() ? " guests" : " أشخاص";
     var d = $("d").value, t = $("t").value;
-    if (!d) return party + " أشخاص";
+    if (!d) return party + guests;
     var at = venueMs(d, t || "12:00");
-    if (!Number.isFinite(at)) return party + " أشخاص";
-    var day = new Date(at).toLocaleDateString("ar-EG", { timeZone: zone(), day: "numeric", month: "long" });
-    var time = t ? new Date(at).toLocaleTimeString("ar-EG", { timeZone: zone(), hour: "numeric", minute: "2-digit" }) : "";
-    return day + (time ? " · " + time : "") + " · " + party + " أشخاص";
+    if (!Number.isFinite(at)) return party + guests;
+    var day = new Date(at).toLocaleDateString(uiLoc(), { timeZone: zone(), day: "numeric", month: "long" });
+    var time = t ? new Date(at).toLocaleTimeString(uiLoc(), { timeZone: zone(), hour: "numeric", minute: "2-digit" }) : "";
+    return day + (time ? " · " + time : "") + " · " + party + guests;
   }
   function updateVisit() {
     document.querySelectorAll(".visit-review").forEach(function (el) { el.textContent = visitSummary(); });
@@ -216,12 +220,13 @@
       var date = new Date(base + "T12:00:00Z"); date.setUTCDate(date.getUTCDate() + i); var key = date.toISOString().slice(0, 10);
       if (key > $("d").max) break;
       var at = new Date(venueMs(key, "12:00"));
-      var day = key === today ? "النهارده" : at.toLocaleDateString("ar-EG", { timeZone: zone(), weekday: "short" });
+      var day = key === today ? (uiEn() ? "Today" : "النهارده") : at.toLocaleDateString(uiLoc(), { timeZone: zone(), weekday: "short" });
       html += '<button type="button" class="day' + (key === $("d").value ? ' selected' : '') + '" data-date="' + key + '" aria-pressed="' + (key === $("d").value) + '"><span>' + esc(day) + '</span><b>' + Number(key.slice(-2)) + '</b></button>';
     }
     $("dates").innerHTML = html;
   }
   $("dates").addEventListener("click", function (e) { var b = e.target.closest("[data-date]"); if (!b) return; $("d").value = b.dataset.date; renderDates(); checkTime(); updateVisit(); });
+  window.addEventListener("imenu-lang-changed", function () { if ($("dates") && $("dates").innerHTML) { renderDates(); updateVisit(); } });
   function showForm() {
     show("loading", false); show("statusView", false); show("form", true); show("bar", true);
     var now = Date.now(), min = now + cfg.minLeadMin * 60000, max = now + cfg.maxDaysAhead * 86400000;

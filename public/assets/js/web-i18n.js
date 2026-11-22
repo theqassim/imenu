@@ -29,7 +29,7 @@
     "🛍️ تيك أواي": "🛍️ Takeaway",
     "🍽️ طاولة:": "🍽️ Table:",
     "ج.م": "EGP",
-    "تحب تطلب إيه النهاردة؟": "What would you like to order today?",
+    "تحب تطلب إيه النهاردة؟": "What would you like?",
     "راجع السلة وأكّد الطلب 🛒": "Review your cart and confirm 🛒",
     "كمّل اختيارك 🔥": "Pick your items 🔥",
     "ابدأ اطلب دلوقتي 🔥": "Start your order now 🔥",
