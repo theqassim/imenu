@@ -3357,13 +3357,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           'input[name="orderType"]:checked',
         ).value;
         const wrapper = document.getElementById("table-input-wrapper");
-        if (type === "takeaway" || window.useTableNumbers === false) {
-          wrapper.style.display = "none";
-          if (window.useTableNumbers === false)
-            document.getElementById("table-number").value = "";
-        } else {
-          wrapper.style.display = "block";
-        }
+        if (type === "takeaway") wrapper.style.display = "none";
+        else wrapper.style.display = "block";
       }
 
      async function submitOrder() {
@@ -3376,7 +3371,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         finalTableValue = "تيك أواي";
     } else {
         const inputVal = document.getElementById("table-number").value;
-        if (window.useTableNumbers !== false && !inputVal) {
+        if (!inputVal) {
             Swal.fire({
                 icon: "warning",
                 title: "تنبيه",
