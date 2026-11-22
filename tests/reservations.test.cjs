@@ -38,7 +38,7 @@ const DB = process.env.TEST_DATABASE_URL;
 for (const mode of ["pg", "rest"]) {
   test(`reservation routes (${mode})`, { skip: !DB && "TEST_DATABASE_URL not set" }, async (t) => {
     const pool = new Pool({ connectionString: DB });
-    await pool.query("DROP TABLE IF EXISTS public.reservation_events, public.reservations");
+    await pool.query("DROP TABLE IF EXISTS public.timed_reservation_events, public.timed_reservations");
     let emu, db;
     if (mode === "pg") db = pgReservations(pool);
     else {

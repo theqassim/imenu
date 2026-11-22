@@ -5,9 +5,9 @@ const http = require("http");
 const COLS = {
   live_pos_keys: ["restaurant_id", "key_hash", "key_hint", "created_at"],
   live_orders_inbox: ["id", "restaurant_id", "payload", "attempts", "created_at"],
-  reservations: ["id", "restaurant_id", "code", "request_key", "customer_name", "customer_phone", "party_size", "starts_at", "status",
+  timed_reservations: ["id", "restaurant_id", "code", "request_key", "customer_name", "customer_phone", "party_size", "starts_at", "status",
     "table_label", "window_start", "window_end", "preorder", "note", "version", "created_at", "updated_at"],
-  reservation_events: ["id", "restaurant_id", "reservation_id", "kind", "acked", "created_at"],
+  timed_reservation_events: ["id", "restaurant_id", "reservation_id", "kind", "acked", "created_at"],
 };
 const ident = (n) => `"${n}"`;
 

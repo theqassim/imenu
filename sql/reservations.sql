@@ -1,8 +1,8 @@
--- Timed table reservations (DRAFT, not yet run anywhere). Review before running in the Supabase SQL editor.
+-- Timed table reservations (DRAFT, not yet run anywhere). New tables only, named timed_* because "reservations" is already the old seat-counter table. Review before running in the Supabase SQL editor.
 -- Private tables: row level security on, no policies, so only the service-role key can use them.
 create extension if not exists btree_gist;
 
-create table if not exists public.reservations (
+create table if not exists public.timed_reservations (
   id            text primary key,
   restaurant_id text not null,
   code          text not null unique,          -- public lookup code shown to the customer
@@ -27,17 +27,17 @@ create table if not exists public.reservations (
     restaurant_id with =, table_label with =, tstzrange(window_start, window_end) with &&
   ) where (status in ('approved','arrived') and table_label is not null and window_start is not null)
 );
-create index if not exists reservations_rest_time_idx on public.reservations (restaurant_id, starts_at);
+create index if not exists timed_reservations_rest_time_idx on public.timed_reservations (restaurant_id, starts_at);
 
-create table if not exists public.reservation_events (
+create table if not exists public.timed_reservation_events (
   id             bigint generated always as identity primary key,
   restaurant_id  text not null,
-  reservation_id text not null references public.reservations(id) on delete cascade,
+  reservation_id text not null references public.timed_reservations(id) on delete cascade,
   kind           text not null,               -- created | approved | rejected | cancelled | arrived | no_show | expired
   acked          boolean not null default false,
   created_at     timestamptz not null default now()
 );
-create index if not exists reservation_events_pending_idx on public.reservation_events (restaurant_id, acked, id);
+create index if not exists timed_reservation_events_pending_idx on public.timed_reservation_events (restaurant_id, acked, id);
 
-alter table public.reservations enable row level security;
-alter table public.reservation_events enable row level security;
+alter table public.timed_reservations enable row level security;
+alter table public.timed_reservation_events enable row level security;
