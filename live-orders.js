@@ -1,12 +1,13 @@
 "use strict";
 // Live orders: online QR menu -> offline POS.
 //
-// Flow: customer order -> row in live_orders_inbox (Postgres) -> pushed over a
+// Flow: customer order -> row in live_orders_inbox (Supabase Postgres, via live-orders-db.js) -> pushed over a
 // persistent Socket.IO connection (namespace /pos) to the restaurant's offline
 // install -> install saves it, then ACKs -> only then the row is deleted.
 // Presence = at least one authenticated /pos connection for the restaurant.
 
 const crypto = require("crypto");
+const { pgBackend } = require("./live-orders-db");
 
 const ACK_TIMEOUT_MS = 20000;
 const RETRY_EVERY_MS = 30000;
@@ -132,7 +133,8 @@ function generateKey() {
   return KEY_PREFIX + crypto.randomBytes(24).toString("base64url");
 }
 
-function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = console }) {
+function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console }) {
+  const db = dbIn || pgBackend(pool);
   const connections = new Map(); // restaurantId -> Set(socket)
   const locks = new Map(); // restaurantId -> Promise chain
   const rate = new Map(); // ip -> [timestamps]
@@ -143,6 +145,13 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
     const msg = String((e && e.message) || "");
     if (/DATABASE_URL is not set/i.test(msg)) return "no_database_url";
     const code = e && e.code ? String(e.code) : "";
+    if (e && e.rest) {
+      // Supabase REST backend: tables missing (run sql/live-orders.sql), bad key, or network.
+      if (code === "PGRST205" || code === "42P01" || /schema cache|does not exist/i.test(msg)) return "tables_missing";
+      if (/invalid api key|jwt/i.test(msg) || code === "HTTP_401" || code === "HTTP_403" || code === "PGRST301") return "rest_auth";
+      if (/fetch failed|network|ENOTFOUND|ECONNREFUSED/i.test(msg)) return "rest_unreachable";
+      return "rest_" + (code || "error");
+    }
     if (/^(ENOTFOUND|ENETUNREACH|ECONNREFUSED|ETIMEDOUT|ECONNRESET|EAI_AGAIN)$/.test(code)) return code;
     if (/^[0-9A-Z]{5}$/.test(code)) return "pg_" + code; // e.g. 28P01 wrong password, 42501 permission, 3D000 no such database
     if (/tenant or user not found/i.test(msg)) return "pooler_tenant_not_found";
@@ -156,25 +165,7 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
     if (schemaPromise) return schemaPromise;
     schemaPromise = (async () => {
       try {
-        await pool.query(`CREATE TABLE IF NOT EXISTS public.live_pos_keys (
-          restaurant_id text PRIMARY KEY,
-          key_hash text NOT NULL,
-          key_hint text NOT NULL,
-          created_at timestamptz NOT NULL DEFAULT now()
-        )`);
-        await pool.query(`CREATE TABLE IF NOT EXISTS public.live_orders_inbox (
-          id text PRIMARY KEY,
-          restaurant_id text NOT NULL,
-          payload jsonb NOT NULL,
-          attempts integer NOT NULL DEFAULT 0,
-          created_at timestamptz NOT NULL DEFAULT now()
-        )`);
-        await pool.query(
-          "CREATE INDEX IF NOT EXISTS live_orders_inbox_rest_idx ON public.live_orders_inbox (restaurant_id, created_at)",
-        );
-        // Private tables: never expose through the public PostgREST API.
-        await pool.query("ALTER TABLE public.live_pos_keys ENABLE ROW LEVEL SECURITY");
-        await pool.query("ALTER TABLE public.live_orders_inbox ENABLE ROW LEVEL SECURITY");
+        await db.ensure();
         schemaReady = true;
         schemaReason = null;
         return true;
@@ -252,17 +243,13 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
       for (;;) {
         const sockets = connections.get(rid);
         if (!sockets || sockets.size === 0) return;
-        const { rows } = await pool.query(
-          "SELECT id, payload, created_at FROM public.live_orders_inbox WHERE restaurant_id = $1 ORDER BY created_at ASC, id ASC LIMIT 1",
-          [rid],
-        );
-        if (rows.length === 0) return;
-        const row = rows[0];
+        const row = await db.oldest(rid);
+        if (!row) return;
         const socket = Array.from(sockets)[0];
-        await pool.query("UPDATE public.live_orders_inbox SET attempts = attempts + 1 WHERE id = $1", [row.id]);
+        await db.bumpAttempts(row);
         const res = await emitWithAck(socket, { ...row.payload, id: row.id, createdAt: row.created_at });
         if (!res.ok) return; // stays in the inbox; retried on next kick / reconnect / timer
-        await pool.query("DELETE FROM public.live_orders_inbox WHERE id = $1", [row.id]);
+        await db.remove(row.id);
       }
     });
   }
@@ -281,11 +268,9 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
       if (!(await ensureSchema())) return next(new Error("UNAVAILABLE"));
       const restaurant = await store.getRestaurantBySlug(slug);
       if (!restaurant) return next(new Error("AUTH_FAILED"));
-      const { rows } = await pool.query("SELECT key_hash FROM public.live_pos_keys WHERE restaurant_id = $1", [
-        String(restaurant._id),
-      ]);
+      const keyRow = await db.getKey(restaurant._id);
       const candidate = sha256(key);
-      if (!rows.length || !safeEqualHex(rows[0].key_hash, candidate)) return next(new Error("AUTH_FAILED"));
+      if (!keyRow || !safeEqualHex(keyRow.key_hash, candidate)) return next(new Error("AUTH_FAILED"));
       socket.data.restaurantId = String(restaurant._id);
       socket.data.slug = restaurant.slug;
       next();
@@ -372,11 +357,7 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
       if (built.error) return res.status(400).json({ message: built.error, code: built.code });
       const id = crypto.randomUUID();
       const payload = { ...built.order, slug: restaurant.slug, source: "online-menu" };
-      await pool.query("INSERT INTO public.live_orders_inbox (id, restaurant_id, payload) VALUES ($1, $2, $3)", [
-        id,
-        String(restaurant._id),
-        JSON.stringify(payload),
-      ]);
+      await db.insertOrder(id, restaurant._id, payload);
       deliver(restaurant._id); // fire and forget; the inbox keeps it until ACK
       res.status(202).json({ status: "success", data: { id, totalPrice: payload.totalPrice } });
     } catch (e) {
@@ -393,10 +374,8 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
       const ready = await ensureSchema();
       let keyHint = null;
       if (ready) {
-        const { rows } = await pool.query("SELECT key_hint FROM public.live_pos_keys WHERE restaurant_id = $1", [
-          String(restaurant._id),
-        ]);
-        keyHint = rows[0] ? rows[0].key_hint : null;
+        const keyRow = await db.getKey(restaurant._id);
+        keyHint = keyRow ? keyRow.key_hint : null;
       }
       res.json({
         status: "success",
@@ -443,12 +422,7 @@ function createLiveOrders({ app, io, pool, store, protect, restrictTo, log = con
       if (!(await ensureSchema())) return res.status(503).json({ message: "الخدمة غير متاحة دلوقتي", reason: schemaReason });
       const key = generateKey();
       const rid = String(restaurant._id);
-      await pool.query(
-        `INSERT INTO public.live_pos_keys (restaurant_id, key_hash, key_hint)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (restaurant_id) DO UPDATE SET key_hash = EXCLUDED.key_hash, key_hint = EXCLUDED.key_hint, created_at = now()`,
-        [rid, sha256(key), key.slice(-4)],
-      );
+      await db.setKey(rid, sha256(key), key.slice(-4));
       const set = connections.get(rid);
       if (set) for (const s of Array.from(set)) s.disconnect(true);
       res.json({ status: "success", data: { slug: restaurant.slug, key, keyHint: key.slice(-4) } });

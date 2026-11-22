@@ -63,9 +63,23 @@ test("buildOrder: product offers and whole-bill offer match the menu logic", () 
 });
 
 const DB = process.env.TEST_DATABASE_URL;
-test("live orders end to end", { skip: !DB && "TEST_DATABASE_URL not set" }, async (t) => {
+// Same end-to-end suite against both storage backends: direct Postgres, and the Supabase REST API
+// (a PostgREST look-alike over the same Postgres, with sql/live-orders.sql creating the tables).
+for (const mode of ["pg", "rest"]) {
+test(`live orders end to end (${mode} backend)`, { skip: !DB && "TEST_DATABASE_URL not set" }, async (t) => {
   const pool = new Pool({ connectionString: DB });
   await pool.query("DROP TABLE IF EXISTS public.live_orders_inbox, public.live_pos_keys");
+  let emu = null;
+  let dbBackend;
+  if (mode === "rest") {
+    await pool.query("DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF; IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF; END $$");
+    await pool.query(require("fs").readFileSync(require("path").join(__dirname, "../sql/live-orders.sql"), "utf8"));
+    const { startEmulator } = require("./helpers/postgrest-emulator.cjs");
+    emu = await startEmulator(pool);
+    const { createClient } = require("@supabase/supabase-js");
+    const sb = createClient(emu.url, "test-service-role-key", { auth: { persistSession: false } });
+    dbBackend = require("../live-orders-db").restBackend(sb);
+  }
   const state = { restaurant: { ...baseRestaurant, customUI: { liveOrders: { enabled: true } } } };
   const store = {
     getRestaurantBySlug: async (s) => (s === state.restaurant.slug ? state.restaurant : null),
@@ -81,7 +95,7 @@ test("live orders end to end", { skip: !DB && "TEST_DATABASE_URL not set" }, asy
   const protect = (req, res, next) => { req.user = { _id: "u1", role: "owner" }; next(); };
   const restrictTo = () => (req, res, next) => next();
   const quiet = { log() {}, error: console.error };
-  const live = createLiveOrders({ app, io, pool, store, protect, restrictTo, log: quiet });
+  const live = createLiveOrders({ app, io, ...(dbBackend ? { db: dbBackend } : { pool }), store, protect, restrictTo, log: quiet });
   await new Promise((r) => server.listen(0, r));
   const base = `http://127.0.0.1:${server.address().port}`;
   const j = async (method, path, body) => {
@@ -97,7 +111,7 @@ test("live orders end to end", { skip: !DB && "TEST_DATABASE_URL not set" }, asy
   const waitFor = async (fn, ms = 4000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await fn()) return true; await new Promise((r) => setTimeout(r, 25)); } return false; };
   const orderBody = (extra = {}) => ({ items: [{ productId: "p1", qty: 1 }], tableNumber: "7", ...extra });
 
-  t.after(async () => { io.close(); server.close(); await pool.end(); });
+  t.after(async () => { io.close(); server.close(); if (emu) emu.server.close(); await pool.end(); });
 
   await t.test("no key yet: connection refused", async () => {
     const r = await connect({ slug: "demo", key: "imk_wrong" });
@@ -209,6 +223,7 @@ test("live orders end to end", { skip: !DB && "TEST_DATABASE_URL not set" }, asy
     s.close();
   });
 });
+}
 
 test("public menu endpoint never selects the owner's full user row", () => {
   const src = require("fs").readFileSync(require("path").join(__dirname, "../server.js"), "utf8");
@@ -237,4 +252,34 @@ test("schema failure gives the owner a short non-secret reason code", async () =
     assert.equal(k.status, 503);
     assert.equal((await k.json()).reason, "no_database_url");
   } finally { io.close(); srv.close(); }
+});
+
+test("rest backend: missing tables or a bad key give a short non-secret reason", async () => {
+  const express = require("express");
+  const { Pool: P } = require("pg");
+  const { createLiveOrders: mk } = require("../live-orders.js");
+  const { restBackend } = require("../live-orders-db");
+  const { startEmulator } = require("./helpers/postgrest-emulator.cjs");
+  const { createClient } = require("@supabase/supabase-js");
+  const { Server: SIO } = require("socket.io");
+  const pool = new P({ connectionString: DB || "postgres://x:y@127.0.0.1:1/z" });
+  for (const [opts, want] of [[{ missingTables: true }, "tables_missing"], [{ rejectAuth: true }, "rest_auth"]]) {
+    const emu = await startEmulator(pool, opts);
+    const app = express(); app.use(express.json());
+    const srv = http.createServer(app); const io = new SIO(srv);
+    const db = restBackend(createClient(emu.url, "k", { auth: { persistSession: false } }));
+    const store = { getRestaurantByOwner: async () => ({ _id: "r1", slug: "x", customUI: {} }), getRestaurantBySlug: async () => null, getRestaurantById: async () => null, getProducts: async () => [], updateRestaurantCustomUI: async () => {} };
+    mk({ app, io, db, store, protect: (q, s, n) => { q.user = { _id: "u", role: "owner" }; n(); }, restrictTo: () => (a, b, n) => n(), log: { log() {}, error() {} } });
+    await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+    try {
+      const base = "http://127.0.0.1:" + srv.address().port;
+      const s = await (await fetch(base + "/api/v1/live-orders/settings")).json();
+      assert.equal(s.data.available, false);
+      assert.equal(s.data.unavailableReason, want);
+      const k = await fetch(base + "/api/v1/live-orders/key", { method: "POST" });
+      assert.equal(k.status, 503);
+      assert.equal((await k.json()).reason, want);
+    } finally { io.close(); srv.close(); emu.server.close(); }
+  }
+  await pool.end().catch(() => {});
 });
