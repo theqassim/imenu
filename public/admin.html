@@ -5337,22 +5337,38 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
              }
           }
 
+          let enSaved = true;
           if (data.status === "success") {
             try {
               const enCat = (document.getElementById("c-name-en").value || "").trim();
-              if (typeof currentDesign === "object" && currentDesign) {
-                currentDesign.categoryNamesEn = currentDesign.categoryNamesEn || {};
-                if (oldName && oldName !== name) delete currentDesign.categoryNamesEn[oldName];
-                if (enCat) currentDesign.categoryNamesEn[name] = enCat;
-                else delete currentDesign.categoryNamesEn[name];
-                const uiFd = new FormData();
-                uiFd.append("customUI", JSON.stringify(currentDesign));
-                fetch(`/api/v1/restaurants/${rId}`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: uiFd }).catch(() => {});
-              }
-            } catch (e) { console.error(e); }
+              const freshRes = await fetch(`/api/v1/restaurants/${rId}`, { headers: { Authorization: `Bearer ${token}` } });
+              const freshData = await freshRes.json();
+              const freshUI = (freshData && freshData.data && freshData.data.restaurant && freshData.data.restaurant.customUI && typeof freshData.data.restaurant.customUI === "object")
+                ? { ...freshData.data.restaurant.customUI }
+                : (typeof currentDesign === "object" && currentDesign ? { ...currentDesign } : {});
+              freshUI.categoryNamesEn = { ...(freshUI.categoryNamesEn || {}) };
+              if (oldName && oldName !== name) delete freshUI.categoryNamesEn[oldName];
+              if (enCat) freshUI.categoryNamesEn[name] = enCat;
+              else delete freshUI.categoryNamesEn[name];
+              const uiFd = new FormData();
+              uiFd.append("customUI", JSON.stringify(freshUI));
+              const uiRes = await fetch(`/api/v1/restaurants/${rId}`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` }, body: uiFd });
+              if (!uiRes.ok) throw new Error("customUI save failed: " + uiRes.status);
+              if (typeof currentDesign === "object" && currentDesign) currentDesign.categoryNamesEn = freshUI.categoryNamesEn;
+            } catch (e) {
+              console.error(e);
+              enSaved = false;
+            }
           }
 
           Swal.close();
+
+          if (data.status === "success" && !enSaved) {
+            resetCategoryForm();
+            loadCategories();
+            loadProducts();
+            return Swal.fire("القسم اتحفظ، لكن الترجمة الإنجليزية لأ", "القسم نفسه متسجل. الاسم الإنجليزي محفظتش، افتح تعديل القسم واكتبها واحفظ تاني.", "warning");
+          }
 
           if (data.status === "success") {
             resetCategoryForm();
