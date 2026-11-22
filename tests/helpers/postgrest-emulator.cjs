@@ -19,6 +19,8 @@ function parseFilters(url, cols) {
     if (!cols.includes(k)) throw Object.assign(new Error("bad column " + k), { status: 400 });
     let m = /^eq\.(.*)$/.exec(v);
     if (m) { vals.push(m[1]); where.push(`${ident(k)} = $${vals.length}`); continue; }
+    m = /^lte\.(.*)$/.exec(v);
+    if (m) { vals.push(m[1]); where.push(`${ident(k)} <= $${vals.length}`); continue; }
     m = /^gte\.(.*)$/.exec(v);
     if (m) { vals.push(m[1]); where.push(`${ident(k)} >= $${vals.length}`); continue; }
     m = /^in\.\((.*)\)$/.exec(v);
@@ -60,7 +62,9 @@ function startEmulator(pool, opts = {}) {
         const ords = url.searchParams.getAll("order").join(",").split(",").filter(Boolean);
         if (ords.length) order = " ORDER BY " + ords.map((o) => { const [c, d] = o.split("."); if (!cols.includes(c)) throw new Error("bad order"); return ident(c) + (d === "desc" ? " DESC" : " ASC"); }).join(", ");
         const limit = url.searchParams.get("limit") ? ` LIMIT ${parseInt(url.searchParams.get("limit"), 10)}` : "";
-        const r = await pool.query(`SELECT ${use.map(ident).join(", ")} FROM public.${ident(table)}${where}${order}${limit}`, vals);
+        const selection = use.map((c) => ["starts_at", "updated_at", "created_at", "window_start", "window_end"].includes(c)
+          ? `${ident(c)}::text AS ${ident(c)}` : ident(c)).join(", ");
+        const r = await pool.query(`SELECT ${selection} FROM public.${ident(table)}${where}${order}${limit}`, vals);
         return send(200, r.rows);
       }
       if (req.method === "POST") {
@@ -89,7 +93,9 @@ function startEmulator(pool, opts = {}) {
         const { where, vals } = parseFilters(url, cols);
         if (!where) return send(400, { message: "filter required" });
         if (req.method === "DELETE") {
-          await pool.query(`DELETE FROM public.${ident(table)}${where}`, vals);
+          const wantRep = /return=representation/.test(req.headers.prefer || "");
+          const deleted = await pool.query(`DELETE FROM public.${ident(table)}${where}${wantRep ? " RETURNING *" : ""}`, vals);
+          if (wantRep) return send(200, deleted.rows);
         } else {
           const body = JSON.parse(raw);
           const keys = Object.keys(body);

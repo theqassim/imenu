@@ -94,7 +94,7 @@ function posView(row) {
     windowEnd: row.window_end, preorder: row.preorder || null, note: row.note || null };
 }
 
-function createReservations({ app, io, db, store, protect, restrictTo, connections, log = console, now = () => Date.now(), rateMax = 10 }) {
+function createReservations({ app, io, db, store, protect, restrictTo, connections, log = console, now = () => Date.now(), rateMax = 10, archivePolicy = null }) {
   const rate = new Map();
   // Separate buckets: creating/cancelling is tight, reading a status (the customer page polls it) is looser.
   const limited = (ip, bucket = "write", max = 10) => {
@@ -287,6 +287,8 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
 
   // ---- POS (called from live-orders.js socket handlers) ----
   async function posAttach(socket, restaurantId) {
+    // Default policy is null. Deploying this preparation alone cannot enable deletion.
+    require("./reservation-archive").attachArchive({ socket, venue: restaurantId, db, getPolicy: archivePolicy, now, log });
     socket.emit("reservations:ready", {});
     push(restaurantId);
     socket.on("reservations:sync", () => push(restaurantId));
