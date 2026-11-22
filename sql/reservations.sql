@@ -12,7 +12,7 @@ create table if not exists public.reservations (
   party_size    integer not null check (party_size between 1 and 100),
   starts_at     timestamptz not null,          -- the booked time
   status        text not null default 'pending'
-                check (status in ('pending','approved','rejected','cancelled','arrived','no_show','expired')),
+                check (status in ('pending','approved','rejected','cancelled','arrived','no_show','expired','completed')),
   table_label   text,                          -- set by the owner on approval
   window_start  timestamptz,                   -- hold window, set on approval
   window_end    timestamptz,

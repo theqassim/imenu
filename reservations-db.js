@@ -46,7 +46,7 @@ function pgReservations(pool) {
     async listActive(rid, fromIso) {
       const { rows } = await pool.query(
         `SELECT ${COLS} FROM public.reservations WHERE restaurant_id=$1 AND status IN ('pending','approved','arrived')
-         AND starts_at >= $2 ORDER BY starts_at ASC`, [String(rid), fromIso]);
+         AND (starts_at >= $2 OR status = 'arrived') ORDER BY starts_at ASC`, [String(rid), fromIso]);
       return rows;
     },
     async listFor(rid) {
@@ -113,9 +113,14 @@ function restReservations(supabase) {
     async get(id) { return one(supabase.from(T).select(COLS).eq("id", id).limit(1)); },
     async getByCode(code) { return one(supabase.from(T).select(COLS).eq("code", code).limit(1)); },
     async listActive(rid, fromIso) {
-      return run(supabase.from(T).select(COLS).eq("restaurant_id", String(rid)).in("status", ["pending", "approved", "arrived"])
-        .gte("starts_at", fromIso).order("starts_at", { ascending: true }));
+      // Two plain queries (no OR filter): the normal window, plus every guest still marked arrived.
+      const base = () => supabase.from(T).select(COLS).eq("restaurant_id", String(rid));
+      const recent = await run(base().in("status", ["pending", "approved", "arrived"]).gte("starts_at", fromIso).order("starts_at", { ascending: true }));
+      const seated = await run(base().eq("status", "arrived").order("starts_at", { ascending: true }));
+      const ids = new Set(recent.map((x) => x.id));
+      return [...seated.filter((x) => !ids.has(x.id)), ...recent];
     },
+
     async listFor(rid) {
       return run(supabase.from(T).select(COLS).eq("restaurant_id", String(rid)).order("starts_at", { ascending: false }).limit(200));
     },

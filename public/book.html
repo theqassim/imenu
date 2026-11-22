@@ -111,6 +111,26 @@
   // Every date and time on this page is the restaurant's own clock (cfg.timezone), never the device's.
   function zone() { return (cfg && cfg.timezone) || "Africa/Cairo"; }
   function ymd(ts) { return new Intl.DateTimeFormat("en-CA", { timeZone: zone(), year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ts)); }
+  // Wall-clock "YYYY-MM-DD" + "HH:MM" in the venue zone -> UTC ms (same rule the server applies).
+  function venueMs(d, t) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d), h = /^(\d{2}):(\d{2})$/.exec(t);
+    if (!m || !h) return NaN;
+    var guess = Date.UTC(+m[1], +m[2] - 1, +m[3], +h[1], +h[2]);
+    var parts = new Intl.DateTimeFormat("en-US", { timeZone: zone(), hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(guess));
+    var g = {}; parts.forEach(function (x) { g[x.type] = +x.value; });
+    var asZone = Date.UTC(g.year, g.month - 1, g.day, g.hour, g.minute);
+    return guess - (asZone - guess);
+  }
+  function tooSoon(d, t) {
+    var ms = venueMs(d, t);
+    return !isNaN(ms) && ms < Date.now() + cfg.minLeadMin * 60000;
+  }
+  function checkTime() {
+    var d = $("d").value, t = $("t").value;
+    if (d && t && tooSoon(d, t)) { fail("الميعاد ده فات أو قريب جدًا، اختار وقت أبعد"); return true; }
+    if ($("err").textContent.indexOf("فات أو قريب") >= 0) fail("");
+    return false;
+  }
   function fmt(iso) {
     var d = new Date(iso);
     return d.toLocaleDateString("ar-EG", { timeZone: zone(), weekday: "long", day: "numeric", month: "long" }) + " الساعة " + d.toLocaleTimeString("ar-EG", { timeZone: zone(), hour: "numeric", minute: "2-digit" });
@@ -127,7 +147,8 @@
     cancelled: ["الحجز اتلغى", "b-bad", ""],
     expired: ["الطلب انتهى من غير رد", "b-bad", "تقدر تبعت طلب جديد."],
     arrived: ["تم تسجيل وصولك", "b-arrived", "بالهنا."],
-    no_show: ["الحجز اتقفل لأنك ماحضرتش", "b-bad", ""]
+    no_show: ["الحجز اتقفل لأنك ماحضرتش", "b-bad", ""],
+    completed: ["شكرًا لزيارتك", "b-arrived", ""]
   };
   function renderStatus(r) {
     var L = LABELS[r.status] || [r.status, "b-pending", ""];
@@ -198,6 +219,7 @@
     });
     $("menu").innerHTML = html || '<div class="muted">المنيو مش متاح دلوقتي.</div>';
   }
+  $("d").addEventListener("change", checkTime); $("t").addEventListener("change", checkTime);
   $("menu").addEventListener("click", function (ev) {
     var b = ev.target.closest("button[data-d]"); if (!b) return;
     var row = b.closest(".item"), p = products.filter(function (x) { return String(x._id) === row.dataset.id; })[0];
@@ -228,6 +250,7 @@
     if (sending) return; fail("");
     var name = $("n").value.trim(), phone = $("p").value.trim(), d = $("d").value, t = $("t").value;
     if (!d || !t) return fail("اختار اليوم والساعة");
+    if (checkTime()) return;
     if (!name) return fail("اكتب اسمك");
     if (phone.replace(/\D/g, "").length < 7) return fail("اكتب رقم موبايل صحيح");
     var items = Object.keys(cart).map(function (k) { var c = cart[k]; var o = { productId: c.p._id, qty: c.qty }; if (c.size) o.sizeName = c.size; return o; });

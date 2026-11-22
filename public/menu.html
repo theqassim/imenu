@@ -2451,7 +2451,7 @@
           });
           const data = await res.json().catch(() => ({}));
           if (res.status === 202 && data.status === "success") {
-            cart = {};
+            clearCartAfterOrder();
             appliedCoupon = null;
             updateCartUI();
             closeCart();
@@ -3386,7 +3386,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
         window.open(url, "_blank");
 
-        cart = {};
+        clearCartAfterOrder();
         appliedCoupon = null;
         updateCartUI();
         closeCart();
@@ -3446,7 +3446,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     localStorage.setItem(couponKey, "true");
                 }
 
-                cart = {};
+                clearCartAfterOrder();
                 appliedCoupon = null;
                 document.getElementById("coupon-code-input").value = "";
                 if (document.getElementById("coupon-msg"))
@@ -3730,6 +3730,16 @@ function trackOrder(orderId) {
 
       checkActiveOrder();
       loadMenu();
+
+      // Only called once an order was really accepted: empty the cart, forget the saved copy and un-tick every item.
+      function clearCartAfterOrder() {
+        cart = {};
+        try { localStorage.removeItem("myCart"); } catch (_) {}
+        document.querySelectorAll(".add-btn.in-cart").forEach((b) => {
+          b.classList.remove("in-cart");
+          b.innerHTML = '<i class="fas fa-plus"></i> أضف';
+        });
+      }
 
       function saveCart() {
         localStorage.setItem("myCart", JSON.stringify(cart));

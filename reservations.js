@@ -72,6 +72,10 @@ function planTransition(row, action, input, settings, now) {
     case "arrived":
       if (st !== "approved") return { error: "STATE", message: "لازم الحجز يكون موافق عليه الأول" };
       return { patch: { status: "arrived" } };
+    case "release":
+      // The cashier confirms the guests left (or an order took over the table). Shared by every POS device.
+      if (st !== "arrived") return { error: "STATE", message: "الحجز مش في حالة وصل" };
+      return { patch: { status: "completed" } };
     case "no_show":
       if (st !== "approved") return { error: "STATE", message: "لازم الحجز يكون موافق عليه الأول" };
       if (now < start) return { error: "TOO_EARLY", message: "لسه ميعاد الحجز ماجاش" };
@@ -119,15 +123,14 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
     return out;
   }
 
-  // Guests who arrived stay on the POS list for up to SEATED_KEEP_MIN after their booked time, so a seated table
-  // never turns green just because the booking window ended. Pending/approved requests keep the normal window.
-  const SEATED_KEEP_MIN = 12 * 60;
+  // Guests who arrived stay on the POS list until a cashier releases them ("release" action), however long
+  // that takes: time passing never frees a table people may still be sitting at. Pending/approved requests
+  // keep the normal window.
   async function activeFor(restaurant) {
     const settings = settingsOf(restaurant);
     const t = now();
     const normalFrom = t - minutes(settings.holdAfterMin + 60);
-    const from = new Date(Math.min(normalFrom, t - minutes(SEATED_KEEP_MIN))).toISOString();
-    const rows = await sweep(await db.listActive(String(restaurant._id), from), settings);
+    const rows = await sweep(await db.listActive(String(restaurant._id), new Date(normalFrom).toISOString()), settings);
     return rows.filter((r) => r.status === "arrived" || (["pending", "approved"].includes(r.status) && new Date(r.starts_at).getTime() >= normalFrom));
   }
 
