@@ -1034,7 +1034,8 @@ app.delete("/api/v1/restaurants/:id", protect, restrictTo("admin"), async (req, 
     } catch(err) { res.status(400).json({ message: err.message }); }
 });
 
-app.patch("/api/v1/restaurants/update-qr/:slug", protect, async (req, res) => {
+// Caller audit: only the super-admin panel (super.html) calls this — lock it to admin.
+app.patch("/api/v1/restaurants/update-qr/:slug", protect, restrictTo("admin"), async (req, res) => {
   try {
     const { qrImage, qrName } = req.body;
     const { data: restaurant, error } = await supabase
@@ -1067,6 +1068,8 @@ app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin")
         const { restaurantId, isEnabled, totalSeats, resetCounter } = req.body;
         const restaurant = await Restaurant.findById(restaurantId);
         if(!restaurant) return res.status(404).json({message: "المكان غير موجود"});
+        if (req.user.role !== "admin" && String(restaurant.owner) !== String(req.user._id))
+            return res.status(403).json({ message: "غير مصرح بهذه العملية" });
 
         if(resetCounter) {
             restaurant.reservationSettings.bookedSeats = 0;
@@ -1239,6 +1242,16 @@ app.patch("/api/v1/products/reorder", protect, restrictTo("owner", "admin"), asy
       _id: item.id,
       sortOrder: item.sortOrder
     }));
+
+    // ownership: an owner may only reorder products of their own restaurant
+    if (req.user.role !== "admin") {
+      const ids = operations.map((o) => o._id).filter(Boolean);
+      const { data: prods } = await supabase.from('products').select('_id, restaurant').in('_id', ids);
+      const restIds = [...new Set((prods || []).map((p) => p.restaurant))];
+      if ((prods || []).length !== ids.length) return res.status(403).json({ message: "غير مصرح بهذه العملية" });
+      const { data: owned } = await supabase.from('restaurants').select('_id').in('_id', restIds).eq('owner', req.user._id);
+      if (!owned || owned.length !== restIds.length) return res.status(403).json({ message: "غير مصرح بهذه العملية" });
+    }
 
     const { error } = await supabase.from('products').upsert(operations);
     if (error) throw error;
