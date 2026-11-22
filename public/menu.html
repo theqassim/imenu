@@ -2020,6 +2020,7 @@
 
     <div class="sticky-header">
       <div class="top-bar">
+        <span data-imenu-lang-host style="display:inline-flex;align-items:center"></span>
         <button class="theme-btn" onclick="toggleTheme()">
           <i class="fas fa-moon" id="theme-icon"></i>
         </button>
@@ -2560,6 +2561,7 @@
             document.getElementById("res-name").innerText =
               restaurant.restaurantName;
             restaurantId = restaurant._id;
+            window.__restaurant = restaurant;
 
             try {
               const catRes = await fetch(`/api/v1/categories/${restaurantId}`);
@@ -2614,6 +2616,35 @@
         }
       }
 
+      function isEn() {
+        return !!(window.imenuGetLang && window.imenuGetLang() === "en");
+      }
+      function pickName(p) {
+        try {
+          if (isEn() && p.name && p.name.en && String(p.name.en).trim() && p.name.en !== p.name.ar) return p.name.en;
+        } catch (e) {}
+        return (p.name && p.name.ar) || "";
+      }
+      function pickDesc(p) {
+        try {
+          if (isEn() && p.description && p.description.en && String(p.description.en).trim()) return p.description.en;
+        } catch (e) {}
+        return (p.description && p.description.ar) || "";
+      }
+      function pickCat(c) {
+        try {
+          if (isEn()) {
+            const m = (window.__restaurant && window.__restaurant.customUI && window.__restaurant.customUI.categoryNamesEn) || {};
+            if (m[c]) return m[c];
+          }
+        } catch (e) {}
+        return c;
+      }
+      window.addEventListener("imenu-lang-changed", function () {
+        try { if (window.__rawMenu) renderMenu(window.__rawMenu); } catch (e) {}
+        try { renderCartItems(); } catch (e) {}
+      });
+
       function renderMenu(menu) {
         if (typeof applyOffersToMenu === "function") menu = applyOffersToMenu(menu);
         productsData = menu;
@@ -2650,7 +2681,7 @@
           catScroll.innerHTML += `
             <div class="cat-chip ${activeClass}" onclick="scrollToSection('${cat}', this)">
                 ${imgHtml}
-                <span>${cat}</span>
+                <span data-imenu-skip>${pickCat(cat)}</span>
             </div>`;
 
           first = false;
@@ -2662,10 +2693,10 @@
           if (hasCatImg) {
             sectionHTML += `
               <div class="cat-hero" style="background-image:url('${categoryImages[cat]}')">
-                <span class="cat-hero-title">${cat}</span>
+                <span class="cat-hero-title" data-imenu-skip>${pickCat(cat)}</span>
               </div>`;
           } else {
-            sectionHTML += `<div class="section-label category-header-text" style="display:flex; align-items:center;">${secImg} ${cat}</div>`;
+            sectionHTML += `<div class="section-label category-header-text" style="display:flex; align-items:center;">${secImg} <span data-imenu-skip>${pickCat(cat)}</span></div>`;
           }
 
           items.forEach((p) => {
@@ -2687,8 +2718,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                             
                             <div class="prod-content">
                             <div style="flex:1">
-                                <h3 class="prod-title">${p.name.ar}${hasDiscount ? `<span class="disc-tag">خصم${Number(p.oldPrice) > 0 && !(p.sizes && p.sizes.length) ? " " + Math.round((1 - Number(p.price) / Number(p.oldPrice)) * 100) + "%" : ""}</span>` : ""}</h3>
-                                ${p.description && p.description.ar ? `<p class="prod-desc">${p.description.ar}</p>` : ""}
+                                <h3 class="prod-title"><span data-imenu-skip>${pickName(p)}</span>${hasDiscount ? `<span class="disc-tag">خصم${Number(p.oldPrice) > 0 && !(p.sizes && p.sizes.length) ? " " + Math.round((1 - Number(p.price) / Number(p.oldPrice)) * 100) + "%" : ""}</span>` : ""}</h3>
+                                ${pickDesc(p) ? `<p class="prod-desc" data-imenu-skip>${pickDesc(p)}</p>` : ""}
                             </div>
                             
                             <div class="prod-footer" style="${p.sizes && p.sizes.length > 0 ? 'display:block;' : ''}">
@@ -2803,11 +2834,13 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         const finalName = sizeName
           ? `${product.name.ar} (${sizeName})`
           : product.name.ar;
+        const enBase = product.name && product.name.en && String(product.name.en).trim() && product.name.en !== product.name.ar ? product.name.en : null;
+        const finalNameEn = enBase ? (sizeName ? `${enBase} (${sizeName})` : enBase) : null;
 
         if (!cart[cartId]) {
           cart[cartId] = {
             _id: id,
-            name: { ar: finalName },
+            name: { ar: finalName, en: finalNameEn },
             price: finalPrice,
             qty: 1,
             isSizeVariant: !!sizeName,
@@ -2876,7 +2909,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
     sizesHtml += "</div>";
 
     Swal.fire({
-        title: product.name.ar,
+        title: pickName(product),
         html: `${storeSettings.mode === "view_only" ? 'الأحجام والأسعار المتاحة:' : 'اختر الحجم المناسب:'} ${sizesHtml}`,
         showConfirmButton: false,
         showCloseButton: true,
@@ -2929,9 +2962,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
         const fillHint = (h) => {
           h.replaceChildren();
-          if (status.active) h.append("💰 وفّرت ", el("em", "", nf(Math.round(saved)) + " ج.م"), " على فاتورتك");
-          else if (sub > 0) h.append("فاضل ", el("em", "", nf(Math.ceil(status.remaining)) + " ج.م"), " وتاخد خصم " + nf(status.orderPercent) + "% 🔥");
-          else h.append("اطلب بـ ", el("em", "", nf(status.minAmount) + " ج.م"), " أو أكتر وخد خصم " + nf(status.orderPercent) + "% 🎁");
+          if (status.active) h.append(...(isEn() ? ["💰 You saved ", el("em", "", nf(Math.round(saved)) + " EGP"), " on your bill"] : ["💰 وفّرت ", el("em", "", nf(Math.round(saved)) + " ج.م"), " على فاتورتك"]));
+          else if (sub > 0) h.append(...(isEn() ? ["Only ", el("em", "", nf(Math.ceil(status.remaining)) + " EGP"), " left to get " + nf(status.orderPercent) + "% off 🔥"] : ["فاضل ", el("em", "", nf(Math.ceil(status.remaining)) + " ج.م"), " وتاخد خصم " + nf(status.orderPercent) + "% 🔥"]));
+          else h.append(...(isEn() ? ["Order for ", el("em", "", nf(status.minAmount) + " EGP"), " or more and get " + nf(status.orderPercent) + "% off 🎁"] : ["اطلب بـ ", el("em", "", nf(status.minAmount) + " ج.م"), " أو أكتر وخد خصم " + nf(status.orderPercent) + "% 🎁"]));
         };
         const patch = (root) => {
           const h = root.querySelector(".an-hint");
@@ -2968,8 +3001,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           const tagText = typeof a.tagText === "string" ? a.tagText : "⚡ عرض خاص على الفاتورة كلها";
           if (tagText) txt.append(el("div", "an-tag", tagText));
           txt.append(el("h3", "an-title", status.active
-            ? "🎉 مبروك! خصم " + nf(status.orderPercent) + "% اتطبق"
-            : (a.title || "خصم " + nf(status.orderPercent) + "% على طلبك")));
+            ? (isEn() ? "🎉 Congrats! " + nf(status.orderPercent) + "% off applied" : "🎉 مبروك! خصم " + nf(status.orderPercent) + "% اتطبق")
+            : (a.title || (isEn() ? nf(status.orderPercent) + "% off your order" : "خصم " + nf(status.orderPercent) + "% على طلبك"))));
           if (a.message) txt.append(el("div", "an-msg", a.message));
           top.append(badge, txt);
 
@@ -3013,10 +3046,10 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           window.__anTimer = setInterval(() => {
             document.querySelectorAll(".an-timer").forEach((t) => {
               const ms = Number(t.dataset.end) - Date.now();
-              if (ms <= 0) { t.textContent = "⏳ انتهى"; return; }
+              if (ms <= 0) { t.textContent = isEn() ? "⏳ Ended" : "⏳ انتهى"; return; }
               const s = Math.floor(ms / 1000), d = Math.floor(s / 86400);
               const p = (n) => String(n).padStart(2, "0");
-              t.textContent = "⏳ ينتهي خلال " + (d > 0 ? d + "ي " : "") + p(Math.floor((s % 86400) / 3600)) + ":" + p(Math.floor((s % 3600) / 60)) + ":" + p(s % 60);
+              t.textContent = (isEn() ? "⏳ Ends in " : "⏳ ينتهي خلال ") + (d > 0 ? d + (isEn() ? "d " : "ي ") : "") + p(Math.floor((s % 86400) / 3600)) + ":" + p(Math.floor((s % 3600) / 60)) + ":" + p(s % 60);
             });
           }, 1000);
         }
@@ -3109,13 +3142,13 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           const chips = el("div", "offer-scope");
           const tagText = typeof a.tagText === "string" ? a.tagText : "⚡ عرض خاص على الفاتورة كلها";
           if (tagText) chips.append(el("span", "offer-chip", tagText));
-          chips.append(el("span", "offer-chip", "من " + nf(status.minAmount) + " ج.م"));
+          chips.append(el("span", "offer-chip", (isEn() ? "From " : "من ") + nf(status.minAmount) + (isEn() ? " EGP" : " ج.م")));
           body.append(chips);
 
           const hint = el("p", "an-pop-hint");
-          if (status.active) hint.append("✅ الخصم متطبق على طلبك — وفّرت ", el("em", "", nf(Math.round(window.calculateOrderOfferDiscount ? window.calculateOrderOfferDiscount(sub) : 0)) + " ج.م"));
-          else if (sub > 0) hint.append("فاضل ", el("em", "", nf(Math.ceil(status.remaining)) + " ج.م"), " وتاخد خصم " + nf(status.orderPercent) + "% 🔥");
-          else hint.append("اطلب بـ ", el("em", "", nf(status.minAmount) + " ج.م"), " أو أكتر وخد خصم " + nf(status.orderPercent) + "% 🎁");
+          if (status.active) hint.append(...(isEn() ? ["✅ Discount applied — you saved ", el("em", "", nf(Math.round(window.calculateOrderOfferDiscount ? window.calculateOrderOfferDiscount(sub) : 0)) + " EGP")] : ["✅ الخصم متطبق على طلبك — وفّرت ", el("em", "", nf(Math.round(window.calculateOrderOfferDiscount ? window.calculateOrderOfferDiscount(sub) : 0)) + " ج.م")]));
+          else if (sub > 0) hint.append(...(isEn() ? ["Only ", el("em", "", nf(Math.ceil(status.remaining)) + " EGP"), " left to get " + nf(status.orderPercent) + "% off 🔥"] : ["فاضل ", el("em", "", nf(Math.ceil(status.remaining)) + " ج.م"), " وتاخد خصم " + nf(status.orderPercent) + "% 🔥"]));
+          else hint.append(...(isEn() ? ["Order for ", el("em", "", nf(status.minAmount) + " EGP"), " or more and get " + nf(status.orderPercent) + "% off 🎁"] : ["اطلب بـ ", el("em", "", nf(status.minAmount) + " ج.م"), " أو أكتر وخد خصم " + nf(status.orderPercent) + "% 🎁"]));
           body.append(hint);
 
           const end = a.endsAt ? Date.parse(a.endsAt) : NaN;
@@ -3339,7 +3372,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           container.innerHTML += `
                     <div class="cart-item">
                         <div class="cart-item-info">
-                            <div class="cart-item-name">${item.name.ar}</div>
+                            <div class="cart-item-name" data-imenu-skip>${pickName(item)}</div>
                             <div class="cart-item-price">${item.price} ج.م × ${item.qty}</div>
                         </div>
                         <div class="qty-controls">
@@ -4007,7 +4040,7 @@ function trackOrder(orderId) {
             return h;
           }
           if (o.scope === "products" && (o.productIds || []).length) {
-            const names = raw.filter((p) => o.productIds.indexOf(p._id) > -1).map((p) => (p.name && p.name.ar) || "");
+            const names = raw.filter((p) => o.productIds.indexOf(p._id) > -1).map((p) => pickName(p));
             h += names.slice(0, 3).map((x) => '<span class="offer-chip">' + esc(x) + "</span>").join("");
             if (names.length > 3) h += '<span class="offer-chip">+' + (names.length - 3) + "</span>";
             return h;
@@ -4277,5 +4310,6 @@ function trackOrder(orderId) {
           .catch(function () {});
       })();
     </script>
+    <script src="/assets/js/web-i18n.js"></script>
 </body>
 </html>
