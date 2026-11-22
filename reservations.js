@@ -251,22 +251,28 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
     } catch (e) { res.status(500).json({ message: e.message }); }
   });
 
+  // Shared by the owner web dashboard and the POS socket so both obey the same rules.
+  async function applySettings(restaurant, input) {
+      const b = input || {};
+      // The older seat-counter page (/reserve) has no tables or times, so the two cannot share one venue without double booking.
+      // The owner must close the old one first; its existing requests and data stay untouched.
+      if (b.enabled === true && settingsOf(restaurant).enabled !== true && restaurant.reservationSettings && (restaurant.reservationSettings.isEnabled === true || Number(restaurant.reservationSettings.bookedSeats) > 0)) return { status: 409, body: { code: "LEGACY_ACTIVE", message: "حجز المقاعد القديم لسه شغّال أو عليه حجوزات مقاعد لسه ماخلصتش. اقفله وخلّص حجوزاته من صفحة الحجوزات القديمة (أو صفّر العداد بعد ما تخلصها) وبعدين فعّل الحجز بالميعاد. مفيش حاجة هتتمسح لوحدها." } };
+      if (b.enabled === true && !(await ensure())) return { status: 503, body: { message: "قاعدة البيانات لسه ماجهزتش" } };
+      const merged = { ...settingsOf(restaurant) };
+      for (const k of ["timezone", "enabled", "holdBeforeMin", "holdAfterMin", "minLeadMin", "maxDaysAhead", "expireMin"]) if (k in b) merged[k] = b[k];
+      if ("timezone" in b && settingsOf({ customUI: { timedReservations: { timezone: b.timezone } } }).timezone !== b.timezone) return { status: 400, body: { message: "المنطقة الزمنية غير صحيحة، مثال: Africa/Cairo" } };
+      const cleaned = settingsOf({ customUI: { timedReservations: merged } });
+      const customUI = { ...(restaurant.customUI || {}), timedReservations: cleaned };
+      await store.updateRestaurantCustomUI(restaurant._id, customUI);
+      return { status: 200, body: { status: "success", data: cleaned } };
+  }
+
   app.patch("/api/v1/timed-reservations/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
     try {
       const restaurant = await ownerRestaurant(req);
       if (!restaurant) return res.status(404).json({ message: "لا يوجد مطعم مرتبط بحسابك" });
-      const b = req.body || {};
-      // The older seat-counter page (/reserve) has no tables or times, so the two cannot share one venue without double booking.
-      // The owner must close the old one first; its existing requests and data stay untouched.
-      if (b.enabled === true && settingsOf(restaurant).enabled !== true && restaurant.reservationSettings && (restaurant.reservationSettings.isEnabled === true || Number(restaurant.reservationSettings.bookedSeats) > 0)) return res.status(409).json({ code: "LEGACY_ACTIVE", message: "حجز المقاعد القديم لسه شغّال أو عليه حجوزات مقاعد لسه ماخلصتش. اقفله وخلّص حجوزاته من صفحة الحجوزات القديمة (أو صفّر العداد بعد ما تخلصها) وبعدين فعّل الحجز بالميعاد. مفيش حاجة هتتمسح لوحدها." });
-      if (b.enabled === true && !(await ensure())) return res.status(503).json({ message: "قاعدة البيانات لسه ماجهزتش" });
-      const merged = { ...settingsOf(restaurant) };
-      for (const k of ["timezone", "enabled", "holdBeforeMin", "holdAfterMin", "minLeadMin", "maxDaysAhead", "expireMin"]) if (k in b) merged[k] = b[k];
-      if ("timezone" in b && settingsOf({ customUI: { timedReservations: { timezone: b.timezone } } }).timezone !== b.timezone) return res.status(400).json({ message: "المنطقة الزمنية غير صحيحة، مثال: Africa/Cairo" });
-      const cleaned = settingsOf({ customUI: { timedReservations: merged } });
-      const customUI = { ...(restaurant.customUI || {}), timedReservations: cleaned };
-      await store.updateRestaurantCustomUI(restaurant._id, customUI);
-      res.json({ status: "success", data: cleaned });
+      const r = await applySettings(restaurant, req.body);
+      res.status(r.status).json(r.body);
     } catch (e) { res.status(500).json({ message: e.message }); }
   });
 
@@ -284,6 +290,25 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
     socket.emit("reservations:ready", {});
     push(restaurantId);
     socket.on("reservations:sync", () => push(restaurantId));
+    socket.on("reservations:settings:get", async (_m, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        const restaurant = await store.getRestaurantById(restaurantId);
+        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المطعم مش موجود" });
+        reply({ ok: true, settings: settingsOf(restaurant) });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
+    // The POS only forwards this from a local owner/admin session; the venue key authenticates the venue.
+    socket.on("reservations:settings:set", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        const restaurant = await store.getRestaurantById(restaurantId);
+        if (!restaurant) return reply({ ok: false, code: "NOT_FOUND", message: "المطعم مش موجود" });
+        const r = await applySettings(restaurant, msg && typeof msg === "object" ? msg : {});
+        if (r.status === 200) return reply({ ok: true, settings: r.body.data });
+        reply({ ok: false, code: (r.body && r.body.code) || "REFUSED", message: (r.body && r.body.message) || "تعذر الحفظ" });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
     socket.on("reservations:act", async (msg, cb) => {
       const reply = typeof cb === "function" ? cb : () => {};
       try {
