@@ -2001,7 +2001,7 @@
       .prod-card:not(:has(.prod-img)) { min-height: 0 !important; }
       .prod-card:not(:has(.prod-img)) .prod-content { padding: 14px 16px; gap: 10px; }
       .prod-card:not(:has(.prod-img)) .prod-footer { margin-top: 2px; }
-      .add-btn { min-width: 38px; height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; }
+      .add-btn { margin-inline-start: 10px; min-width: 38px; height: 38px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; }
       .swal2-popup.imn-pop { width: 19em; padding: 1.1em 1em 1.3em; border-radius: 18px; }
       .swal2-popup.imn-pop .swal2-title { font-size: 1.2em; padding: .2em .4em 0; }
       .swal2-popup.imn-pop .swal2-html-container { font-size: .95em; margin: .6em 1em .2em; }
@@ -3391,8 +3391,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 
         if (appliedCoupon && appliedCoupon.code) {
+            // Not "used" yet: opening WhatsApp proves nothing. The customer confirms below when they come back.
             const couponKey = "used_coupon_" + appliedCoupon.code.toUpperCase();
-            localStorage.setItem(couponKey, "true");
+            if (localStorage.getItem(couponKey) !== "true") localStorage.setItem(couponKey, "pending");
         }
 
         // WhatsApp only opens a chat with the text prefilled: we cannot know it was sent, so the cart stays intact.
@@ -3744,6 +3745,30 @@ function trackOrder(orderId) {
       loadMenu();
 
       // Only called once an order was really accepted: empty the cart, forget the saved copy and un-tick every item.
+      // A coupon whose WhatsApp chat was opened stays "pending" until the customer says whether they sent it.
+      let resolvingCoupons = false;
+      async function resolvePendingCoupons() {
+        if (resolvingCoupons) return;
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf("used_coupon_") === 0 && localStorage.getItem(k) === "pending") keys.push(k);
+        }
+        if (!keys.length) return;
+        resolvingCoupons = true;
+        try {
+          const r = await Swal.fire({
+            icon: "question", title: "بعتّ الطلب على واتساب؟",
+            text: "لو بعتّه هنحسب الكوبون كمستخدم، ولو لأ تقدر تستخدمه تاني.",
+            showCancelButton: true, confirmButtonText: "أيوه بعته", cancelButtonText: "لأ، لسه",
+            allowOutsideClick: false, customClass: { popup: "imn-pop" },
+          });
+          keys.forEach((k) => { if (r.isConfirmed) localStorage.setItem(k, "true"); else localStorage.removeItem(k); });
+        } finally { resolvingCoupons = false; }
+      }
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) resolvePendingCoupons(); });
+      window.addEventListener("load", () => { setTimeout(resolvePendingCoupons, 1500); });
+
       function clearCartAfterOrder() {
         cart = {};
         try { localStorage.removeItem("myCart"); } catch (_) {}
@@ -3777,6 +3802,7 @@ function trackOrder(orderId) {
         const code = codeInput.value.trim().toUpperCase();
         const msg = document.getElementById("coupon-msg");
 
+        await resolvePendingCoupons();
         if (localStorage.getItem("used_coupon_" + code) === "true") {
           msg.innerHTML =
             '<span style="color:red; font-weight:bold;">⛔ عذراً، لقد استخدمت هذا الكوبون سابقاً على هذا الجهاز.</span>';
