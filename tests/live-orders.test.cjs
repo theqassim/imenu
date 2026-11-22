@@ -209,3 +209,12 @@ test("live orders end to end", { skip: !DB && "TEST_DATABASE_URL not set" }, asy
     s.close();
   });
 });
+
+test("public menu endpoint never selects the owner's full user row", () => {
+  const src = require("fs").readFileSync(require("path").join(__dirname, "../server.js"), "utf8");
+  const i = src.indexOf('app.get("/api/v1/restaurants/:slug"');
+  assert.ok(i > 0);
+  const handler = src.slice(i, src.indexOf("\napp.get(", i + 10));
+  assert.ok(!/users\(\s*\*\s*\)/.test(handler), "owner:users(*) would leak email, phone and password hash");
+  assert.match(handler, /owner:users\(active, subscriptionExpires, isTrial\)/);
+});

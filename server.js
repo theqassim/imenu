@@ -723,7 +723,7 @@ app.get("/api/v1/restaurants/:slug", async (req, res) => {
   try {
     const { data: restaurant, error: resError } = await supabase
         .from('restaurants')
-        .select('*, owner:users(*)')
+        .select('*, owner:users(active, subscriptionExpires, isTrial)')
         .eq('slug', req.params.slug)
         .single();
 
