@@ -119,11 +119,16 @@ function createReservations({ app, io, db, store, protect, restrictTo, connectio
     return out;
   }
 
+  // Guests who arrived stay on the POS list for up to SEATED_KEEP_MIN after their booked time, so a seated table
+  // never turns green just because the booking window ended. Pending/approved requests keep the normal window.
+  const SEATED_KEEP_MIN = 12 * 60;
   async function activeFor(restaurant) {
     const settings = settingsOf(restaurant);
-    const from = new Date(now() - minutes(settings.holdAfterMin + 60)).toISOString();
+    const t = now();
+    const normalFrom = t - minutes(settings.holdAfterMin + 60);
+    const from = new Date(Math.min(normalFrom, t - minutes(SEATED_KEEP_MIN))).toISOString();
     const rows = await sweep(await db.listActive(String(restaurant._id), from), settings);
-    return rows.filter((r) => ["pending", "approved", "arrived"].includes(r.status));
+    return rows.filter((r) => r.status === "arrived" || (["pending", "approved"].includes(r.status) && new Date(r.starts_at).getTime() >= normalFrom));
   }
 
   async function push(rid) {

@@ -123,6 +123,12 @@ for (const mode of ["pg", "rest"]) {
       assert.equal((await api("POST", `/api/v1/timed-reservations/${r.id}/no_show`, {})).body.code, "TOO_EARLY");
       const arr = await api("POST", `/api/v1/timed-reservations/${r.id}/arrived`, {});
       assert.equal(arr.body.data.status, "arrived");
+      // Seated guests must stay on the POS list long after the booking window ended (table must not turn green).
+      const keep = clock; clock = new Date(r.startsAt).getTime() + 5 * 3600 * 1000;
+      assert.ok((await res.activeFor(restaurant)).some((x) => x.id === r.id && x.status === "arrived"));
+      clock = new Date(r.startsAt).getTime() + 13 * 3600 * 1000;
+      assert.ok(!(await res.activeFor(restaurant)).some((x) => x.id === r.id));
+      clock = keep;
       assert.equal((await api("POST", `/api/v1/timed-reservations/cancel/${created.code}`)).status, 409);
       const c = (await api("POST", "/api/v1/timed-reservations/demo", good({ startsAt: "2030-05-03T18:00:00Z" }))).body.data;
       assert.equal((await api("POST", `/api/v1/timed-reservations/cancel/${c.code}`)).status, 200);
