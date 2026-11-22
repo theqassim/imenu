@@ -787,6 +787,21 @@
         font-weight: 500;
         color: white;
       }
+      .book-table-link {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 9px 20px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        color: white;
+        font-weight: 800;
+        font-size: 15px;
+        text-decoration: none;
+        text-shadow: none;
+      }
+      .book-table-link[hidden] { display: none; }
       .social-links-bar {
         display: flex;
         justify-content: center;
@@ -1988,6 +2003,7 @@
         <h1 class="res-name" id="res-name">...</h1>
         <p class="res-desc" id="res-desc">قائمة المأكولات والمشروبات</p>
         <div class="social-links-bar" id="social-links-bar"></div>
+        <a class="book-table-link" id="book-table-link" hidden>🗓️ احجز طاولة</a>
       </div>
     </div>
 
@@ -4180,5 +4196,22 @@ function trackOrder(orderId) {
         };
       })();
     </script>
-  </body>
+  <script>
+      // Timed table reservations: the link only appears when the restaurant turned them on.
+      (function () {
+        var slug = decodeURIComponent(location.pathname.split("/").pop() || "").toLowerCase();
+        if (!slug) return;
+        fetch("/api/v1/timed-reservations/config/" + encodeURIComponent(slug))
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) {
+            if (!j || !j.data || j.data.enabled !== true) return;
+            var a = document.getElementById("book-table-link");
+            if (!a) return;
+            a.href = "/book/" + encodeURIComponent(slug);
+            a.hidden = false;
+          })
+          .catch(function () {});
+      })();
+    </script>
+</body>
 </html>
