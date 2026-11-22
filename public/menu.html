@@ -2411,7 +2411,8 @@
           updateCartUI();
         }
       }
-      setInterval(() => { if (window.__liveEnabled) refreshLiveStatus(true); }, 20000);
+      setInterval(() => { if (window.__liveEnabled && !document.hidden) refreshLiveStatus(true); }, 8000);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden && window.__liveEnabled) refreshLiveStatus(true); });
 
       async function submitLiveOrder(orderType, finalTableValue) {
         const items = [];

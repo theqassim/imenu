@@ -69,7 +69,8 @@ cron.schedule("0 * * * *", async () => {
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+// Short ping so a silently dropped POS (internet cut, no FIN) is noticed in ~10s instead of ~45s.
+const io = new Server(server, { cors: { origin: "*" }, pingInterval: 5000, pingTimeout: 5000 });
 
 const publicVapidKey = process.env.WEB_PUSH_PUBLIC;
 const privateVapidKey = process.env.WEB_PUSH_PRIVATE;
