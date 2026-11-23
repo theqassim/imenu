@@ -1394,14 +1394,14 @@
   height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  display: none; 
+  display: none;
 }
 .cat-chip img:not([src=""]):not([src="#"]) {
   display: block;
 }
 .cat-chip:has(img:not([src=""]):not([src="#"])) {
     padding-right: 16px;
-    padding-left: 6px; 
+    padding-left: 6px;
 }
       .cat-chip.active {
         background: var(--primary);
@@ -1412,7 +1412,7 @@
         padding-left: 20px;
       }
 
-      
+
       body.theme-gold-dust { background: #0f0f0f; }
       body.theme-gold-dust .hero::after {
           background: linear-gradient(to bottom, rgba(0,0,0,0.6), #0f0f0f);
@@ -1660,7 +1660,7 @@
           background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.3));
           backdrop-filter: blur(10px);
           border: 1px solid rgba(255,255,255,1);
-          box-shadow: 
+          box-shadow:
             0 5px 15px rgba(0,0,0,0.05),
             inset 0 0 20px rgba(255,255,255,0.5);
           position: relative;
@@ -2136,6 +2136,54 @@
       body.nd .book-table-link .btl-icon { width: 24px !important; height: 24px !important; font-size: 11px !important; }
       body.nd .btl-text { font-size: 12.5px; }
       body.nd .top-bar { padding-top: 8px !important; padding-bottom: 2px !important; }
+      body.nd .book-table-link[hidden] { display: none !important; }
+      body.nd .prod-footer > .prod-sizes-display { display: flex !important; flex-direction: column; grid-column: 1 / -1; width: 100% !important; gap: 3px; }
+      body.nd .prod-content:has(.prod-sizes-display) > div:first-child { grid-column: 1 / -1; }
+      body.nd.dark-mode .an-badge, body.nd.dark-mode .an-pct, body.nd.dark-mode .an-off, body.nd.dark-mode .an-hint em { color: var(--primary) !important; }
+      body.nd .nd-items { background: var(--card-bg); border: 1.5px solid var(--border); border-radius: 22px; margin: 0 6px; padding: 5px 14px; position: relative; z-index: 3; box-shadow: var(--shadow); }
+      body.nd .nd-items .prod-card { background: transparent !important; border: 0 !important; border-bottom: 1px solid var(--border) !important; border-radius: 0 !important; box-shadow: none !important; padding: 14px 0 !important; margin: 0 !important; }
+      body.nd .nd-items .prod-card:last-child { border-bottom: 0 !important; }
+      body.nd .an-top { gap: 10px !important; }
+      body.nd .an-badge { width: 52px !important; height: 52px !important; flex: none; border-radius: 50% !important; }
+      body.nd .an-pct { font-size: 18px !important; }
+      body.nd .an-off { font-size: 10px !important; margin-top: 1px !important; }
+      body.nd .an-inner { padding: 12px 14px !important; }
+      body.nd .an-hint { margin-top: 8px !important; font-size: 12px !important; }
+      body.nd .an-hint em { box-shadow: none !important; padding: 2px 8px !important; }
+      body.nd .an-chips { margin-top: 7px !important; }
+      body.nd .an-chip { padding: 4px 8px !important; font-size: 10px !important; }
+      body.nd .an-cta { padding: 9px 14px !important; margin-top: 9px !important; font-size: 12px !important; }
+      body.nd .an-inner .an-confetti, body.nd .an-inner > canvas { display: none !important; }
+      body.nd .swal2-popup { background: var(--card-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border); border-radius: 26px; font-family: 'Tajawal',sans-serif; }
+      body.nd .swal2-title { font-family: 'El Messiri', 'Tajawal',sans-serif; color: var(--text-main); font-size: 20px; }
+      body.nd .swal2-html-container { color: var(--text-sub); font-size: 13px; }
+      body.nd .nd-size-option { border-radius: 16px !important; padding: 13px 15px !important; background: var(--card-bg) !important; color: var(--text-main) !important; border: 1.5px solid var(--border) !important; }
+      body.nd .nd-size-option:hover { border-color: var(--primary) !important; background: var(--input-bg) !important; }
+      body.nd .prod-footer > .prod-sizes-display { display: flex !important; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 6px; min-width: 0; }
+      body.nd .prod-sizes-display > div { display: inline-flex !important; gap: 7px; align-items: center; background: var(--input-bg); border: 1px solid var(--border); border-radius: 999px; padding: 5px 9px; }
+      body.nd .nd-size-hint { color: var(--primary); font-size: 11px; font-weight: 700; grid-column: 1 / -1; margin-top: 4px; }
+      body.nd #nd-dock { position: fixed; bottom: 0; inset-inline: 0; z-index: 200; background: var(--card-bg); border-top: 1px solid var(--border); padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px)); }
+      body.nd #nd-dock .cart-bar { position: relative; inset: auto !important; margin: 0 auto; width: 100%; max-width: 402px; box-sizing: border-box; }
+      body.nd #nd-dock:not(:has(.visible)) { display: none; }
+      body.nd .nd-rowstep { display: flex; grid-column: 2; grid-row: 1 / span 2; align-items: center; gap: 2px; border: 1.5px solid var(--border); padding: 3px; border-radius: 999px; }
+      body.nd .nd-rowstep button { border: 0; width: 28px; height: 28px; border-radius: 50%; background: transparent; color: var(--text-sub); font-size: 17px; cursor: pointer; }
+      body.nd .nd-rowstep button:last-child { background: var(--nd-green); color: #f6f2e5; }
+      body.nd .nd-rowstep span { min-width: 20px; text-align: center; font-size: 13px; font-weight: 800; }
+      body.nd .cart-item { display: grid; grid-template-columns: minmax(0,1fr) auto auto; column-gap: 10px; align-items: center; }
+      body.nd .cart-item-info { min-width: 0; }
+      body.nd .nd-line-total { font-size: 13px; font-weight: 800; color: var(--text-main); white-space: nowrap; }
+      body.nd .cart-item .qty-controls { gap: 0; }
+      body.nd .cart-item .qty-btn { width: 25px; height: 25px; }
+      body.nd .cart-item .qty-val { min-width: 20px; }
+      body.nd .nd-size-option.selected { border-color: var(--primary) !important; background: var(--input-bg) !important; }
+      body.nd .nd-size-cta { width: 100%; margin-top: 12px; border: 0; border-radius: 16px; padding: 14px; background: var(--nd-green); color: #f6f2e5; font-weight: 800; font-size: 14px; cursor: pointer; }
+      #nd-cart-summary { display:none; }
+      body.nd #nd-cart-summary { display:block; font-size:11px; font-weight:500; color:#a8b0a4; margin-top:2px; }
+      body.nd .cart-btn-txt { display:grid; grid-template-columns: 32px 1fr; gap:0 8px; align-items:center; text-align:start; color:#f6f2e5 !important; font-size:14px; order:-1; }
+      body.nd .cart-btn-txt > i { grid-row:1 / span 2; background:rgba(246,242,229,.12); border-radius:12px; padding:10px; font-size:16px; }
+      body.nd .cart-btn-txt small, body.nd .cart-btn-txt span { grid-column:2; }
+      body.nd .cart-info { gap:8px; }
+      body.nd #bar-total { font-size:15px; }
       body.nd .item-note-add { color: var(--nd-gold-deep) !important; }
       body.nd.dark-mode .item-note-add { color: var(--primary) !important; }
       body.nd .item-note-input { background: var(--card-bg) !important; border-color: var(--border) !important; color: var(--text-main) !important; }
@@ -2198,16 +2246,15 @@
       <i class="fas fa-receipt"></i> <span>طلبي الحالي</span>
     </div>
 
-    <div class="cart-bar" id="cart-bar" onclick="openCart()">
+    <div id="nd-dock"><div class="cart-bar" id="cart-bar" onclick="openCart()">
       <div class="cart-info">
         <span class="cart-count" id="bar-count">0</span>
         <span id="bar-total">0 ج.م</span>
       </div>
-      <div class="cart-btn-txt">
-        استعراض السلة <i class="fas fa-shopping-basket"></i>
-      </div>
+      <div class="cart-btn-txt"><i class="fas fa-shopping-basket"></i><span>استعراض السلة</span><small id="nd-cart-summary"></small></div>
     </div>
 
+    </div>
     <div class="modal-overlay" id="modal-overlay" onclick="closeCart()"></div>
     <div class="cart-modal" id="cart-modal">
       <div class="cart-header">
@@ -2486,6 +2533,8 @@
           const r = window.__restaurant || {};
           const logo = r.storePage && r.storePage.logo;
           const hc = document.querySelector(".hero-content");
+          const hero = document.querySelector(".hero");
+          if (hc && hero && hc.parentElement !== hero) hero.appendChild(hc);
           if (hc && hc.querySelector(".nd-avatar")) document.body.classList.add("nd-has-avatar");
           else if (logo && hc) {
             const img = document.createElement("img");
@@ -2514,7 +2563,7 @@
         root.style.setProperty("--hero-overlay-opacity", (config.heroOverlay || 30) / 100);
 
         document.body.className = "";
-        
+
         if (config.animationTheme && !NEW_DESIGN) {
             document.body.classList.add(config.animationTheme);
         }
@@ -2528,7 +2577,7 @@
         } else if (config.bgType === "image") {
           document.body.classList.add("bg-image");
           document.body.style.backgroundImage = `url('${config.bgValue}')`;
-          
+
           document.body.style.backgroundSize = config.bgSize || "cover";
           document.body.style.backgroundRepeat = config.bgRepeat || "no-repeat";
           document.body.style.backgroundAttachment = config.bgAttachment || "fixed";
@@ -2563,9 +2612,9 @@
         const searchWrapper = document.querySelector(".search-wrapper");
         const searchInput = document.getElementById("search-input");
         if (searchWrapper) {
-             searchWrapper.parentElement.style.display = config.showSearch === false ? "none" : "flex"; 
+             searchWrapper.parentElement.style.display = config.showSearch === false ? "none" : "flex";
              if(config.showSearch === false) searchWrapper.style.width = "0";
-             
+
              if(config.searchPlaceholder && searchInput) {
                  searchInput.placeholder = config.searchPlaceholder;
              }
@@ -2585,7 +2634,7 @@
                 heroContent.style.padding = "15px 15px 5px 15px";
                 heroContent.style.textShadow = "none";
                 heroContent.style.textAlign = config.headerTextAlignment || "center";
-                
+
                 if (resNameEl) resNameEl.style.color = config.resNameColor || "var(--primary)";
                 if (resDescEl) resDescEl.style.color = config.resDescColor || "var(--text-sub)";
 
@@ -2596,7 +2645,7 @@
                 heroContent.style.position = "relative";
                 heroContent.style.padding = "0";
                 heroContent.style.textShadow = "0 2px 10px rgba(0, 0, 0, 0.5)";
-                
+
                 if (resNameEl) resNameEl.style.color = config.resNameColor || "var(--primary)";
                 if (resDescEl) resDescEl.style.color = config.resDescColor || "#ffffff";
             }
@@ -2759,7 +2808,7 @@
               ? restaurant.customUI.orderAnnouncements
               : (Array.isArray(restaurant.announcements) ? restaurant.announcements : []);
             setTimeout(updateCartUI, 100);
-            
+
             if (restaurant.owner && restaurant.owner.isTrial && typeof checkTrialWarning === 'function') {
                  checkTrialWarning({ message: "هذا المنيو يعمل بنسخة تجريبية مؤقتة." });
             }
@@ -2869,6 +2918,7 @@
             sectionHTML += `<div class="section-label category-header-text" style="display:flex; align-items:center;">${secImg} <span data-imenu-skip>${pickCat(cat)}</span></div>`;
           }
 
+          if (NEW_DESIGN) sectionHTML += '<div class="nd-items">';
           items.forEach((p) => {
             const imgHTML =
               p.image && p.image !== ""
@@ -2882,18 +2932,18 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
                     sectionHTML += `
                         <div class="prod-card" data-name="${p.name.ar}" ${clickableAction} style="${p.sizes && p.sizes.length > 0 ? 'cursor:pointer;' : ''}">
-                            
-                            
+
+
                             ${imgHTML}
-                            
+
                             <div class="prod-content">
                             <div style="flex:1">
                                 <h3 class="prod-title"><span data-imenu-skip>${pickName(p)}</span>${hasDiscount ? `<span class="disc-tag">${isEn() ? "Sale" : "خصم"}${Number(p.oldPrice) > 0 && !(p.sizes && p.sizes.length) ? " " + Math.round((1 - Number(p.price) / Number(p.oldPrice)) * 100) + "%" : ""}</span>` : ""}</h3>
                                 ${pickDesc(p) ? `<p class="prod-desc" data-imenu-skip>${pickDesc(p)}</p>` : ""}
                             </div>
-                            
+
                             <div class="prod-footer" style="${p.sizes && p.sizes.length > 0 ? 'display:block;' : ''}">
-    ${p.sizes && p.sizes.length > 0 ? 
+    ${p.sizes && p.sizes.length > 0 ?
         `<div class="prod-sizes-display" style="margin-top:5px; border-top:1px dashed var(--border); padding-top:5px;">
             ${p.sizes.map(s => `
                 <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px;">
@@ -2904,8 +2954,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     </span>
                 </div>
             `).join('')}
-        </div>` 
-        : 
+        </div>${NEW_DESIGN ? `<span class="nd-size-hint">${isEn() ? 'Choose size' : 'اختار الحجم'} ‹</span>` : ''}`
+        :
         `<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
             <div class="prod-price">
                 ${hasDiscount ? `<span style="text-decoration:line-through; color:var(--text-sub); font-size:12px; margin-left:5px; opacity:0.7">${p.oldPrice}</span>` : ""}
@@ -2924,21 +2974,22 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     `;
           });
 
+          if (NEW_DESIGN) sectionHTML += '</div>';
           const taxVal = Number(accounting.tax) || 0;
           const serviceVal = Number(accounting.service) || 0;
           if (taxVal > 0 || serviceVal > 0) {
             let noteText = "";
             if (taxVal > 0 && serviceVal > 0) {
-              noteText = `يضاف ${taxVal}% ضريبة و ${serviceVal}% خدمة`;
+              noteText = isEn() ? `${taxVal}% tax and ${serviceVal}% service added` : `يضاف ${taxVal}% ضريبة و ${serviceVal}% خدمة`;
             } else if (taxVal > 0) {
-              noteText = `يضاف ${taxVal}% ضريبة`;
+              noteText = isEn() ? `${taxVal}% tax added` : `يضاف ${taxVal}% ضريبة`;
             } else if (serviceVal > 0) {
-              noteText = `يضاف ${serviceVal}% خدمة`;
+              noteText = isEn() ? `${serviceVal}% service added` : `يضاف ${serviceVal}% خدمة`;
             }
             const noteFontSize = Number(accounting.noteFontSize) || 11;
             const noteColor = accounting.noteColor || "#888888";
             sectionHTML += `
-              <div class="tax-note" style="text-align:center; padding:8px 10px 2px; margin-top:-6px; font-size:${noteFontSize}px; color:${noteColor}; opacity:0.9;">
+              <div class="tax-note" data-imenu-skip style="text-align:center; padding:8px 10px 2px; margin-top:-6px; font-size:${noteFontSize}px; color:${noteColor}; opacity:0.9;">
                 * ${noteText}
               </div>`;
           }
@@ -2946,6 +2997,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           sectionHTML += `</div>`;
           container.innerHTML += sectionHTML;
         }
+        syncRowControls();
       }
       function filterMenu() {
         const query = document
@@ -2992,7 +3044,14 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
       function addToCart(id, sizeName = null, sizePrice = null) {
         if (storeSettings.mode === "view_only") return;
 
+        // Cart buttons pass a line key, which includes the size for variants.
+        if (cart[id] && cart[id].isSizeVariant && !sizeName) {
+          cart[id].qty++;
+          updateCartUI(); saveCart();
+          return;
+        }
         const product = productsData.find((p) => p._id === id);
+        if (!product) return;
 
         if (product.sizes && product.sizes.length > 0 && !sizeName) {
           showSizeSelectionModal(product);
@@ -3028,10 +3087,45 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
         Swal.close();
         updateCartUI();
+        saveCart();
         if (navigator.vibrate) navigator.vibrate(50);
       }
 
       function showSizeSelectionModal(product) {
+        if (NEW_DESIGN) {
+          let selected = 0;
+          Swal.fire({
+            title: pickName(product),
+            html: '<div id="nd-size-options"></div>',
+            showConfirmButton: false, showCloseButton: true,
+            didOpen: function () {
+              const host = document.getElementById('nd-size-options');
+              const list = document.createElement('div');
+              const cta = document.createElement('button'); cta.type='button'; cta.className='nd-size-cta';
+              const buttons=[];
+              function update() {
+                buttons.forEach(function(b,i){b.classList.toggle('selected',i===selected);b.firstChild.firstChild.textContent=(i===selected?'◉ ':'○ ')+product.sizes[i].name;});
+                cta.textContent=(isEn() ? 'Add to cart · ' : 'إضافة للسلة · ') + product.sizes[selected].price + (isEn() ? ' EGP' : ' ج.م');
+              }
+              product.sizes.forEach(function(sz,i) {
+                const b=document.createElement('button'); b.type='button'; b.className='nd-size-option';
+                b.style.cssText='display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:10px;text-align:start;font:inherit;cursor:pointer;gap:14px';
+                const label=document.createElement('span'); label.textContent='○ ' + sz.name;
+                const prices=document.createElement('span'); prices.style.cssText='display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-weight:800';
+                if (Number(sz.oldPrice)>Number(sz.price)) {
+                  const old=document.createElement('del'); old.textContent=sz.oldPrice; old.style.cssText='font-size:12px;color:#ac423a'; prices.appendChild(old);
+                  const badge=document.createElement('small'); badge.textContent=(isEn()?'Save ':'خصم ') + Math.round((sz.oldPrice-sz.price)/sz.oldPrice*100)+'%'; badge.style.cssText='background:#faebe7;color:#ac423a;border-radius:999px;padding:3px 8px';label.append(document.createElement('br'),badge);
+                }
+                const val=document.createElement('span');val.textContent=sz.price+(isEn()?' EGP':' ج.م');val.style.color='var(--prod-price-color)';prices.appendChild(val);
+                b.append(label,prices);b.onclick=function(){selected=i;update();};buttons.push(b);list.appendChild(b);
+              });
+              host.append(list);
+              if (storeSettings.mode!=='view_only') { host.append(cta); cta.onclick=function(){const sz=product.sizes[selected];addToCart(product._id,sz.name,sz.price);}; }
+              update();
+            }
+          });
+          return;
+        }
     let sizesHtml = '<div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">';
 
     product.sizes.forEach((s) => {
@@ -3062,10 +3156,10 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         const clickAction = (storeSettings.mode === "view_only") ? "" : `onclick="addToCart('${product._id}', '${s.name}', ${s.price})"`;
 
         sizesHtml += `
-            <div ${clickAction} 
-                class="${btnClass}"
+            <div ${clickAction}
+                class="${btnClass} nd-size-option"
                 style="${btnStyle} padding:12px 15px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; cursor:${storeSettings.mode === "view_only" ? 'default' : 'pointer'}; width:100%; font-family:var(--font); margin-bottom:10px; position:relative; overflow:hidden;">
-                
+
                 <div style="display:flex; flex-direction:column; align-items:flex-start; gap:5px;">
                     <span style="font-weight:800; font-size:15px">${s.name}</span>
                     ${badgeHtml}
@@ -3433,7 +3527,26 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         };
       })();
 
+      function syncRowControls() {
+        if (!NEW_DESIGN) return;
+        document.querySelectorAll('.nd-rowstep').forEach(function(el) { el.remove(); });
+        productsData.forEach(function(p) {
+          if (p.sizes && p.sizes.length) return;
+          const b = document.getElementById('btn-' + p._id);
+          if (!b) return;
+          const item = cart[p._id];
+          b.style.setProperty('display', item ? 'none' : 'flex', 'important');
+          if (!item) return;
+          const step = document.createElement('div'); step.className='nd-rowstep';
+          const minus=document.createElement('button'); minus.type='button'; minus.textContent='−'; minus.onclick=function(e){e.stopPropagation();decreaseQty(p._id);};
+          const qty=document.createElement('span'); qty.textContent=item.qty;
+          const plus=document.createElement('button'); plus.type='button'; plus.textContent='+'; plus.onclick=function(e){e.stopPropagation();addToCart(p._id);};
+          step.append(minus,qty,plus); b.parentNode.insertBefore(step,b);
+        });
+      }
+
       function updateCartUI() {
+        syncRowControls();
         const bar = document.getElementById("cart-bar");
         let totalQty = 0;
         let subTotal = 0;
@@ -3468,6 +3581,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         if (grandTotal < 0) grandTotal = 0;
 
         document.getElementById("bar-count").innerText = totalQty;
+        const ndSummary=document.getElementById('nd-cart-summary');
+        if(ndSummary) ndSummary.textContent = Object.keys(cart).length + (isEn() ? ' items in cart' : ' أصناف في السلة');
         document.getElementById("bar-total").innerText =
           grandTotal.toLocaleString("en-US", {
             minimumFractionDigits: 0,
@@ -3533,7 +3648,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
       function openCart() {
         renderCartItems();
         toggleTableInput();
-        
+
         const couponSec = document.getElementById("coupon-section");
         if (storeSettings.enableCoupons) {
           couponSec.classList.remove("hidden");
@@ -3572,7 +3687,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                             <div class="cart-item-name" data-imenu-skip>${pickName(item)}</div>
                             <div class="cart-item-price">${item.price} ج.م × ${item.qty}</div>
                             ${(item.note || openItemNotes.has(id))
-                              ? `<textarea id="item-note-${id}" class="item-note-input" rows="2" maxlength="150" dir="auto" placeholder="${isEn() ? "Note for this item (e.g. no sugar)" : "ملاحظة لهذا الصنف (مثال: بدون سكر)"}" oninput="setItemNote('${id}', this.value)">${String(item.note || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")}</textarea>`
+                              ? `<textarea id="item-note-${id}" class="item-note-input" rows="2" maxlength="150" dir="auto" placeholder="${isEn() ? "e.g. no sugar, no ice..." : "مثال: بدون سكر، من غير تلج..."}" oninput="setItemNote('${id}', this.value)">${String(item.note || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")}</textarea>`
                               : `<button type="button" class="item-note-add" onclick="toggleItemNote('${id}')">${isEn() ? "+ Add note" : "+ إضافة ملاحظة"}</button>`}
                         </div>
                         <div class="qty-controls">
@@ -3580,6 +3695,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                             <span class="qty-val">${item.qty}</span>
                             <button class="qty-btn" onclick="addToCart('${id}') ; renderCartItems()">+</button>
                         </div>
+                        ${NEW_DESIGN ? `<span class="nd-line-total">${Number(item.price * item.qty).toLocaleString('en-US',{maximumFractionDigits:2})} ${isEn() ? 'EGP' : 'ج.م'}</span>` : ''}
                     </div>
                 `;
         }
@@ -3756,7 +3872,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
 
                 let history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
                 history.unshift(myOrder);
-                
+
                 if(history.length > 20) history = history.slice(0, 20);
 
                 localStorage.setItem("myOrdersHistory", JSON.stringify(history));
@@ -3861,17 +3977,17 @@ function trackOrder(orderId) {
     function checkActiveOrder() {
     const history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
     const btn = document.getElementById("active-order-btn");
-    
+
     const now = new Date().getTime();
     const validOrders = history.filter(o => (now - o.timestamp) < 86400000);
-    
+
     if (validOrders.length < history.length) {
         localStorage.setItem("myOrdersHistory", JSON.stringify(validOrders));
     }
 
     if (validOrders.length > 0) {
         btn.classList.add("visible");
-        
+
         validOrders.forEach(order => {
             if (order.status !== 'completed' && order.status !== 'canceled') {
                 socket.emit("join-order", order._id);
@@ -3897,8 +4013,8 @@ function trackOrder(orderId) {
         if (order.status === "pending" && typeof storeSettings !== 'undefined' && storeSettings.mode !== 'view_only') {
              statusText += ` <button onclick="event.stopPropagation(); cancelOrder('${order._id}')" style="margin-right:5px; background:#fee2e2; color:#ef4444; border:1px solid #ef4444; padding:3px 8px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer;">إلغاء 🗑️</button>`;
         }
-        let statusColor = "#f59e0b"; 
-        let headerColor = "#fffbeb"; 
+        let statusColor = "#f59e0b";
+        let headerColor = "#fffbeb";
 
         if (order.status === "preparing") {
             statusText = "جاري التحضير 👨‍🍳";
@@ -3916,7 +4032,7 @@ function trackOrder(orderId) {
 
         const dateObj = new Date(order.timestamp);
         const timeStr = dateObj.toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'});
-        
+
         let itemsSummary = order.items.map(i => `<div style="display:flex; justify-content:space-between; font-size:13px; border-bottom:1px dashed #eee; padding:3px 0;"><span>${i.name} (x${i.qty})</span><span>${i.price * i.qty}</span></div>`).join('');
 
         htmlContent += `
@@ -3925,7 +4041,7 @@ function trackOrder(orderId) {
                 <span style="font-weight:bold; color:var(--text-main); font-size:15px;">طلب #${order.orderNum || String(order._id).slice(-4)}</span>
                 <span style="font-size:12px; color:#6b7280; direction:ltr;">${timeStr}</span>
             </div>
-            
+
             <div style="padding:15px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:10px; background:${statusColor}15; padding:5px 10px; border-radius:6px;">
                     <span style="font-weight:bold; color:${statusColor}; font-size:13px;">${statusText}</span>
@@ -3967,22 +4083,22 @@ function trackOrder(orderId) {
 }
      function listenToStatus() {
     socket.off("status-changed");
-    
+
     socket.on("status-changed", (status) => {
         let history = JSON.parse(localStorage.getItem("myOrdersHistory") || "[]");
-        
+
         const activeOrderIndex = history.findIndex(o => o.status !== 'completed' && o.status !== 'canceled');
-        
+
         if (activeOrderIndex !== -1) {
             const oldStatus = history[activeOrderIndex].status;
-            
+
             if (oldStatus !== status) {
                 history[activeOrderIndex].status = status;
                 localStorage.setItem("myOrdersHistory", JSON.stringify(history));
-                
+
                 let msg = "";
                 let icon = "info";
-                
+
                 if (status === "preparing") {
                     msg = `بدأ تحضير طلبك #${history[activeOrderIndex].orderNum}`;
                 } else if (status === "completed") {
@@ -3992,7 +4108,7 @@ function trackOrder(orderId) {
                     msg = `تم إلغاء الطلب #${history[activeOrderIndex].orderNum}`;
                     icon = "error";
                 }
-                
+
                 if(msg) {
                     Swal.fire({
                         toast: true,
@@ -4003,12 +4119,12 @@ function trackOrder(orderId) {
                         showConfirmButton: false,
                         timerProgressBar: true
                     });
-                    
+
                     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
                 }
-                
+
                 checkActiveOrder();
-                
+
                 if(Swal.isVisible() && Swal.getTitle()?.innerText.includes('سجل')) {
                     showMyReceipt();
                 }
@@ -4132,11 +4248,11 @@ function trackOrder(orderId) {
       box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
       direction: rtl;
     `;
-    
+
     warningDiv.innerHTML = `
       ⚠️ ${warningData.message}
       <br>
-      <a href="tel:01145435095" style="color: #fff; text-decoration: underline; margin: 0 5px;">01145435095</a> | 
+      <a href="tel:01145435095" style="color: #fff; text-decoration: underline; margin: 0 5px;">01145435095</a> |
       <a href="tel:01040761680" style="color: #fff; text-decoration: underline; margin: 0 5px;">01040761680</a>
     `;
 
