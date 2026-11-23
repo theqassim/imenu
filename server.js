@@ -110,6 +110,11 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 app.use(cors());
+// Retired website simulator, including the former direct static-file URLs.
+app.use(/^\/simulator(?:\.html|\.js)?\/?$/i, (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.status(410).type("text/plain").send("This demo is no longer available.");
+});
 app.use(express.static("public"));
 app.use('/uploads', express.static('public/uploads'));
 
@@ -2838,7 +2843,6 @@ Sitemap: ${SITE_URL}/sitemap.xml
 `);
 });
 
-app.get("/simulator", (req, res) => res.sendFile(path.join(__dirname, "public", "simulator.html")));
 app.get("/owner", (req, res) => res.sendFile(path.join(__dirname, "public", "admin.html")));
 app.get("/super-admin", (req, res) => res.sendFile(path.join(__dirname, "public", "super.html")));
 app.get("/sales-dashboard", (req, res) => res.sendFile(path.join(__dirname, "public", "sales.html")));
