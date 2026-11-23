@@ -8,7 +8,7 @@
     />
     <title>Menu</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;800&family=Cairo:wght@400;700&family=Almarai:wght@400;700&family=Amiri:wght@400;700&family=Zain:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800&family=El+Messiri:wght@600;700&family=Cairo:wght@400;700&family=Almarai:wght@400;700&family=Amiri:wght@400;700&family=Zain:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <link
@@ -2001,6 +2001,145 @@
         .offer-badge, .offer-badge::before, .offer-badge-icon, .offer-confetti span,
         .offer-cta::after, .offer-fab, .offer-fab i { animation: none !important; }
       }
+          /* ===== NEW DESIGN (body.nd): booking-palette look. Rollback: set NEW_DESIGN=false in applyTheme. Saved customUI values are untouched. ===== */
+      body.nd {
+        --nd-green: #294f40; --nd-gold: #8c6b2d; --nd-gold-deep: #6b5220; --nd-soft: #f5f2e6; --nd-chipbd: #e0d9bc;
+        --bg-color: #f6f5f0; --card-bg: #ffffff; --primary: #8c6b2d; --primary-light: #f5f2e6;
+        --text-main: #253a32; --text-sub: #667065; --border: #e8eae3; --input-bg: #f7f6ee;
+        --sec-title-color: #253a32; --prod-title-color: #253a32; --prod-price-color: #6b5220;
+        --radius: 18px; --shadow: 0 3px 10px rgba(33,52,40,.05);
+        --font: "Tajawal", sans-serif;
+        font-family: "Tajawal", sans-serif !important;
+        background: #f6f5f0 !important; background-image: none !important; color: var(--text-main);
+      }
+      body.nd.dark-mode {
+        --nd-soft: #26372f; --nd-chipbd: #3a4f44; --bg-color: #131b17; --card-bg: #1b2621; --primary: #d9b86a;
+        --text-main: #eef1ea; --text-sub: #a3ada4; --border: #2c3a33; --input-bg: #212d27;
+        --sec-title-color: #eef1ea; --prod-title-color: #eef1ea; --prod-price-color: #e3c77f;
+        --shadow: 0 3px 10px rgba(0,0,0,.3);
+        background: #131b17 !important;
+      }
+      body.nd::before { display: none !important; }
+      body.nd * { font-family: inherit; }
+      body.nd .fas, body.nd .fab, body.nd .far { font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands" !important; }
+      body.nd .fab { font-family: "Font Awesome 6 Brands" !important; }
+      /* header */
+      body.nd .hero.has-book-link, body.nd .hero { padding-top: 14px !important; } body.nd .hero { height: auto !important; min-height: 0 !important; background: none !important; padding: 14px 18px 2px !important; display: block !important; }
+      body.nd .hero::after, body.nd .hero::before { display: none !important; }
+      body.nd .hero-content { display: grid !important; grid-template-columns: 44px minmax(0, 1fr) auto; column-gap: 12px; max-width: 100%; align-items: center; text-align: start !important; padding: 0 !important; text-shadow: none !important; position: relative; }
+      body.nd .nd-avatar { grid-column: 1; grid-row: 1 / span 2; width: 44px; height: 44px; border-radius: 15px; object-fit: cover; border: 1.5px solid var(--border); background: var(--nd-green); }
+      body.nd .res-name { grid-column: 2 / -1; font-family: "El Messiri", "Tajawal", serif !important; font-size: 21px !important; font-weight: 700 !important; line-height: 1.2; margin: 0 !important; color: var(--text-main) !important; text-align: start !important; text-shadow: none !important; }
+      body.nd .res-desc { grid-column: 2 / -1; font-size: 12px !important; margin: 2px 0 0 !important; color: var(--text-sub) !important; text-align: start !important; text-shadow: none !important; opacity: 1 !important; }
+      body.nd:not(.nd-has-avatar) .hero-content { grid-template-columns: 1fr auto; }
+      body.nd:not(.nd-has-avatar) .res-name, body.nd:not(.nd-has-avatar) .res-desc { grid-column: 1 / -1; }
+      body.nd:not(.nd-has-avatar) .social-links-bar { grid-column: 1; }
+      body.nd:not(.nd-has-avatar) .book-table-link { grid-column: 2; }
+      body.nd .social-links-bar { grid-column: 1 / 3; grid-row: 3; margin-top: 8px !important; gap: 7px !important; flex-wrap: nowrap !important; justify-content: flex-start !important; }
+      body.nd .social-links-bar a { width: 30px !important; height: 30px !important; font-size: 13px !important; background: var(--card-bg) !important; color: var(--nd-gold-deep) !important; border: 1px solid var(--border) !important; box-shadow: none !important; backdrop-filter: none !important; }
+      body.nd.dark-mode .social-links-bar a { color: var(--primary) !important; }
+      body.nd .book-table-link { grid-column: 3; grid-row: 3; justify-self: end; margin-top: 8px !important; white-space: nowrap; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; gap: 10px; font-size: 13.5px !important; padding: 7px 14px !important; background: var(--nd-soft) !important; border: 1px solid var(--nd-chipbd) !important; color: var(--nd-gold-deep) !important; box-shadow: none !important; }
+      body.nd.dark-mode .book-table-link { color: var(--primary) !important; }
+      /* search + chips */
+      body.nd .sticky-header { background: rgba(246,245,240,.9) !important; backdrop-filter: blur(14px); border-bottom: 1px solid rgba(232,234,227,.8) !important; box-shadow: none !important; padding-top: 4px !important; }
+      body.nd.dark-mode .sticky-header { background: rgba(19,27,23,.92) !important; border-bottom-color: #2c3a33 !important; }
+      body.nd .top-bar { gap: 8px !important; }
+      body.nd .search-wrapper { background: var(--card-bg) !important; border: 1px solid var(--border) !important; border-radius: 999px !important; box-shadow: 0 2px 8px rgba(33,52,40,.04) !important; }
+      body.nd .search-input { background: transparent !important; color: var(--text-main) !important; font-size: 13.5px !important; }
+      body.nd .search-wrapper i { color: var(--text-sub) !important; }
+      body.nd .theme-btn { background: var(--card-bg) !important; color: var(--nd-gold-deep) !important; border: 1px solid var(--border) !important; border-radius: 50% !important; box-shadow: none !important; }
+      body.nd.dark-mode .theme-btn { color: var(--primary) !important; }
+      body.nd .cat-scroll { gap: 12px !important; padding: 8px 18px 8px !important; }
+      body.nd .cat-chip { flex-direction: column !important; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; gap: 5px !important; min-width: 0 !important; color: var(--text-sub) !important; animation: none !important; transform: none !important; }
+      body.nd .cat-chip img, body.nd .cat-chip > div { width: 54px !important; height: 54px !important; border-radius: 50% !important; object-fit: cover; border: 2.5px solid transparent; box-shadow: 0 2px 6px rgba(33,52,40,.09); transition: .2s; margin: 0 !important; }
+      body.nd .cat-chip span { font-size: 10.5px !important; font-weight: 500 !important; color: var(--text-sub) !important; white-space: nowrap; }
+      body.nd .cat-chip.active img, body.nd .cat-chip.active > div { border-color: var(--nd-gold) !important; transform: scale(1.06); }
+      body.nd .cat-chip.active span { color: var(--nd-gold-deep) !important; font-weight: 800 !important; }
+      body.nd.dark-mode .cat-chip.active span { color: var(--primary) !important; }
+      body.nd .cat-chip.active { background: transparent !important; box-shadow: none !important; }
+      /* promo / announcement */
+      body.nd .an { background: var(--card-bg) !important; border: 1.5px solid var(--nd-chipbd) !important; color: var(--text-main) !important; box-shadow: 0 4px 14px rgba(33,52,40,.06) !important; border-radius: 20px !important; animation: none !important; }
+      body.nd .an::after, body.nd .an::before, body.nd .an-confetti { display: none !important; }
+      body.nd .an-inner { padding: 14px 16px !important; }
+      body.nd .an-badge { background: var(--nd-soft) !important; border: 1px solid var(--nd-chipbd) !important; color: var(--nd-gold-deep) !important; box-shadow: none !important; width: 70px !important; height: 70px !important; }
+      body.nd .an-badge::before { display: none !important; }
+      body.nd .an-pct { font-size: 22px !important; color: var(--nd-gold-deep) !important; text-shadow: none !important; }
+      body.nd .an-off { font-size: 11px !important; color: var(--nd-gold-deep) !important; }
+      body.nd .an-ico { display: none !important; }
+      body.nd .an-tag, body.nd .an-chip { background: var(--input-bg) !important; border: 1px solid var(--nd-chipbd) !important; color: var(--text-sub) !important; text-shadow: none !important; }
+      body.nd .an-title { font-family: "El Messiri", "Tajawal", serif !important; font-size: 17px !important; color: var(--text-main) !important; text-shadow: none !important; }
+      body.nd .an-msg, body.nd .an-hint { color: var(--text-sub) !important; text-shadow: none !important; }
+      body.nd .an-hint em { background: var(--nd-soft) !important; color: var(--nd-gold-deep) !important; }
+      body.nd .an-cta { background: var(--nd-green) !important; color: #f6f2e5 !important; border-radius: 999px !important; box-shadow: none !important; }
+      body.nd .an-cta::after { display: none !important; }
+      /* sections: neutralize every layout/style/theme variant */
+      body.nd .container { padding: 0 18px 120px !important; max-width: 430px !important; margin: 0 auto !important; }
+      body.nd .container .menu-section { display: block !important; margin-top: 24px !important; }
+      body.nd .section-label { font-family: "El Messiri", "Tajawal", serif !important; font-size: 22px !important; color: var(--text-main) !important; margin: 0 0 10px !important; }
+      body.nd .section-label::after { background: var(--border) !important; height: 1px !important; }
+      body.nd .section-label i { color: var(--nd-gold) !important; }
+      body.nd .cat-hero { height: 150px !important; border-radius: 24px !important; margin: 0 0 -14px !important; box-shadow: 0 6px 16px rgba(33,52,40,.12) !important; }
+      body.nd .cat-hero::after { background: linear-gradient(0deg, rgba(24,34,29,.72) 8%, rgba(24,34,29,.12) 55%, rgba(24,34,29,0) 80%) !important; }
+      body.nd .cat-hero-title { font-family: "El Messiri", "Tajawal", serif !important; font-size: 25px !important; color: #FFF8EE !important; padding: 0 16px 20px !important; }
+      body.nd .container .prod-card { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px; width: auto !important; height: auto !important; min-height: 0 !important; margin: 0 0 10px !important; padding: 13px 14px !important; background: var(--card-bg) !important; background-image: none !important; border: 1.5px solid var(--border) !important; border-radius: 20px !important; box-shadow: var(--shadow) !important; backdrop-filter: none !important; transform: none !important; animation: none !important; opacity: 1 !important; outline: none !important; filter: none !important; position: relative; z-index: 3; }
+      body.nd .container .prod-card::before, body.nd .container .prod-card::after { display: none !important; }
+      body.nd .container .prod-card:nth-child(even) { flex-direction: row !important; }
+      body.nd .container .prod-img { width: 62px !important; height: 62px !important; flex: none; border-radius: 15px !important; object-fit: cover !important; margin: 0 !important; box-shadow: none !important; border: 1px solid var(--border); position: static !important; }
+      body.nd .container .prod-content { flex: 1 !important; min-width: 0; width: auto !important; padding: 0 !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border-radius: 0 !important; text-align: start !important; display: flex !important; flex-direction: row !important; align-items: center; gap: 10px; }
+      body.nd .container .prod-content > div:first-child { flex: 1; min-width: 0; }
+      body.nd .prod-title { font-family: "Tajawal", sans-serif !important; font-size: 14.5px !important; font-weight: 700 !important; color: var(--prod-title-color) !important; text-shadow: none !important; line-height: 1.35; margin: 0 !important; text-align: start !important; }
+      body.nd .prod-desc { font-size: 11.5px !important; color: var(--text-sub) !important; margin: 3px 0 0 !important; display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: start !important; }
+      body.nd .prod-footer { margin: 0 !important; padding: 0 !important; width: auto !important; justify-content: flex-end !important; flex: none; }
+      body.nd .prod-footer > div { width: auto !important; gap: 10px; }
+      body.nd .prod-price { color: var(--prod-price-color) !important; font-weight: 800 !important; font-size: 14.5px !important; text-shadow: none !important; }
+      body.nd .prod-sizes-display { min-width: 120px; border-top: none !important; }
+      body.nd .add-btn { width: 34px !important; height: 34px !important; flex: none; border-radius: 50% !important; border: none !important; background: var(--nd-green) !important; color: #f6f2e5 !important; box-shadow: 0 3px 8px rgba(41,79,64,.28) !important; font-size: 14px; }
+      body.nd .add-btn.in-cart { background: var(--nd-gold) !important; color: #fff6e8 !important; }
+      body.nd .disc-tag { background: #f5efdf !important; color: #956829 !important; border-radius: 999px !important; }
+      /* cart bar */
+      body.nd .cart-bar { left: 14px !important; right: 14px !important; bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important; background: var(--nd-green) !important; color: #f6f2e5 !important; border-radius: 18px !important; padding: 13px 16px !important; box-shadow: 0 8px 20px rgba(32,61,50,.28) !important; max-width: 402px; margin: 0 auto; }
+      body.nd .cart-count { background: var(--nd-gold) !important; color: #f6f2e5 !important; }
+      body.nd .cart-info, body.nd .cart-btn-txt { color: #e6dcae !important; font-weight: 800; }
+      body.nd .active-order-btn { background: var(--nd-soft) !important; color: var(--nd-gold-deep) !important; border: 1px solid var(--nd-chipbd) !important; box-shadow: none !important; }
+      /* cart modal */
+      body.nd .cart-modal { background: var(--card-bg) !important; color: var(--text-main) !important; border-radius: 26px 26px 0 0 !important; box-shadow: 0 -12px 40px rgba(24,34,29,.25) !important; max-width: 430px; margin: 0 auto; left: 0; right: 0; }
+      body.nd .modal-overlay { background: rgba(24,34,29,.48) !important; backdrop-filter: none !important; }
+      body.nd .cart-title { font-family: "El Messiri", "Tajawal", serif !important; font-size: 19px !important; color: var(--text-main) !important; }
+      body.nd .cart-title i { color: var(--nd-gold) !important; }
+      body.nd .cart-count-badge { background: var(--nd-soft) !important; border: 1px solid var(--nd-chipbd) !important; color: var(--nd-gold-deep) !important; }
+      body.nd .close-cart { background: var(--card-bg) !important; border: 1px solid var(--border) !important; color: var(--text-sub) !important; border-radius: 50% !important; }
+      body.nd .cart-item { background: transparent !important; border-radius: 0 !important; border-bottom: 1px solid var(--border) !important; padding: 13px 0 !important; box-shadow: none !important; }
+      body.nd .cart-item-name { font-weight: 800 !important; font-size: 14px !important; color: var(--text-main) !important; }
+      body.nd .cart-item-price { color: var(--text-sub) !important; font-size: 11.5px !important; }
+      body.nd .qty-controls { background: var(--card-bg) !important; border: 1.5px solid var(--border) !important; border-radius: 999px !important; padding: 3px !important; }
+      body.nd .qty-btn { background: transparent !important; color: var(--text-sub) !important; box-shadow: none !important; }
+      body.nd .qty-btn:last-child { background: var(--nd-green) !important; color: #f6f2e5 !important; }
+      body.nd .cart-footer { background: transparent !important; }
+      body.nd .cart-total-line { color: var(--text-main) !important; }
+      body.nd .cart-total-line span:last-child, body.nd #cart-final-total { color: var(--nd-gold-deep) !important; }
+      body.nd.dark-mode #cart-final-total { color: var(--primary) !important; }
+      body.nd .order-type-container { background: var(--card-bg) !important; border: 1.5px solid var(--border) !important; border-radius: 16px !important; padding: 5px !important; gap: 6px !important; }
+      body.nd .type-content { border: 1px solid transparent !important; background: transparent !important; color: var(--text-sub) !important; border-radius: 12px !important; font-weight: 700 !important; box-shadow: none !important; }
+      body.nd .type-option input:checked + .type-content { background: var(--nd-soft) !important; border-color: var(--nd-chipbd) !important; color: var(--nd-gold-deep) !important; font-weight: 800 !important; }
+      body.nd.dark-mode .type-option input:checked + .type-content { color: var(--primary) !important; }
+      body.nd .table-input { background: var(--card-bg) !important; border: 1.5px solid var(--border) !important; color: var(--text-main) !important; border-radius: 14px !important; }
+      body.nd .checkout-btn { background: var(--nd-green) !important; background-image: none !important; color: #f6f2e5 !important; border-radius: 16px !important; box-shadow: 0 8px 18px rgba(32,61,50,.25) !important; }
+      body.nd .cat-chip { flex: none !important; }
+      body.nd .container .prod-content { display: grid !important; grid-template-columns: 1fr auto; column-gap: 10px; row-gap: 2px; align-items: center; }
+      body.nd .container .prod-content > div:first-child { grid-column: 1; grid-row: 1; }
+      body.nd .prod-footer, body.nd .prod-footer > div { display: contents !important; }
+      body.nd .prod-price { grid-column: 1; grid-row: 2; margin: 0 !important; }
+      body.nd .container .add-btn { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
+      body.nd .prod-sizes-display { grid-column: 1 / -1; grid-row: 3; margin-top: 8px !important; }
+      body.nd .prod-sizes-display > div { font-size: 12px !important; }
+      body.nd .tax-note, body.nd #tax-note { color: var(--text-sub) !important; }
+      body.nd .style-brutalism .prod-title, body.nd .style-neon .prod-title, body.nd .layout-zigzag .prod-title { border: none !important; border-bottom: none !important; text-shadow: none !important; padding: 0 !important; }
+      body.nd .book-table-link .btl-icon { width: 24px !important; height: 24px !important; font-size: 11px !important; }
+      body.nd .btl-text { font-size: 12.5px; }
+      body.nd .top-bar { padding-top: 8px !important; padding-bottom: 2px !important; }
+      body.nd .item-note-add { color: var(--nd-gold-deep) !important; }
+      body.nd.dark-mode .item-note-add { color: var(--primary) !important; }
+      body.nd .item-note-input { background: var(--card-bg) !important; border-color: var(--border) !important; color: var(--text-main) !important; }
+      body.nd .item-note-input:focus { border-color: var(--nd-green) !important; }
     </style>
       <style id="imenu-polish">
       /* modest polish: compact cards without a photo, steadier add button, smaller success dialog */
@@ -2338,6 +2477,26 @@
         }
       });
 
+      // New unified design. Set to false to restore the previous per-venue look (saved customUI values are never modified).
+      const NEW_DESIGN = true;
+      function applyNewDesign() {
+        if (!NEW_DESIGN) return;
+        document.body.classList.add("nd");
+        try {
+          const r = window.__restaurant || {};
+          const logo = r.storePage && r.storePage.logo;
+          const hc = document.querySelector(".hero-content");
+          if (hc && hc.querySelector(".nd-avatar")) document.body.classList.add("nd-has-avatar");
+          else if (logo && hc) {
+            const img = document.createElement("img");
+            img.className = "nd-avatar"; img.alt = ""; img.src = logo;
+            img.onerror = function () { img.remove(); document.body.classList.remove("nd-has-avatar"); };
+            hc.insertBefore(img, hc.firstChild);
+            document.body.classList.add("nd-has-avatar");
+          }
+        } catch (_) {}
+      }
+
       function applyTheme(config) {
         const root = document.documentElement;
 
@@ -2356,7 +2515,7 @@
 
         document.body.className = "";
         
-        if (config.animationTheme) {
+        if (config.animationTheme && !NEW_DESIGN) {
             document.body.classList.add(config.animationTheme);
         }
 
@@ -2447,6 +2606,7 @@
         const layoutClass = `layout-${config.layoutType || "modern"}`;
         const styleClass = `style-${config.cardStyle || "solid"}`;
         container.className = `container ${layoutClass} ${styleClass}`;
+        applyNewDesign();
       }
 
       // ===== Live orders (online menu -> restaurant's offline cashier) =====
@@ -2570,6 +2730,7 @@
               restaurant.restaurantName;
             restaurantId = restaurant._id;
             window.__restaurant = restaurant;
+            applyNewDesign();
 
             try {
               const catRes = await fetch(`/api/v1/categories/${restaurantId}`);
@@ -2777,7 +2938,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             const noteFontSize = Number(accounting.noteFontSize) || 11;
             const noteColor = accounting.noteColor || "#888888";
             sectionHTML += `
-              <div style="text-align:center; padding:8px 10px 2px; margin-top:-6px; font-size:${noteFontSize}px; color:${noteColor}; opacity:0.9;">
+              <div class="tax-note" style="text-align:center; padding:8px 10px 2px; margin-top:-6px; font-size:${noteFontSize}px; color:${noteColor}; opacity:0.9;">
                 * ${noteText}
               </div>`;
           }
