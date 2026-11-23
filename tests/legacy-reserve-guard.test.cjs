@@ -8,7 +8,7 @@ function run(row, body) {
   let handler; const updates = [];
   const app = { patch: (_p, _a, _b, h) => { handler = h; } };
   const supabase = { from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: row }) }) }), update: (v) => { updates.push(v); return { eq: () => ({ select: () => ({ single: async () => ({ data: { slug: "x", ...row } }) }) }) }; } }) };
-  new Function("app", "protect", "restrictTo", "supabase", code)(app, null, () => null, supabase);
+  new Function("app", "protect", "restrictTo", "supabase", "checkRestaurantWriteAccess", code)(app, null, () => null, supabase, async () => ({ok:true}));
   const out = {}; const res = { status(c) { out.status = c; return this; }, json(j) { out.body = j; } };
   return handler({ body, io: null }, res).then(() => ({ out, updates }));
 }

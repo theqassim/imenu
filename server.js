@@ -99,6 +99,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 const memoryUpload = multer({ storage: multer.memoryStorage() });
+const productUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -888,7 +889,7 @@ app.post("/api/v1/offers/upload-bg", protect, upload.single("image"), async (req
 // Ownership guard: previously any authenticated user could PATCH any restaurant
 // by id. admin writes any; owner only their own; staff roles denied. Runs before
 // multer so a rejected request stores no uploaded files.
-const { createRestaurantWriteGuard } = require("./restaurant-access");
+const { createRestaurantWriteGuard, checkRestaurantWriteAccess } = require("./restaurant-access");
 
 app.patch("/api/v1/restaurants/:id", protect, createRestaurantWriteGuard(supabase), upload.fields([{ name: 'bgImage', maxCount: 1 }, { name: 'heroImage', maxCount: 1 }, { name: 'storeLogo', maxCount: 1 }]), async (req, res) => {
   try {
@@ -1063,37 +1064,7 @@ cron.schedule("0 4 * * *", async () => {
   }
 });
 
-app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
-    try {
-        const { restaurantId, isEnabled, totalSeats, resetCounter } = req.body;
-        const restaurant = await Restaurant.findById(restaurantId);
-        if(!restaurant) return res.status(404).json({message: "المكان غير موجود"});
-        if (req.user.role !== "admin" && String(restaurant.owner) !== String(req.user._id))
-            return res.status(403).json({ message: "غير مصرح بهذه العملية" });
 
-        if(resetCounter) {
-            restaurant.reservationSettings.bookedSeats = 0;
-            await Reservation.deleteMany({ restaurant: restaurantId });
-        } else {
-            if(isEnabled !== undefined) restaurant.reservationSettings.isEnabled = isEnabled;
-            if(totalSeats !== undefined) restaurant.reservationSettings.totalSeats = Number(totalSeats);
-        }
-
-        await restaurant.save();
-        
-        if(req.io) {
-            req.io.emit("seats_updated", { 
-                slug: restaurant.slug,
-                total: restaurant.reservationSettings.totalSeats, 
-                booked: restaurant.reservationSettings.bookedSeats 
-            });
-        }
-
-        res.status(200).json({ status: "success", data: { reservationSettings: restaurant.reservationSettings } });
-    } catch(err) {
-        res.status(500).json({ message: err.message });
-    }
-});
 
 app.post("/api/v1/reservations/book/:slug", async (req, res) => {
   try {
@@ -1178,8 +1149,11 @@ app.patch("/api/v1/reservations/action/:id", protect, restrictTo("owner", "admin
     }
 });
 
-app.post("/api/v1/products", protect, upload.single('image'), async (req, res) => {
+app.post("/api/v1/products", protect, restrictTo("owner", "admin"), productUpload.single('image'), async (req, res) => {
   try {
+    if (typeof req.body.restaurantId !== "string" || !req.body.restaurantId.trim()) return res.status(400).json({ message: "Invalid restaurant" });
+    const access = await checkRestaurantWriteAccess(supabase, req.user, req.body.restaurantId);
+    if (!access.ok) return res.status(access.status).json({ message: access.message });
     const currentUser = req.user;
     if (currentUser.productLimit !== -1) {
       const { count: currentCount, error: countError } = await supabase.from('products').select('*', { count: 'exact', head: true }).eq('restaurant', req.body.restaurantId);
@@ -1193,6 +1167,15 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
       try { return typeof val === 'string' ? JSON.parse(val) : val; } catch (e) { return val; }
     };
 
+    // Multipart is buffered first: foreign-venue requests never upload to Cloudinary.
+    let productImage = "";
+    if (req.file) {
+      productImage = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream({ folder: "smart-menu-uploads", allowed_formats: ["jpg", "png", "jpeg", "webp"] },
+          (error, result) => error ? reject(error) : resolve(result.secure_url));
+        stream.end(req.file.buffer);
+      });
+    }
     const { data: newProduct, error } = await supabase.from('products').insert([{
       name: safeParse(name),
       description: safeParse(description),
@@ -1202,7 +1185,7 @@ app.post("/api/v1/products", protect, upload.single('image'), async (req, res) =
       category,
       ingredients: ingredients ? safeParse(ingredients) : [],
       restaurant: restaurantId,
-      image: req.file ? req.file.path : "",
+      image: productImage,
       isAvailable: true
     }]).select().single();
 
@@ -1238,19 +1221,26 @@ app.patch("/api/v1/products/reorder", protect, restrictTo("owner", "admin"), asy
     const { order } = req.body; 
     if (!order || !Array.isArray(order)) return res.status(400).json({ message: "Invalid data" });
 
+    if (order.some((item) => !item || typeof item !== "object")) return res.status(400).json({ message: "Invalid data" });
     const operations = order.map((item) => ({
       _id: item.id,
       sortOrder: item.sortOrder
     }));
 
-    // ownership: an owner may only reorder products of their own restaurant
+    const ids = operations.map((o) => o._id);
+    if (operations.some((o) => typeof o._id !== "string" || !o._id.trim() || !Number.isInteger(o.sortOrder) || o.sortOrder < 0) || new Set(ids).size !== ids.length)
+      return res.status(400).json({ message: "Invalid data" });
+    if (!ids.length) return res.status(200).json({ status: "success" });
+    // Resolve every product before writing. Missing rows and lookup failures fail closed.
+    const { data: prods, error: productError } = await supabase.from('products').select('_id, restaurant').in('_id', ids);
+    if (productError) throw productError;
+    if (!prods || prods.length !== ids.length || prods.some((p) => !p.restaurant))
+      return res.status(403).json({ message: "غير مصرح بهذه العملية" });
     if (req.user.role !== "admin") {
-      const ids = operations.map((o) => o._id).filter(Boolean);
-      const { data: prods } = await supabase.from('products').select('_id, restaurant').in('_id', ids);
-      const restIds = [...new Set((prods || []).map((p) => p.restaurant))];
-      if ((prods || []).length !== ids.length) return res.status(403).json({ message: "غير مصرح بهذه العملية" });
-      const { data: owned } = await supabase.from('restaurants').select('_id').in('_id', restIds).eq('owner', req.user._id);
-      if (!owned || owned.length !== restIds.length) return res.status(403).json({ message: "غير مصرح بهذه العملية" });
+      for (const restaurantId of new Set(prods.map((p) => p.restaurant))) {
+        const access = await checkRestaurantWriteAccess(supabase, req.user, restaurantId);
+        if (!access.ok) return res.status(access.status).json({ message: access.message });
+      }
     }
 
     const { error } = await supabase.from('products').upsert(operations);
@@ -2344,10 +2334,12 @@ app.delete("/api/v1/reservations/:id", protect, restrictTo("owner"), async (req,
     }
 });
 
-app.patch("/api/v1/reservations/settings", protect, restrictTo("owner"), async (req, res) => {
+app.patch("/api/v1/reservations/settings", protect, restrictTo("owner", "admin"), async (req, res) => {
   try {
     const { isEnabled, totalSeats, resetCounter } = req.body;
     const rId = req.body.restaurantId;
+    const access = await checkRestaurantWriteAccess(supabase, req.user, rId);
+    if (!access.ok) return res.status(access.status).json({ message: access.message });
 
     const { data: restaurant, error: fetchError } = await supabase.from('restaurants').select('_id, slug, reservationSettings, customUI').eq('_id', rId).single();
     if (fetchError || !restaurant) throw new Error("المكان غير موجود");
