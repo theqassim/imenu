@@ -3460,7 +3460,17 @@
           <div class="design-container">
             
             <div class="design-controls">
-              <div class="design-scroll-area"> <div class="design-section">
+              <div class="design-scroll-area">              <div class="design-section" id="menu-theme-choice">
+                <div class="design-section-title"><i class="fas fa-palette"></i> ثيم المنيو</div>
+                <label class="form-label" for="ui-menuTheme">اختار شكل المنيو</label>
+                <select id="ui-menuTheme" onchange="setUiParam('menuTheme', this.value)" style="height:46px;">
+                  <option value="classic">تصميمك الحالي (الافتراضي)</option>
+                  <option value="booking">الثيم الجديد: كريمي وأخضر</option>
+                </select>
+                <p style="font-size:12px;line-height:1.8;color:var(--text-sub);margin:10px 0 0;">الثيم الجديد اختياري لهذا المنيو فقط. ألوانك وخطك وصورة الغلاف وتخصيصاتك محفوظة. ارجع إلى تصميمك الحالي في أي وقت. التغيير لا يظهر للعملاء إلا بعد الضغط على حفظ التصميم.</p>
+              </div>
+
+<div class="design-section">
                 <div class="design-section-title">
                   <i class="fas fa-magic"></i> القوالب السحرية (Themes)
                 </div>
@@ -3587,6 +3597,7 @@
                     </div>
                 </div>
               </div>
+
 
               <div class="design-section">
                 <div class="design-section-title">
@@ -6577,6 +6588,7 @@ window.addBulkRow = function() { addBulkRows(1); };
       }
 
       let currentDesign = {
+        menuTheme: "classic",
         layoutType: "modern",
         primaryColor: "#B78728",
         bgType: "color",
@@ -6608,6 +6620,7 @@ window.addBulkRow = function() { addBulkRows(1); };
           currentDesign = { ...currentDesign, ...restaurantData.customUI };
         }
 
+        document.getElementById("ui-menuTheme").value = currentDesign.menuTheme === "booking" ? "booking" : "classic";
         const themeContainer = document.getElementById("theme-library");
         if (themeContainer) {
           themeContainer.innerHTML = "";
@@ -7076,6 +7089,7 @@ window.addBulkRow = function() { addBulkRows(1); };
       }
 
       const defaultDesign = {
+        menuTheme: "classic",
         layoutType: "modern",
         primaryColor: "#B78728",
         bgType: "color",
@@ -7098,6 +7112,7 @@ window.addBulkRow = function() { addBulkRows(1); };
         }).then((result) => {
           if (result.isConfirmed) {
             currentDesign = { ...defaultDesign };
+            document.getElementById("ui-menuTheme").value = "classic";
 
             document.getElementById("ui-primaryColor").value =
               currentDesign.primaryColor;

@@ -2001,7 +2001,7 @@
         .offer-badge, .offer-badge::before, .offer-badge-icon, .offer-confetti span,
         .offer-cta::after, .offer-fab, .offer-fab i { animation: none !important; }
       }
-          /* ===== NEW DESIGN (body.nd): booking-palette look. Rollback: set NEW_DESIGN=false in applyTheme. Saved customUI values are untouched. ===== */
+          /* Optional booking-palette theme. Saved customUI values are untouched. */
       body.nd {
         --nd-green: #294f40; --nd-gold: #8c6b2d; --nd-gold-deep: #6b5220; --nd-soft: #f5f2e6; --nd-chipbd: #e0d9bc;
         --bg-color: #f6f5f0; --card-bg: #ffffff; --primary: #8c6b2d; --primary-light: #f5f2e6;
@@ -2521,11 +2521,14 @@
       window.addEventListener("message", (event) => {
         if (event.data.type === "UPDATE_THEME") {
           applyTheme(event.data.config);
+          if (window.__rawMenu) renderMenu(window.__rawMenu);
+          renderCartItems();
+          updateCartUI();
         }
       });
 
-      // New unified design. Set to false to restore the previous per-venue look (saved customUI values are never modified).
-      const NEW_DESIGN = false;
+      // Explicit per-venue opt-in only. Missing or unknown values use the saved classic design.
+      let NEW_DESIGN = false;
       function applyNewDesign() {
         if (!NEW_DESIGN) return;
         document.body.classList.add("nd");
@@ -2547,6 +2550,11 @@
       }
 
       function applyTheme(config) {
+        config = config || {};
+        NEW_DESIGN = config.menuTheme === 'booking';
+        if (!NEW_DESIGN) {
+          document.querySelectorAll('.nd-avatar,.nd-rowstep').forEach(function(el){el.remove();});
+        }
         const root = document.documentElement;
 
         root.style.setProperty("--primary", config.primaryColor || "#B78728");
