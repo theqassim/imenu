@@ -16,6 +16,8 @@
     "أدخل الكود": "Enter the code",
     "تطبيق": "Apply",
     "رقم الطاولة (Table No):": "Table number:",
+    "ملاحظات على الطلب (اختياري):": "Order notes (optional):",
+    "مثال: بدون سكر، من غير تلج...": "e.g. no sugar, no ice...",
     "اكتب رقم الطاولة هنا...": "Type your table number...",
     "من فضلك اكتب رقم الطاولة لاستكمال طلب الصالة": "Please enter the table number to complete your dine-in order",
     "إرسال الطلب": "Send order",

@@ -2156,6 +2156,17 @@
           placeholder="اكتب رقم الطاولة هنا..."
         />
       </div>
+      <div class="table-input-container" id="order-notes-wrapper" style="margin-top: 12px">
+        <label class="table-label" for="order-notes">ملاحظات على الطلب (اختياري):</label>
+        <textarea
+          id="order-notes"
+          class="table-input"
+          rows="2"
+          maxlength="300"
+          placeholder="مثال: بدون سكر، من غير تلج..."
+          style="resize: none; font-family: inherit; height: auto; min-height: 52px"
+        ></textarea>
+      </div>
 
       <button class="checkout-btn" onclick="submitOrder()">
         <i class="fas fa-paper-plane"></i> إرسال الطلب
@@ -2501,11 +2512,13 @@
               items,
               orderType: orderType === "takeaway" ? "takeaway" : "dine_in",
               tableNumber: finalTableValue,
+              orderNote: getOrderNote() || undefined,
             }),
           });
           const data = await res.json().catch(() => ({}));
           if (res.status === 202 && data.status === "success") {
             clearCartAfterOrder();
+            clearOrderNote();
             appliedCoupon = null;
             updateCartUI();
             closeCart();
@@ -3463,6 +3476,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             msg += `▫️ ${item.name.ar} (x${item.qty}) - ${subtotal} ج.م\n`;
         }
 
+        const waOrderNote = getOrderNote();
+        if (waOrderNote) msg += `📝 ملاحظات: ${waOrderNote}\n`;
+
         const taxVal = (total * accounting.tax) / 100;
         const serviceVal =
             orderType === "dining" ? (total * accounting.service) / 100 : 0;
@@ -3550,6 +3566,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     couponCode: appliedCoupon ? appliedCoupon.code : null,
                     discountAmount: discountVal,
                     totalPrice: finalTotal,
+                    notes: getOrderNote() || undefined,
                 }),
             });
 
@@ -3562,6 +3579,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                 }
 
                 clearCartAfterOrder();
+                clearOrderNote();
                 appliedCoupon = null;
                 document.getElementById("coupon-code-input").value = "";
                 if (document.getElementById("coupon-msg"))
@@ -3856,6 +3874,30 @@ function trackOrder(orderId) {
           b.innerHTML = '<i class="fas fa-plus"></i>';
         });
       }
+
+      function getOrderNote() {
+        const el = document.getElementById("order-notes");
+        if (!el) return "";
+        return el.value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+      }
+
+      function clearOrderNote() {
+        const el = document.getElementById("order-notes");
+        if (el) el.value = "";
+        try { localStorage.removeItem("imenu_order_note"); } catch (_) {}
+      }
+
+      (function initOrderNote() {
+        const el = document.getElementById("order-notes");
+        if (!el) return;
+        try {
+          const saved = localStorage.getItem("imenu_order_note");
+          if (saved) el.value = saved;
+        } catch (_) {}
+        el.addEventListener("input", function () {
+          try { localStorage.setItem("imenu_order_note", el.value); } catch (_) {}
+        });
+      })();
 
       function saveCart() {
         localStorage.setItem("myCart", JSON.stringify(cart));
