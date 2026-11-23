@@ -7280,6 +7280,9 @@ window.createOrderCardHTML = function (order) {
           itemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:14px; border-bottom:1px solid #eee; padding-bottom:5px;">
             <span>- ${item.name} <span style="font-weight:bold">x${item.qty}</span></span>
             ${role !== "kitchen" ? `<span>${item.price * item.qty}</span>` : ""} </div>`;
+          if (item.note) {
+            itemsHtml += `<div style="font-size:12px; color:#c00; font-weight:bold; margin:-3px 0 6px; padding-right:8px;">↳ ${String(item.note).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>`;
+          }
         });
 
         if (order.discountAmount > 0 && role !== "kitchen") {
@@ -8325,6 +8328,7 @@ async function submitPosOrder() {
                     <span style="font-weight:bold;">${item.name}</span>
                     <span>${item.qty} x ${item.price}</span>
                 </div>
+                ${item.note ? `<div style="font-size:11px; font-weight:bold; padding-right:6px;">↳ ${String(item.note).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>` : ""}
                 <div style="text-align:left; border-bottom:1px dashed #000; margin-bottom:5px; padding-bottom:2px;">
                     ${item.qty * item.price} ج.م
                 </div>

@@ -1737,6 +1737,10 @@
       }
       .offer-overlay.in .offer-card { transform: none; opacity: 1; }
 
+
+      .item-note-add { background: none; border: 0; padding: 4px 0 0; margin: 0; font-family: inherit; font-size: 12px; font-weight: 700; color: var(--primary); cursor: pointer; }
+      .item-note-input { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; min-height: 36px; resize: none; border: 1.5px solid var(--border); border-radius: 10px; padding: 7px 10px; font-family: inherit; font-size: 13px; color: inherit; background: var(--card-bg, #fff); outline: none; }
+      .item-note-input:focus { border-color: var(--primary); }
       .offer-close {
         position: absolute;
         top: 12px;
@@ -2156,17 +2160,6 @@
           placeholder="اكتب رقم الطاولة هنا..."
         />
       </div>
-      <div class="table-input-container" id="order-notes-wrapper" style="margin-top: 12px">
-        <label class="table-label" for="order-notes">ملاحظات على الطلب (اختياري):</label>
-        <textarea
-          id="order-notes"
-          class="table-input"
-          rows="2"
-          maxlength="300"
-          placeholder="مثال: بدون سكر، من غير تلج..."
-          style="resize: none; font-family: inherit; height: auto; min-height: 52px"
-        ></textarea>
-      </div>
 
       <button class="checkout-btn" onclick="submitOrder()">
         <i class="fas fa-paper-plane"></i> إرسال الطلب
@@ -2501,7 +2494,10 @@
           const c = cart[id];
           let sizeName = c.sizeName || null;
           if (!sizeName && c.isSizeVariant) sizeName = id.slice(String(c._id).length + 1);
-          items.push({ productId: c._id, sizeName, qty: c.qty });
+          const line = { productId: c._id, sizeName, qty: c.qty };
+          const n = cleanItemNote(c.note);
+          if (n) line.note = n;
+          items.push(line);
         }
         Swal.fire({ title: "جاري إرسال الطلب للمكان...", didOpen: () => Swal.showLoading(), allowOutsideClick: false });
         try {
@@ -2512,13 +2508,11 @@
               items,
               orderType: orderType === "takeaway" ? "takeaway" : "dine_in",
               tableNumber: finalTableValue,
-              orderNote: getOrderNote() || undefined,
             }),
           });
           const data = await res.json().catch(() => ({}));
           if (res.status === 202 && data.status === "success") {
             clearCartAfterOrder();
-            clearOrderNote();
             appliedCoupon = null;
             updateCartUI();
             closeCart();
@@ -3417,6 +3411,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                         <div class="cart-item-info">
                             <div class="cart-item-name" data-imenu-skip>${pickName(item)}</div>
                             <div class="cart-item-price">${item.price} ج.م × ${item.qty}</div>
+                            ${(item.note || openItemNotes.has(id))
+                              ? `<textarea id="item-note-${id}" class="item-note-input" rows="1" maxlength="150" dir="auto" placeholder="${isEn() ? "Note for this item (e.g. no sugar)" : "ملاحظة لهذا الصنف (مثال: بدون سكر)"}" oninput="setItemNote('${id}', this.value)">${String(item.note || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")}</textarea>`
+                              : `<button type="button" class="item-note-add" onclick="toggleItemNote('${id}')">${isEn() ? "+ Add note" : "+ إضافة ملاحظة"}</button>`}
                         </div>
                         <div class="qty-controls">
                             <button class="qty-btn" onclick="decreaseQty('${id}')">-</button>
@@ -3474,10 +3471,8 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             const subtotal = item.price * item.qty;
             total += subtotal;
             msg += `▫️ ${item.name.ar} (x${item.qty}) - ${subtotal} ج.م\n`;
+            if (cleanItemNote(item.note)) msg += `   📝 ${cleanItemNote(item.note)}\n`;
         }
-
-        const waOrderNote = getOrderNote();
-        if (waOrderNote) msg += `📝 ملاحظات: ${waOrderNote}\n`;
 
         const taxVal = (total * accounting.tax) / 100;
         const serviceVal =
@@ -3528,11 +3523,13 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         const items = [];
         let subTotal = 0;
         for (const id in cart) {
-            items.push({
+            const sysItem = {
                 name: cart[id].name.ar,
                 qty: cart[id].qty,
                 price: cart[id].price,
-            });
+            };
+            if (cleanItemNote(cart[id].note)) sysItem.note = cleanItemNote(cart[id].note);
+            items.push(sysItem);
             subTotal += cart[id].price * cart[id].qty;
         }
 
@@ -3566,7 +3563,6 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                     couponCode: appliedCoupon ? appliedCoupon.code : null,
                     discountAmount: discountVal,
                     totalPrice: finalTotal,
-                    notes: getOrderNote() || undefined,
                 }),
             });
 
@@ -3579,8 +3575,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
                 }
 
                 clearCartAfterOrder();
-                clearOrderNote();
-                appliedCoupon = null;
+                    appliedCoupon = null;
                 document.getElementById("coupon-code-input").value = "";
                 if (document.getElementById("coupon-msg"))
                     document.getElementById("coupon-msg").innerHTML = "";
@@ -3875,29 +3870,22 @@ function trackOrder(orderId) {
         });
       }
 
-      function getOrderNote() {
-        const el = document.getElementById("order-notes");
-        if (!el) return "";
-        return el.value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+      const openItemNotes = new Set();
+      function cleanItemNote(v) {
+        return String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 150);
       }
-
-      function clearOrderNote() {
-        const el = document.getElementById("order-notes");
-        if (el) el.value = "";
-        try { localStorage.removeItem("imenu_order_note"); } catch (_) {}
+      function toggleItemNote(id) {
+        if (openItemNotes.has(id)) openItemNotes.delete(id); else openItemNotes.add(id);
+        renderCartItems();
+        const ta = document.getElementById("item-note-" + id);
+        if (ta) ta.focus();
       }
-
-      (function initOrderNote() {
-        const el = document.getElementById("order-notes");
-        if (!el) return;
-        try {
-          const saved = localStorage.getItem("imenu_order_note");
-          if (saved) el.value = saved;
-        } catch (_) {}
-        el.addEventListener("input", function () {
-          try { localStorage.setItem("imenu_order_note", el.value); } catch (_) {}
-        });
-      })();
+      function setItemNote(id, val) {
+        if (!cart[id]) return;
+        const v = String(val == null ? "" : val).slice(0, 150);
+        if (v.trim()) cart[id].note = v; else delete cart[id].note;
+        try { localStorage.setItem("myCart", JSON.stringify(cart)); } catch (_) {}
+      }
 
       function saveCart() {
         localStorage.setItem("myCart", JSON.stringify(cart));
