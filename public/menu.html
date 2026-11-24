@@ -2274,8 +2274,8 @@
         <span id="cart-final-total">0 ج.م</span>
       </div>
 
-      <div class="order-type-container">
-        <label class="type-option">
+      <div class="order-type-container" id="order-type-container">
+        <label class="type-option" id="ot-dining">
           <input
             type="radio"
             name="orderType"
@@ -2287,7 +2287,7 @@
           />
           <div class="type-content"><i class="fas fa-utensils"></i> صالة</div>
         </label>
-        <label class="type-option">
+        <label class="type-option" id="ot-takeaway">
           <input
             type="radio"
             name="orderType"
@@ -2302,6 +2302,31 @@
             <i class="fas fa-shopping-bag"></i> تيك أواي
           </div>
         </label>
+        <label class="type-option" id="ot-delivery" style="display:none">
+          <input
+            type="radio"
+            name="orderType"
+            value="delivery"
+            onchange="
+              toggleTableInput();
+              updateCartUI();
+            "
+          />
+          <div class="type-content"><i class="fas fa-motorcycle"></i> توصيل</div>
+        </label>
+      </div>
+      <div id="delivery-wrapper" style="display:none; margin-top:14px">
+        <label class="table-label">الاسم:</label>
+        <input type="text" id="dv-name" class="table-input" maxlength="80" placeholder="اسمك" autocomplete="name" />
+        <label class="table-label" style="margin-top:10px">رقم الموبايل:</label>
+        <input type="tel" id="dv-phone" class="table-input" maxlength="30" placeholder="01xxxxxxxxx" autocomplete="tel" inputmode="tel" />
+        <label class="table-label" style="margin-top:10px">المنطقة:</label>
+        <div style="position:relative">
+          <input type="text" id="dv-zone-search" class="table-input" placeholder="ابحث عن منطقتك..." autocomplete="off" oninput="dvZoneFilter()" onfocus="dvZoneFilter()" />
+          <div id="dv-zone-list" style="display:none; position:absolute; inset-inline:0; top:100%; margin-top:4px; max-height:190px; overflow:auto; background:var(--card-bg); border:1px solid var(--border); border-radius:12px; z-index:5; box-shadow:0 8px 24px rgba(0,0,0,.12)"></div>
+        </div>
+        <label class="table-label" style="margin-top:10px">العنوان بالتفصيل:</label>
+        <input type="text" id="dv-address" class="table-input" maxlength="300" placeholder="الشارع، رقم العمارة، الدور..." autocomplete="street-address" />
       </div>
       <div
         id="coupon-section"
@@ -2682,6 +2707,49 @@
         b.textContent = "استقبال الطلبات من المنيو متوقف مؤقتًا، تقدر تتصفح المنيو وتطلب من الكاشير مباشرة";
       }
 
+      // Shows only the order types the restaurant turned on. One type = no choice shown. Delivery only exists in live mode.
+      function applyOrderOptions() {
+        const o = window.__liveMode === true && window.__orderOpts ? window.__orderOpts.types : { dine_in: true, takeaway: true, delivery: false };
+        const show = { dining: o.dine_in !== false, takeaway: o.takeaway !== false, delivery: o.delivery === true };
+        const key = JSON.stringify(show);
+        const enabled = Object.keys(show).filter((k) => show[k]);
+        if (window.__otKey !== key) {
+          window.__otKey = key;
+          ["dining", "takeaway", "delivery"].forEach((k) => { const el = document.getElementById("ot-" + k); if (el) el.style.display = show[k] ? "" : "none"; });
+          const cur = document.querySelector('input[name="orderType"]:checked');
+          if (!cur || !show[cur.value]) {
+            const pick = document.querySelector('input[name="orderType"][value="' + (show.takeaway ? "takeaway" : enabled[0] || "takeaway") + '"]');
+            if (pick) pick.checked = true;
+          }
+        }
+        const box = document.getElementById("order-type-container");
+        if (box) box.style.display = enabled.length > 1 ? "" : "none";
+        if (typeof toggleTableInput === "function") toggleTableInput();
+      }
+      function dvZones() { return window.__orderOpts && Array.isArray(window.__orderOpts.zones) ? window.__orderOpts.zones : []; }
+      function dvZone() { const z = dvZones().find((x) => x.id === window.__dvZoneId); return z || null; }
+      function dvZoneFilter() {
+        const q = (document.getElementById("dv-zone-search").value || "").trim().toLowerCase();
+        const list = document.getElementById("dv-zone-list");
+        const sel = dvZone();
+        if (sel && q !== sel.name.toLowerCase()) { window.__dvZoneId = null; updateCartUI(); }
+        const rows = dvZones().filter((z) => !q || z.name.toLowerCase().includes(q));
+        list.innerHTML = rows.length
+          ? rows.map((z) => `<div data-id="${z.id}" onmousedown="dvZonePick(this.dataset.id)" ontouchstart="dvZonePick(this.dataset.id)" style="display:flex;justify-content:space-between;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--border);font-size:14px"><span></span><b style="color:var(--primary);white-space:nowrap">${Number(z.price).toLocaleString("en-US")} ج.م</b></div>`).join("")
+          : `<div style="padding:12px 14px;color:var(--text-sub);font-size:13px">مفيش منطقة بالاسم ده</div>`;
+        Array.from(list.children).forEach((row, i) => { const sp = row.querySelector("span"); if (sp && rows[i]) sp.textContent = rows[i].name; });
+        list.style.display = "block";
+      }
+      function dvZonePick(id) {
+        const z = dvZones().find((x) => x.id === id);
+        if (!z) return;
+        window.__dvZoneId = z.id;
+        document.getElementById("dv-zone-search").value = z.name;
+        document.getElementById("dv-zone-list").style.display = "none";
+        updateCartUI();
+      }
+      document.addEventListener("click", (e) => { const l = document.getElementById("dv-zone-list"); if (l && !e.target.closest("#dv-zone-search") && !e.target.closest("#dv-zone-list")) l.style.display = "none"; });
+
       async function refreshLiveStatus(rerender) {
         const before = window.__liveMode === true;
         let live = false;
@@ -2691,9 +2759,13 @@
             const d = await r.json();
             live = !!(d && d.data && d.data.enabled && d.data.online);
             if (d && d.data && d.data.enabled === false) window.__liveEnabled = false;
+            if (d && d.data && d.data.types) window.__orderOpts = { types: d.data.types, zones: Array.isArray(d.data.zones) ? d.data.zones : [] };
+            else window.__orderOpts = null;
+            if (live && window.__orderOpts && !window.__orderOpts.types.dine_in && !window.__orderOpts.types.takeaway && !window.__orderOpts.types.delivery) live = false; // every type switched off: browse only
           } catch (e) { live = before; }
         }
         window.__liveMode = live;
+        applyOrderOptions();
         storeSettings.mode = live ? "live" : "view_only";
         if (live) storeSettings.enableCoupons = false;
         applyLiveBanner();
@@ -2705,7 +2777,7 @@
       setInterval(() => { if (window.__liveEnabled && !document.hidden) refreshLiveStatus(true); }, 8000);
       document.addEventListener("visibilitychange", () => { if (!document.hidden && window.__liveEnabled) refreshLiveStatus(true); });
 
-      async function submitLiveOrder(orderType, finalTableValue) {
+      async function submitLiveOrder(orderType, finalTableValue, dv) {
         const items = [];
         for (const id in cart) {
           const c = cart[id];
@@ -2723,8 +2795,9 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               items,
-              orderType: orderType === "takeaway" ? "takeaway" : "dine_in",
+              orderType: orderType === "takeaway" ? "takeaway" : orderType === "delivery" ? "delivery" : "dine_in",
               tableNumber: finalTableValue,
+              ...(orderType === "delivery" && dv ? dv : {}),
             }),
           });
           const data = await res.json().catch(() => ({}));
@@ -2736,7 +2809,7 @@
             Swal.fire({
               icon: "success",
               title: "تم إرسال طلبك للمكان",
-              html: `الكاشير هيستلم الطلب ويأكده.<br>الإجمالي: <b>${Number(data.data.totalPrice).toLocaleString()} ج.م</b>`,
+              html: `الكاشير هيستلم الطلب ويأكده.<br>${data.data.deliveryFee ? `رسوم التوصيل: ${Number(data.data.deliveryFee).toLocaleString()} ج.م<br>` : ""}الإجمالي: <b>${Number(data.data.grandTotal != null ? data.data.grandTotal : data.data.totalPrice).toLocaleString()} ج.م</b>`,
               confirmButtonText: "تمام",
               customClass: { popup: "imn-pop" },
             });
@@ -2746,6 +2819,7 @@
             await refreshLiveStatus(true);
             closeCart();
           }
+          if (data.code === "TYPE_DISABLED") await refreshLiveStatus(true);
           if (data.code === "UNKNOWN_PRODUCT" || data.code === "UNAVAILABLE" || data.code === "BAD_SIZE") loadMenu();
           Swal.fire("تنبيه", data.message || "حدثت مشكلة، حاول مرة أخرى", "warning");
         } catch (err) {
@@ -3587,6 +3661,9 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
             : 0;
         let grandTotal = subTotal + taxVal + serviceVal - discountVal;
         if (grandTotal < 0) grandTotal = 0;
+        const dvZ = currentOrderType === "delivery" ? dvZone() : null;
+        const dvFee = dvZ ? Number(dvZ.price) || 0 : 0;
+        grandTotal += dvFee;
 
         document.getElementById("bar-count").innerText = totalQty;
         const ndSummary=document.getElementById('nd-cart-summary');
@@ -3612,6 +3689,10 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         }
         if (accounting.service > 0) {
           detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>${isEn() ? "Service" : "خدمة"} (${accounting.service}%):</span><span>${serviceVal.toLocaleString()}${curUnit}</span></div>`;
+        }
+
+        if (currentOrderType === "delivery") {
+          detailsHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--text-sub)"><span>${isEn() ? "Delivery fee:" : "رسوم التوصيل:"}</span><span>${dvZ ? dvFee.toLocaleString() + curUnit : (isEn() ? "choose a zone" : "اختار المنطقة")}</span></div>`;
         }
 
         if (discountVal > 0) {
@@ -3714,8 +3795,10 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
           'input[name="orderType"]:checked',
         ).value;
         const wrapper = document.getElementById("table-input-wrapper");
-        if (type === "takeaway") wrapper.style.display = "none";
+        if (type === "takeaway" || type === "delivery") wrapper.style.display = "none";
         else wrapper.style.display = "block";
+        const dw = document.getElementById("delivery-wrapper");
+        if (dw) dw.style.display = type === "delivery" ? "block" : "none";
       }
 
      async function submitOrder() {
@@ -3724,7 +3807,16 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
     const orderType = document.querySelector('input[name="orderType"]:checked').value;
     let finalTableValue = "";
 
-    if (orderType === "takeaway") {
+    let dvData = null;
+    if (orderType === "delivery") {
+        const z = dvZone();
+        const nm = document.getElementById("dv-name").value.trim();
+        const ph = document.getElementById("dv-phone").value.trim();
+        const ad = document.getElementById("dv-address").value.trim();
+        const bad = !z ? "اختار منطقة التوصيل" : !nm ? "اكتب اسمك" : ph.replace(/\D/g, "").length < 7 ? "اكتب رقم موبايل صحيح" : !ad ? "اكتب العنوان بالتفصيل" : "";
+        if (bad) { Swal.fire({ icon: "warning", title: "تنبيه", text: bad }); return; }
+        dvData = { zoneId: z.id, customerName: nm, customerPhone: ph, customerAddress: ad };
+    } else if (orderType === "takeaway") {
         finalTableValue = "تيك أواي";
     } else {
         const inputVal = document.getElementById("table-number").value;
@@ -3740,7 +3832,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
     }
 
     if (window.__liveMode === true) {
-        return submitLiveOrder(orderType, finalTableValue);
+        return submitLiveOrder(orderType, finalTableValue, dvData);
     }
 
     if (storeSettings.mode === "whatsapp") {

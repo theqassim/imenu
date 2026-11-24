@@ -78,7 +78,38 @@ function orderOfferPercent(announcements, subTotal, now) {
   return best.orderPercent;
 }
 
-function buildOrder({ restaurant, products, body, now = Date.now() }) {
+// ---- order types + delivery zones (owned by the POS, pushed here; stored in customUI.deliveryConfig) ----
+const MAX_ZONES = 300;
+function normalizeDeliveryConfig(raw) {
+  const r = raw && typeof raw === "object" ? raw : {};
+  const t = r.types && typeof r.types === "object" ? r.types : {};
+  const types = {
+    dine_in: t.dine_in === undefined ? true : t.dine_in === true,
+    takeaway: t.takeaway === undefined ? true : t.takeaway === true,
+    delivery: t.delivery === true,
+  };
+  const zones = [];
+  const seen = new Set();
+  for (const z of Array.isArray(r.zones) ? r.zones.slice(0, MAX_ZONES) : []) {
+    if (!z || typeof z !== "object") continue;
+    const id = cleanText(z.id, 40);
+    const name = cleanText(z.name, 60);
+    const price = round2(z.price);
+    if (!/^[A-Za-z0-9_-]{4,40}$/.test(id) || seen.has(id) || !name || !Number.isFinite(price) || price < 0 || price > 100000) continue;
+    seen.add(id);
+    zones.push({ id, name, price });
+  }
+  return { types, zones };
+}
+const deliveryConfigOf = (restaurant) => normalizeDeliveryConfig(restaurant && restaurant.customUI && restaurant.customUI.deliveryConfig);
+// What the public menu may offer right now. Delivery needs the POS online, the switch on and at least one zone.
+function orderOptions(restaurant, posOnline) {
+  const c = deliveryConfigOf(restaurant);
+  const delivery = c.types.delivery && posOnline && c.zones.length > 0;
+  return { types: { dine_in: c.types.dine_in, takeaway: c.types.takeaway, delivery }, zones: delivery ? c.zones : [] };
+}
+
+function buildOrder({ restaurant, products, body, now = Date.now(), posOnline = true }) {
   const rawItems = Array.isArray(body.items) ? body.items : [];
   if (rawItems.length === 0) return { error: "السلة فاضية", code: "EMPTY" };
   if (rawItems.length > MAX_ITEMS) return { error: "عدد الأصناف كبير", code: "TOO_MANY" };
@@ -100,9 +131,28 @@ function buildOrder({ restaurant, products, body, now = Date.now() }) {
     subTotal += unit.price * qty;
   }
   subTotal = round2(subTotal);
-  const takeaway = body.orderType === "takeaway";
-  const tableNumber = takeaway ? "تيك أواي" : cleanText(body.tableNumber, 20);
-  if (!takeaway && restaurant.useTableNumbers === true && !tableNumber) {
+  const opts = orderOptions(restaurant, posOnline);
+  const wanted = body.orderType === "takeaway" ? "takeaway" : body.orderType === "delivery" ? "delivery" : "dine_in";
+  if (!opts.types[wanted]) {
+    return wanted === "delivery"
+      ? { error: "التوصيل مش متاح دلوقتي", code: "TYPE_DISABLED" }
+      : { error: "النوع ده مش متاح دلوقتي", code: "TYPE_DISABLED" };
+  }
+  const takeaway = wanted === "takeaway";
+  const delivery = wanted === "delivery";
+  let zone = null, customerName = "", customerPhone = "", customerAddress = "";
+  if (delivery) {
+    zone = opts.zones.find((z) => z.id === cleanText(body.zoneId, 40));
+    if (!zone) return { error: "اختار منطقة التوصيل", code: "ZONE_REQUIRED" };
+    customerName = cleanText(body.customerName, 80);
+    customerPhone = cleanText(body.customerPhone, 30);
+    customerAddress = cleanText(body.customerAddress, 300);
+    if (!customerName) return { error: "اكتب اسمك", code: "NAME_REQUIRED" };
+    if (customerPhone.replace(/\D/g, "").length < 7) return { error: "اكتب رقم موبايل صحيح", code: "PHONE_REQUIRED" };
+    if (!customerAddress) return { error: "اكتب العنوان", code: "ADDRESS_REQUIRED" };
+  }
+  const tableNumber = takeaway ? "تيك أواي" : delivery ? "" : cleanText(body.tableNumber, 20);
+  if (!takeaway && !delivery && restaurant.useTableNumbers === true && !tableNumber) {
     return { error: "اكتب رقم الطاولة", code: "TABLE_REQUIRED" };
   }
   const pct = orderOfferPercent(
@@ -112,12 +162,13 @@ function buildOrder({ restaurant, products, body, now = Date.now() }) {
   );
   const discountAmount = pct ? round2((subTotal * pct) / 100) : 0;
   const taxAmount = round2((subTotal * (Number(restaurant.taxRate) || 0)) / 100);
-  const serviceAmount = takeaway ? 0 : round2((subTotal * (Number(restaurant.serviceRate) || 0)) / 100);
+  const serviceAmount = takeaway || delivery ? 0 : round2((subTotal * (Number(restaurant.serviceRate) || 0)) / 100);
   const totalPrice = Math.max(0, round2(subTotal + taxAmount + serviceAmount - discountAmount));
   return {
     order: {
       tableNumber,
-      orderType: takeaway ? "takeaway" : "dine_in",
+      orderType: wanted,
+      ...(delivery ? { customerName, customerPhone, customerAddress, zoneId: zone.id, zoneName: zone.name, deliveryFee: zone.price } : {}),
       items,
       subTotal,
       taxAmount,
@@ -286,6 +337,18 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
     connections.get(rid).add(socket);
     log.log(`🟢 live orders: restaurant ${socket.data.slug} online (${connections.get(rid).size})`);
     socket.emit("ready", { slug: socket.data.slug });
+    // The POS owns order types and delivery zones and pushes them here (owner/admin only on the POS side).
+    socket.on("delivery:config:set", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (!store.writeCustomUI) return reply({ ok: false, code: "UNSUPPORTED", message: "غير مدعوم" });
+        const cfg = normalizeDeliveryConfig(msg);
+        const r = await store.writeCustomUI(rid, (ui) => ({ ...ui, deliveryConfig: cfg }));
+        if (!r || !r.ok) return reply({ ok: false, code: "CONFLICT", message: "حصل تعديل تاني، حاول تاني" });
+        if (io) io.to(String(rid)).emit("menu_updated");
+        reply({ ok: true, config: cfg });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
     if (typeof onPosConnect === "function") {
       try { onPosConnect(socket, rid); } catch (e) { log.error("onPosConnect error:", e.message); }
     }
@@ -338,7 +401,11 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
       res.set("Cache-Control", "no-store");
       res.json({
         status: "success",
-        data: { enabled: enabled && ready, online: enabled && ready && onlineCount(restaurant._id) > 0 },
+        data: {
+          enabled: enabled && ready,
+          online: enabled && ready && onlineCount(restaurant._id) > 0,
+          ...orderOptions(restaurant, enabled && ready && onlineCount(restaurant._id) > 0),
+        },
       });
     } catch (e) {
       res.status(500).json({ message: "تعذر قراءة الحالة" });
@@ -356,13 +423,14 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
         return res.status(503).json({ message: "المكان مش مستقبل طلبات دلوقتي", code: "POS_OFFLINE" });
       }
       const products = await store.getProducts(restaurant._id);
-      const built = buildOrder({ restaurant, products, body: req.body || {} });
+      const built = buildOrder({ restaurant, products, body: req.body || {}, posOnline: true });
       if (built.error) return res.status(400).json({ message: built.error, code: built.code });
       const id = crypto.randomUUID();
       const payload = { ...built.order, slug: restaurant.slug, source: "online-menu" };
       await db.insertOrder(id, restaurant._id, payload);
       deliver(restaurant._id); // fire and forget; the inbox keeps it until ACK
-      res.status(202).json({ status: "success", data: { id, totalPrice: payload.totalPrice } });
+      const deliveryFee = payload.deliveryFee || 0;
+      res.status(202).json({ status: "success", data: { id, totalPrice: payload.totalPrice, deliveryFee, grandTotal: round2(payload.totalPrice + deliveryFee) } });
     } catch (e) {
       log.error("live orders place error:", e.message);
       res.status(500).json({ message: "حصلت مشكلة، حاول تاني" });
@@ -437,4 +505,4 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
   return { ensureSchema, deliver, connections, buildOrder };
 }
 
-module.exports = { createLiveOrders, buildOrder, generateKey, sha256 };
+module.exports = { createLiveOrders, buildOrder, normalizeDeliveryConfig, orderOptions, generateKey, sha256 };
