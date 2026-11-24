@@ -76,6 +76,22 @@ function pgReservations(pool) {
         [String(rid), limit]);
       return rows;
     },
+    async archiveCandidates(rid, cutoff, limit = 25) {
+      const { rows } = await pool.query(
+        `SELECT ${COLS}, updated_at::text AS updated_at, starts_at::text AS starts_at FROM public.timed_reservations WHERE restaurant_id=$1
+         AND status IN ('rejected','cancelled','no_show','expired','completed')
+         AND updated_at <= $2 AND starts_at <= $2 ORDER BY timed_reservations.updated_at, id LIMIT $3`,
+        [String(rid), cutoff, Math.min(25, Math.max(1, limit))]);
+      return rows;
+    },
+    async deleteArchived(rid, row, cutoff) {
+      if (!require("./reservation-archive").eligible(row, rid, cutoff)) return false;
+      const { rows } = await pool.query(
+        `DELETE FROM public.timed_reservations WHERE restaurant_id=$1 AND id=$2 AND version=$3 AND status=$4
+         AND updated_at=$5 AND starts_at=$6 AND updated_at <= $7 AND starts_at <= $7 RETURNING id`,
+        [String(rid), row.id, row.version, row.status, row.updated_at, row.starts_at, cutoff]);
+      return rows.length === 1;
+    },
     async ackEvent(id) { await pool.query("UPDATE public.timed_reservation_events SET acked=true WHERE id=$1", [id]); },
   };
 }
@@ -142,6 +158,19 @@ function restReservations(supabase) {
     async pendingEvents(rid, limit = 100) {
       return run(supabase.from(E).select("id, reservation_id, kind, created_at").eq("restaurant_id", String(rid)).eq("acked", false)
         .order("id", { ascending: true }).limit(limit));
+    },
+    async archiveCandidates(rid, cutoff, limit = 25) {
+      return run(supabase.from(T).select(COLS).eq("restaurant_id", String(rid))
+        .in("status", ["rejected", "cancelled", "no_show", "expired", "completed"])
+        .lte("updated_at", cutoff).lte("starts_at", cutoff)
+        .order("updated_at", { ascending: true }).order("id", { ascending: true }).limit(Math.min(25, Math.max(1, limit))));
+    },
+    async deleteArchived(rid, row, cutoff) {
+      if (!require("./reservation-archive").eligible(row, rid, cutoff)) return false;
+      const rows = await run(supabase.from(T).delete().eq("restaurant_id", String(rid)).eq("id", row.id)
+        .eq("version", row.version).eq("status", row.status).eq("updated_at", row.updated_at).eq("starts_at", row.starts_at)
+        .lte("updated_at", cutoff).lte("starts_at", cutoff).select("id"));
+      return rows && rows.length === 1;
     },
     async ackEvent(id) { await run(supabase.from(E).update({ acked: true }).eq("id", id)); },
   };

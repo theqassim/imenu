@@ -55,6 +55,40 @@ for (const mode of ["pg", "rest"]) test("reservations store (" + mode + ")", { s
     assert.equal(adj.ok, true);
   });
 
+  await t.test("archive offer + CAS removal retains active/future/recent and cascades events only after ACK", async () => {
+    const rid = "archive_" + mode;
+    const cutoff = "2026-11-01T00:00:00Z";
+    const past = "2026-10-01T00:00:00Z";
+    const make = async (status, extra = {}) => {
+      const r = (await db.create(base({ restaurant_id: rid, starts_at: past, ...extra }))).row;
+      await pool.query("UPDATE timed_reservations SET status=$1, updated_at=$2 WHERE id=$3", [status, past, r.id]);
+      return r.id;
+    };
+    const ids = [];
+    for (const status of ["rejected", "cancelled", "no_show", "expired", "completed"]) ids.push(await make(status));
+    const active = [];
+    for (const status of ["pending", "approved", "arrived"]) active.push(await make(status));
+    const future = await make("cancelled", { starts_at: "2027-01-01T00:00:00Z" });
+    const recent = await make("completed");
+    await pool.query("UPDATE timed_reservations SET updated_at='2026-11-10T00:00:00Z' WHERE id=$1", [recent]);
+    const batch = await db.archiveCandidates(rid, cutoff);
+    assert.equal(batch.length, 5);
+    assert.deepEqual(new Set(batch.map((r) => r.id)), new Set(ids));
+    assert.ok((await db.pendingEvents(rid)).length > 0);
+    assert.equal(await db.deleteArchived("wrong_venue", batch[0], cutoff), false);
+    assert.equal(await db.deleteArchived(rid, { ...batch[0], version: batch[0].version + 1 }, cutoff), false);
+    for (const r of batch) assert.equal(await db.deleteArchived(rid, r, cutoff), true);
+    assert.equal(await db.deleteArchived(rid, batch[0], cutoff), false);
+    for (const id of [...active, future, recent]) assert.ok(await db.get(id));
+    const events = await db.pendingEvents(rid);
+    assert.equal(events.some((e) => ids.includes(e.reservation_id)), false);
+    const stale = await make("completed");
+    const candidate = (await db.archiveCandidates(rid, cutoff)).find((r) => r.id === stale);
+    await pool.query("UPDATE timed_reservations SET version=version+1, status='arrived' WHERE id=$1", [stale]);
+    assert.equal(await db.deleteArchived(rid, candidate, cutoff), false);
+    assert.equal((await db.get(stale)).status, "arrived");
+  });
+
   await t.test("cancelled booking frees the table; events survive ack", async () => {
     const a = (await db.create(base())).row;
     const p = { table_label: "T20", window_start: "2030-03-01T17:00:00Z", window_end: "2030-03-01T19:00:00Z" };
