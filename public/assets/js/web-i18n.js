@@ -6,6 +6,21 @@
 (function () {
   'use strict';
   var DICT = {
+    "توصيل": "Delivery",
+    "الاسم:": "Name:",
+    "رقم الموبايل:": "Mobile number:",
+    "المنطقة:": "Area:",
+    "العنوان بالتفصيل:": "Detailed address:",
+    "ابحث عن منطقتك...": "Search for your area...",
+    "الشارع، رقم العمارة، الدور...": "Street, building no., floor...",
+    "مفيش منطقة بالاسم ده": "No area with this name",
+    "رسوم التوصيل:": "Delivery fee:",
+    "اختار المنطقة": "Choose an area",
+    "اختار منطقة التوصيل": "Choose a delivery area",
+    "اكتب العنوان بالتفصيل": "Enter the detailed address",
+    "التوصيل مش متاح دلوقتي": "Delivery is not available right now",
+    "النوع ده مش متاح دلوقتي": "This order type is not available right now",
+    "رسوم التوصيل": "Delivery fee",
     // ---- shared / menu ----
     "سلة الطلب": "Cart",
     "فاتورة الطلب": "Order bill",
