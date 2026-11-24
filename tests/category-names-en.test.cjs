@@ -47,10 +47,10 @@ function makeCasClient(row, onWrite) {
       _cols: null, _id: null, _eqUI: undefined, _update: null,
       select(cols) { c._cols = cols; return c; },
       update(patch) { c._update = patch; return c; },
-      eq(col, val) { if (col === "_id") c._id = val; else c._eqUI = val; return c; },
+      eq(col, val) { if (col === "_id") c._id = val; else { c._eqUI = val; if (typeof val !== "string") c._badEq = true; else c._eqUI = JSON.parse(val); } return c; },
       single: async () => {
         if (c._update) {
-          if (onWrite) onWrite(row); // concurrent session's write lands before ours reaches the DB
+          if (onWrite && c._eqUI !== undefined) onWrite(row); // concurrent session's write lands before ours reaches the DB
           if (!semEq(row.customUI, c._eqUI)) return { data: null, error: null }; // 0 rows matched
           Object.assign(row, c._update);
           return { data: row, error: null };
@@ -60,6 +60,8 @@ function makeCasClient(row, onWrite) {
       then(resolve) { // await on the chain itself (update path without .single in CAS helper)
         const run = async () => {
           if (c._update) {
+            if (c._badEq) return { data: null, error: { message: "invalid input syntax for type json" } }; // what real PostgREST does with "[object Object]"
+            if (c._eqUI === undefined) { Object.assign(row, c._update); return { data: [{ _id: c._id }], error: null }; } // plain update
             if (onWrite) onWrite(row); // concurrent session's write lands before ours reaches the DB
             if (!semEq(row.customUI, c._eqUI)) return { data: [], error: null };
             Object.assign(row, c._update);
@@ -143,4 +145,25 @@ test("CAS: retry re-applies mutations onto the fresh value, not the stale read",
   assert.strictEqual(row.customUI.note, "concurrent");       // concurrent write survived the upload merge
   assert.strictEqual(row.customUI.files.logo, "new.png");
   assert.strictEqual(row.customUI.bgValue, "/uploads/bg.jpg");
+});
+
+test("CAS: the revision check is sent as JSON text, never an object", async () => {
+  const { writeCustomUICas } = require("../category-names-en");
+  const row = { customUI: { a: 1 } };
+  const r = await writeCustomUICas(makeCasClient(row), "r1", (u) => ({ ...u, b: 2 }), 3);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.fallback, undefined);
+  assert.deepStrictEqual(row.customUI, { a: 1, b: 2 });
+});
+
+test("CAS: a check that never matches with no concurrent change falls back to a plain update", async () => {
+  const { writeCustomUICas } = require("../category-names-en");
+  const row = { customUI: { a: 1 } };
+  const client = makeCasClient(row);
+  const orig = client.from;
+  client.from = () => { const c = orig(); const e = c.eq; c.eq = (col, v) => (col === "customUI" ? e.call(c, col, JSON.stringify({ never: true })) : e.call(c, col, v)); return c; };
+  const r = await writeCustomUICas(client, "r1", (u) => ({ ...u, b: 2 }), 3);
+  assert.strictEqual(r.ok, true);
+  assert.strictEqual(r.fallback, true);
+  assert.deepStrictEqual(row.customUI, { a: 1, b: 2 });
 });
