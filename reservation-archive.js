@@ -65,6 +65,25 @@ function attachArchive({ socket, venue, db, getPolicy, now = Date.now, log = con
     }
     return { ok: true, deleted };
   });
+  // Dry run: read-only. Reports what a real pull would offer. Offers no token, so it can never lead to a delete.
+  handle("reservations:archive:dryrun", async (m) => {
+    const p = typeof getPolicy === "function" ? await getPolicy(String(venue)) : null;
+    const grace = p && Number.isInteger(p.graceDays) && p.graceDays >= 1 && p.graceDays <= 365 ? p.graceDays : 7;
+    const cutoff = new Date(now() - grace * 86400000).toISOString();
+    const rows = await db.archiveCandidates(venue, cutoff, 25);
+    const eligibleRows = rows.map((r) => JSON.parse(JSON.stringify(r))).filter((r) => eligible(r, venue, cutoff));
+    const byStatus = {};
+    for (const r of eligibleRows) byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+    return { ok: true, dryRun: true, wouldOffer: eligibleRows.length, byStatus, graceDays: grace,
+      policyEnabled: !!(p && p.enabled === true), ids: eligibleRows.map((r) => r.id) };
+  });
   socket.on("disconnect", () => { offered.clear(); });
 }
-module.exports = { attachArchive, canonical, digest, eligible, TERMINAL };
+// Policy source: env RESERVATION_ARCHIVE_POLICY = JSON map {"<restaurantId>": {enabled, ownerId, graceDays}}.
+// Unset, malformed or missing venue means no policy, so nothing can be deleted.
+function policyFromEnv(env = process.env) {
+  let map = null;
+  try { map = env.RESERVATION_ARCHIVE_POLICY ? JSON.parse(env.RESERVATION_ARCHIVE_POLICY) : null; } catch (_) { map = null; }
+  return async (venue) => (map && typeof map === "object" && Object.prototype.hasOwnProperty.call(map, String(venue))) ? map[String(venue)] : null;
+}
+module.exports = { policyFromEnv, attachArchive, canonical, digest, eligible, TERMINAL };

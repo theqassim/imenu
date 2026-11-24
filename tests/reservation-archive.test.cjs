@@ -61,3 +61,23 @@ test("repeated pull invalidates old tokens, successful ACK repeats harmlessly", 
   assert.deepEqual((await t.call("reservations:archive:ack", { ownerId, records: second.records })).deleted, []);
   assert.equal(t.deleted.length, 1);
 });
+test("dry run offers no token, never deletes, and reports what would go", async () => {
+  const t = setup({ rows: [row(), row({ id: "rsv_two", status: "cancelled" }), row({ id: "p", status: "pending" }), row({ id: "f", starts_at: "2026-12-01T00:00:00Z" })] });
+  const got = await t.call("reservations:archive:dryrun", {});
+  assert.equal(got.dryRun, true);
+  assert.equal(got.wouldOffer, 2);
+  assert.deepEqual(got.ids.sort(), ["rsv_one", "rsv_two"]);
+  assert.equal(got.records, undefined);
+  assert.equal(t.deleted.length, 0);
+  const d = setup({ noPolicy: true, rows: [row()] });
+  const off = await d.call("reservations:archive:dryrun", {});
+  assert.equal(off.policyEnabled, false);
+  assert.equal(d.deleted.length, 0);
+});
+test("env policy fails closed", async () => {
+  const { policyFromEnv } = require("../reservation-archive");
+  assert.equal(await policyFromEnv({})("v"), null);
+  assert.equal(await policyFromEnv({ RESERVATION_ARCHIVE_POLICY: "{bad" })("v"), null);
+  assert.equal(await policyFromEnv({ RESERVATION_ARCHIVE_POLICY: '{"a":{"enabled":true}}' })("b"), null);
+  assert.equal((await policyFromEnv({ RESERVATION_ARCHIVE_POLICY: '{"a":{"enabled":true}}' })("a")).enabled, true);
+});

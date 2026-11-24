@@ -258,7 +258,8 @@ const restrictTo = (...roles) => {
   {
     const rdb = require("./reservations-db");
     const resDb = pool ? rdb.pgReservations(pool) : (supabaseUrl && supabaseKey) ? rdb.restReservations(supabase) : null;
-    if (resDb) timedReservations = require("./reservations").createReservations({ app, io, db: resDb, store, protect, restrictTo, connections: liveOrders.connections });
+    if (resDb) timedReservations = require("./reservations").createReservations({ app, io, db: resDb, store, protect, restrictTo, connections: liveOrders.connections,
+      archivePolicy: require("./reservation-archive").policyFromEnv() });
   }
 })();
 
