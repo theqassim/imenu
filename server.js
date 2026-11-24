@@ -255,7 +255,7 @@ const restrictTo = (...roles) => {
     getRestaurantById: (id) => one(supabase.from("restaurants").select("*, owner:users(active, subscriptionExpires)").eq("_id", id).maybeSingle()),
     getRestaurantByOwner: (ownerId) => one(supabase.from("restaurants").select("*, owner:users(active, subscriptionExpires)").eq("owner", ownerId).maybeSingle()),
     getProducts: async (restaurantId) => { const { data, error } = await supabase.from("products").select("_id, name, price, sizes, category, isAvailable").eq("restaurant", restaurantId); if (error) throw error; return data || []; },
-    writeCustomUI: (id, fn) => require("./category-names-en").writeCustomUICas(supabase, id, fn, 3),
+    writeCustomUI: (id, fn) => require("./custom-ui-write").writeCustomUI(supabase, id, fn),
     updateRestaurantCustomUI: async (id, customUI) => { const { error } = await supabase.from("restaurants").update({ customUI }).eq("_id", id); if (error) throw error; },
   };
   let timedReservations = null;
