@@ -210,7 +210,7 @@ function generateKey() {
   return KEY_PREFIX + crypto.randomBytes(24).toString("base64url");
 }
 
-function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect, appBuild = null, protectOptional = null, onCustomerOrder = null }) {
+function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect, appBuild = null, protectOptional = null, onCustomerOrder = null, onOrderStatus = null }) {
   const db = dbIn || pgBackend(pool);
   const connections = new Map(); // restaurantId -> Set(socket)
   const locks = new Map(); // restaurantId -> Promise chain
@@ -437,6 +437,20 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
         const restaurant = await store.getRestaurantById(rid);
         if (!restaurant) return reply({ ok: false, code: "ERROR", message: "المكان غير موجود" });
         reply({ ok: true, view: appBuild.view(restaurant) });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
+    // The POS reports what happened to an online order (accepted / rejected / done); the customer's "My orders" reads it.
+    socket.on("order:status", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (typeof onOrderStatus !== "function") return reply({ ok: false, code: "OLD_SERVER", message: "غير مدعوم" });
+        const id = msg && typeof msg.id === "string" ? msg.id : "";
+        const status = msg && typeof msg.status === "string" ? msg.status : "";
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id) || !["pending", "preparing", "completed", "canceled"].includes(status)) {
+          return reply({ ok: false, code: "BAD_VALUE", message: "قيمة غير صالحة" });
+        }
+        await onOrderStatus({ restaurantId: rid, id, status });
+        reply({ ok: true });
       } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
     });
     if (typeof onPosConnect === "function") {

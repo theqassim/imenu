@@ -299,9 +299,10 @@ test("customer token on a live order records it on the account; anonymous orders
   const app = express(); app.use(express.json());
   const srv = require("http").createServer(app); const io = new SIO(srv);
   const recorded = [];
+  const statuses = [];
   const protectOptional = (req, res, next) => { if (req.headers.authorization === "Bearer cust") req.customer = { _id: "c1", name: "Ali", phone: "01000000000" }; next(); };
   mk({ app, io, db: fakeDb, store, protect: (q, s, n) => n(), restrictTo: () => (a, b, n) => n(), log: { log() {}, error() {} }, protectOptional,
-    onCustomerOrder: async (x) => { recorded.push(x); } });
+    onCustomerOrder: async (x) => { recorded.push(x); }, onOrderStatus: async (x) => { statuses.push(x); } });
   await new Promise((r) => srv.listen(0, "127.0.0.1", r));
   const base = "http://127.0.0.1:" + srv.address().port;
   const pos = cli(base + "/pos", { auth: { slug: "demo", key: "imk_test" }, reconnection: false, transports: ["websocket"] });
@@ -314,5 +315,13 @@ test("customer token on a live order records it on the account; anonymous orders
     assert.equal(recorded.length, 1);
     assert.equal(recorded[0].customer._id, "c1");
     assert.equal(recorded[0].payload.items[0].qty, 1);
+    const call = (m) => new Promise((r) => pos.emit("order:status", m, r));
+    const uid = "123e4567-e89b-12d3-a456-426614174000";
+    assert.deepEqual(await call({ id: uid, status: "preparing" }), { ok: true });
+    assert.equal(statuses.length, 1);
+    assert.equal(statuses[0].id, uid);
+    assert.equal((await call({ id: "x", status: "preparing" })).ok, false);
+    assert.equal((await call({ id: uid, status: "hacked" })).ok, false);
+    assert.equal(statuses.length, 1);
   } finally { pos.close(); io.close(); srv.close(); }
 });

@@ -280,12 +280,16 @@ const restrictTo = (...roles) => {
     }),
   });
   const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo, appBuild, protectOptional,
-    onCustomerOrder: async ({ customer, restaurantId, payload }) => {
+    onOrderStatus: async ({ restaurantId, id, status }) => {
+      const { error } = await supabase.from('orders').update({ status }).eq('_id', id).eq('restaurant', restaurantId).not('customerId', 'is', null);
+      if (error) throw error;
+    },
+    onCustomerOrder: async ({ customer, restaurantId, payload, id }) => {
       const { data: lastOrder } = await supabase.from('orders').select('orderNum').eq('restaurant', restaurantId).order('orderNum', { ascending: false }).limit(1).single();
       const nextOrderNum = lastOrder && lastOrder.orderNum ? lastOrder.orderNum + 1 : 1;
       const type = payload.orderType === "delivery" ? "delivery" : payload.orderType === "takeaway" ? "takeaway" : "dine_in";
       const { error } = await supabase.from('orders').insert([{
-        restaurant: restaurantId, tableNumber: payload.tableNumber || (type === "takeaway" ? "تيك أواي" : ""), orderNum: nextOrderNum,
+        _id: id, restaurant: restaurantId, tableNumber: payload.tableNumber || (type === "takeaway" ? "تيك أواي" : ""), orderNum: nextOrderNum,
         customerId: customer._id, items: payload.items, subTotal: payload.subTotal || 0, taxAmount: payload.taxAmount || 0,
         serviceAmount: payload.serviceAmount || 0, discountAmount: payload.discountAmount || 0,
         totalPrice: Math.round(((payload.totalPrice || 0) + (payload.deliveryFee || 0)) * 100) / 100,
