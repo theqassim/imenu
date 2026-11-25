@@ -210,7 +210,7 @@ function generateKey() {
   return KEY_PREFIX + crypto.randomBytes(24).toString("base64url");
 }
 
-function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect, appBuild = null, protectOptional = null, onCustomerOrder = null, onOrderStatus = null }) {
+function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect, appBuild = null, protectOptional = null, onCustomerOrder = null, onOrderStatus = null, perks = null }) {
   const db = dbIn || pgBackend(pool);
   const connections = new Map(); // restaurantId -> Set(socket)
   const locks = new Map(); // restaurantId -> Promise chain
@@ -439,6 +439,25 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
         reply({ ok: true, view: appBuild.view(restaurant) });
       } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
     });
+    // The POS owns coupons, the welcome gift and the loyalty rules and pushes them here.
+    socket.on("coupons:sync", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (!perks) return reply({ ok: false, code: "UNSUPPORTED", message: "غير مدعوم" });
+        const n = await perks.syncCoupons(rid, msg && msg.coupons);
+        reply({ ok: true, count: n });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
+    socket.on("perks:config:set", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (!perks || !store.writeCustomUI) return reply({ ok: false, code: "UNSUPPORTED", message: "غير مدعوم" });
+        const cfg = require("./perks").normalizePerksConfig(msg);
+        const r = await store.writeCustomUI(rid, (ui) => ({ ...ui, perks: cfg }));
+        if (!r || !r.ok) return reply({ ok: false, code: "CONFLICT", message: "حصل تعديل تاني، حاول تاني" });
+        reply({ ok: true, config: cfg });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
     // The POS reports what happened to an online order (accepted / rejected / done); the customer's "My orders" reads it.
     socket.on("order:status", async (msg, cb) => {
       const reply = typeof cb === "function" ? cb : () => {};
@@ -516,6 +535,48 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
     }
   });
 
+  // One discount per order (coupon, welcome gift or points). Mutates the built order's totals. Customer token needed for gift/points.
+  async function applyPerks(restaurant, req, order) {
+    const b = req.body || {};
+    if (!perks || !(b.couponCode || b.useGift === true || b.usePoints === true)) return {};
+    const r = await perks.resolve({ restaurant, customer: req.customer || null, subTotal: order.subTotal, body: b, deviceId: req.get("x-device-id") || b.deviceId });
+    if (r.error) return r;
+    if (r.discount > 0) {
+      order.discountAmount = round2(order.discountAmount + r.discount);
+      order.totalPrice = Math.max(0, round2(order.totalPrice - r.discount));
+      order.couponCode = r.couponCode;
+    }
+    return r.discount > 0 ? r : {};
+  }
+  const optAuth = (req, res, next) => (typeof protectOptional === "function" ? protectOptional(req, res, next) : next());
+  // What the customer has: welcome gift, points. Public coupons are never listed (codes are secret).
+  app.get("/api/v1/live-orders/:slug/perks", optAuth, async (req, res) => {
+    try {
+      const restaurant = await store.getRestaurantBySlug(cleanText(req.params.slug, 80).toLowerCase());
+      if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
+      if (!perks) return res.json({ status: "success", data: { gift: null, loyalty: null } });
+      res.set("Cache-Control", "no-store");
+      res.json({ status: "success", data: await perks.overview(restaurant, req.customer || null, req.get("x-device-id") || req.query.deviceId) });
+    } catch (e) { res.status(500).json({ message: "حصلت مشكلة" }); }
+  });
+  // Price check without placing the order: same body as placing it, returns the totals with the discount applied.
+  app.post("/api/v1/live-orders/:slug/quote", optAuth, async (req, res) => {
+    try {
+      if (rateLimited(req.ip)) return res.status(429).json({ message: "طلبات كتير، حاول بعد شوية", code: "RATE_LIMIT" });
+      const restaurant = await store.getRestaurantBySlug(cleanText(req.params.slug, 80).toLowerCase());
+      if (!restaurant) return res.status(404).json({ message: "المكان غير موجود" });
+      const products = await store.getProducts(restaurant._id);
+      const built = buildOrder({ restaurant, products, body: req.body || {}, posOnline: true });
+      if (built.error) return res.status(400).json({ message: built.error, code: built.code });
+      const o = built.order;
+      const before = o.discountAmount;
+      const perk = await applyPerks(restaurant, req, o);
+      if (perk.error) return res.status(400).json({ message: perk.error, code: perk.code });
+      const deliveryFee = o.deliveryFee || 0;
+      res.json({ status: "success", data: { subTotal: o.subTotal, discountAmount: o.discountAmount, perkDiscount: round2(o.discountAmount - before), couponCode: o.couponCode || null, totalPrice: o.totalPrice, deliveryFee, grandTotal: round2(o.totalPrice + deliveryFee) } });
+    } catch (e) { res.status(500).json({ message: "حصلت مشكلة" }); }
+  });
+
   app.post("/api/v1/live-orders/:slug/orders", (req, res, next) => (typeof protectOptional === "function" ? protectOptional(req, res, next) : next()), async (req, res) => {
     try {
       if (rateLimited(req.ip)) return res.status(429).json({ message: "طلبات كتير، حاول بعد شوية", code: "RATE_LIMIT" });
@@ -529,8 +590,12 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
       const products = await store.getProducts(restaurant._id);
       const built = buildOrder({ restaurant, products, body: req.body || {}, posOnline: true });
       if (built.error) return res.status(400).json({ message: built.error, code: built.code });
+      const perk = await applyPerks(restaurant, req, built.order);
+      if (perk.error) return res.status(400).json({ message: perk.error, code: perk.code });
       const id = crypto.randomUUID();
       const payload = { ...built.order, slug: restaurant.slug, source: "online-menu" };
+      if (perk.couponCode) payload.couponCode = perk.couponCode;
+      if (perk.commit) { try { await perk.commit(); } catch (e) { log.error("coupon count error:", e.message); } }
       await db.insertOrder(id, restaurant._id, payload);
       deliver(restaurant._id); // fire and forget; the inbox keeps it until ACK
       if (req.customer && typeof onCustomerOrder === "function") {

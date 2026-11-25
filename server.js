@@ -279,7 +279,7 @@ const restrictTo = (...roles) => {
       stream.end(buffer);
     }),
   });
-  const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo, appBuild, protectOptional,
+  const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo, appBuild, protectOptional, perks: require("./perks").createPerks({ supabase }),
     onOrderStatus: async ({ restaurantId, id, status }) => {
       const { error } = await supabase.from('orders').update({ status }).eq('_id', id).eq('restaurant', restaurantId).not('customerId', 'is', null);
       if (error) throw error;
@@ -293,7 +293,7 @@ const restrictTo = (...roles) => {
         customerId: customer._id, items: payload.items, subTotal: payload.subTotal || 0, taxAmount: payload.taxAmount || 0,
         serviceAmount: payload.serviceAmount || 0, discountAmount: payload.discountAmount || 0,
         totalPrice: Math.round(((payload.totalPrice || 0) + (payload.deliveryFee || 0)) * 100) / 100,
-        status: 'pending', type, customerName: payload.customerName || customer.name, phone: payload.customerPhone || customer.phone,
+        status: 'pending', type, couponCode: payload.couponCode || undefined, customerName: payload.customerName || customer.name, phone: payload.customerPhone || customer.phone,
         notes: payload.orderNote || undefined,
       }]);
       if (error) throw error;
