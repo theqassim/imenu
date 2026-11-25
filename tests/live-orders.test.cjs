@@ -283,3 +283,36 @@ test("rest backend: missing tables or a bad key give a short non-secret reason",
   }
   await pool.end().catch(() => {});
 });
+
+test("customer token on a live order records it on the account; anonymous orders do not", async () => {
+  const express = require("express");
+  const { Server: SIO } = require("socket.io");
+  const { io: cli } = require("socket.io-client");
+  const { createLiveOrders: mk, sha256 } = require("../live-orders.js");
+  const rows = [];
+  const fakeDb = {
+    ensure: async () => {}, getKey: async () => ({ key_hash: sha256("imk_test"), key_hint: "test" }), setKey: async () => {},
+    insertOrder: async (id, rid, payload) => { rows.push({ id, rid, payload }); }, oldest: async () => null, bumpAttempts: async () => {}, remove: async () => {},
+  };
+  const restaurant = { ...baseRestaurant, customUI: { liveOrders: { enabled: true } } };
+  const store = { getRestaurantBySlug: async (s) => (s === "demo" ? restaurant : null), getRestaurantById: async () => restaurant, getRestaurantByOwner: async () => restaurant, getProducts: async () => products };
+  const app = express(); app.use(express.json());
+  const srv = require("http").createServer(app); const io = new SIO(srv);
+  const recorded = [];
+  const protectOptional = (req, res, next) => { if (req.headers.authorization === "Bearer cust") req.customer = { _id: "c1", name: "Ali", phone: "01000000000" }; next(); };
+  mk({ app, io, db: fakeDb, store, protect: (q, s, n) => n(), restrictTo: () => (a, b, n) => n(), log: { log() {}, error() {} }, protectOptional,
+    onCustomerOrder: async (x) => { recorded.push(x); } });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  const base = "http://127.0.0.1:" + srv.address().port;
+  const pos = cli(base + "/pos", { auth: { slug: "demo", key: "imk_test" }, reconnection: false, transports: ["websocket"] });
+  try {
+    await new Promise((res, rej) => { pos.on("ready", res); pos.on("connect_error", rej); });
+    const post = (h) => fetch(base + "/api/v1/live-orders/demo/orders", { method: "POST", headers: { "Content-Type": "application/json", ...h }, body: JSON.stringify({ items: [{ productId: "p1", qty: 1 }], tableNumber: "3" }) });
+    assert.equal((await post({})).status, 202);
+    assert.equal(recorded.length, 0);
+    assert.equal((await post({ Authorization: "Bearer cust" })).status, 202);
+    assert.equal(recorded.length, 1);
+    assert.equal(recorded[0].customer._id, "c1");
+    assert.equal(recorded[0].payload.items[0].qty, 1);
+  } finally { pos.close(); io.close(); srv.close(); }
+});

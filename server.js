@@ -278,7 +278,21 @@ const restrictTo = (...roles) => {
       stream.end(buffer);
     }),
   });
-  const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo, appBuild,
+  const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo, appBuild, protectOptional,
+    onCustomerOrder: async ({ customer, restaurantId, payload }) => {
+      const { data: lastOrder } = await supabase.from('orders').select('orderNum').eq('restaurant', restaurantId).order('orderNum', { ascending: false }).limit(1).single();
+      const nextOrderNum = lastOrder && lastOrder.orderNum ? lastOrder.orderNum + 1 : 1;
+      const type = payload.orderType === "delivery" ? "delivery" : payload.orderType === "takeaway" ? "takeaway" : "dine_in";
+      const { error } = await supabase.from('orders').insert([{
+        restaurant: restaurantId, tableNumber: payload.tableNumber || (type === "takeaway" ? "تيك أواي" : ""), orderNum: nextOrderNum,
+        customerId: customer._id, items: payload.items, subTotal: payload.subTotal || 0, taxAmount: payload.taxAmount || 0,
+        serviceAmount: payload.serviceAmount || 0, discountAmount: payload.discountAmount || 0,
+        totalPrice: Math.round(((payload.totalPrice || 0) + (payload.deliveryFee || 0)) * 100) / 100,
+        status: 'pending', type, customerName: payload.customerName || customer.name, phone: payload.customerPhone || customer.phone,
+        notes: payload.orderNote || undefined,
+      }]);
+      if (error) throw error;
+    },
     onPosConnect: (socket, rid) => { if (timedReservations) timedReservations.posAttach(socket, rid); } });
   // Timed reservations: dormant until the owner enables them (customUI.timedReservations.enabled) and sql/reservations.sql has been run.
   {
@@ -668,12 +682,12 @@ app.get("/api/v1/customers/orders", protectCustomer, async (req, res) => {
 
 app.get("/api/v1/customers/addresses", protectCustomer, async (req, res) => {
   try {
-    const { data: addresses, error } = await supabase
-      .from('imenu_customer_addresses')
-      .select('_id, label, address')
-      .eq('customer', req.customer._id)
-      .order('createdAt', { ascending: true });
+    const readAddr = (cols) => supabase.from('imenu_customer_addresses').select(cols)
+      .eq('customer', req.customer._id).order('createdAt', { ascending: true });
+    let { data: addresses, error } = await readAddr('_id, label, address, zone_name');
+    if (error) ({ data: addresses, error } = await readAddr('_id, label, address'));
     if (error) throw error;
+    addresses = (addresses || []).map((a) => { if (a.zone_name) { a.zoneName = a.zone_name; } delete a.zone_name; return a; });
     res.status(200).json({ status: "success", data: { addresses } });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
@@ -682,13 +696,19 @@ app.get("/api/v1/customers/addresses", protectCustomer, async (req, res) => {
 
 app.post("/api/v1/customers/addresses", protectCustomer, async (req, res) => {
   try {
-    const { label, address } = req.body || {};
+    const { label, address, zoneName } = req.body || {};
     if (!address || !address.trim()) return res.status(400).json({ message: "اكتب العنوان" });
-    const { data: saved, error } = await supabase
-      .from('imenu_customer_addresses')
-      .insert([{ customer: req.customer._id, label: (label || "المنزل").trim(), address: address.trim() }])
-      .select('_id, label, address').single();
+    const row = { customer: req.customer._id, label: (label || "المنزل").trim(), address: address.trim() };
+    const zone = typeof zoneName === "string" ? zoneName.trim().slice(0, 80) : "";
+    let saved, error;
+    // zone_name needs sql/customer-address-zone.sql; until it is run, save without it.
+    ({ data: saved, error } = await supabase.from('imenu_customer_addresses')
+      .insert([zone ? { ...row, zone_name: zone } : row]).select(zone ? '_id, label, address, zone_name' : '_id, label, address').single());
+    if (error && zone) {
+      ({ data: saved, error } = await supabase.from('imenu_customer_addresses').insert([row]).select('_id, label, address').single());
+    }
     if (error) throw error;
+    if (saved && saved.zone_name) { saved.zoneName = saved.zone_name; delete saved.zone_name; }
     res.status(201).json({ status: "success", data: { address: saved } });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });

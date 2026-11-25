@@ -210,7 +210,7 @@ function generateKey() {
   return KEY_PREFIX + crypto.randomBytes(24).toString("base64url");
 }
 
-function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect, appBuild = null }) {
+function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect, appBuild = null, protectOptional = null, onCustomerOrder = null }) {
   const db = dbIn || pgBackend(pool);
   const connections = new Map(); // restaurantId -> Set(socket)
   const locks = new Map(); // restaurantId -> Promise chain
@@ -502,7 +502,7 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
     }
   });
 
-  app.post("/api/v1/live-orders/:slug/orders", async (req, res) => {
+  app.post("/api/v1/live-orders/:slug/orders", (req, res, next) => (typeof protectOptional === "function" ? protectOptional(req, res, next) : next()), async (req, res) => {
     try {
       if (rateLimited(req.ip)) return res.status(429).json({ message: "طلبات كتير، حاول بعد شوية", code: "RATE_LIMIT" });
       const restaurant = await store.getRestaurantBySlug(cleanText(req.params.slug, 80).toLowerCase());
@@ -519,6 +519,11 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
       const payload = { ...built.order, slug: restaurant.slug, source: "online-menu" };
       await db.insertOrder(id, restaurant._id, payload);
       deliver(restaurant._id); // fire and forget; the inbox keeps it until ACK
+      if (req.customer && typeof onCustomerOrder === "function") {
+        // Keep a record on the customer's account so the app's My Orders shows it. Never fails the order.
+        try { await onCustomerOrder({ customer: req.customer, restaurantId: restaurant._id, payload, id }); }
+        catch (e) { log.error("customer order record error:", e.message); }
+      }
       const deliveryFee = payload.deliveryFee || 0;
       res.status(202).json({ status: "success", data: { id, totalPrice: payload.totalPrice, deliveryFee, grandTotal: round2(payload.totalPrice + deliveryFee) } });
     } catch (e) {
