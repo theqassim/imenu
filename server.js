@@ -455,9 +455,43 @@ app.get("/api/v1/app/latest/:slug", async (req, res) => {
     const apk = restaurant.customUI && restaurant.customUI.appApk;
     if (!apk || !apk.url) return res.status(404).json({ message: "لسه مفيش نسخة تطبيق منشورة" });
     res.set("Cache-Control", "no-store");
-    res.status(200).json({ status: "success", data: apk });
+    // The stored URL has no file extension, so phones saved it as "test" with no type. Point the button at a real .apk route instead.
+    const slug = String(req.params.slug).toLowerCase();
+    const dl = /^[a-z0-9][a-z0-9-]{0,60}$/.test(slug) ? `/app/download/${slug}.apk` : apk.url;
+    res.status(200).json({ status: "success", data: { ...apk, url: dl, directUrl: apk.url } });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+// Streams the published APK with a proper file name and Android package content type, so the phone offers to install it.
+app.get("/app/download/:file", async (req, res) => {
+  try {
+    const m = /^([a-z0-9][a-z0-9-]{0,60})\.apk$/.exec(String(req.params.file || "").toLowerCase());
+    if (!m) return res.status(404).send("Not found");
+    const slug = m[1];
+    const { data: restaurant, error } = await supabase.from('restaurants').select('customUI').eq('slug', slug).single();
+    const url = !error && restaurant && restaurant.customUI && restaurant.customUI.appApk && restaurant.customUI.appApk.url;
+    if (!url) return res.status(404).send("Not found");
+    let u; try { u = new URL(url); } catch (e) { return res.status(404).send("Not found"); }
+    if (u.protocol !== "https:" || u.hostname !== "res.cloudinary.com") return res.status(404).send("Not found");
+    const https = require("https");
+    const fetchStream = (target, hops) => https.get(target, (up) => {
+      if (up.statusCode >= 300 && up.statusCode < 400 && up.headers.location && hops < 2) {
+        up.resume();
+        const nx = new URL(up.headers.location, target);
+        if (nx.protocol !== "https:" || !/(^|\.)cloudinary\.com$/.test(nx.hostname)) return res.status(502).send("Bad upstream");
+        return fetchStream(nx, hops + 1);
+      }
+      if (up.statusCode !== 200) { up.resume(); return res.status(502).send("Bad upstream"); }
+      res.status(200);
+      res.set({ "Content-Type": "application/vnd.android.package-archive", "Content-Disposition": `attachment; filename="iMenu-${slug}.apk"`, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+      if (up.headers["content-length"]) res.set("Content-Length", up.headers["content-length"]);
+      up.pipe(res);
+    }).on("error", () => { if (!res.headersSent) res.status(502).send("Bad upstream"); else res.destroy(); });
+    fetchStream(u, 0);
+  } catch (err) {
+    if (!res.headersSent) res.status(500).send("Error");
   }
 });
 
