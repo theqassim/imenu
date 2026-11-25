@@ -4746,6 +4746,29 @@ function trackOrder(orderId) {
           .catch(function () {});
       })();
     </script>
+    <script>
+      // Customer app download button (shows only when the owner published an APK).
+      (function () {
+        try {
+          var slug = window.location.pathname.split("/").filter(Boolean).pop();
+          if (!slug) return;
+          fetch("/api/v1/app/latest/" + encodeURIComponent(slug), { cache: "no-store" })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (j) {
+              if (!j || !j.data || !j.data.url) return;
+              var a = document.createElement("a");
+              a.href = j.data.url;
+              a.className = "app-download-btn";
+              a.textContent = "📲 حمّل تطبيقنا";
+              a.style.cssText = "position:fixed;bottom:16px;inset-inline-start:16px;z-index:9998;" +
+                "background:#111;color:#fff;padding:12px 18px;border-radius:999px;" +
+                "font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.35);";
+              document.body.appendChild(a);
+            })
+            .catch(function () {});
+        } catch (e) {}
+      })();
+    </script>
     <script src="/assets/js/web-i18n.js"></script>
 </body>
 </html>

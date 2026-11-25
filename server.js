@@ -399,6 +399,58 @@ app.post("/api/v1/users/login", async (req, res) => {
 });
 
 
+
+// ==================== Customer-app APK distribution ====================
+// Owner uploads the built APK once; customers download it from the menu page.
+
+const apkUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 80 * 1024 * 1024 } });
+
+app.post("/api/v1/app/upload", protect, restrictTo("owner", "admin"), apkUpload.single("apk"), async (req, res) => {
+  try {
+    const { data: restaurant } = await supabase.from('restaurants').select('_id, slug, customUI').eq('owner', req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
+    if (!req.file) return res.status(400).json({ message: "ارفع ملف الـ APK" });
+    const name = (req.file.originalname || "").toLowerCase();
+    if (!name.endsWith(".apk")) return res.status(400).json({ message: "الملف لازم يكون بصيغة .apk" });
+    // An APK is a ZIP: reject anything that does not start with the ZIP signature.
+    const b = req.file.buffer;
+    if (!b || b.length < 4 || b[0] !== 0x50 || b[1] !== 0x4b || b[2] !== 0x03 || b[3] !== 0x04) return res.status(400).json({ message: "الملف مش APK صالح" });
+
+    const version = (req.body.version || "").toString().trim();
+    const url = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "customer-apps", resource_type: "raw", public_id: restaurant.slug, overwrite: true },
+        (error, result) => error ? reject(error) : resolve(result.secure_url));
+      stream.end(req.file.buffer);
+    });
+
+    // Same revision-checked writer the other customUI saves use, so a concurrent owner settings save is not overwritten.
+    const appApk = { url, version, uploadedAt: new Date().toISOString() };
+    const { writeCustomUI } = require("./custom-ui-write");
+    await writeCustomUI(supabase, restaurant._id, (cur) => Object.assign({}, cur, { appApk }));
+
+    res.status(200).json({ status: "success", data: appApk });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+app.get("/api/v1/app/latest/:slug", async (req, res) => {
+  try {
+    const { data: restaurant, error } = await supabase
+      .from('restaurants').select('customUI').eq('slug', req.params.slug).single();
+    if (error || !restaurant) return res.status(404).json({ message: "المكان غير موجود" });
+    const apk = restaurant.customUI && restaurant.customUI.appApk;
+    if (!apk || !apk.url) return res.status(404).json({ message: "لسه مفيش نسخة تطبيق منشورة" });
+    res.set("Cache-Control", "no-store");
+    res.status(200).json({ status: "success", data: apk });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+// ==================== End customer-app APK distribution ====================
+
 // ==================== Customer accounts (per-restaurant customer app) ====================
 // Tables come from sql/customer-accounts.sql. Uses the same JWT_SECRET (90d) and bcrypt.
 
