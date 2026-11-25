@@ -4747,23 +4747,52 @@ function trackOrder(orderId) {
       })();
     </script>
     <script>
-      // Customer app download button (shows only when the owner published an APK).
+      // Customer app download button: Android phones only, when the owner published an APK or a Google Play link.
       (function () {
         try {
+          if (!/Android/i.test(navigator.userAgent || "")) return;
           var slug = window.location.pathname.split("/").filter(Boolean).pop();
           if (!slug) return;
           fetch("/api/v1/app/latest/" + encodeURIComponent(slug), { cache: "no-store" })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (j) {
               if (!j || !j.data || !j.data.url) return;
+              var css = document.createElement("style");
+              css.textContent =
+                ".app-download-btn{position:fixed;bottom:max(16px,env(safe-area-inset-bottom));inset-inline-start:16px;z-index:9998;" +
+                "display:inline-flex;align-items:center;gap:10px;padding:11px 18px 11px 14px;border-radius:14px;text-decoration:none;" +
+                "background:var(--primary);color:var(--app-btn-fg,#fff);font-weight:700;font-size:14px;letter-spacing:.2px;" +
+                "box-shadow:0 8px 24px rgba(0,0,0,.28),inset 0 0 0 1px rgba(255,255,255,.18);-webkit-tap-highlight-color:transparent;transition:transform .15s ease}" +
+                ".app-download-btn:active{transform:scale(.96)}" +
+                ".app-download-btn .adb-ico{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.2);display:inline-flex;align-items:center;justify-content:center;flex:none}" +
+                ".app-download-btn .adb-ico svg{width:18px;height:18px}" +
+                ".app-download-btn .adb-sub{display:block;font-size:10.5px;font-weight:500;opacity:.8;line-height:1.1}" +
+                ".app-download-btn .adb-main{display:block;line-height:1.2}";
+              document.head.appendChild(css);
+              var en = typeof isEn === "function" && isEn();
               var a = document.createElement("a");
               a.href = j.data.url;
               a.className = "app-download-btn";
-              a.textContent = "📲 حمّل تطبيقنا";
-              a.style.cssText = "position:fixed;bottom:16px;inset-inline-start:16px;z-index:9998;" +
-                "background:#111;color:#fff;padding:12px 18px;border-radius:999px;" +
-                "font-weight:700;font-size:14px;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.35);";
+              a.setAttribute("dir", en ? "ltr" : "rtl");
+              a.innerHTML =
+                '<span class="adb-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></span>' +
+                '<span><span class="adb-sub">' + (en ? "Android app" : "تطبيق أندرويد") + '</span><span class="adb-main">' + (en ? "Get our app" : "حمّل تطبيقنا") + "</span></span>";
+              // Pick readable text on the brand color.
+              try {
+                var c = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
+                var m = /^#([0-9a-f]{6})$/i.exec(c);
+                if (m) {
+                  var n = parseInt(m[1], 16), lum = (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+                  a.style.setProperty("--app-btn-fg", lum > 0.6 ? "#191307" : "#fff");
+                }
+              } catch (e) {}
               document.body.appendChild(a);
+              window.addEventListener("imenu-lang-changed", function () {
+                var e2 = typeof isEn === "function" && isEn();
+                a.setAttribute("dir", e2 ? "ltr" : "rtl");
+                a.querySelector(".adb-sub").textContent = e2 ? "Android app" : "تطبيق أندرويد";
+                a.querySelector(".adb-main").textContent = e2 ? "Get our app" : "حمّل تطبيقنا";
+              });
             })
             .catch(function () {});
         } catch (e) {}
