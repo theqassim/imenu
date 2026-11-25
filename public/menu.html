@@ -2640,6 +2640,13 @@
             if(config.customResDesc && config.customResDesc.trim() !== "") {
                 resDescEl.innerText = config.customResDesc;
             }
+            const resDescEn = (config.customResDescEn || "").trim();
+            if (resDescEn) {
+                const ar = (config.customResDesc || "").trim() || "قائمة المأكولات والمشروبات";
+                const applyDesc = function () { resDescEl.innerText = isEn() ? resDescEn : ar; };
+                applyDesc();
+                window.addEventListener("imenu-lang-changed", function () { setTimeout(applyDesc, 0); });
+            }
         }
 
         const searchWrapper = document.querySelector(".search-wrapper");

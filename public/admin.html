@@ -3650,6 +3650,7 @@
                       <input type="color" id="ui-resDescColor" oninput="setUiParam('resDescColor', this.value)" style="width:30px; height:30px; border:none; padding:0; background:none;">
                    </div>
                    <input type="text" id="ui-customResDesc" placeholder="تعديل الوصف (اختياري)" oninput="setUiParam('customResDesc', this.value)" style="font-size:12px;">
+                   <input type="text" id="ui-customResDescEn" dir="ltr" placeholder="Description in English (optional)" oninput="setUiParam('customResDescEn', this.value)" style="font-size:12px; margin-top:6px;">
                    
                    <div style="width:100%; height:1px; background:#cbd5e1; margin:15px 0;"></div>
 
@@ -6605,6 +6606,7 @@ window.addBulkRow = function() { addBulkRows(1); };
         
         showResDesc: true,
         customResDesc: "",
+        customResDescEn: "",
         resDescColor: "#ffffff",
         
         showSearch: true,
@@ -6672,6 +6674,7 @@ window.addBulkRow = function() { addBulkRows(1); };
 
         document.getElementById("ui-showResDesc").checked = currentDesign.showResDesc !== false;
         document.getElementById("ui-customResDesc").value = currentDesign.customResDesc || "";
+        document.getElementById("ui-customResDescEn").value = currentDesign.customResDescEn || "";
         document.getElementById("ui-resDescColor").value = currentDesign.resDescColor || "#ffffff";
 
         document.getElementById("ui-showSearch").checked = currentDesign.showSearch !== false;
