@@ -449,6 +449,94 @@ app.get("/api/v1/app/latest/:slug", async (req, res) => {
   }
 });
 
+
+// Auto-provision a Firebase Android app per venue so push works with no console work.
+app.post("/api/v1/app/firebase", protect, restrictTo("owner", "admin"), async (req, res) => {
+  try {
+    const { data: restaurant } = await supabase.from('restaurants').select('_id, slug, customUI, restaurantName').eq('owner', req.user._id).single();
+    if (!restaurant) return res.status(404).json({ message: "لا يوجد مكان مرتبط بحسابك" });
+    if (!firebaseServiceAccount?.project_id) return res.status(503).json({ message: "خدمة الإشعارات غير مفعّلة على السيرفر" });
+
+    const slugNorm = String(restaurant.slug || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!slugNorm) return res.status(400).json({ message: "اسم المكان غير صالح لإنشاء تطبيق" });
+    const packageName = "com.imenu.customer." + slugNorm;
+
+    if (restaurant.customUI?.appFirebase?.appId) {
+      return res.status(200).json({ status: "success", data: restaurant.customUI.appFirebase });
+    }
+
+    const token = await getScopedFirebaseToken(
+      "https://www.googleapis.com/auth/firebase",
+      (t, exp) => { firebaseMgmtToken = t; firebaseMgmtTokenExpiresAt = exp; },
+      firebaseMgmtToken && Date.now() < firebaseMgmtTokenExpiresAt - 60000 ? firebaseMgmtToken : null,
+    );
+    const headers = { Authorization: "Bearer " + token, "Content-Type": "application/json" };
+    const projectPath = "projects/" + firebaseServiceAccount.project_id;
+
+    // Find an existing Android app with this package name first.
+    let appName = null;
+    const listRes = await fetch(`https://firebase.googleapis.com/v1beta1/${projectPath}/androidApps?pageSize=100`, { headers });
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      for (const a of listData.apps || []) {
+        if (a.packageName === packageName) { appName = a.name; break; }
+      }
+    }
+    if (!appName) {
+      const createRes = await fetch(`https://firebase.googleapis.com/v1beta1/${projectPath}/androidApps`, {
+        method: "POST", headers,
+        body: JSON.stringify({ displayName: restaurant.restaurantName || packageName, packageName }),
+      });
+      const createData = await createRes.json();
+      if (!createRes.ok || !createData.name) {
+        const gmsg = createData.error?.message || `Firebase error ${createRes.status}`;
+        return res.status(502).json({ message: "تعذر إنشاء تطبيق الإشعارات: " + gmsg });
+      }
+      // The create call returns an Operation; poll until the app resource exists.
+      for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 1500));
+        const opRes = await fetch(`https://firebase.googleapis.com/v1beta1/${createData.name}`, { headers });
+        const opData = await opRes.json();
+        if (opData.done) {
+          appName = opData.response?.name || (opData.response && opData.response.name);
+          if (!appName && opData.error) return res.status(502).json({ message: "Firebase: " + opData.error.message });
+          break;
+        }
+      }
+      if (!appName) {
+        const relist = await fetch(`https://firebase.googleapis.com/v1beta1/${projectPath}/androidApps?pageSize=100`, { headers });
+        const relistData = await relist.json();
+        for (const a of relistData.apps || []) {
+          if (a.packageName === packageName) { appName = a.name; break; }
+        }
+      }
+      if (!appName) return res.status(502).json({ message: "التطبيق اتعمل لكن تعذر تأكيده، حاول تاني" });
+    }
+
+    const cfgRes = await fetch(`https://firebase.googleapis.com/v1beta1/${appName}/config`, { headers });
+    const cfgData = await cfgRes.json();
+    if (!cfgRes.ok || !cfgData.configFileContents) {
+      return res.status(502).json({ message: "تعذر قراءة إعدادات التطبيق من Firebase" });
+    }
+    const gs = JSON.parse(Buffer.from(cfgData.configFileContents, "base64").toString("utf8"));
+    const client = (gs.client || [])[0] || {};
+    const appFirebase = {
+      packageName,
+      appId: client.client_info?.mobilesdk_app_id || "",
+      apiKey: (client.api_key || []).find(k => k.current_key)?.current_key || "",
+      projectId: gs.project_info?.project_id || "",
+      senderId: gs.project_info?.project_number || "",
+    };
+
+    const { writeCustomUI } = require("./custom-ui-write");
+    await writeCustomUI(supabase, restaurant._id, (cur) => Object.assign({}, cur, { appFirebase }));
+
+    res.status(200).json({ status: "success", data: appFirebase });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
 // ==================== End customer-app APK distribution ====================
 
 // ==================== Customer accounts (per-restaurant customer app) ====================
@@ -3194,9 +3282,18 @@ app.post("/api/v1/owner/fcm-unsubscribe", protect, restrictTo("owner"), async (r
 });
 
 async function getFirebaseAccessToken() {
-  if (firebaseAccessToken && Date.now() < firebaseAccessTokenExpiresAt - 60000) {
-    return firebaseAccessToken;
-  }
+  return getScopedFirebaseToken(
+    "https://www.googleapis.com/auth/firebase.messaging",
+    (t, exp) => { firebaseAccessToken = t; firebaseAccessTokenExpiresAt = exp; },
+    firebaseAccessToken && Date.now() < firebaseAccessTokenExpiresAt - 60000 ? firebaseAccessToken : null,
+  );
+}
+
+let firebaseMgmtToken = null;
+let firebaseMgmtTokenExpiresAt = 0;
+
+async function getScopedFirebaseToken(scope, setCache, cached) {
+  if (cached) return cached;
   if (!firebaseServiceAccount?.client_email || !firebaseServiceAccount?.private_key) {
     throw new Error("Firebase service account is not configured");
   }
@@ -3205,7 +3302,7 @@ async function getFirebaseAccessToken() {
   const assertion = jwt.sign(
     {
       iss: firebaseServiceAccount.client_email,
-      scope: "https://www.googleapis.com/auth/firebase.messaging",
+      scope,
       aud: "https://oauth2.googleapis.com/token",
       iat: now,
       exp: now + 3600,
@@ -3225,9 +3322,9 @@ async function getFirebaseAccessToken() {
   if (!tokenResponse.ok || !tokenData.access_token) {
     throw new Error(`Firebase OAuth failed: ${tokenData.error_description || tokenData.error || tokenResponse.status}`);
   }
-  firebaseAccessToken = tokenData.access_token;
-  firebaseAccessTokenExpiresAt = Date.now() + Number(tokenData.expires_in || 3600) * 1000;
-  return firebaseAccessToken;
+  const expiry = Date.now() + Number(tokenData.expires_in || 3600) * 1000;
+  setCache(tokenData.access_token, expiry);
+  return tokenData.access_token;
 }
 
 async function sendFirebasePush(deviceToken, payloadObj) {
