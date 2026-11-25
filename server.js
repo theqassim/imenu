@@ -212,8 +212,17 @@ const protectOptional = async (req, res, next) => {
       .select('*')
       .eq('_id', decoded.id)
       .single();
-      
-    if (error || !currentUser) return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
+
+    if (error || !currentUser) {
+      // Customer-app token: link the order to the customer account.
+      const { data: customer } = await supabase
+        .from('imenu_customers')
+        .select('_id, name, phone')
+        .eq('_id', decoded.id)
+        .single();
+      if (customer) { req.customer = customer; return next(); }
+      return res.status(401).json({ message: "المستخدم لم يعد موجوداً." });
+    }
     if (currentUser) req.user = currentUser;
     next();
   } catch (err) {
@@ -388,6 +397,133 @@ app.post("/api/v1/users/login", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+// ==================== Customer accounts (per-restaurant customer app) ====================
+// Tables come from sql/customer-accounts.sql. Uses the same JWT_SECRET (90d) and bcrypt.
+
+const protectCustomer = async (req, res, next) => {
+  try {
+    const h = req.headers.authorization || "";
+    if (!h.startsWith("Bearer")) return res.status(401).json({ message: "سجّل دخولك الأول" });
+    const decoded = jwt.verify(h.split(" ")[1], process.env.JWT_SECRET);
+    const { data: customer, error } = await supabase
+      .from('imenu_customers').select('_id, name, phone, "createdAt"').eq('_id', decoded.id).single();
+    if (error || !customer) return res.status(401).json({ message: "الحساب غير موجود" });
+    req.customer = customer;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "سجّل دخولك الأول" });
+  }
+};
+
+const PHONE_RE = /^01[0-9]{9}$/;
+
+app.post("/api/v1/customers/signup", async (req, res) => {
+  try {
+    const { name, phone, password } = req.body || {};
+    if (!name || !name.trim()) return res.status(400).json({ message: "اكتب اسمك" });
+    if (!PHONE_RE.test((phone || "").trim())) return res.status(400).json({ message: "رقم التليفون غير صحيح" });
+    if (!password || password.length < 6) return res.status(400).json({ message: "كلمة المرور 6 أحرف على الأقل" });
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const { data: customer, error } = await supabase
+      .from('imenu_customers')
+      .insert([{ name: name.trim(), phone: phone.trim(), password: hashedPassword }])
+      .select('_id, name, phone').single();
+
+    if (error) {
+      if (error.code === '23505') return res.status(400).json({ message: "الرقم ده مسجل قبل كده، سجّل دخولك" });
+      throw error;
+    }
+    const token = signToken(customer._id);
+    res.status(201).json({ status: "success", token, data: { customer } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+app.post("/api/v1/customers/login", async (req, res) => {
+  try {
+    const { phone, password } = req.body || {};
+    if (!phone || !password) return res.status(400).json({ message: "أدخل رقم التليفون وكلمة المرور" });
+
+    const { data: customer, error } = await supabase
+      .from('imenu_customers').select('*').eq('phone', phone.trim()).single();
+    if (error || !customer || !(await bcrypt.compare(password, customer.password))) {
+      return res.status(401).json({ message: "رقم التليفون أو كلمة المرور غير صحيحة" });
+    }
+    const token = signToken(customer._id);
+    customer.password = undefined;
+    res.status(200).json({ status: "success", token, data: { customer } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+app.get("/api/v1/customers/me", protectCustomer, async (req, res) => {
+  res.status(200).json({ status: "success", data: { customer: req.customer } });
+});
+
+app.get("/api/v1/customers/orders", protectCustomer, async (req, res) => {
+  try {
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('_id, restaurant, orderNum, status, type, items, totalPrice, "createdAt"')
+      .eq('customerId', req.customer._id)
+      .order('createdAt', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    res.status(200).json({ status: "success", data: { orders } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+app.get("/api/v1/customers/addresses", protectCustomer, async (req, res) => {
+  try {
+    const { data: addresses, error } = await supabase
+      .from('imenu_customer_addresses')
+      .select('_id, label, address')
+      .eq('customer', req.customer._id)
+      .order('createdAt', { ascending: true });
+    if (error) throw error;
+    res.status(200).json({ status: "success", data: { addresses } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+app.post("/api/v1/customers/addresses", protectCustomer, async (req, res) => {
+  try {
+    const { label, address } = req.body || {};
+    if (!address || !address.trim()) return res.status(400).json({ message: "اكتب العنوان" });
+    const { data: saved, error } = await supabase
+      .from('imenu_customer_addresses')
+      .insert([{ customer: req.customer._id, label: (label || "المنزل").trim(), address: address.trim() }])
+      .select('_id, label, address').single();
+    if (error) throw error;
+    res.status(201).json({ status: "success", data: { address: saved } });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+app.delete("/api/v1/customers/addresses/:id", protectCustomer, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('imenu_customer_addresses')
+      .delete()
+      .eq('_id', req.params.id)
+      .eq('customer', req.customer._id);
+    if (error) throw error;
+    res.status(204).json({ status: "success" });
+  } catch (err) {
+    res.status(400).json({ status: "fail", message: err.message });
+  }
+});
+
+// ==================== End customer accounts ====================
 
 app.patch("/api/v1/users/update-password", protect, async (req, res) => {
   try {
@@ -1901,7 +2037,7 @@ app.post("/api/v1/orders", protectOptional, async (req, res) => {
 
       const { data: newOrder, error } = await supabase.from('orders').insert([{
         restaurant: targetRestaurant, tableNumber: targetTable, orderNum: nextOrderNum,
-        createdBy: req.user ? req.user._id : undefined, items,
+        createdBy: req.user ? req.user._id : undefined, customerId: req.customer ? req.customer._id : undefined, items,
         subTotal: subTotal || calcTotal, taxAmount: taxAmount || 0, serviceAmount: serviceAmount || 0,
         couponCode, discountAmount: discountAmount || 0, totalPrice: totalPrice || calcTotal,
         status: 'pending', type: type || (targetTable === "تيك أواي" ? 'takeaway' : 'dine_in'),
