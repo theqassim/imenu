@@ -268,7 +268,17 @@ const restrictTo = (...roles) => {
     updateRestaurantCustomUI: async (id, customUI) => { const { error } = await supabase.from("restaurants").update({ customUI }).eq("_id", id); if (error) throw error; },
   };
   let timedReservations = null;
-  const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo,
+  const appBuild = require("./app-build").createAppBuild({
+    token: process.env.APP_BUILD_GITHUB_TOKEN || "",
+    writeCustomUI: (id, fn) => store.writeCustomUI(id, fn),
+    uploadApk: (slug, buffer) => new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "customer-apps", resource_type: "raw", public_id: slug, overwrite: true },
+        (error, result) => error ? reject(error) : resolve(result.secure_url));
+      stream.end(buffer);
+    }),
+  });
+  const liveOrders = require("./live-orders").createLiveOrders({ app, io, db, store, protect, restrictTo, appBuild,
     onPosConnect: (socket, rid) => { if (timedReservations) timedReservations.posAttach(socket, rid); } });
   // Timed reservations: dormant until the owner enables them (customUI.timedReservations.enabled) and sql/reservations.sql has been run.
   {
@@ -440,6 +450,8 @@ app.get("/api/v1/app/latest/:slug", async (req, res) => {
     const { data: restaurant, error } = await supabase
       .from('restaurants').select('customUI').eq('slug', req.params.slug).single();
     if (error || !restaurant) return res.status(404).json({ message: "المكان غير موجود" });
+    const playUrl = restaurant.customUI && restaurant.customUI.appPlayUrl;
+    if (playUrl) { res.set("Cache-Control", "no-store"); return res.status(200).json({ status: "success", data: { url: playUrl, kind: "play" } }); }
     const apk = restaurant.customUI && restaurant.customUI.appApk;
     if (!apk || !apk.url) return res.status(404).json({ message: "لسه مفيش نسخة تطبيق منشورة" });
     res.set("Cache-Control", "no-store");

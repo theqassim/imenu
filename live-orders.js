@@ -180,11 +180,19 @@ function buildOrder({ restaurant, products, body, now = Date.now(), posOnline = 
   };
 }
 
+// Empty string clears the link. Anything that is not a Google Play app page returns null (rejected).
+function normalizePlayUrl(v) {
+  const t = String(v == null ? "" : v).trim();
+  if (!t) return "";
+  if (t.length > 300) return null;
+  return /^https:\/\/play\.google\.com\/store\/apps\/details\?id=[A-Za-z][A-Za-z0-9_.]*(&[A-Za-z0-9_=%.\-]*)?$/.test(t) ? t : null;
+}
+
 function generateKey() {
   return KEY_PREFIX + crypto.randomBytes(24).toString("base64url");
 }
 
-function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect }) {
+function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo, log = console, onPosConnect, appBuild = null }) {
   const db = dbIn || pgBackend(pool);
   const connections = new Map(); // restaurantId -> Set(socket)
   const locks = new Map(); // restaurantId -> Promise chain
@@ -349,6 +357,38 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
         reply({ ok: true, config: cfg });
       } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
     });
+    // Google Play link for the customer app: when set, the online menu's download button sends people there instead of the APK.
+    socket.on("app:link:set", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (!store.writeCustomUI) return reply({ ok: false, code: "UNSUPPORTED", message: "غير مدعوم" });
+        const url = normalizePlayUrl(msg && msg.url);
+        if (url === null) return reply({ ok: false, code: "BAD_URL", message: "الرابط لازم يكون رابط التطبيق على Google Play" });
+        const r = await store.writeCustomUI(rid, (ui) => { const n = { ...ui }; if (url) n.appPlayUrl = url; else delete n.appPlayUrl; return n; });
+        if (!r || !r.ok) return reply({ ok: false, code: "CONFLICT", message: "حصل تعديل تاني، حاول تاني" });
+        reply({ ok: true, playUrl: url });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
+    // One-tap customer app build, driven from the POS (owner/admin gate is on the POS side). Same slug+key auth as above.
+    socket.on("app:build", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (!appBuild) return reply({ ok: false, code: "DISABLED", message: "غير مدعوم" });
+        const restaurant = await store.getRestaurantById(rid);
+        if (!restaurant) return reply({ ok: false, code: "ERROR", message: "المكان غير موجود" });
+        const r = await appBuild.start(restaurant);
+        reply({ ...r, view: r.view || appBuild.view(restaurant) });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
+    socket.on("app:build:status", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (!appBuild) return reply({ ok: false, code: "DISABLED", message: "غير مدعوم" });
+        const restaurant = await store.getRestaurantById(rid);
+        if (!restaurant) return reply({ ok: false, code: "ERROR", message: "المكان غير موجود" });
+        reply({ ok: true, view: appBuild.view(restaurant) });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
     if (typeof onPosConnect === "function") {
       try { onPosConnect(socket, rid); } catch (e) { log.error("onPosConnect error:", e.message); }
     }
@@ -505,4 +545,4 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
   return { ensureSchema, deliver, connections, buildOrder };
 }
 
-module.exports = { createLiveOrders, buildOrder, normalizeDeliveryConfig, orderOptions, generateKey, sha256 };
+module.exports = { createLiveOrders, normalizePlayUrl, buildOrder, normalizeDeliveryConfig, orderOptions, generateKey, sha256 };
