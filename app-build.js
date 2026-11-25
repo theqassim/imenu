@@ -22,6 +22,18 @@ function createAppBuild({ token, fetchImpl = fetch, writeCustomUI, uploadApk, sl
     headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "imenu-app-build", ...(opts.headers || {}) },
   });
 
+  // The venue's own logo becomes the app icon. Only an https URL is passed; no logo means the template icon stays.
+  function iconUrlFor(r) {
+    for (const raw of [r.storePage && r.storePage.logo, r.image]) {
+      let u = String(raw || "").replace(/\\/g, "/").trim();
+      if (!u) continue;
+      if (!/^https?:\/\//i.test(u)) u = "https://www.imenueg.com/" + u.replace(/^\/+/, "");
+      u = u.replace(/^http:\/\//i, "https://");
+      if (u.length <= 500 && /^https:\/\/[^\s"'<>\\]+$/.test(u)) return u;
+    }
+    return "";
+  }
+
   function inputsFor(restaurant, requestId) {
     const slug = String(restaurant.slug || "").toLowerCase();
     if (!/^[a-z0-9][a-z0-9-]{0,60}$/.test(slug)) return null;
@@ -31,6 +43,8 @@ function createAppBuild({ token, fetchImpl = fetch, writeCustomUI, uploadApk, sl
     const ui = restaurant.customUI || {};
     const color = /^#[0-9a-fA-F]{6}$/.test(String(ui.primaryColor || "")) ? ui.primaryColor : "#D4AF37";
     const inputs = { slug, app_name: name, color, request_id: requestId };
+    const icon = iconUrlFor(restaurant);
+    if (icon) inputs.icon_url = icon;
     const fb = ui.appFirebase;
     if (fb && /^[\w-]{20,80}$/.test(fb.apiKey || "") && /^[0-9]:[0-9]+:android:[0-9a-f]+$/.test(fb.appId || "") && /^[a-z0-9-]{4,60}$/.test(fb.projectId || "") && /^[0-9]{6,20}$/.test(String(fb.senderId || ""))) {
       Object.assign(inputs, { fb_api_key: fb.apiKey, fb_app_id: fb.appId, fb_project_id: fb.projectId, fb_sender_id: String(fb.senderId) });

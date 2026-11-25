@@ -105,3 +105,13 @@ test('play link validation: only Google Play app pages, empty clears', () => {
   assert.equal(n('https://play.google.com/store/apps/details?id=com.x.y&hl=ar'), 'https://play.google.com/store/apps/details?id=com.x.y&hl=ar');
   for (const bad of ['http://play.google.com/store/apps/details?id=com.x', 'https://evil.com/store/apps/details?id=com.x', 'javascript:alert(1)', 'https://play.google.com.evil.com/store/apps/details?id=a', 'https://play.google.com/store/apps/details?id=a b']) assert.equal(n(bad), null);
 });
+
+test('icon_url: store logo first, then image; none keeps the template icon; junk rejected', () => {
+  const h = harness();
+  const base = { slug: 'cafe-x', restaurantName: 'X', customUI: {} };
+  assert.equal(h.ab.inputsFor({ ...base, storePage: { logo: 'https://res.cloudinary.com/a/logo.png' }, image: 'https://i/x.png' }, 'r').icon_url, 'https://res.cloudinary.com/a/logo.png');
+  assert.equal(h.ab.inputsFor({ ...base, image: 'uploads/pic.jpg' }, 'r').icon_url, 'https://www.imenueg.com/uploads/pic.jpg');
+  assert.equal(h.ab.inputsFor({ ...base, storePage: { logo: 'http://x.com/l.png' } }, 'r').icon_url, 'https://x.com/l.png');
+  assert.equal('icon_url' in h.ab.inputsFor({ ...base }, 'r'), false);
+  assert.equal('icon_url' in h.ab.inputsFor({ ...base, storePage: { logo: 'https://x.com/a b"c.png' } }, 'r'), false);
+});
