@@ -251,6 +251,7 @@ const restrictTo = (...roles) => {
     pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false }, max: 4, idleTimeoutMillis: 30000 });
     pool.on("error", (e) => console.error("⚠️ pg pool error (live orders):", e.message));
     db = require("./live-orders-db").pgBackend(pool);
+    require("./schema-migrations").runMigrations(pool).catch(() => {});
   } else if (supabaseUrl && supabaseKey) {
     // No direct Postgres URL: use the Supabase REST API (service-role key). Tables come from sql/live-orders.sql.
     db = require("./live-orders-db").restBackend(supabase);
