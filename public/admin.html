@@ -2075,12 +2075,12 @@
                   <input type="hidden" id="c-old-name" /> 
                   
                   <div style="flex: 2; min-width: 250px;">
-                    <label class="form-label">اسم القسم</label>
+                    <label class="form-label">اسم القسم بالعربي</label>
                     <input type="text" id="c-name" class="modern-input" placeholder="مثال: مشويات، مشروبات..." style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color);" />
                   </div>
 
                   <div style="flex: 2; min-width: 250px;">
-                    <label class="form-label">اسم القسم بالإنجليزي <span style="color:#94a3b8; font-weight:400;">(اختياري)</span></label>
+                    <label class="form-label">اسم القسم بالإنجليزي <span style="color:#94a3b8; font-weight:400;">(اختياري - يظهر لعملاء المنيو الإنجليزي)</span></label>
                     <div style="display:flex; gap:8px;">
                       <input type="text" id="c-name-en" class="modern-input" placeholder="e.g. Grill, Drinks..." dir="ltr" style="padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); flex:1;" />
                       <button type="button" class="btn" onclick="suggestEnCat()" title="ترجمة تلقائية عبر MyMemory - الاسم بيتبعت للخدمة" style="white-space:nowrap; background:#eef2ff; color:var(--primary, #4338ca); border:1px solid #c7d2fe; font-size:12px; padding:0 12px; border-radius:12px;">
@@ -5002,6 +5002,15 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
           searchTable();
       }
 
+      function fillCatEnLines() {
+        const m = (typeof currentDesign === "object" && currentDesign && currentDesign.categoryNamesEn) || {};
+        document.querySelectorAll(".cat-en-line").forEach(function (el) {
+          const n = decodeURIComponent(el.dataset.cat), v = m[n];
+          el.textContent = v ? v : "+ English name";
+          el.style.color = v ? "var(--text-sub, #64748b)" : "#94a3b8";
+          el.style.fontStyle = v ? "normal" : "italic";
+        });
+      }
       async function loadCategories() {
         const rId = document.getElementById("restaurant-id").value;
         const grid = document.getElementById("categories-grid");
@@ -5064,6 +5073,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
                                 font-weight: 800; 
                                 color: var(--text-main);
                             ">${cat.name}</h3>
+                            <div class="cat-en-line" data-cat="${encodeURIComponent(cat.name)}" dir="ltr" style="font-size:13px; margin:0 0 6px; text-align:start;"></div>
                             ${countBadge}
                         </div>
                     </div>
@@ -5089,6 +5099,7 @@ const allViews = ["categories", "products", "recipes", "bulk", "orders", "histor
                 </div>
               `;
             });
+            fillCatEnLines();
 
             new Sortable(grid, {
                 animation: 150,
@@ -6620,6 +6631,7 @@ window.addBulkRow = function() { addBulkRows(1); };
       function initDesignStudio(restaurantData) {
         if (restaurantData.customUI) {
           currentDesign = { ...currentDesign, ...restaurantData.customUI };
+          if (typeof fillCatEnLines === "function") fillCatEnLines();
         }
 
         document.getElementById("ui-menuTheme").value = currentDesign.menuTheme === "booking" ? "booking" : "classic";
