@@ -188,6 +188,24 @@ function normalizePlayUrl(v) {
   return /^https:\/\/play\.google\.com\/store\/apps\/details\?id=[A-Za-z][A-Za-z0-9_.]*(&[A-Za-z0-9_=%.\-]*)?$/.test(t) ? t : null;
 }
 
+const APP_THEME_SLOTS = ["primary", "background", "card", "categoryText", "productName", "price"];
+// Owner look settings for the customer app. Returns { mode, slots, language } with only valid values, or null if anything is malformed.
+function normalizeAppTheme(msg) {
+  const m = msg && typeof msg === "object" ? msg : {};
+  const out = { mode: "dark", slots: {}, language: "" };
+  if (m.mode != null && m.mode !== "") { if (!["dark", "light", "auto"].includes(m.mode)) return null; out.mode = m.mode; }
+  if (m.language != null && m.language !== "") { if (!["en", "ar", "auto"].includes(m.language)) return null; out.language = m.language; }
+  const sl = m.slots && typeof m.slots === "object" ? m.slots : {};
+  for (const k of Object.keys(sl)) {
+    if (!APP_THEME_SLOTS.includes(k)) return null;
+    const v = String(sl[k] == null ? "" : sl[k]).trim();
+    if (!v) continue;
+    if (!/^#[0-9a-fA-F]{6}$/.test(v)) return null;
+    out.slots[k] = v.toUpperCase();
+  }
+  return out;
+}
+
 function generateKey() {
   return KEY_PREFIX + crypto.randomBytes(24).toString("base64url");
 }
@@ -369,6 +387,38 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
         reply({ ok: true, playUrl: url });
       } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
     });
+    // Owner look settings for the customer app (mode, colors, language). The app re-themes itself from these on its next menu load.
+    socket.on("app:theme:get", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        const restaurant = await store.getRestaurantById(rid);
+        if (!restaurant) return reply({ ok: false, code: "ERROR", message: "المكان غير موجود" });
+        const ui = restaurant.customUI || {};
+        const t = ui.appTheme && typeof ui.appTheme === "object" ? ui.appTheme : {};
+        const slots = {}; for (const k of APP_THEME_SLOTS) if (typeof t[k] === "string") slots[k] = t[k];
+        reply({ ok: true, theme: { mode: ["dark", "light", "auto"].includes(t.mode) ? t.mode : "dark", slots, language: ["en", "ar", "auto"].includes(ui.appLanguage) ? ui.appLanguage : "" } });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
+    socket.on("app:theme:set", async (msg, cb) => {
+      const reply = typeof cb === "function" ? cb : () => {};
+      try {
+        if (!store.writeCustomUI) return reply({ ok: false, code: "UNSUPPORTED", message: "غير مدعوم" });
+        const v = normalizeAppTheme(msg);
+        if (!v) return reply({ ok: false, code: "BAD_VALUE", message: "قيمة غير صالحة" });
+        const r = await store.writeCustomUI(rid, (ui) => {
+          const n = { ...ui };
+          const old = n.appTheme && typeof n.appTheme === "object" ? n.appTheme : {};
+          const t = { ...old };
+          for (const k of APP_THEME_SLOTS) delete t[k];
+          t.mode = v.mode; Object.assign(t, v.slots);
+          n.appTheme = t;
+          if (v.language) n.appLanguage = v.language; else delete n.appLanguage;
+          return n;
+        });
+        if (!r || !r.ok) return reply({ ok: false, code: "CONFLICT", message: "حصل تعديل تاني، حاول تاني" });
+        reply({ ok: true, theme: v });
+      } catch (e) { reply({ ok: false, code: "ERROR", message: "حصلت مشكلة" }); }
+    });
     // One-tap customer app build, driven from the POS (owner/admin gate is on the POS side). Same slug+key auth as above.
     socket.on("app:build", async (msg, cb) => {
       const reply = typeof cb === "function" ? cb : () => {};
@@ -545,4 +595,4 @@ function createLiveOrders({ app, io, pool, db: dbIn, store, protect, restrictTo,
   return { ensureSchema, deliver, connections, buildOrder };
 }
 
-module.exports = { createLiveOrders, normalizePlayUrl, buildOrder, normalizeDeliveryConfig, orderOptions, generateKey, sha256 };
+module.exports = { createLiveOrders, normalizePlayUrl, normalizeAppTheme, buildOrder, normalizeDeliveryConfig, orderOptions, generateKey, sha256 };

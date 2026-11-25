@@ -115,3 +115,14 @@ test('icon_url: store logo first, then image; none keeps the template icon; junk
   assert.equal('icon_url' in h.ab.inputsFor({ ...base }, 'r'), false);
   assert.equal('icon_url' in h.ab.inputsFor({ ...base, storePage: { logo: 'https://x.com/a b"c.png' } }, 'r'), false);
 });
+
+test('normalizeAppTheme accepts only known mode, language and hex slots', () => {
+  const { normalizeAppTheme: n } = require('../live-orders');
+  assert.deepEqual(n({ mode: 'light', language: 'ar', slots: { primary: '#d4af37', card: '' } }), { mode: 'light', slots: { primary: '#D4AF37' }, language: 'ar' });
+  assert.deepEqual(n({}), { mode: 'dark', slots: {}, language: '' });
+  assert.equal(n({ mode: 'neon' }), null);
+  assert.equal(n({ language: 'fr' }), null);
+  assert.equal(n({ slots: { primary: 'red' } }), null);
+  assert.equal(n({ slots: { evil: '#112233' } }), null);
+  assert.equal(n({ slots: { primary: '#12345' } }), null);
+});
