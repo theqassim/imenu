@@ -102,3 +102,53 @@ test("config normalizers clamp bad input", () => {
   assert.equal(c.welcomeGift.value, 100); assert.equal(c.loyalty.enabled, false); assert.equal(c.loyalty.earnPer, 1);
   assert.equal(normalizeCoupons("x"), null);
 });
+
+test("HTTP: quote and order apply a coupon on the server; POS sync over the socket; one discount only", async () => {
+  const express = require("express");
+  const { Server: SIO } = require("socket.io");
+  const { io: cli } = require("socket.io-client");
+  const { createLiveOrders, sha256 } = require("../live-orders.js");
+  const products = [{ _id: "p1", name: { ar: "برجر" }, price: 100, sizes: [], category: "برجر", isAvailable: true }];
+  const restaurant = { _id: "r1", slug: "demo", taxRate: 0, serviceRate: 0, useTableNumbers: false, offers: [], customUI: { liveOrders: { enabled: true } } };
+  const rows = [];
+  const fdb = { ensure: async () => {}, getKey: async () => ({ key_hash: sha256("imk_test"), key_hint: "test" }), setKey: async () => {},
+    insertOrder: async (id, rid, payload) => { rows.push({ id, rid, payload }); }, oldest: async () => null, bumpAttempts: async () => {}, remove: async () => {} };
+  const tables = { coupons: [], orders: [] };
+  const store = { getRestaurantBySlug: async (s) => (s === "demo" ? restaurant : null), getRestaurantById: async () => restaurant, getRestaurantByOwner: async () => restaurant, getProducts: async () => products,
+    writeCustomUI: async (id, fn) => { restaurant.customUI = fn(restaurant.customUI); return { ok: true }; } };
+  const app = express(); app.use(express.json());
+  const srv = require("http").createServer(app); const io = new SIO(srv);
+  const perks = createPerks({ supabase: fakeSupabase(tables) });
+  createLiveOrders({ app, io, db: fdb, store, protect: (q, s, n) => n(), restrictTo: () => (a, b, n) => n(), log: { log() {}, error() {} },
+    protectOptional: (req, res, next) => { if (req.headers.authorization === "Bearer cust") req.customer = { _id: "c1", name: "Ali", phone: "010" }; next(); }, perks });
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  const base = "http://127.0.0.1:" + srv.address().port;
+  const pos = cli(base + "/pos", { auth: { slug: "demo", key: "imk_test" }, reconnection: false, transports: ["websocket"] });
+  try {
+    await new Promise((res, rej) => { pos.on("ready", res); pos.on("connect_error", rej); });
+    const call = (e, m) => new Promise((r) => pos.emit(e, m, r));
+    assert.equal((await call("coupons:sync", { coupons: [{ code: "TEN", discountType: "percent", value: 10, usageLimit: 1 }] })).ok, true);
+    assert.equal((await call("perks:config:set", { welcomeGift: { enabled: true, discountType: "fixed", value: 30 }, loyalty: { enabled: false } })).ok, true);
+    const post = (path, body, h = {}) => fetch(base + "/api/v1/live-orders/demo/" + path, { method: "POST", headers: { "Content-Type": "application/json", ...h }, body: JSON.stringify({ items: [{ productId: "p1", qty: 2 }], ...body }) });
+    const q = await (await post("quote", { couponCode: "ten" })).json();
+    assert.equal(q.data.perkDiscount, 20); assert.equal(q.data.totalPrice, 180);
+    assert.equal(tables.coupons[0].usedCount || 0, 0, "a quote never counts a use");
+    assert.equal((await post("quote", { couponCode: "NOPE" })).status, 400);
+    const o = await post("orders", { couponCode: "TEN" });
+    assert.equal(o.status, 202);
+    assert.equal(rows[0].payload.couponCode, "TEN"); assert.equal(rows[0].payload.discountAmount, 20); assert.equal(rows[0].payload.totalPrice, 180);
+    assert.equal(tables.coupons[0].usedCount, 1);
+    const again = await post("orders", { couponCode: "TEN" });
+    assert.equal(again.status, 400, "usage limit reached");
+    // gift: needs login and a device id, comes off as one discount
+    assert.equal((await post("quote", { useGift: true }, { "X-Device-Id": "device-12345678" })).status, 400);
+    const g = await (await post("quote", { useGift: true }, { Authorization: "Bearer cust", "X-Device-Id": "device-12345678" })).json();
+    assert.equal(g.data.perkDiscount, 30);
+    assert.equal((await post("quote", { useGift: true }, { Authorization: "Bearer cust" })).status, 400);
+    const ov = await (await fetch(base + "/api/v1/live-orders/demo/perks", { headers: { Authorization: "Bearer cust", "X-Device-Id": "device-12345678" } })).json();
+    assert.equal(ov.data.gift.value, 30); assert.equal(ov.data.loyalty, null);
+    tables.coupons[0].usedCount = 0; // coupon wins when both are sent: one discount only
+    const both = await (await post("quote", { couponCode: "TEN", useGift: true }, { Authorization: "Bearer cust", "X-Device-Id": "device-12345678" })).json();
+    assert.equal(both.data.perkDiscount, 20); assert.equal(both.data.couponCode, "TEN");
+  } finally { pos.close(); io.close(); srv.close(); }
+});
