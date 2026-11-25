@@ -2773,6 +2773,7 @@
         }
         window.__liveMode = live;
         applyOrderOptions();
+        { const t = document.querySelector('input[name="orderType"]:checked'); if (t && t.value === "delivery") dvRestoreSaved(); }
         storeSettings.mode = live ? "live" : "view_only";
         if (live) storeSettings.enableCoupons = false;
         applyLiveBanner();
@@ -3806,6 +3807,29 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         else wrapper.style.display = "block";
         const dw = document.getElementById("delivery-wrapper");
         if (dw) dw.style.display = type === "delivery" ? "block" : "none";
+        if (type === "delivery") dvRestoreSaved();
+      }
+
+      // Remember the customer's delivery details (this browser only) so they are not typed or picked again.
+      function dvSavedKey() { return "dvSaved:" + (window.__liveSlug || location.pathname.split("/").filter(Boolean).pop() || ""); }
+      function dvRestoreSaved() {
+        try {
+          const s = JSON.parse(localStorage.getItem(dvSavedKey()) || "null");
+          if (!s) return;
+          if (!window.__dvTextRestored) {
+            window.__dvTextRestored = true;
+            const put = (id, v) => { const el = document.getElementById(id); if (el && !el.value && v) el.value = v; };
+            put("dv-name", s.name); put("dv-phone", s.phone); put("dv-address", s.address);
+          }
+          if (!window.__dvZoneRestored && dvZones().length) {
+            window.__dvZoneRestored = true;
+            const z = dvZones().find((x) => x.id === s.zoneId) || dvZones().find((x) => x.name === s.zoneName);
+            if (z && !window.__dvZoneId) dvZonePick(z.id);
+          }
+        } catch (_) {}
+      }
+      function dvSaveDetails(z, nm, ph, ad) {
+        try { localStorage.setItem(dvSavedKey(), JSON.stringify({ name: nm, phone: ph, address: ad, zoneId: z.id, zoneName: z.name })); } catch (_) {}
       }
 
      async function submitOrder() {
@@ -3823,6 +3847,7 @@ const clickableAction = (p.sizes && p.sizes.length > 0) ? `onclick="showSizeSele
         const bad = !z ? "اختار منطقة التوصيل" : !nm ? "اكتب اسمك" : ph.replace(/\D/g, "").length < 7 ? "اكتب رقم موبايل صحيح" : !ad ? "اكتب العنوان بالتفصيل" : "";
         if (bad) { Swal.fire({ icon: "warning", title: "تنبيه", text: bad }); return; }
         dvData = { zoneId: z.id, customerName: nm, customerPhone: ph, customerAddress: ad };
+        dvSaveDetails(z, nm, ph, ad);
     } else if (orderType === "takeaway") {
         finalTableValue = "تيك أواي";
     } else {
