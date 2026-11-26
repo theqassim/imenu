@@ -1,0 +1,25 @@
+#chefo-wrap{position:fixed;bottom:6px;right:6px;z-index:99990;display:flex;flex-direction:row;align-items:flex-end;gap:2px;direction:ltr;pointer-events:none;font-family:"Cairo","IBM Plex Sans Arabic",sans-serif;transition:right .55s cubic-bezier(.22,.9,.3,1),bottom .55s cubic-bezier(.22,.9,.3,1),transform .55s cubic-bezier(.22,.9,.3,1)}
+#chefo-wrap.gated{right:50%;bottom:44%;transform:translate(50%,50%) scale(1.12)}
+#chefo-stage{display:flex;flex-direction:column;align-items:flex-end}
+#chefo-canvas{width:calc(118px * var(--cs,1));height:calc(143px * var(--cs,1));pointer-events:auto;cursor:pointer;touch-action:manipulation}
+#chefo-bubble{position:relative;max-width:168px;margin:0 6px 30px 0;background:#fffdf7;border:1px solid #e9e2d3;border-radius:14px;padding:7px 10px;font-size:12px;line-height:1.6;color:#1b160e;box-shadow:0 6px 18px rgba(27,22,14,.13);opacity:0;transform:translateX(6px) scale(.92);transform-origin:bottom right;transition:opacity .25s ease,transform .25s ease}
+#chefo-bubble.show{opacity:1;transform:none}
+#chefo-bubble::after{content:"";position:absolute;right:-6px;bottom:22px;width:10px;height:10px;background:#fffdf7;border-right:1px solid #e9e2d3;border-bottom:1px solid #e9e2d3;transform:rotate(-45deg)}
+#chefo-sound{pointer-events:auto;width:30px;height:30px;border-radius:50%;border:1px solid #e9e2d3;background:#191307;color:#b9862a;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-bottom:4px;margin-inline-end:6px;box-shadow:0 4px 12px rgba(27,22,14,.18);transition:transform .2s}
+#chefo-sound:hover{transform:scale(1.08)}
+#chefo-wrap:not(.muted) .snd-off{display:none}
+#chefo-wrap.muted .snd-on{display:none}
+#chefo-gate{position:fixed;inset:0;z-index:99989;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:10%;background:rgba(250,248,244,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);transition:opacity .5s ease;font-family:"Cairo","IBM Plex Sans Arabic",sans-serif}
+#chefo-gate.leave{opacity:0;pointer-events:none}
+#chefo-gate .gate-actions{display:flex;flex-direction:column;align-items:center;gap:9px}
+#chefo-enter{pointer-events:auto;border:0;border-radius:999px;background:#191307;color:#f4e9d2;font-family:inherit;font-weight:800;font-size:15px;padding:12px 24px;cursor:pointer;display:inline-flex;align-items:center;gap:9px;box-shadow:0 10px 26px rgba(27,22,14,.28);transition:transform .18s ease}
+#chefo-enter:hover{transform:scale(1.045)}
+#chefo-enter .pulse{display:inline-flex;animation:gatepulse 1.6s ease-in-out infinite}
+@keyframes gatepulse{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+#chefo-skip{pointer-events:auto;background:none;border:0;color:#7a7060;font-family:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:4px}
+#chefo-wrap.gated #chefo-sound{display:none}
+#chefo-wrap.docked{z-index:99991}
+#chefo-wrap.docked #chefo-sound{display:none}
+#chefo-wrap.docked #chefo-bubble{position:absolute;top:calc(100% + 2px);right:0;margin:0;width:150px;transform-origin:top right}
+#chefo-wrap.docked #chefo-bubble::after{top:-5px;bottom:auto;right:12px;transform:rotate(135deg)}
+
